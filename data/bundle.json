@@ -2367,7 +2367,7 @@
           "name": "Sympathetic Response",
           "role": "combat",
           "description": "This discipline adds two Mesmerism tricks to your list, free and permanent: **Lull** (level 2) and **The Suggestion** (level 3). They are yours alone — no other Illusionist learns them — and they are what this feature is built on, because the base Illusionist list carries almost no Mesmerism at all. On top of that, a mind you have opened stays open: when a creature fails a saving throw against one of your Mesmerism tricks, it has **disadvantage on every attack roll and every saving throw it makes until the end of its next turn**. It is not helpless and nobody gets a free shot at it — it is simply worse at all of it, for a while, because part of it is still listening to you.",
-          "sheetSummary": "Adds Lull (L2) and The Suggestion (L3) to your trick list. Also: when a creature fails a save against one of your Mesmerism tricks, it has disadvantage on every attack roll and saving throw it makes until the end of its next turn.",
+          "sheetSummary": "When a creature fails a save against one of your Mesmerism tricks, it has disadvantage on every attack roll and saving throw it makes until the end of its next turn.",
           "narration": "You open something in them and it stays open. Their swings come in half-committed and their mind will not close around anything, because part of it is still back in the room with your voice.",
           "meta": {
             "action": "Passive",
@@ -2554,14 +2554,24 @@
           "level": 3,
           "name": "Vanishing Trick",
           "role": "combat",
-          "description": "Your Swap doubles as a parting insult. Once per turn, when you use Swap, you may choose one creature within 5 feet of the space you just left that could see you there: that creature has disadvantage on the next attack roll it makes before the end of your next turn, having lunged for a reflection that was never really there. This requires no action or reaction beyond using Swap itself, and doesn't change how Swap otherwise works. In addition, once per combat you may Swap defensively: when a creature you can see hits you with an attack, before its damage is dealt, you can use your reaction to Swap with one of your Clones within Swap's range — you trade places, the blow lands on the Clone now standing in the space you left (destroying it), and you take no damage. This defensive use costs your reaction (unlike the disadvantage effect above) and needs a Clone available to Swap with.",
+          "description": "Your Swap doubles as a parting insult, and in a pinch as an escape. It does two separate things:",
           "narration": "You are gone before the space you left has finished being empty, and the thing nearest it commits to a lunge at nothing. On the occasions you leave it later than that, you trade places with the blow already falling and let the reflection catch what was yours.",
-          "sheetSummary": "Free with Swap, 1/turn: one creature within 5 ft of the space you left has disadvantage on its next attack roll before the end of your next turn. Separately, 1/combat as a reaction: when a creature you can see hits you, Swap with a Clone in range before damage — the blow destroys that Clone and you take none.",
+          "sheetSummary": "Two effects. Free with Swap, 1/turn: one creature within 5 ft of the space you left has disadvantage on its next attack roll before the end of your next turn. Separately, reaction, 1/combat: when a creature you can see hits you, Swap with a Clone in range before damage — the blow destroys that Clone and you take none.",
           "meta": {
             "action": "Free with Swap / Reaction (defensive)",
             "uses": "Disadv 1 / turn; defensive Swap 1 / combat",
             "range": "5 ft / Swap range"
-          }
+          },
+          "options": [
+            {
+              "name": "Parting insult (1/turn, free)",
+              "effect": "When you use Swap, choose one creature within 5 feet of the space you just left that could see you there: it has disadvantage on the next attack roll it makes before the end of your next turn. This costs no action or reaction beyond the Swap itself."
+            },
+            {
+              "name": "Defensive Swap (1/combat, reaction)",
+              "effect": "When a creature you can see hits you with an attack, before its damage is dealt, use your reaction to Swap with one of your Clones within Swap's range. You trade places, the blow lands on the Clone now standing where you were and destroys it, and you take no damage."
+            }
+          ]
         },
         {
           "level": 3,
@@ -2603,8 +2613,8 @@
           "level": 3,
           "name": "Feed the Fear",
           "role": "combat",
-          "description": "This discipline adds two tricks to your list, free and permanent: **Your Own Face** (level 2) and **Night Terrors** (level 3). They are yours alone — no other Illusionist learns them. Terror is credibility. The first time each turn a creature fails a saving throw against one of your tricks that deals psychic damage, you gain 1 additional Phantasm, over and above whatever your engine already granted this turn.",
-          "sheetSummary": "Adds Your Own Face (L2) and Night Terrors (L3) to your trick list. 1/turn. Gain 1 additional Phantasm the first time each turn a creature fails a save against one of your psychic-damage tricks.",
+          "description": "Terror is credibility. The first time each turn a creature fails a saving throw against one of your tricks that deals psychic damage, you gain 1 additional Phantasm, over and above whatever your engine already granted this turn.",
+          "sheetSummary": "1/turn. Gain 1 additional Phantasm the first time each turn a creature fails a save against one of your psychic-damage tricks.",
           "narration": "You watch it land and something in you banks it. The scream is not the point. The scream is the receipt.",
           "meta": {
             "action": "Passive",
@@ -2984,8 +2994,8 @@
           "level": 3,
           "name": "Palmed",
           "role": "combat",
-          "description": "This discipline adds two tricks to your list, free and permanent: **Palmed Card** (level 1) and **Swap the Cards** (level 3). They are yours alone — no other Illusionist learns them. And you can hide the real work inside the loud work: once on each of your turns, when you cast a Turn, you may also cast one Pledge as part of the same action. The Pledge resolves after the Turn. With Palmed Card in your list this is a second attack every round for nothing, which is the whole reason to take this discipline.",
-          "sheetSummary": "Adds Palmed Card (L1) and Swap the Cards (L3) to your trick list. Also: 1/turn, when you cast a Turn, also cast one Pledge as part of the same action; the Pledge resolves after the Turn.",
+          "description": "Hide the real work inside the loud work: once on each of your turns, when you cast a Turn, you may also cast one Pledge as part of the same action. The Pledge resolves after the Turn. With Palmed Card in your list this is a second attack every round for nothing, which is the whole reason to take this discipline.",
+          "sheetSummary": "1/turn, when you cast a Turn, also cast one Pledge as part of the same action; the Pledge resolves after the Turn.",
           "narration": "The big gesture is the cover. The small one, the one that actually matters, happens inside it while everyone is busy applauding the wrong hand.",
           "meta": {
             "action": "Part of casting a Turn",
@@ -3903,11 +3913,33 @@
       ],
       "duration": "Up to 10 minutes",
       "save": "Wisdom",
-      "description": "You remake a piece of the world. A 60-foot cube within range fills with a fully realised illusory environment — sight, sound, temperature, even scent — and it can be anything you can picture: a collapsed tunnel, a wall of roaring fire, a chasm where the floor used to be, a cheering crowd of a hundred phantom performers. It needs no concentration and holds for the duration while you do whatever else you like.\n\n**While it stands, it behaves like the thing it depicts.** It blocks line of sight through it, its area is difficult terrain, and **every creature inside it has disadvantage on every attack roll, ability check and saving throw it makes** — nobody fights well inside a rockfall they believe in. This applies to your allies too, so place it as a hazard to be worked around rather than a blanket to fight under. It is still an image: it deals no damage, supports no weight, and stops nothing that does not care what it sees.\n\n**One creature seeing through it ends the whole thing.** A creature can spend its action to study the illusion and make an Intelligence (Investigation) check against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}; a creature that shoves through it may make that check as part of the movement, since contact gives the game away. On any success the illusion **collapses immediately and entirely, for every creature at once** — it does not linger as an image and it does not go on fooling anyone who failed. That is the counter-play, and it costs a single enemy a single action to find it.\n\n**Once before it ends**, as a bonus action, you can make the whole thing enact a single dramatic moment: the phantom army charges, the fire roars up, the floor gives way. Every creature of your choice inside it or within 10 feet of it must succeed on a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or be frightened of it until the end of its next turn and, if it has a reaction available, use that reaction to move as far from the illusion as its speed allows.",
+      "description": "You remake a piece of the world. A 60-foot cube within range fills with a fully realised illusory environment — sight, sound, temperature, even scent — and it can be anything you can picture: a collapsed tunnel, a wall of roaring fire, a chasm where the floor used to be, a cheering crowd of a hundred phantom performers. It needs no concentration and holds for the duration while you do whatever else you like. It is still an image: it deals no damage, supports no weight, and stops nothing that does not care what it sees.",
       "narration": "The tent is gone. In its place is a rockfall, or a fire, or a drop into nothing — cold on your face, loud in your ears, entirely in the way, and nobody caught inside it can think straight. It holds until one person stops and really looks, and then there was never anything there at all.",
       "sheetSummary": "Once per combat. Action, 120 ft, 60-ft cube, costs 3 Phantasm, up to 10 minutes, no concentration. While it stands: blocks line of sight, difficult terrain, and EVERY creature inside has disadvantage on all attack rolls, ability checks and saving throws — allies included. Any creature can spend its action (or push through it) to make an Investigation check vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}; ANY success collapses the whole illusion immediately for everyone. Once before it ends, bonus action: creatures of your choice inside or within 10 ft make a Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or are frightened until the end of their next turn and must use a reaction to flee it. Deals no damage.",
       "classes": [
         "illusionist"
+      ],
+      "options": [
+        {
+          "name": "Blocks sight",
+          "effect": "Line of sight cannot be traced through the cube."
+        },
+        {
+          "name": "Difficult terrain",
+          "effect": "The whole area is difficult terrain — nobody walks briskly through a rockfall they believe in."
+        },
+        {
+          "name": "Nobody thinks straight inside",
+          "effect": "Every creature inside the cube has disadvantage on every attack roll, ability check and saving throw it makes. This applies to your allies too: place it as a hazard to work around, not a blanket to fight under."
+        },
+        {
+          "name": "Seeing through it ends everything",
+          "effect": "A creature can spend its action to study the illusion and make an Intelligence (Investigation) check against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}; a creature that shoves through it makes that check as part of the movement. On ANY success the illusion collapses immediately and entirely, for every creature at once."
+        },
+        {
+          "name": "The dramatic moment (once, bonus action)",
+          "effect": "The phantom army charges, the fire roars up, the floor gives way. Every creature of your choice inside the cube or within 10 feet of it makes a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or is frightened of it until the end of its next turn and, if it has a reaction available, uses that reaction to move as far from the illusion as its speed allows."
+        }
       ],
       "_file": "tricks/the-impossible-show.json"
     },

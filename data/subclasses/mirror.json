@@ -22,14 +22,24 @@
       "level": 3,
       "name": "Vanishing Trick",
       "role": "combat",
-      "description": "Your Swap doubles as a parting insult. Once per turn, when you use Swap, you may choose one creature within 5 feet of the space you just left that could see you there: that creature has disadvantage on the next attack roll it makes before the end of your next turn, having lunged for a reflection that was never really there. This requires no action or reaction beyond using Swap itself, and doesn't change how Swap otherwise works. In addition, once per combat you may Swap defensively: when a creature you can see hits you with an attack, before its damage is dealt, you can use your reaction to Swap with one of your Clones within Swap's range — you trade places, the blow lands on the Clone now standing in the space you left (destroying it), and you take no damage. This defensive use costs your reaction (unlike the disadvantage effect above) and needs a Clone available to Swap with.",
+      "description": "Your Swap doubles as a parting insult, and in a pinch as an escape. It does two separate things:",
       "narration": "You are gone before the space you left has finished being empty, and the thing nearest it commits to a lunge at nothing. On the occasions you leave it later than that, you trade places with the blow already falling and let the reflection catch what was yours.",
-      "sheetSummary": "Free with Swap, 1/turn: one creature within 5 ft of the space you left has disadvantage on its next attack roll before the end of your next turn. Separately, 1/combat as a reaction: when a creature you can see hits you, Swap with a Clone in range before damage — the blow destroys that Clone and you take none.",
+      "sheetSummary": "Two effects. Free with Swap, 1/turn: one creature within 5 ft of the space you left has disadvantage on its next attack roll before the end of your next turn. Separately, reaction, 1/combat: when a creature you can see hits you, Swap with a Clone in range before damage — the blow destroys that Clone and you take none.",
       "meta": {
         "action": "Free with Swap / Reaction (defensive)",
         "uses": "Disadv 1 / turn; defensive Swap 1 / combat",
         "range": "5 ft / Swap range"
-      }
+      },
+      "options": [
+        {
+          "name": "Parting insult (1/turn, free)",
+          "effect": "When you use Swap, choose one creature within 5 feet of the space you just left that could see you there: it has disadvantage on the next attack roll it makes before the end of your next turn. This costs no action or reaction beyond the Swap itself."
+        },
+        {
+          "name": "Defensive Swap (1/combat, reaction)",
+          "effect": "When a creature you can see hits you with an attack, before its damage is dealt, use your reaction to Swap with one of your Clones within Swap's range. You trade places, the blow lands on the Clone now standing where you were and destroys it, and you take no damage."
+        }
+      ]
     },
     {
       "level": 3,

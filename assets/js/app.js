@@ -949,7 +949,25 @@ function engineSection(e) {
 
 function renderSubclass(s) {
   return head(s.name, (s.parentClass ? s.parentClass + " subclass" : "")) +
-    `<div class="detail-body">${s.flavor ? `<p>${esc(s.flavor)}</p>` : ""}${features(s.features)}</div>`;
+    `<div class="detail-body">${s.flavor ? `<p>${esc(s.flavor)}</p>` : ""}` +
+    grantedTricksSection(s) + `${features(s.features)}</div>`;
+}
+
+/* Tricks this subclass grants (MECHANICS §4.9d), read straight off the trick files so the list
+   has ONE source of truth — it used to be retyped into a feature's prose, which is both a blob
+   and a thing that can drift. */
+function grantedTricksSection(s) {
+  const sid = s.id || s.name;
+  const mine = (store.tricks || []).filter((t) => (t.subclasses || []).includes(sid));
+  if (!mine.length) return "";
+  const lv = subclassLevelOf(s.parentClass);
+  const rows = mine
+    .sort((a, b) => (a.minLevel || 1) - (b.minLevel || 1) || a.name.localeCompare(b.name))
+    .map((t) => `<tr><td>${esc(cap(t.tier || ""))}</td><td><a href="#/tricks/${encodeURIComponent(slug(t))}">${esc(t.name)}</a></td>
+      <td>${fmtDesc(t.sheetSummary || "", trickLadder(t))}</td></tr>`).join("");
+  return `<h2>Discipline Tricks</h2>
+    <p class="muted">Taking this discipline adds these to your trick list, free and permanent, at level ${esc(lv)}. No other member of your class learns them.</p>
+    <table class="data-table"><thead><tr><th>Tier</th><th>Trick</th><th>What it does</th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 
 /* What each Trick tier means, shown as a hover/tap tooltip on the tier badge so a reader never
