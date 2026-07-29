@@ -782,10 +782,10 @@ function scalingDieHTML(count, size, abil, ladder) {
     return { lv, die };
   });
   const plain = seq.map((r) => `L${r.lv} ${r.die}`).join(" · ");
-  const title = `Damage: ${plain}${rung.note ? ` (${rung.note})` : ""}${modLine}`;
+  const title = `Scales: ${plain}${rung.note ? ` (${rung.note})` : ""}${modLine}`;
   return `<span class="scaling-die" title="${esc(title)}">${esc(base)}<sup class="scale-mark">▲</sup>` +
     `<span class="scale-tip" role="tooltip">
-       <span class="scale-tip-title">${ab ? "Damage" : "Scaling die"}</span>
+       <span class="scale-tip-title">Scaling die</span>
        <span class="scale-tip-row">${seq.map((r) =>
          `<span class="scale-step"><span class="scale-lv">L${esc(r.lv)}</span>${esc(r.die)}</span>`).join("")}</span>
        ${rung.note ? `<span class="scale-tip-lv">${esc(rung.note)}</span>` : ""}
