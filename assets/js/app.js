@@ -1,8 +1,24 @@
 /*
- * Circus of Chaos (CoC) — 5e Compendium (base app)
- * Data-driven: every category is a list of JSON files declared in data/manifest.json.
- * Agents add content by dropping a JSON file in data/<category>/ and regenerating the
- * manifest (scripts/build_manifest.py). The UI never needs to change to show new content.
+ * Circus of Chaos — compendium front-end.
+ *
+ * DATA-DRIVEN BY CONTRACT. Nothing here knows about any specific class, trick or weapon: every
+ * category is a folder of JSON validated against data/schema/<category>.schema.json, bundled by
+ * scripts/build_manifest.py, and rendered by one function listed in CATEGORIES below.
+ *
+ * TO ADD CONTENT: drop a JSON file in data/<category>/ and run `bash scripts/check.sh`. No code
+ * change. An empty category hides its own sidebar tab until it has an entry.
+ *
+ * TO ADD A CATEGORY: (1) data/schema/<name>.schema.json, (2) the folder, (3) one line in
+ * CATEGORIES here, (4) one render<Name>() function, (5) a `case` in cardMeta(). Add the name to
+ * SCHEMA in scripts/validate.py and CATEGORIES in scripts/build_manifest.py. That is the whole
+ * surface — see the add-content-type skill.
+ *
+ * TWO AUTHORING TOKENS, expanded by fmtDesc() and enforced by the build lint:
+ *   {{Label|formula}}  a derived number. The LABEL shows; the formula is the tooltip. Never spell
+ *                      maths inline — the build fails on it, and fails if the halves are swapped.
+ *   [[XdY]] / [[XdY+Abil]]  a Scaling Die (MECHANICS §3). Renders the whole level ladder.
+ * Any text that reaches the screen must go through esc() or fmtDesc(). stat(), statHTML(),
+ * makeCard() and snippet() escape for you; statHTML() is the one that takes trusted HTML.
  */
 
 const CATEGORIES = [
@@ -56,12 +72,25 @@ async function boot() {
     }));
   }
 
+  buildIndexes();
   buildSidebar();
   wireEvents();
   $("#legend-panel").innerHTML = legendHTML();
   const total = Object.values(store).reduce((n, a) => n + a.length, 0);
   setStatus(total ? `${total} entries loaded across ${CATEGORIES.length} categories.` : "No content yet.");
   routeFromHash();
+}
+
+/* Lookup indexes, built once after load. Six render paths used to linear-scan a store array —
+   attacksSection did one scan per weapon per class page — which is fine at 141 entries and silly
+   at any larger number. Rebuilt by buildIndexes() whenever the store changes. */
+const idx = { classes: new Map(), subclasses: new Map(), weaponsByName: new Map(), skillsByName: new Map() };
+function buildIndexes() {
+  idx.classes.clear(); idx.subclasses.clear(); idx.weaponsByName.clear(); idx.skillsByName.clear();
+  for (const c of store.classes || []) idx.classes.set(c.id || slug(c), c);
+  for (const s of store.subclasses || []) idx.subclasses.set(s.id || s.name, s);
+  for (const w of store.weapons || []) idx.weaponsByName.set(w.name, w);
+  for (const k of store.skills || []) idx.skillsByName.set((k.name || "").toLowerCase(), k);
 }
 
 // Attach the searchable text blob and sort a category's entries by name.
@@ -133,7 +162,7 @@ function wireEvents() {
     const want = btn.dataset.fview;
     box.querySelectorAll(":scope > .group-toggle > .toggle-btn")
        .forEach((b) => b.classList.toggle("active", b.dataset.fview === want));
-    box.querySelectorAll(":scope > .fbody")
+    box.querySelectorAll(":scope > [data-body]")
        .forEach((b) => b.classList.toggle("hidden", b.dataset.body !== want));
   });
   // Tap-to-toggle tooltips: touchscreens can't hover, so a tap opens the formula /
@@ -478,7 +507,7 @@ function renderTricksByClass(container, items) {
 
 /* The level at which a class actually picks a subclass (all 8 are 3 today, but read it). */
 function subclassLevelOf(cid) {
-  const c = (store.classes || []).find((x) => (x.id || slug(x)) === cid);
+  const c = idx.classes.get(cid);
   return (c && c.subclassLevel) || 3;
 }
 
@@ -486,7 +515,7 @@ function subclassLevelOf(cid) {
    them — the class's casting start level, raised to the subclass level for granted tricks. The
    trick's own minLevel is its power gate; the later gate always wins (MECHANICS §4.9b, §4.9d). */
 function levelLadder(list, floor) {
-  const wrap = el("div", "ladder");
+  const wrap = el("div", "ladder");  // hook kept for the Tricks class view
   const byLevel = new Map();
   for (const t of list) {
     const lv = Math.max(t.minLevel || 1, floor);
@@ -508,13 +537,13 @@ function levelLadder(list, floor) {
 
 // Display name for a class id (e.g. "the-sandow" -> "The Sandow").
 function className(id) {
-  const c = (store.classes || []).find((x) => (x.id || slug(x)) === id);
+  const c = idx.classes.get(id);
   return c ? c.name : cap(String(id).replace(/-/g, " "));
 }
 
 /* Display name for a subclass id, mirroring className() for classes. */
 function subclassName(id) {
-  const s = (store.subclasses || []).find((x) => (x.id || x.name) === id);
+  const s = idx.subclasses.get(id);
   return s ? s.name : cap(String(id || "").replace(/-/g, " "));
 }
 
@@ -569,8 +598,16 @@ function showDetail(key, id, keepScroll) {
   current = key;
   $("#list-view").classList.add("hidden");
   $("#detail-view").classList.remove("hidden");
-  const renderer = CATEGORIES.find((c) => c.key === key).render;
-  $("#detail").innerHTML = renderer(it);
+  const entry = CATEGORIES.find((c) => c.key === key);
+  try {
+    $("#detail").innerHTML = entry.render(it);
+  } catch (err) {
+    // One malformed entry must not blank the app. Show what failed and keep the shell usable.
+    console.error("render failed for", key, id, err);
+    $("#detail").innerHTML = `<h1>${esc(it.name || id)}</h1>` +
+      `<p class="muted">This entry could not be rendered — its data is probably malformed. ` +
+      `Run <code>bash scripts/check.sh</code>. Details are in the browser console.</p>`;
+  }
   if (content) content.scrollTop = at;
 }
 
@@ -603,8 +640,8 @@ function tabbed(rulesHTML, playHTML) {
   ).join("");
   return `<div class="tabbed">
     <div class="group-toggle view-toggle">${btns}</div>
-    <div class="fbody" data-body="rules">${rulesHTML}</div>
-    <div class="fbody hidden" data-body="play">${playHTML}</div>
+    <div data-body="rules">${rulesHTML}</div>
+    <div class="hidden" data-body="play">${playHTML}</div>
   </div>`;
 }
 
@@ -673,16 +710,10 @@ function oneOptionTable(opts, ladder) {
 /* A feature whose text embeds a numbered option list — "(1) Name: effect. (2) …" — renders
    that list as a table (e.g. the Joker's Wild Card d8 table). Any feature without the pattern
    renders as plain text, exactly as before. */
+/* A description as prose with its tokens expanded. Multi-part features use the structured
+   `options` field and render through optionTable() instead — see the author-trick skill. */
 function renderFeatureDesc(desc, ladder) {
-  const t = extractNumberedTable(desc);
-  if (!t) return `<br>${fmtDesc(desc || "", ladder)}`;
-  const body = t.rows.map((r) =>
-    `<tr><td class="col-num">${esc(r.n)}</td><td>${fmtDesc(r.name, ladder)}</td><td>${fmtDesc(r.effect, ladder)}</td></tr>`).join("");
-  return (t.lead ? `<br>${fmtDesc(t.lead, ladder)}` : "") +
-    `<table class="data-table option-table">
-       <thead><tr><th>#</th><th>Result</th><th>Effect</th></tr></thead>
-       <tbody>${body}</tbody>
-     </table>`;
+  return `<br>${fmtDesc(desc || "", ladder)}`;
 }
 
 /* Escape description text, expanding any [[XdY]] Scaling Die token (MECHANICS.md §3) into
@@ -816,23 +847,6 @@ function scalingDieHTML(count, size, abil, ladder) {
      </span></span>`;
 }
 
-/* Pull "(1) Name: effect (2) Name: effect …" out of a description. Returns
-   { lead, rows:[{n,name,effect}] } or null if there is no such list (needs 2+ items). */
-function extractNumberedTable(desc) {
-  if (typeof desc !== "string") return null;
-  const first = desc.search(/\(1\)\s*[^:)]+?:/);
-  if (first < 0) return null;
-  const lead = desc.slice(0, first).trim();
-  const body = desc.slice(first);
-  const re = /\((\d+)\)\s*([^:]+?):\s*([\s\S]*?)(?=\s*\(\d+\)\s*[^:]+?:|$)/g;
-  const rows = [];
-  let m;
-  while ((m = re.exec(body)) !== null) {
-    rows.push({ n: m[1], name: m[2].trim(), effect: m[3].trim() });
-  }
-  return rows.length >= 2 ? { lead, rows } : null;
-}
-
 function renderClass(c) {
   return head(c.name, c.flavor) +
     `<div class="detail-grid">
@@ -879,7 +893,7 @@ function attacksSection(c) {
   const names = c.proficiencies && Array.isArray(c.proficiencies.weapons) ? c.proficiencies.weapons : [];
   if (!names.length) return "";
   const rows = names.map((n) => {
-    const w = (store.weapons || []).find((x) => x.name === n);
+    const w = idx.weaponsByName.get(n);
     if (!w || !w.damage) return `<tr><td><strong>${esc(n)}</strong></td><td class="muted" colspan="4">—</td></tr>`;
     const hasVers = Array.isArray(w.properties) && w.properties.includes("versatile");
     const dmg = esc(w.damage.die) +
@@ -891,10 +905,10 @@ function attacksSection(c) {
   }).join("");
   return `<h2>Attacks</h2>
     <p class="muted">Weapons this class is proficient with, and what each hits for. To attack, take the Attack action: roll d20 + ability modifier + proficiency bonus vs the target's AC. On a hit, damage = the die below <strong>+ your ability modifier</strong>. Any feature that says “weapon attack” or deals “weapon damage” (an extra attack, an area strike, a rider) uses one of these weapons and this damage — class features then add their own bonuses on top. <strong>Mastery</strong> is the default maneuver any proficient wielder gets from that weapon (hover it); see the Rules tab (Weapon Mastery).</p>
-    <table class="data-table attack-table">
+    <div class="table-scroll"><table class="data-table attack-table">
       <thead><tr><th>Weapon</th><th>Damage</th><th>Type</th><th>Properties</th><th>Mastery</th></tr></thead>
       <tbody>${rows}</tbody>
-    </table>`;
+    </table></div>`;
 }
 
 /* Skill proficiencies as a table: one row per option, sorted by (and showing) the
@@ -906,7 +920,7 @@ function skillChoiceSection(c) {
     return raw ? `<h2>Skill Proficiencies</h2><p>${esc(typeof raw === "string" ? raw : "")}</p>` : "";
   }
   const rows = parsed.skills.map((name) => {
-    const s = (store.skills || []).find((x) => (x.name || "").toLowerCase() === name.toLowerCase());
+    const s = idx.skillsByName.get(String(name).toLowerCase());
     return { name, ability: s ? s.ability : "—" };
   });
   rows.sort((a, b) =>
@@ -1088,7 +1102,7 @@ function renderTrick(t) {
         const own = t.minLevel || 1;
         if (Array.isArray(t.subclasses) && t.subclasses.length) {
           const sid = t.subclasses[0];
-          const parent = (store.subclasses || []).find((x) => (x.id || x.name) === sid);
+          const parent = idx.subclasses.get(sid);
           const lv = Math.max(own, subclassLevelOf(parent && parent.parentClass));
           return tipTermHTML("Level " + lv,
             `You gain this with the ${subclassName(sid)} discipline, which you choose at level ${subclassLevelOf(parent && parent.parentClass)}, so it cannot unlock before then whatever its own gate says. Its own power gate is level ${own}; the later of the two applies.`);
@@ -1214,8 +1228,8 @@ function slug(it) {
   return (it.id || it.name || "").toString().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
 function esc(s) {
-  return (s == null ? "" : String(s)).replace(/[&<>"]/g, (c) =>
-    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  return (s == null ? "" : String(s)).replace(/[&<>"']/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
 function setStatus(msg) { $("#status").textContent = msg; }

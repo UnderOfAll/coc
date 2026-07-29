@@ -243,7 +243,6 @@ h1 { font-family: var(--serif); font-weight: 600; margin: 0 0 1.25rem; }
 }
 
 /* Classes tab: full-width field per class, with an open-arrow button */
-.class-list { display: flex; flex-direction: column; gap: 0.85rem; }
 .class-field {
   display: flex; align-items: center; gap: 1rem;
   background: var(--panel); border: 1px solid var(--border); border-left: 3px solid var(--accent);
@@ -353,7 +352,6 @@ h1 { font-family: var(--serif); font-weight: 600; margin: 0 0 1.25rem; }
 }
 .muted { color: var(--muted); }
 .hidden { display: none !important; }
-.empty { text-align: center; color: var(--muted); margin-top: 4rem; line-height: 1.8; }
 code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; font-size: 0.85em; }
 
 @media (max-width: 640px) {
@@ -408,6 +406,7 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 
 /* Tricks tab, Class view: a subclass's granted tricks sit in their own block below the class's
    own ladder, so a discipline list never reads as part of the base repertoire (MECHANICS §4.9d). */
+.ladder { display: block; }
 .granted-block {
   margin-top: 1.25rem; padding-left: 0.9rem;
   border-left: 2px solid var(--gold);
@@ -450,3 +449,10 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
   top: auto; bottom: 100%; border-top-color: transparent; border-bottom-color: var(--gold);
 }
 .tip-term:focus-visible, .scaling-die:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+/* Wide tables scroll inside their own box rather than stretching the page. The Attacks table is
+   five columns (Weapon/Damage/Type/Properties/Mastery) and is the first thing to overflow on a
+   narrow window. */
+.table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 1rem; }
+.table-scroll > .data-table { margin-bottom: 0; }
+.attack-table { min-width: 34rem; }
