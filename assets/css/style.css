@@ -430,3 +430,16 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
   font-family: var(--serif); color: var(--gold); font-size: 0.9rem;
   margin: 1rem 0 0.35rem;
 }
+
+/* Links inside content. Without this, browsers paint them their own blue/purple and a visited
+   link turns a colour that belongs to no part of this palette. Everything in-app is gold. */
+.content a,
+.content a:link,
+.content a:visited,
+.content a:active {
+  color: var(--gold);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--gold);
+}
+.content a:hover,
+.content a:focus-visible { color: var(--accent-soft); border-bottom-color: var(--accent-soft); }
