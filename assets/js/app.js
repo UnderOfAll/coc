@@ -443,24 +443,34 @@ function renderTricksByClass(container, items) {
         bySub.get(sid).push(t);
       }
     }
+    // A THIRD gate applies here (MECHANICS §4.9d): you do not have the subclass until its own
+    // level, so a granted trick can never unlock before then however low its minLevel is.
+    const subLv = subclassLevelOf(cid);
     for (const sid of [...bySub.keys()].sort((a, b) => subclassName(a).localeCompare(subclassName(b)))) {
       const box = el("div", "granted-block");
       box.appendChild(el("h3", "granted-title",
         `${esc(subclassName(sid))} <span class="granted-note">— discipline tricks, this subclass only</span>`));
-      box.appendChild(levelLadder(bySub.get(sid), g.startsAt));
+      box.appendChild(levelLadder(bySub.get(sid), Math.max(g.startsAt, subLv)));
       section.appendChild(box);
     }
     container.appendChild(section);
   }
 }
 
-/* A set of tricks as a level ladder, resolving the two gates: the trick's own minLevel vs the
-   class's casting start level (MECHANICS §4.9b — the later one wins). */
-function levelLadder(list, startsAt) {
+/* The level at which a class actually picks a subclass (all 8 are 3 today, but read it). */
+function subclassLevelOf(cid) {
+  const c = (store.classes || []).find((x) => (x.id || slug(x)) === cid);
+  return (c && c.subclassLevel) || 3;
+}
+
+/* A set of tricks as a level ladder. `floor` is the earliest level this reader could have ANY of
+   them — the class's casting start level, raised to the subclass level for granted tricks. The
+   trick's own minLevel is its power gate; the later gate always wins (MECHANICS §4.9b, §4.9d). */
+function levelLadder(list, floor) {
   const wrap = el("div", "ladder");
   const byLevel = new Map();
   for (const t of list) {
-    const lv = Math.max(t.minLevel || 1, startsAt);
+    const lv = Math.max(t.minLevel || 1, floor);
     if (!byLevel.has(lv)) byLevel.set(lv, []);
     byLevel.get(lv).push(t);
   }
@@ -1014,8 +1024,18 @@ function renderTrick(t) {
       ${limiterHTML(t)}
       ${prestigeUsesHTML(t)}
       ${t.save ? stat("Save", t.save + " saving throw") : ""}
-      ${statHTML("Unlocks At", tipTermHTML("Level " + (t.minLevel || 1),
-        "This is the trick's own level gate. A half-caster (Puppeteer, Doppelganger, Joker) casts nothing before level 2, so for them the later of the two applies — see the Class view for your class's actual level."))}
+      ${statHTML("Unlocks At", (() => {
+        const own = t.minLevel || 1;
+        if (Array.isArray(t.subclasses) && t.subclasses.length) {
+          const sid = t.subclasses[0];
+          const parent = (store.subclasses || []).find((x) => (x.id || x.name) === sid);
+          const lv = Math.max(own, subclassLevelOf(parent && parent.parentClass));
+          return tipTermHTML("Level " + lv,
+            `You gain this with the ${subclassName(sid)} discipline, which you choose at level ${subclassLevelOf(parent && parent.parentClass)}, so it cannot unlock before then whatever its own gate says. Its own power gate is level ${own}; the later of the two applies.`);
+        }
+        return tipTermHTML("Level " + own,
+          "This is the trick's own level gate. A half-caster (Puppeteer, Doppelganger, Joker) casts nothing before level 2, so for them the later of the two applies — see the Class view for your class's actual level.");
+      })())}
     </div>
     <div class="detail-body">
       ${renderFeatureDesc(t.sheetSummary || t.description || "", ladder)}
