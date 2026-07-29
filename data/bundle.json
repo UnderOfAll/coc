@@ -941,7 +941,7 @@
         "resourceType": "pool",
         "description": "The room's goodwill, measured. Mirth is what builds when the company is laughing with you and the enemy is not — every joke that lands, every ally who gets back up because you were there, wound up into something you eventually cash in all at once. It is the Jester's sole resource, and like the Illusionist he is a full caster: casting IS the class, so casting is what feeds it.",
         "generation": "You gain 1 Mirth each time you cast a Turn. You gain 1 additional Mirth the first time each turn one of your tricks helps an ally — granting them a bonus, temporary hit points, a reroll, resistance, or removing something afflicting them. Pledges generate nothing and a Prestige generates nothing; the Prestige is where the goodwill gets spent, not made.",
-        "spend": "Only a Prestige spends Mirth, and it takes most of the pool — see your trick list for the cost. Nothing else in your kit draws on it. Unspent Mirth carries over between rounds, but never between fights: you start every combat with 0 Mirth and any left over is lost the moment the fight ends. Mirth is a per-combat currency like every other engine in this system — it is built during a fight and cannot be banked before one.",
+        "spend": "Mirth is spent three ways, and you have all three from 2nd level. **Play It Up:** as you cast a trick that helps an ally, spend 1 Mirth to double what that ally gets from it — the temporary hit points, the bonus die, the number of rerolls. **Heckle:** Heckler's Timing costs 1 Mirth and your reaction. **Costed Turns:** a few of your better Turns carry a price of their own (Killing It costs 2) — the mid-fight payoff you bank the meter for, long before a Prestige is on the table. A Prestige then spends most of what is left. Unspent Mirth carries over between rounds, but never between fights: you start every combat with 0 Mirth and any left over is lost the moment the fight ends. Mirth is a per-combat currency like every other engine in this system — it is built during a fight and cannot be banked before one.",
         "cap": "≈6 (L1-4) · 7+ (L5+)",
         "capFormula": "proficiency bonus + Charisma modifier (minimum 3)"
       },
@@ -983,23 +983,25 @@
           "level": 1,
           "name": "Mirth",
           "role": "combat",
-          "description": "You gain the Mirth pool. Casting a Turn builds it, helping an ally builds it, and only a Prestige spends it; see your Mirth engine for generation, spending, and cap.",
-          "sheetSummary": "You gain the Mirth pool. See the Mirth engine for generation, spending, and cap. Starts every combat at 0.",
-          "narration": "You can hear it building — the company loosening up, the fight turning into a show, the moment getting closer where you can ask the whole room for something ridiculous and get it.",
+          "description": "You gain the Mirth pool. Casting a Turn builds it and helping an ally builds it, and you spend it from 2nd level: 1 Mirth to double what an ally gets from a supporting trick (Play It Up), 1 Mirth and your reaction to heckle, and whatever a costed Turn or a Prestige asks for. See your Mirth engine for generation and cap.",
+          "sheetSummary": "You gain the Mirth pool. Spend 1: double what one ally gets from a supporting trick you are casting. Spend 1 (+ your reaction): Heckler's Timing. Costed Turns and Prestiges spend more. Starts every combat at 0.",
+          "narration": "You can hear it building — the company loosening up, the fight turning into a show — and you have learned exactly when to spend it and on whom.",
           "meta": {
-            "action": "Passive"
+            "action": "Free (as you cast / with your reaction)",
+            "cost": "1+ Mirth",
+            "uses": "Any time you can pay"
           }
         },
         {
           "level": 1,
           "name": "Never the Target",
           "role": "combat",
-          "description": "Nobody's first instinct is to kill the clown. When a hostile creature can see both you and an ally within 5 feet of you, and it makes an attack roll against you, you may use no action to make it choose: it has disadvantage on that attack roll unless it has already attacked you this combat. Once a creature has attacked you in a fight, it has your measure and this no longer works on it for the rest of that fight.",
-          "sheetSummary": "No action. A hostile that can see both you and an ally within 5 ft has disadvantage on its attack against you — but only until it has attacked you once this combat. After that it is immune to this for the rest of the fight.",
+          "description": "Nobody's first instinct is to kill the clown. Once per round, when a hostile creature that can see both you and an ally within 5 feet of you makes an attack roll against you, it has disadvantage on that roll — it does the arithmetic everyone does and decides the armed one is the problem. This costs no action and no reaction, and it refreshes at the start of each of your turns.",
+          "sheetSummary": "No action, once per round, refreshing at the start of your turn. When a hostile that can see both you and an ally within 5 ft of you attacks you, it has disadvantage on that roll.",
           "narration": "It looks at you, then at the armed and serious person beside you, and does the arithmetic everyone does. You are not a threat. You are a distraction with bells on. It swings at you like it is swatting something.",
           "meta": {
             "action": "No action",
-            "uses": "Once per creature, per combat",
+            "uses": "1 / round",
             "range": "Self"
           }
         },
@@ -1020,12 +1022,13 @@
           "level": 2,
           "name": "Heckler's Timing",
           "role": "combat",
-          "description": "Your interruptions land where they hurt. Once on each of your turns, when a creature within 30 feet of you that can hear you makes an attack roll, ability check, or saving throw, you can use no action to say precisely the wrong thing at precisely the right moment: it must subtract 1d4 from the roll. A creature that cannot hear you, or that does not understand you, is unaffected.",
-          "sheetSummary": "No action, 1/turn, 30 ft, target must be able to hear and understand you. Subtract 1d4 from its attack roll, ability check, or saving throw.",
+          "description": "Your interruptions land where they hurt. When a creature within 30 feet of you that can hear and understand you makes an attack roll, ability check, or saving throw, you can use your reaction and spend 1 Mirth to say precisely the wrong thing at precisely the right moment: it subtracts 1d6 from the roll. You must decide before the roll is made. This uses the same single reaction as your Parry, so on any given round you are choosing between defending yourself and ruining somebody else's moment.",
+          "sheetSummary": "Reaction, 30 ft, costs 1 Mirth, declared before the roll. Target must hear and understand you. It subtracts 1d6 from that attack roll, ability check, or saving throw. Uses the same single reaction as Parry.",
           "narration": "You wait for the exact instant before it commits and then say the one thing guaranteed to get in. It is petty, it is unfair, and the wince costs it the shot.",
           "meta": {
-            "action": "No action",
-            "uses": "1 / turn",
+            "action": "Reaction",
+            "cost": "1 Mirth",
+            "uses": "1 / round (your reaction)",
             "range": "30 ft"
           }
         },
@@ -1990,7 +1993,7 @@
           "name": "Beneath Contempt",
           "role": "roleplay",
           "description": "Nobody guards their tongue in front of the fool. Guards, servants, courtiers, and hired muscle routinely discuss things in front of you that they would never say to an armed stranger, and you have advantage on Charisma (Deception) checks made to be dismissed as harmless. A creature that has already seen you do something dangerous is immune to this for as long as it remembers.",
-          "sheetSummary": "People speak freely in front of you as though you don't count. Advantage on Deception checks made to be dismissed as harmless. A creature that has seen you do something dangerous is immune while it remembers.",
+          "sheetSummary": "Guards, servants and hired muscle speak freely in front of you. Advantage on Charisma (Deception) checks made to be dismissed as harmless. A creature that has seen you do something dangerous is immune to this for as long as it remembers.",
           "narration": "They look straight through you and carry on the conversation. You are furniture that occasionally makes a noise, and you have built an entire career out of what people say in front of furniture.",
           "meta": {
             "action": "Passive"
@@ -3320,6 +3323,32 @@
       "_file": "tricks/idle-image.json"
     },
     {
+      "id": "killing-it",
+      "name": "Killing It",
+      "source": "Circus of Chaos",
+      "flavor": "Every performer knows the feeling: the room is yours, the timing is perfect, and you could say anything right now and it would land. Tonight, it lands hard.",
+      "tier": "turn",
+      "discipline": "Mesmerism",
+      "minLevel": 3,
+      "cooldown": 3,
+      "engineCost": 2,
+      "castingTime": "1 action",
+      "range": "60 feet",
+      "components": [
+        "Patter",
+        "Flourish"
+      ],
+      "duration": "Instantaneous",
+      "save": "Wisdom",
+      "description": "You spend banked Mirth on a bit that takes the whole room at once. Each creature of your choice within a 15-foot radius of a point you can see within range that can hear and understand you makes a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure it takes [[2d8]] psychic damage; on a success it takes half as much. Casting this costs 2 Mirth, spent whether or not anybody fails, and you may freely exclude your own company from the area — nobody has ever been hurt by a joke they were in on.",
+      "narration": "You have the whole room and you know it. Whatever you say next goes through every one of them at the same moment, and the ones who are not in on it come away genuinely hurt.",
+      "sheetSummary": "Action, 60 ft, 15-ft radius, cooldown 3, costs 2 Mirth. Creatures of your choice that can hear and understand you; allies can be excluded. Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[2d8]] psychic. Success: half damage.",
+      "classes": [
+        "jester"
+      ],
+      "_file": "tricks/killing-it.json"
+    },
+    {
       "id": "lull",
       "name": "Lull",
       "source": "Circus of Chaos",
@@ -3972,6 +4001,30 @@
         "doppelganger"
       ],
       "_file": "tricks/the-prestige.json"
+    },
+    {
+      "id": "the-punchline",
+      "name": "The Punchline",
+      "source": "Circus of Chaos",
+      "flavor": "You have been setting this up since the fight started, and they have been laughing along with everyone else. Then it lands on them.",
+      "tier": "turn",
+      "discipline": "Mesmerism",
+      "minLevel": 1,
+      "cooldown": 2,
+      "castingTime": "1 action",
+      "range": "60 feet",
+      "components": [
+        "Patter"
+      ],
+      "duration": "Instantaneous",
+      "save": "Wisdom",
+      "description": "You deliver the line you have been building toward at one creature that can hear and understand you within range. It makes a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure it takes [[2d6]] psychic damage; on a success it takes half as much. This is plain, reliable damage with nothing attached to it — it is what you do on a turn when nobody needs saving.",
+      "narration": "The timing is everything and you have had all fight to find it. It lands somewhere behind the eyes, and the worst part is that everyone else in the room laughs.",
+      "sheetSummary": "Action, 60 ft, cooldown 2. Target must hear and understand you. Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[2d6]] psychic. Success: half damage. No rider.",
+      "classes": [
+        "jester"
+      ],
+      "_file": "tricks/the-punchline.json"
     },
     {
       "id": "the-quick-change",

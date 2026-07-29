@@ -34,7 +34,7 @@
       "name": "Beneath Contempt",
       "role": "roleplay",
       "description": "Nobody guards their tongue in front of the fool. Guards, servants, courtiers, and hired muscle routinely discuss things in front of you that they would never say to an armed stranger, and you have advantage on Charisma (Deception) checks made to be dismissed as harmless. A creature that has already seen you do something dangerous is immune to this for as long as it remembers.",
-      "sheetSummary": "People speak freely in front of you as though you don't count. Advantage on Deception checks made to be dismissed as harmless. A creature that has seen you do something dangerous is immune while it remembers.",
+      "sheetSummary": "Guards, servants and hired muscle speak freely in front of you. Advantage on Charisma (Deception) checks made to be dismissed as harmless. A creature that has seen you do something dangerous is immune to this for as long as it remembers.",
       "narration": "They look straight through you and carry on the conversation. You are furniture that occasionally makes a noise, and you have built an entire career out of what people say in front of furniture.",
       "meta": {
         "action": "Passive"
