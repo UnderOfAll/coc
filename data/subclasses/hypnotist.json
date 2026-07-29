@@ -23,9 +23,9 @@
       "level": 3,
       "name": "Sympathetic Response",
       "role": "combat",
-      "description": "Taking this discipline adds three Mesmerism tricks to your list, free and permanent: **Pay No Attention** (level 1), **Lull** (level 2) and **The Suggestion** (level 3). They are yours alone — no other Illusionist learns them — and they are what this feature is built on, because the base Illusionist list carries almost no Mesmerism at all. On top of that: a mind you have already touched keeps answering. Once per turn, when a creature fails a saving throw against one of your Mesmerism tricks, the next attack roll made against that creature before the start of your next turn has advantage.",
-      "sheetSummary": "Adds Pay No Attention (L1), Lull (L2) and The Suggestion (L3) to your trick list. Also: 1/turn, when a creature fails a save against one of your Mesmerism tricks, the next attack roll against it before the start of your next turn has advantage.",
-      "narration": "You have three routines no other illusionist bothers to learn, because they are not about showing anyone anything. Its attention is still half on you when the blade arrives, and it never even turns to look.",
+      "description": "This discipline adds two Mesmerism tricks to your list, free and permanent: **Lull** (level 2) and **The Suggestion** (level 3). They are yours alone — no other Illusionist learns them — and they are what this feature is built on, because the base Illusionist list carries almost no Mesmerism at all. On top of that: a mind you have already touched keeps answering. Once per turn, when a creature fails a saving throw against one of your Mesmerism tricks, the next attack roll made against that creature before the start of your next turn has advantage.",
+      "sheetSummary": "Adds Lull (L2) and The Suggestion (L3) to your trick list. Also: 1/turn, when a creature fails a save against one of your Mesmerism tricks, the next attack roll against it before the start of your next turn has advantage.",
+      "narration": "You have two routines no other illusionist bothers to learn, because they are not about showing anyone anything. Its attention is still half on you when the blade arrives, and it never even turns to look.",
       "meta": {
         "action": "Passive",
         "uses": "1 / turn",

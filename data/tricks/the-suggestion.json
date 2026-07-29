@@ -14,15 +14,15 @@
   ],
   "duration": "The target's next turn",
   "save": "Wisdom",
-  "description": "You hand one creature that can hear and understand you a course of action it believes was its own idea. Choose one option below as you cast. The target makes a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}; on a failure it must obey on its next turn. It is never made to harm itself or its allies, and the compulsion ends the moment it takes damage from you or your companions.",
+  "description": "You hand one creature that can hear and understand you a course of action it believes was its own idea. Choose one option below as you cast. The target makes a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}; on a failure it must obey. It is never made to harm itself or its allies, and the compulsion ends the moment it takes damage from you or your companions.",
   "options": [
     {
       "name": "Take a walk",
-      "effect": "On its next turn it must use its action to Dash, moving as directly away from you as its path allows."
+      "effect": "On its next turn it must use its action to Dash, moving as directly away from you as its path allows. It provokes opportunity attacks as normal for leaving anyone's reach."
     },
     {
-      "name": "Nothing worth doing",
-      "effect": "On its next turn it must use its action to Dodge, and it takes no bonus action."
+      "name": "Put that down",
+      "effect": "It immediately drops whatever it is holding in one hand of your choosing, and it cannot pick anything back up until the end of its next turn."
     }
   ],
   "narration": "You say it plainly, as though confirming something already agreed, and they nod along with a decision they never made.",
