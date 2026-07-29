@@ -62,6 +62,7 @@
     "tricks/meat-shield.json",
     "tricks/night-terrors.json",
     "tricks/now-you-dont.json",
+    "tricks/palmed-card.json",
     "tricks/parting-shot.json",
     "tricks/peals-of-laughter.json",
     "tricks/phantom-needle.json",
@@ -86,7 +87,6 @@
     "tricks/vicious-jibe.json",
     "tricks/waking-nightmare.json",
     "tricks/word-of-encouragement.json",
-    "tricks/wrong-pocket.json",
     "tricks/your-own-face.json"
   ],
   "skills": [

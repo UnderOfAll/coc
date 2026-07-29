@@ -23,8 +23,8 @@
       "level": 3,
       "name": "Palmed",
       "role": "combat",
-      "description": "This discipline adds two tricks to your list, free and permanent: **Wrong Pocket** (level 1) and **Swap the Cards** (level 3). They are yours alone — no other Illusionist learns them. You can hide the real work inside the loud work. When you cast a Turn, you may also cast one Pledge as part of the same action, once on each of your turns. The Pledge resolves after the Turn.",
-      "sheetSummary": "Adds Wrong Pocket (L1) and Swap the Cards (L3) to your trick list. 1/turn. When you cast a Turn, also cast one Pledge as part of the same action; the Pledge resolves after the Turn.",
+      "description": "This discipline adds two tricks to your list, free and permanent: **Palmed Card** (level 1) and **Swap the Cards** (level 3). They are yours alone — no other Illusionist learns them. And you can hide the real work inside the loud work: once on each of your turns, when you cast a Turn, you may also cast one Pledge as part of the same action. The Pledge resolves after the Turn. With Palmed Card in your list this is a second attack every round for nothing, which is the whole reason to take this discipline.",
+      "sheetSummary": "Adds Palmed Card (L1) and Swap the Cards (L3) to your trick list. Also: 1/turn, when you cast a Turn, also cast one Pledge as part of the same action; the Pledge resolves after the Turn.",
       "narration": "The big gesture is the cover. The small one, the one that actually matters, happens inside it while everyone is busy applauding the wrong hand.",
       "meta": {
         "action": "Part of casting a Turn",
