@@ -1978,14 +1978,36 @@
           "level": 3,
           "name": "Take the Fall",
           "role": "combat",
-          "description": "When an attack hits an ally within 10 feet of you, you can use your reaction to shove them clear and wear it yourself: the attack hits you instead, and you take half the damage it would have dealt. You must be able to see the attacker, and this cannot be used against an effect that does not make an attack roll.",
-          "sheetSummary": "Reaction, 10 ft, attacker must be visible. An attack that hits an ally within 10 ft hits you instead and you take HALF its damage. Attack rolls only.",
-          "narration": "You get in the way in the most undignified manner available — a shoulder, a shove, an outraged yelp — and take it across the back with the timing of a man who has been falling over professionally since he was nine.",
+          "description": "When an attack **hits** an ally within 10 feet of you, you can use your reaction to get in the way. This resolves after the attack has already hit: **nothing is re-rolled and your own AC never comes into it** — the blow was always going to land, and you are only deciding who it lands on. You take the damage in your ally's place, and you take **half** of it. Because your reaction is spent doing this, you cannot Parry the same blow, and this never counts as a Parry.",
+          "sheetSummary": "Reaction, 10 ft, attacker must be visible, attack rolls only. When an attack hits an ally, you take the damage instead and take HALF of it. Nothing is re-rolled and your AC is not used. Costs your reaction, so you cannot Parry the same blow.",
+          "narration": "You are not fast enough to stop it and you have never once tried. You get in the way in the most undignified manner available — a shoulder, a shove, an outraged yelp — and take it across the back with the timing of a man who has been falling over professionally since he was nine. It still hurts. It just hurts the correct person.",
           "meta": {
             "action": "Reaction",
             "uses": "1 / round",
             "range": "10 ft"
-          }
+          },
+          "options": [
+            {
+              "group": "Requirements",
+              "name": "You must see the attacker",
+              "effect": "You cannot intercept a blow you never saw coming."
+            },
+            {
+              "group": "Requirements",
+              "name": "Attack rolls only",
+              "effect": "It does nothing against a saving-throw effect, an area effect, or anything that does not make an attack roll."
+            },
+            {
+              "group": "How it resolves",
+              "name": "The hit has already landed",
+              "effect": "You do not re-roll the attack and it is not compared to your AC. The damage is rolled once and you take half of it, rounded down; your ally takes none."
+            },
+            {
+              "group": "How it resolves",
+              "name": "It costs your reaction",
+              "effect": "You cannot also Parry that blow, and this never counts as a Parry. Any damage reduction you have applies to your half as normal."
+            }
+          ]
         },
         {
           "level": 3,
