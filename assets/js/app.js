@@ -930,16 +930,25 @@ function componentsHTML(list) {
 
 /* A trick's limiter is the one number that balances it: a Turn's cooldown or a Prestige's
    engine cost. Pledges have neither by design. */
+/* A trick's limiters. A Turn always has a cooldown and MAY also carry an engine price
+   (MECHANICS §4.4a) — both must show, or a costed Turn reads as free. */
 function limiterHTML(t) {
-  if (t.tier === "turn" && t.cooldown) {
-    return statHTML("Cooldown", tipTermHTML(`${t.cooldown} round${t.cooldown > 1 ? "s" : ""}`,
-      `After casting, this trick is Seen: you can't cast it again for ${t.cooldown} of your turns. Reduce the counter by 1 at the start of each of your turns. Out of combat, it's ready again after about a minute.`));
+  const out = [];
+  if (t.cooldown) {
+    out.push(statHTML("Cooldown", tipTermHTML(`${t.cooldown} round${t.cooldown > 1 ? "s" : ""}`,
+      `After casting, this trick is Seen: you can't cast it again for ${t.cooldown} of your turns. Reduce the counter by 1 at the start of each of your turns. Out of combat, it's ready again after about a minute.`)));
   }
-  if (t.tier === "prestige" && t.engineCost) {
-    return statHTML("Engine Cost", tipTermHTML(`${t.engineCost}`,
-      `Spends ${t.engineCost} of your class engine (Phantasm, Mirth, Strings, Clones, or Mayhem). Build the meter with Turns before you can pay for this.`));
+  if (t.engineCost) {
+    out.push(statHTML("Engine Cost", tipTermHTML(`${t.engineCost}`,
+      t.tier === "prestige"
+        ? `Spends ${t.engineCost} of your class engine (Phantasm, Mirth, Strings, Clones, or Mayhem). Build the meter with Turns before you can pay for this.`
+        : `A costed Turn: spends ${t.engineCost} of your class engine on casting, on top of its cooldown. This is what you bank the meter for before a Prestige is available. Full casters only — the engine is spent whether or not the trick lands.`)));
   }
-  return stat("Limiter", "At-will");
+  if (t.concentration) {
+    out.push(statHTML("Concentration", tipTermHTML("Required",
+      "You must concentrate to keep this going. You hold one concentration trick at a time unless a feature says otherwise, and whenever you take damage you roll a flat d20 against DC 10, or half the damage taken if that is higher — on a failure the trick ends. See the Tricks and Casting rules page.")));
+  }
+  return out.length ? out.join("") : stat("Limiter", "At-will");
 }
 
 /* Every Prestige is once per combat — a tier-wide rule (MECHANICS §4.5), not a per-trick field,
