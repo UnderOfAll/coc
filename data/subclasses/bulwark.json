@@ -30,7 +30,7 @@
         },
         {
           "name": "Intercept",
-          "effect": "Once per turn, when a creature you can see within 5 feet of you is hit by an attack, you can throw yourself into the blow — the attack's damage is dealt to you instead of the original target. This costs you nothing and does not use your reaction, so it never competes with Parry or Hold the Line. You may reduce the damage with Brace as normal, but you cannot Parry a hit you Intercept — it has already landed."
+          "effect": "Once per turn, when a creature you can see within 5 feet of you is hit by an attack, you can throw yourself into the blow — the attack's damage is dealt to you instead of the original target. This costs you nothing and does not use your reaction, so it never competes with Parry or Hold the Line. You may reduce the damage with Brace as normal, but you cannot Parry a hit you Intercept — it has already landed. It works only on a blow with something to step in front of: an attack roll dealing physical or fire damage. It can never take a saving-throw effect, and it can never take psychic damage even from an attack roll — a phantom needle or a suggestion happens inside the target's head, and there is no trajectory to block."
         },
         {
           "name": "Braced Footing",

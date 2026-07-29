@@ -10,7 +10,7 @@
       "name": "Take the Fall",
       "role": "combat",
       "description": "When an attack **hits** an ally within 10 feet of you, you can use your reaction to get in the way. This resolves after the attack has already hit: **nothing is re-rolled and your own AC never comes into it** — the blow was always going to land, and you are only deciding who it lands on. You take the damage in your ally's place, and you take **half** of it. Because your reaction is spent doing this, you cannot Parry the same blow, and this never counts as a Parry.",
-      "sheetSummary": "Reaction, 10 ft, attacker must be visible, attack rolls only. When an attack hits an ally, you take the damage instead and take HALF of it. Nothing is re-rolled and your AC is not used. Costs your reaction, so you cannot Parry the same blow.",
+      "sheetSummary": "Reaction, 10 ft. When an attack hits an ally you take it instead, at HALF damage. Its requirements and how it resolves are listed below.",
       "narration": "You do not push anybody. You could not shift the strongman if you tried, and you have never once got there in time. What you do is trip — a beautifully judged, entirely deliberate accident that puts you in the path with your feet already going out from under you. The blow catches you on the way down instead of square on, and you ride it into the floor, roll through it, and come up talking. It is the oldest thing you know how to do: you have been falling over professionally since you were nine, and the whole craft of it is that the floor never gets you as hard as it should.",
       "meta": {
         "action": "Reaction",
@@ -25,8 +25,8 @@
         },
         {
           "group": "Requirements",
-          "name": "Attack rolls only",
-          "effect": "It does nothing against a saving-throw effect, an area effect, or anything that does not make an attack roll."
+          "name": "Something physical only",
+          "effect": "An attack roll dealing physical or fire damage. Never a saving-throw effect, and never psychic damage even from an attack roll — there is no trajectory to step into."
         },
         {
           "group": "How it resolves",
