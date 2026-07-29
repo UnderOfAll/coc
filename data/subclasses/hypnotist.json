@@ -23,9 +23,9 @@
       "level": 3,
       "name": "Sympathetic Response",
       "role": "combat",
-      "description": "This discipline adds two Mesmerism tricks to your list, free and permanent: **Lull** (level 2) and **The Suggestion** (level 3). They are yours alone — no other Illusionist learns them — and they are what this feature is built on, because the base Illusionist list carries almost no Mesmerism at all. On top of that, a mind you have opened stays open: when a creature fails a saving throw against one of your Mesmerism tricks, then until the start of your next turn **every** attack roll against that creature has advantage and it **cannot take reactions**. It is still standing there, but it has stopped being a participant, and everyone else in the fight gets to take that personally.",
-      "sheetSummary": "Adds Lull (L2) and The Suggestion (L3) to your trick list. Also: when a creature fails a save against one of your Mesmerism tricks, until the start of your next turn EVERY attack roll against it has advantage and it cannot take reactions.",
-      "narration": "You open something in them and it stays open. They are upright, they are breathing, and they are no longer really in the room — and everyone with a weapon notices at the same moment.",
+      "description": "This discipline adds two Mesmerism tricks to your list, free and permanent: **Lull** (level 2) and **The Suggestion** (level 3). They are yours alone — no other Illusionist learns them — and they are what this feature is built on, because the base Illusionist list carries almost no Mesmerism at all. On top of that, a mind you have opened stays open: when a creature fails a saving throw against one of your Mesmerism tricks, it has **disadvantage on every attack roll and every saving throw it makes until the end of its next turn**. It is not helpless and nobody gets a free shot at it — it is simply worse at all of it, for a while, because part of it is still listening to you.",
+      "sheetSummary": "Adds Lull (L2) and The Suggestion (L3) to your trick list. Also: when a creature fails a save against one of your Mesmerism tricks, it has disadvantage on every attack roll and saving throw it makes until the end of its next turn.",
+      "narration": "You open something in them and it stays open. Their swings come in half-committed and their mind will not close around anything, because part of it is still back in the room with your voice.",
       "meta": {
         "action": "Passive",
         "uses": "On any failed Mesmerism save",
