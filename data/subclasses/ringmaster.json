@@ -8,7 +8,10 @@
     {
       "level": 3,
       "name": "All Eyes On Me",
+      "role": "combat",
       "description": "You command attention like a spotlight. Once on each of your turns, when you hit a creature with an implement, you can forgo that implement's damage to instead rivet its attention on you: it must succeed on a Wisdom saving throw against your {{Trick Shot DC|6 + proficiency bonus + Intelligence modifier}} or have disadvantage on any attack roll that doesn't include you as a target, until the start of your next turn. You can hold only one creature's attention this way at a time.",
+      "narration": "You catch it with something that does not hurt at all — a club to the chest, a flourish, a bow — and every bit of its attention comes off whoever it was killing and lands on you. That is the job. Now keep it.",
+      "sheetSummary": "Part of your Barrage, 1/turn. On a hit, forgo that implement's damage: Wisdom save vs your {{Trick Shot DC|6 + proficiency bonus + Intelligence modifier}} or disadvantage on any attack roll that doesn't include you as a target, until the start of your next turn. One creature at a time.",
       "meta": {
         "action": "Part of your Barrage",
         "uses": "1 / turn",
@@ -19,7 +22,10 @@
     {
       "level": 3,
       "name": "Grand Finale",
+      "role": "combat",
       "description": "Once per short or long rest, you can turn a Barrage into a showstopping set piece. Take the Attack action and throw implements as normal, then put on the show: each ally who can see you gains temporary hit points equal to your Juggler level, and each enemy within 15 feet of you must succeed on a Wisdom saving throw against your {{Trick Shot DC|6 + proficiency bonus + Intelligence modifier}} or be frightened of you until the end of its next turn. The crowd is yours.",
+      "narration": "You stop fighting and start performing. The whole cascade goes up at once, the room's eyes come with it, and by the time it comes down your friends are standing straighter and the people trying to kill you have remembered they are afraid.",
+      "sheetSummary": "Part of the Attack action, 1/short or long rest, 15 ft. Throw your Barrage as normal, then each ally who can see you gains temporary hit points equal to your Juggler level, and each enemy within 15 ft makes a Wisdom save vs your {{Trick Shot DC|6 + proficiency bonus + Intelligence modifier}} or is frightened of you until the end of its next turn.",
       "meta": {
         "action": "Part of Attack action",
         "uses": "1 / rest",
@@ -32,6 +38,7 @@
       "name": "Command the Crowd",
       "role": "roleplay",
       "description": "The ring taught you that any room is an audience that hasn't been addressed yet. Your voice carries clearly up to 300 feet without shouting. You have advantage on Charisma checks made to address, sway, or intimidate a group of three or more creatures at once, and with a word and a gesture you can pull a nonhostile crowd's attention onto yourself — cutting through noise, panic, or a rival speaker mid-sentence.",
+      "narration": "Any room is an audience that has not been addressed yet. Your voice reaches the back without rising, and a crowd that was about to become a mob turns into a crowd again because you told it to.",
       "sheetSummary": "Voice carries 300 ft clearly. Advantage on Charisma checks against groups of 3+ creatures. Can seize a nonhostile crowd's attention at will (cuts through noise/panic).",
       "meta": {
         "action": "Passive",

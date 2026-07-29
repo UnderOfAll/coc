@@ -391,3 +391,14 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
     top: auto; bottom: 0.5rem; left: 0.5rem; right: 0.5rem; width: auto; max-height: 70vh;
   }
 }
+
+/* Per-entry How it works / In play tabs (reuse .group-toggle/.toggle-btn styling).
+   Sits above the meta chips, so each feature is switched on its own. */
+.tabbed { margin-top: 0.5rem; }
+.view-toggle { margin: 0.35rem 0 0.6rem; gap: 0.3rem; }
+.view-toggle .toggle-btn { padding: 0.18rem 0.6rem; font-size: 0.78rem; }
+.narration {
+  margin: 0.5rem 0 0; padding: 0.75rem 0.9rem;
+  border-left: 3px solid var(--gold); background: var(--panel-2);
+  border-radius: 0 6px 6px 0; font-style: italic; line-height: 1.65;
+}

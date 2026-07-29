@@ -13,6 +13,7 @@
   ],
   "duration": "Up to 1 hour",
   "description": "You perform a small feat of stage magic within range. You can produce a trivial effect: palm or vanish an object small enough to hide in one hand, make a coin walk across your knuckles and reappear anywhere within range, light or snuff a candle, chill or warm a mouthful of food, soil or clean an object, or create a harmless sensory flourish such as a puff of coloured smoke, a burst of confetti, or a single sour note from nowhere. The effect ends when you dismiss it, when you cast this trick again, or after 1 hour. It can never deal damage, and it can never move a creature or anything a creature is holding.",
+  "narration": "Hands move, and something small stops being where everyone was looking. A coin walks your knuckles and reappears across the room, a candle gutters out, confetti happens for no reason. It is the first thing any performer learns and the last thing anyone catches you doing.",
   "sheetSummary": "Action, 10 ft. Trivial stage-magic effect: vanish/palm a hand-sized object, move a coin, light or snuff a flame, clean or soil, minor sensory flourish. Up to 1 hour. No damage. Cannot affect creatures or held items.",
   "classes": [
     "illusionist",

@@ -14,7 +14,8 @@
   "duration": "Instantaneous",
   "save": "Wisdom",
   "description": "You unleash a string of insults laced with subtle magic at a creature you can see within range that can hear you (the trick has no effect on a target that is deaf). The target must succeed on a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or take [[1d4]] psychic damage and have disadvantage on the next attack roll it makes before the end of its next turn, too busy stewing over what you said to focus.",
-  "sheetSummary": "Action, 60 ft. Wis save vs trick save DC. Fail: [[1d4]] psychic damage, disadvantage on target's next attack roll before end of its next turn. No effect on a deaf target.",
+  "narration": "You find the one thing they already hate about themselves and say it louder than they can think it. It lands somewhere behind the sternum, and for a moment they are not fighting you, they are arguing with you.",
+  "sheetSummary": "Action, 60 ft. Wis save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[1d4]] psychic damage, disadvantage on target's next attack roll before end of its next turn. No effect on a deaf target.",
   "classes": [
     "jester"
   ]

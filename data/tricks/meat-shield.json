@@ -16,6 +16,7 @@
   "duration": "Until the start of your next turn",
   "save": "Strength",
   "description": "You haul on the String fixed to a creature you have a String attached to within range, dragging its body where you want it and pinning it there as a living barricade. The target makes a Strength saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure, you drag it up to 15 feet — through spaces it could normally move through, without provoking opportunity attacks — to an unoccupied space of your choice, where it is restrained until the start of your next turn. While it is pinned this way its body is a shield: any creature has half cover against an attack or effect whose path passes through the meat shield's space. On a success, the wire snaps — the String detaches and nothing else happens. You must already have a String attached to the target to use this trick.",
+  "narration": "Why stop a blade when you can stand someone else in front of it? You haul on the wire and drag the nearest unwilling volunteer into the space you did not want to occupy, and there they stay.",
   "sheetSummary": "Bonus action, 60 ft, cooldown 3. Requires a String on the target. Str save. Fail: drag it up to 15 ft (no opportunity attacks) to a space you choose; it is restrained until the start of your next turn and its body grants half cover to anyone behind it. Success: the String detaches, no effect.",
   "classes": [
     "puppeteer"

@@ -8,7 +8,10 @@
     {
       "level": 3,
       "name": "Iron Resolve",
+      "role": "combat",
       "description": "Your body is trained to feed off danger, your own and the danger aimed at those you're shielding. In addition to your baseline Grit generation, you gain 1 additional Grit the first time each turn you are targeted by an attack from any source (whether it hits or misses), and you gain 1 Grit the first time each turn a hostile creature targets an ally within 5 feet of you with an attack (attacks against you are already covered by the first clause) — two separate sources, each capped at once per turn, exactly like your baseline Grit generation. Standing at the front and drawing fire, onto himself or off an ally, is how a Bulwark keeps his Grit topped up.",
+      "narration": "Being shot at agrees with you. Every blade that turns your way, every arrow meant for the smaller person behind you, settles in your chest as something hot and useful — you are never so full of fight as when the whole room is trying to get through you.",
+      "sheetSummary": "Passive. On top of baseline Grit: +1 Grit the first time each turn you are targeted by an attack (hit or miss), and +1 Grit the first time each turn a hostile targets an ally within 5 ft of you. Two sources, each once per turn.",
       "meta": {
         "action": "Passive"
       }
@@ -16,7 +19,10 @@
     {
       "level": 3,
       "name": "Guardian's Wall",
+      "role": "combat",
       "description": "You make yourself the obstacle nothing gets past. Its protection works three ways:",
+      "narration": "You plant yourself and become architecture. People who wanted to go somewhere discover that the somewhere is behind you, and the blow aimed past your shoulder finds your shoulder instead because you put it there.",
+      "sheetSummary": "Passive and free. Three effects: a 10-ft taunt, an intercept usable once per turn on an ally within 5 ft, and the wall's standing benefit. See the full text for each.",
       "options": [
         {
           "name": "Challenge (taunt)",
@@ -42,6 +48,7 @@
       "name": "Living Barricade",
       "role": "roleplay",
       "description": "You are a wall that walks, and everyone who has ever tried to get past you knows it. Outside combat, you count as one size larger and have advantage on any check made to block a passage, hold a door or gate shut, anchor a rope or a person, or resist being moved or dragged. A doorway, corridor, or gap you choose to fill with your body cannot be squeezed past without your permission.",
+      "narration": "Doors do not close on their own when you are leaning on them, and corridors stop being corridors. You have held a gate against a mob before, and the memory of it is written on the faces of everyone who tries you a second time.",
       "sheetSummary": "Count as one size larger + advantage on checks to block passages, hold doors shut, anchor ropes/people, or resist being moved. A gap you fill can't be squeezed past without your consent.",
       "meta": {
         "action": "Passive",

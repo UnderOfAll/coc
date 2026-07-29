@@ -17,7 +17,8 @@
   "duration": "Concentration, up to 1 minute",
   "save": "Wisdom",
   "description": "You spend a surge of banked Phantasm to seize the minds of every creature you choose within a 30-foot-radius sphere centred on a point within range, showing each of them their own private, tailored nightmare all at once. Each target must make a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure, a target takes [[5d6]] psychic damage and is frightened of you for the duration; on a success, it takes half as much damage and is not frightened. A frightened target can repeat the saving throw at the end of each of its turns, ending the frightened condition on itself on a success. This trick requires you to have at least 4 Phantasm banked, which are spent whether or not any target fails its save.",
-  "sheetSummary": "Once per combat. Action, 90 ft, 30-ft-radius sphere, costs 4 Phantasm, concentration up to 1 min. Wisdom save vs trick save DC per target. Fail: [[5d6]] psychic damage, frightened for duration (repeat save at end of each turn). Success: half damage, no condition.",
+  "narration": "Every eye in the tent turns to you at once, and what they see next they will never fully stop seeing.",
+  "sheetSummary": "Once per combat. Action, 90 ft, 30-ft-radius sphere, costs 4 Phantasm, concentration up to 1 min. Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} per target. Fail: [[5d6]] psychic damage, frightened for duration (repeat save at end of each turn). Success: half damage, no condition.",
   "classes": [
     "illusionist"
   ]

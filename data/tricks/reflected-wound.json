@@ -15,8 +15,9 @@
   ],
   "duration": "Instantaneous",
   "save": "Wisdom",
-  "description": "You conjure a flickering reflection of a creature you can see within range, twisted into a vision of its own mortal wound. The target makes a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure, it takes [[1d8+Con]] psychic damage as its mind flinches from damage that was never real. On a success, it takes half as much damage.",
-  "sheetSummary": "Action, 60 ft, cooldown 2. Wis save vs trick DC. Fail: [[1d8+Con]] psychic. Success: half damage.",
+  "description": "You conjure a flickering reflection of a creature you can see within range, twisted into a vision of its own mortal wound. The target makes a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure, it takes [[2d6]] psychic damage as its mind flinches from damage that was never real. On a success, it takes half as much damage.",
+  "narration": "You show it a version of itself already broken, held up like a mirror at the wrong angle, and for one sick instant its own body believes the picture and starts hurting where the reflection is open.",
+  "sheetSummary": "Action, 60 ft, cooldown 2. Wis save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[2d6]] psychic. Success: half damage.",
   "classes": [
     "doppelganger"
   ]

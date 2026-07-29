@@ -4,10 +4,12 @@
     python3 scripts/validate.py
 
 Complements build_manifest.py (which checks parseability, duplicate ids, and the
-inline-formula lint). This one enforces the JSON Schemas in data/schema/ and checks
-that every subclass points at a real parent class. Exit 1 on any failure.
+inline-formula lint). This one enforces the JSON Schemas in data/schema/, checks
+that every subclass points at a real parent class, and refuses a damaging Turn shared
+across the two caster grades. Exit 1 on any failure.
 """
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -27,9 +29,47 @@ SCHEMA = {
 }
 
 
+# Caster grades (MECHANICS §4.9a). A half-caster's Turns walk the SHORT scaling ladder
+# (§3.1a); everyone else's dice walk the full one.
+FULL_CASTERS = {"illusionist", "jester"}
+HALF_CASTERS = {"puppeteer", "doppelganger", "joker"}
+SCALING_DIE = re.compile(r"\[\[\s*\d+d\d+")
+
+
 def load(p):
     doc = json.loads(p.read_text(encoding="utf-8"))
     return doc if isinstance(doc, list) else [doc]
+
+
+def composition(obj):
+    """The locked subclass shape (DESIGN.md): exactly 3 features, 2 combat + 1 roleplay."""
+    feats = obj.get("features") or []
+    roles = [f.get("role") for f in feats]
+    if len(feats) == 3 and roles.count("combat") == 2 and roles.count("roleplay") == 1:
+        return None
+    return (f"subclass composition is {len(feats)} features "
+            f"{{combat: {roles.count('combat')}, roleplay: {roles.count('roleplay')}, "
+            f"untagged: {roles.count(None)}}} — the locked shape is exactly 3: 2 combat + 1 roleplay")
+
+
+def cross_grade_turn(obj):
+    """A damaging Turn on both a full and a half caster's list has two different, equally
+    correct scaling ladders and one page to show them on — so it is not authorable. Utility
+    tricks are fine to share (Sleight is), and Pledges/Prestiges use the full ladder for
+    everyone, so only a Turn carrying a scaling die can hit this."""
+    if obj.get("tier") != "turn":
+        return None
+    classes = set(obj.get("classes") or [])
+    if not (classes & FULL_CASTERS and classes & HALF_CASTERS):
+        return None
+    text = str(obj.get("description", "")) + str(obj.get("sheetSummary", ""))
+    for opt in obj.get("options") or []:
+        text += str(opt.get("effect", ""))
+    if not SCALING_DIE.search(text):
+        return None
+    return (f"damaging Turn shared by a full caster and a half-caster "
+            f"({', '.join(sorted(classes))}) — the two grades scale it differently "
+            f"(MECHANICS §3.1a), so give each class its own trick")
 
 
 def main():
@@ -50,6 +90,14 @@ def main():
                         class_ids.add(obj.get("id") or obj.get("name"))
                     if cat == "subclasses":
                         subclass_parents.append((f.name, obj.get("parentClass")))
+                    if cat == "subclasses":
+                        bad = composition(obj)
+                        if bad:
+                            errors.append(f"subclasses/{f.name}: {bad}")
+                    if cat == "tricks":
+                        bad = cross_grade_turn(obj)
+                        if bad:
+                            errors.append(f"tricks/{f.name}: {bad}")
             except jsonschema.ValidationError as e:
                 errors.append(f"{cat}/{f.name}: {e.message} (at {list(e.path)})")
             except json.JSONDecodeError as e:

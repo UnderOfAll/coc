@@ -38,6 +38,7 @@
     "subclasses/warden.json"
   ],
   "tricks": [
+    "tricks/after-image.json",
     "tricks/bad-break.json",
     "tricks/card-trick.json",
     "tricks/center-ring.json",

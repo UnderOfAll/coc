@@ -16,6 +16,7 @@
   ],
   "duration": "10 minutes",
   "description": "You wrap yourself in a small illusion of bearing and reputation — a borrowed title, a fresh face, an unearned air of importance. For the duration, you have advantage on Charisma (Deception) and Charisma (Performance) checks, and your voice and appearance seem subtly different (the color of your eyes, the cut of your clothes, small mannerisms) to anyone who hasn't already seen through the act. This trick cannot make you pass for a specific individual.",
+  "narration": "You throw your arms wide and borrow a reputation you never earned. For the length of the introduction you are precisely who the room needs you to be, and nobody thinks to check.",
   "sheetSummary": "Action, self, cooldown 1, 10 minutes. Advantage on Deception and Performance checks; minor cosmetic disguise (not impersonation of a specific person).",
   "classes": [
     "jester"

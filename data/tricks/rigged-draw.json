@@ -15,6 +15,7 @@
   ],
   "duration": "Instantaneous",
   "description": "You gesture at a creature you can see within range, and fate quietly turns against it. Choose one creature within range; the next attack roll or ability check it makes before the start of your next turn is made with disadvantage. This has no effect on saving throws — for those, see your Gambit's Jinx.",
+  "narration": "You palm the card it needed and hand back one that guarantees it loses. Nothing visible happens. It simply has a worse next few seconds than it was expecting.",
   "sheetSummary": "Bonus action, 30 ft, cooldown 2. Target's next attack roll or ability check before the start of your next turn is made with disadvantage. Does not affect saving throws.",
   "classes": [
     "joker"

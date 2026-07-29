@@ -1,24 +1,146 @@
 [
-  { "id": "athletics", "name": "Athletics", "ability": "Strength", "source": "5e SRD", "description": "Covers difficult situations while climbing, jumping, or swimming, and physical feats like grappling." },
-
-  { "id": "acrobatics", "name": "Acrobatics", "ability": "Dexterity", "source": "5e SRD", "description": "Staying on your feet in tricky situations, balancing, and performing acrobatic stunts." },
-  { "id": "sleight-of-hand", "name": "Sleight of Hand", "ability": "Dexterity", "source": "5e SRD", "description": "Perform manual trickery like planting an item, palming an object, or picking a pocket or lock without being noticed." },
-  { "id": "stealth", "name": "Stealth", "ability": "Dexterity", "source": "5e SRD", "description": "Conceal yourself from enemies, slip past guards, or move silently without being seen or heard." },
-
-  { "id": "arcana", "name": "Arcana", "ability": "Intelligence", "source": "5e SRD", "description": "Recall lore about spells, magic items, eldritch symbols, and the planes of existence." },
-  { "id": "history", "name": "History", "ability": "Intelligence", "source": "5e SRD", "description": "Recall lore about historical events, legendary people, ancient kingdoms, and past disputes." },
-  { "id": "investigation", "name": "Investigation", "ability": "Intelligence", "source": "5e SRD", "description": "Deduce clues, spot hidden details, and draw conclusions from evidence at a scene." },
-  { "id": "nature", "name": "Nature", "ability": "Intelligence", "source": "5e SRD", "description": "Recall lore about terrain, plants, animals, weather, and natural cycles." },
-  { "id": "religion", "name": "Religion", "ability": "Intelligence", "source": "5e SRD", "description": "Recall lore about deities, rites, prayers, religious hierarchies, and holy symbols." },
-
-  { "id": "animal-handling", "name": "Animal Handling", "ability": "Wisdom", "source": "5e SRD", "description": "Calm a domesticated animal, keep a mount from bolting, or intuit an animal's intentions." },
-  { "id": "insight", "name": "Insight", "ability": "Wisdom", "source": "5e SRD", "description": "Determine the true intentions of a creature, such as spotting a lie or predicting its next move." },
-  { "id": "medicine", "name": "Medicine", "ability": "Wisdom", "source": "5e SRD", "description": "Stabilize a dying companion, diagnose an illness, or identify what kind of ailment afflicts someone." },
-  { "id": "perception", "name": "Perception", "ability": "Wisdom", "source": "5e SRD", "description": "Spot, hear, or otherwise detect the presence of something using your senses." },
-  { "id": "survival", "name": "Survival", "ability": "Wisdom", "source": "5e SRD", "description": "Follow tracks, hunt, navigate the wilderness, identify natural hazards, and predict the weather." },
-
-  { "id": "deception", "name": "Deception", "ability": "Charisma", "source": "5e SRD", "description": "Convincingly hide the truth, either verbally or through actions, such as bluffing or disguising intent." },
-  { "id": "intimidation", "name": "Intimidation", "ability": "Charisma", "source": "5e SRD", "description": "Influence someone through overt threats, hostile actions, or physical violence." },
-  { "id": "performance", "name": "Performance", "ability": "Charisma", "source": "5e SRD", "description": "Delight an audience with music, dance, acting, storytelling, or other forms of entertainment." },
-  { "id": "persuasion", "name": "Persuasion", "ability": "Charisma", "source": "5e SRD", "description": "Influence someone with tact, social grace, or good nature." }
+  {
+    "id": "athletics",
+    "name": "Athletics",
+    "ability": "Strength",
+    "source": "5e SRD",
+    "description": "Covers difficult situations while climbing, jumping, or swimming, and physical feats like grappling.",
+    "narration": "You get a hand on the ledge and haul, or you take a run at the gap and commit, or you get both arms around someone and refuse to let go. It is rarely graceful and it is usually loud, and it works because you were willing to put your whole body behind it."
+  },
+  {
+    "id": "acrobatics",
+    "name": "Acrobatics",
+    "ability": "Dexterity",
+    "source": "5e SRD",
+    "description": "Staying on your feet in tricky situations, balancing, and performing acrobatic stunts.",
+    "narration": "The floor moves and you go with it. A rolled landing, a foot finding a beam it had no right to find, a spin out of a grab — you stay upright in places where staying upright is not really an option."
+  },
+  {
+    "id": "sleight-of-hand",
+    "name": "Sleight of Hand",
+    "ability": "Dexterity",
+    "source": "5e SRD",
+    "description": "Perform manual trickery like planting an item, palming an object, or picking a pocket or lock without being noticed.",
+    "narration": "Everything interesting happens in the half-second the other person is looking at your face. The object is gone, or arrived, or changed hands, and the only evidence is that nothing feels wrong."
+  },
+  {
+    "id": "stealth",
+    "name": "Stealth",
+    "ability": "Dexterity",
+    "source": "5e SRD",
+    "description": "Conceal yourself from enemies, slip past guards, or move silently without being seen or heard.",
+    "narration": "You move at the speed the room can absorb. Boots off the loud board, breath held through the doorway, body in the pillar's shadow until the lamp swings past — and the guard walks by close enough to touch."
+  },
+  {
+    "id": "arcana",
+    "name": "Arcana",
+    "ability": "Intelligence",
+    "source": "5e SRD",
+    "description": "Recall lore about spells, magic items, eldritch symbols, and the planes of existence.",
+    "narration": "You have seen this sigil before, or something close enough. The knowledge comes up the way a language does — you simply know what the shape is for, and roughly what happens to people who get it wrong."
+  },
+  {
+    "id": "history",
+    "name": "History",
+    "ability": "Intelligence",
+    "source": "5e SRD",
+    "description": "Recall lore about historical events, legendary people, ancient kingdoms, and past disputes.",
+    "narration": "You know whose banner that was, which war ended it, and what everybody at the time claimed had happened instead. The name on the wall means something to you that it does not mean to anyone else in the room."
+  },
+  {
+    "id": "investigation",
+    "name": "Investigation",
+    "ability": "Intelligence",
+    "source": "5e SRD",
+    "description": "Deduce clues, spot hidden details, and draw conclusions from evidence at a scene.",
+    "narration": "You stop looking at the scene and start reading it: the scuff going the wrong direction, the dust missing from one shelf, the drawer that was closed in a hurry. The conclusion assembles itself."
+  },
+  {
+    "id": "nature",
+    "name": "Nature",
+    "ability": "Intelligence",
+    "source": "5e SRD",
+    "description": "Recall lore about terrain, plants, animals, weather, and natural cycles.",
+    "narration": "You read the ground, the weather, and the treeline the way other people read a signpost. What grows here, what hunts here, what the sky is about to do."
+  },
+  {
+    "id": "religion",
+    "name": "Religion",
+    "ability": "Intelligence",
+    "source": "5e SRD",
+    "description": "Recall lore about deities, rites, prayers, religious hierarchies, and holy symbols.",
+    "narration": "You know the rite and you know who it is for. The hierarchy, the holy days, the symbol carved above the door and what the people who carved it wanted from it."
+  },
+  {
+    "id": "animal-handling",
+    "name": "Animal Handling",
+    "ability": "Wisdom",
+    "source": "5e SRD",
+    "description": "Calm a domesticated animal, keep a mount from bolting, or intuit an animal's intentions.",
+    "narration": "You slow down, keep your hands where it can see them, and speak the way you would to someone about to bolt. It watches you, decides, and settles."
+  },
+  {
+    "id": "insight",
+    "name": "Insight",
+    "ability": "Wisdom",
+    "source": "5e SRD",
+    "description": "Determine the true intentions of a creature, such as spotting a lie or predicting its next move.",
+    "narration": "It is the pause before the answer, the smile that arrives a beat late, the way the story is a little too tidy. You do not catch them lying — you catch them deciding to."
+  },
+  {
+    "id": "medicine",
+    "name": "Medicine",
+    "ability": "Wisdom",
+    "source": "5e SRD",
+    "description": "Stabilize a dying companion, diagnose an illness, or identify what kind of ailment afflicts someone.",
+    "narration": "You get to them fast, find the bleed, and put pressure where pressure has to go. Half of it is knowing what the body is doing; the other half is being the person in the room who is not panicking."
+  },
+  {
+    "id": "perception",
+    "name": "Perception",
+    "ability": "Wisdom",
+    "source": "5e SRD",
+    "description": "Spot, hear, or otherwise detect the presence of something using your senses.",
+    "narration": "Something registers before you have words for it — a shape in the treeline, a breath behind a door, the smell of oil where there should not be oil. You look again, properly, and there it is."
+  },
+  {
+    "id": "survival",
+    "name": "Survival",
+    "ability": "Wisdom",
+    "source": "5e SRD",
+    "description": "Follow tracks, hunt, navigate the wilderness, identify natural hazards, and predict the weather.",
+    "narration": "You find the track, read how old it is, and follow it. Water, shelter, weather, the difference between a safe crossing and a bad one — the wilderness stops being a hazard and becomes a set of instructions."
+  },
+  {
+    "id": "deception",
+    "name": "Deception",
+    "ability": "Charisma",
+    "source": "5e SRD",
+    "description": "Convincingly hide the truth, either verbally or through actions, such as bluffing or disguising intent.",
+    "narration": "You tell it with your whole body: the easy shoulders, the unhurried eye contact, the small unimportant detail nobody would invent. The lie is not the words, it is everything around them."
+  },
+  {
+    "id": "intimidation",
+    "name": "Intimidation",
+    "ability": "Charisma",
+    "source": "5e SRD",
+    "description": "Influence someone through overt threats, hostile actions, or physical violence.",
+    "narration": "You do not raise your voice. You close the distance, hold the look a beat past comfortable, and let them finish the sentence for themselves."
+  },
+  {
+    "id": "performance",
+    "name": "Performance",
+    "ability": "Charisma",
+    "source": "5e SRD",
+    "description": "Delight an audience with music, dance, acting, storytelling, or other forms of entertainment.",
+    "narration": "You take the room. A song, a tumble, a story told with the timing you have spent years sharpening — and for as long as it lasts, everyone present is an audience and you are the reason they are quiet."
+  },
+  {
+    "id": "persuasion",
+    "name": "Persuasion",
+    "ability": "Charisma",
+    "source": "5e SRD",
+    "description": "Influence someone with tact, social grace, or good nature.",
+    "narration": "You listen first, find the thing they actually want, and hand them a version of your idea that gets it for them. By the end they are fairly sure it was their idea."
+  }
 ]

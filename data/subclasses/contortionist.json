@@ -8,7 +8,10 @@
     {
       "level": 3,
       "name": "Contortion",
+      "role": "combat",
       "description": "You gain a pool of 4 Contortion Dice (d6), which you regain when you finish a long rest. When a creature you can see hits you with an attack, before you decide whether to Parry, you can spend one Contortion Die — this costs no reaction and no action — and roll it. On a 4 or higher you fold your body around the strike: you take no damage from the attack, the attacker takes half of the damage it would have dealt you (rounded down, of the same type), and your reaction stays free. On a 3 or lower the fold fails and the die is spent — the hit is not turned aside, but you may still spend your reaction to Parry it as normal if you have a reaction available; if your reaction is already gone, the attack lands in full. Because Contortion is not itself a Parry, a successful fold does not trigger Counterflow, Flowing Reflexes, or Riposte, and it sits in front of your Parry as an extra, die-gated chance to avoid a hit.",
+      "narration": "The strike arrives and your body simply is not shaped that way any more. You fold around the blade — spine, ribs, shoulder all going somewhere they should not go — and the blow slides through the space where a person used to be, its own force wrenching back against the arm that threw it.",
+      "sheetSummary": "When hit, before deciding whether to Parry. 4 Contortion Dice (d6) per long rest, costing no action or reaction. Roll one: on a 4+ you take no damage, the attacker takes half the damage it would have dealt (same type), and your reaction stays free. On a 3 or lower the die is spent and you may still Parry. Not a Parry, so it never triggers Counterflow, Flowing Reflexes, or Riposte.",
       "meta": {
         "action": "When hit",
         "cost": "1 Contortion Die (roll 4+)",
@@ -19,20 +22,13 @@
     {
       "level": 3,
       "name": "Reversal",
-      "description": "A successful contortion doesn't just save you — it wrong-foots your attacker. Immediately after your Contortion succeeds (you roll 4 or higher on a Contortion Die and fold a hit away), you may move up to 10 feet without provoking opportunity attacks, and the next attack roll you make before the end of your next turn has advantage. The attacker overcommitted on a blow that found only empty air, and you take the opening.",
+      "role": "combat",
+      "description": "A successful contortion doesn't just save you — it wrong-foots your attacker. Immediately after your Contortion succeeds (you roll 4 or higher on a Contortion Die and fold a hit away), you may move up to 10 feet without provoking opportunity attacks, and the next attack roll you make before the end of your next turn has advantage. The attacker overcommitted on a blow that found only empty air, and you take the opening. From 5th level, a failed defence has an answer too: when a creature within 5 feet of you hits you — the moment your Contortion fold and your Parry have both failed and the blow has actually landed — you can use your reaction to pour your body along the line of the strike and snap back from an angle it can't cover. Make one melee weapon attack against that creature; on a hit, you immediately flow up to 10 feet without provoking opportunity attacks, leaving it striking at the space you just left. This draws on the same single reaction as Parry, so on most rounds it is the counter you take when your defence has already failed you; on a turn when Flowing Reflexes (3rd level) hands your reaction back after a clean Parry, it becomes a second, offensive use of that same reaction against the next foe to land a hit. The reactive slip is off-turn movement and generates no Momentum.",
+      "narration": "Coming out of the fold you are already moving, and they are still leaning into a swing that found nothing. You take the gap. And on the occasions the fold fails and the blade truly lands, you pour yourself along it anyway and come back from an angle no guard covers.",
+      "sheetSummary": "No action. After a successful Contortion, move up to 10 ft without provoking and your next attack roll before the end of your next turn has advantage. From 5th level, when a creature within 5 ft hits you after both your Contortion and Parry have failed, use your reaction to make one melee weapon attack against it; on a hit, move up to 10 ft without provoking. Uses the same single reaction as Parry; generates no Momentum.",
       "meta": {
         "action": "No action",
         "range": "Self"
-      }
-    },
-    {
-      "level": 5,
-      "name": "Boneless Counter",
-      "description": "When a creature within 5 feet of you hits you with an attack — the moment your Contortion fold and your Parry have both failed and the blow has actually landed — you can use your reaction to pour your body along the line of the strike and snap back from an angle it can't cover. Make one melee weapon attack against that creature; on a hit, you immediately flow up to 10 feet without provoking opportunity attacks, leaving it striking at the space you just left. This draws on the same single reaction as Parry, so on most rounds it is the counter you take when your defense has already failed you. On a turn when Flowing Reflexes (4th level) hands your reaction back after a clean Parry, it becomes a second, offensive use of that same reaction against the next foe to land a hit. The reactive slip is off-turn movement and generates no Momentum.",
-      "meta": {
-        "action": "Reaction",
-        "uses": "1 / round",
-        "range": "Melee (5 ft)"
       }
     },
     {
@@ -40,6 +36,7 @@
       "name": "Sideshow Escapist",
       "role": "roleplay",
       "description": "Your act is escape itself, and no lock, rope, or cage in the show has ever held you through a full performance. You can squeeze through any gap wide enough for your head, moving at half speed while you do. Given 1 minute of wriggling, you automatically escape any nonmagical restraint — ropes, chains, manacles, a straitjacket, a locked stock. You also have advantage on Dexterity (Sleight of Hand) and Dexterity (Acrobatics) checks made to slip bonds discreetly or to hide in cramped spaces a person shouldn't fit.",
+      "narration": "Nothing built has ever held you for a full performance. You go through gaps no shoulders should fit, and given a minute alone with a rope, a chain, or a locked stock, you simply are not in it any more.",
       "sheetSummary": "Squeeze through any head-sized gap at half speed. Escape any nonmagical restraint automatically in 1 minute. Advantage on checks to slip bonds discreetly or hide in cramped spaces.",
       "meta": {
         "action": "Passive",

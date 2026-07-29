@@ -14,6 +14,7 @@
   ],
   "duration": "Instantaneous",
   "description": "You click your tongue at exactly the wrong moment, and the universe agrees with you. When a creature you can see within range makes an attack roll, ability check, or saving throw, you can force it to reroll and use the lower of the two results. You can use this trick after the original roll is seen but before its effect (hit or miss, success or failure) is determined.",
+  "narration": "\"Ooh — unlucky,\" you say, tutting, at exactly the wrong moment. The universe, for reasons of its own, agrees with you.",
   "sheetSummary": "Reaction, 60 ft, cooldown 2. Force a seen d20 roll (attack, check, or save) to be made twice; the lower result is used.",
   "classes": [
     "jester"

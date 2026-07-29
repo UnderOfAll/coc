@@ -42,6 +42,16 @@
       ]
     },
     {
+      "heading": "How trick damage grows",
+      "paragraphs": [
+        "A damaging trick is written with a base die, and that die gets bigger as you level - one size up the chain d4 to d6 to d8 to d10 to d12. The number of dice never changes and neither does any modifier; only the die grows. Any die that does this is marked with a small triangle in the app, and hovering it shows you the whole progression.",
+        "d12 is the biggest die there is, so a trick that grows past it stops growing sideways and grows in number instead: a 3d8 trick goes 3d10 at level 5, 3d12 at level 11, and 4d12 at level 17. A level-up never leaves your damage exactly where it was.",
+        "A full caster (the Illusionist and the Jester) steps up at levels 5, 11, and 17. Their tricks are their main weapon, so their tricks have to keep pace all the way to level 20.",
+        "A half-caster (the Puppeteer, the Doppelganger, and the Joker) steps up at levels 5 and 11, and then stops. Their Turns grow alongside a full caster's through the whole early and middle game and end one die size behind. Their Pledges and their Prestige are the exception - those keep the full progression, because an at-will has to stay worth casting and a once-per-combat showstopper has to stay a showstopper.",
+        "This is the same shape as the rest of the half-caster deal: you get the real thing, on the same schedule, up to a ceiling the full caster goes past. What you do not also get is a spellcaster's whole damage output - a half-caster's ability modifier is already on every weapon swing they make, so their trick damage never adds it a second time."
+      ]
+    },
+    {
       "heading": "Your trick ability",
       "paragraphs": [
         "You cast with your class's primary ability — always. The Illusionist uses Intelligence, the Jester and the Joker use Charisma, the Puppeteer uses Wisdom, and the Doppelganger uses Constitution.",

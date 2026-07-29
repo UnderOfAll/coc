@@ -13,6 +13,7 @@
   ],
   "duration": "1 round",
   "description": "You call out a quick word of encouragement to one creature you can see within range. The next time that creature makes an ability check, attack roll, or saving throw before the start of your next turn, it can add 1d4 to the roll. The creature can wait to see the roll before deciding whether to add the bonus.",
+  "narration": "A quick warm aside from the wings — \"you've got this, kid\" — delivered like you have seen them do it a hundred times before. Somehow they always do.",
   "sheetSummary": "Action, 30 ft, no save. Target may add 1d4 to its next ability check, attack roll, or save before the start of your next turn (decided after rolling).",
   "classes": [
     "jester"

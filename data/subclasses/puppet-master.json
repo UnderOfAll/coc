@@ -8,18 +8,24 @@
     {
       "level": 3,
       "name": "Turncoat Strings",
-      "description": "When a hostile creature you have a String attached to hits a target with an attack roll, you can use your reaction to wrench its wire mid-swing, forcing it to make a Charisma saving throw against your control DC. On a failure, you redirect the attack toward a different creature of your choice: a creature within the attacker's reach (for a melee attack) or within its range and your line of sight (for a ranged attack). Compare the triggering attack roll to the new target's AC — if it hits, the attack strikes the new target instead (roll its damage against them); if it would miss the new target, the attack misses entirely. On a success, the attack resolves against its original target as normal. You can use Turncoat Strings only once per turn, and it draws on the same reaction as Parry, Disrupting Pull, Guiding Pull, and opportunity attacks — you still get only one reaction per round. This is a single, save-gated redirection of one attack, not a seizure of the creature's turn: it grants you no movement or additional actions from the target the way Grand Marionette does.",
+      "role": "combat",
+      "description": "When a hostile creature you have a String attached to hits a target with an attack roll, you can use your reaction to wrench its wire mid-swing, forcing it to make a Strength saving throw against your control DC. On a failure, you redirect the attack toward a different creature of your choice: a creature within the attacker's reach (for a melee attack) or within its range and your line of sight (for a ranged attack). Compare the triggering attack roll to the new target's AC — if it hits, the attack strikes the new target instead (roll its damage against them); if it would miss the new target, the attack misses entirely. On a success, the attack resolves against its original target as normal. You can use Turncoat Strings only once per turn, and it draws on the same reaction as Parry, Disrupting Pull, Guiding Pull, and opportunity attacks — you still get only one reaction per round. This is a single, save-gated redirection of one attack, not a seizure of the creature's turn: it grants you no movement or additional actions from the target the way Grand Marionette does.",
+      "narration": "The swing is already committed when you pull. The arm goes wide, past the target and around into whoever happened to be standing there instead, and the look on its face afterwards is worth more than the damage.",
+      "sheetSummary": "Reaction, 1/turn. When a hostile Stringed creature hits with an attack, Strength save vs {{control DC|8 + proficiency bonus + Wisdom modifier}} or you redirect it to another creature within the attacker's reach or range. Compare the original attack roll to the new target's AC. On a save, the attack resolves normally. Uses the same single reaction as Parry.",
       "meta": {
         "action": "Reaction",
         "uses": "1 / turn",
         "range": "Attacker's reach/range",
-        "save": "Cha save vs Control DC"
+        "save": "Str save vs {{control DC|8 + proficiency bonus + Wisdom modifier}}"
       }
     },
     {
       "level": 3,
       "name": "Puppet's Spite",
+      "role": "combat",
       "description": "Your Control Wires cut deeper into a foe already caught in your web. When you hit a creature you have a String attached to with a Control Wires attack, it takes extra damage equal to your {{Wisdom modifier (min 1)|set from your stats on your character sheet}}. You can deal this extra damage only once per turn. This extra damage applies only to unwilling creatures — it never triggers against a willing creature, such as an ally you've strung for support rather than control.",
+      "narration": "The wire is already inside their guard, so your strike does not have to find a way in — it just follows the line that is already there, into somewhere that was never protected.",
+      "sheetSummary": "Passive, 1/turn. When you hit an unwilling Stringed creature with a Control Wires attack, it takes extra damage equal to your {{Wisdom modifier (min 1)|set from your stats on your character sheet}}. Never triggers against a willing creature.",
       "meta": {
         "action": "Passive",
         "uses": "1 / turn",
@@ -31,6 +37,7 @@
       "name": "Deft Wires",
       "role": "roleplay",
       "description": "Your wires are fine enough to vanish in lamplight and precise enough to sign your name. As an action, you can manipulate an object within 30 feet of you as though with your own hands: open a latch, pull a lever, lift or carry up to 10 pounds, pour a drink, palm a key from a belt. Dexterity (Sleight of Hand) checks made this way can target creatures and objects at that range, and you have advantage on them when your hands are visibly elsewhere — nobody suspects the man across the room.",
+      "narration": "Your wires are fine enough to disappear in lamplight and steady enough to sign your name with. Latches lift, levers pull, and a cup crosses a room to your hand with nobody able to say quite how.",
       "sheetSummary": "Action: manipulate an object within 30 ft as if by hand (open, pull, lift up to 10 lb, pickpocket at range). Advantage on Sleight of Hand made this way while your hands are visibly elsewhere.",
       "meta": {
         "action": "Action",

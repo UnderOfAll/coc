@@ -8,19 +8,25 @@
     {
       "level": 3,
       "name": "Powder Burst",
+      "role": "combat",
       "description": "As an action, spend 2 Mayhem to hurl a spray of flash-powder cards that detonate in a 10-foot-radius sphere centered on a point you can see within 60 feet. Each creature in that area must make a Dexterity saving throw against your gambit DC, taking [[2d6]] fire damage on a failed save, or half as much damage on a successful one. You can use Powder Burst only once per turn, and only when you have Mayhem to spend on it — it draws on the same small pool as everything else you do, so it is bounded by how much chaos you've actually generated this fight, not something you can chain turn after turn.",
+      "narration": "You throw a fistful of cards and they go up mid-air — a white crack of flash-powder and heat where the fan opened. For a second afterwards the whole room is negative-coloured and nobody is looking at you, which was rather the idea.",
+      "sheetSummary": "Action, 1/turn, 2 Mayhem, 10-ft radius within 60 ft. Dexterity save vs {{gambit DC|8 + proficiency bonus + Charisma modifier}}. Fail: [[2d6]] fire. Success: half damage.",
       "meta": {
         "action": "Action",
         "cost": "2 Mayhem",
         "uses": "1 / turn",
         "range": "60 ft (10-ft radius)",
-        "save": "Dex save vs Gambit DC"
+        "save": "Dex save vs {{gambit DC|8 + proficiency bonus + Charisma modifier}}"
       }
     },
     {
       "level": 3,
       "name": "Collateral Chaos",
+      "role": "combat",
       "description": "Your chaos never stays contained to one target. The first time each turn you resolve a Wild Card result or a Gambit option that targets a single creature, and a second valid target for that same effect (an additional hostile creature if the original target was hostile, or an additional willing ally if the original was an ally) is within 5 feet of the original target, you may extend the effect to that second creature as well. The second creature is affected exactly as the first, including making its own saving throw if the effect calls for one. This costs no additional Mayhem, happens as part of the Wild Card or Gambit you're already resolving (not a separate action or reaction), and can happen only once per turn.",
+      "narration": "Whatever you did to one of them does not have the manners to stop there. It splashes — the same joke, the same trick, the same unpleasant surprise landing on whoever had the poor judgement to be standing next to them.",
+      "sheetSummary": "Passive, 1/turn. The first time each turn a Wild Card or Gambit targets a single creature, extend it to one more valid target of the same kind within 5 ft of the original. The second creature makes its own save. Costs no extra Mayhem and no action.",
       "meta": {
         "action": "Passive",
         "uses": "1 / turn",
@@ -32,6 +38,7 @@
       "name": "Demolitionist's Eye",
       "role": "roleplay",
       "description": "You read a building the way a card sharp reads a table: where it's weak, where it's load-bearing, and exactly what a charge in the wrong pocket would do to it. By studying a structure, wall, door, or large object for 1 minute, you learn its weak points, what it would take to bring it down, and how it would fall. You have advantage on ability checks made to break, breach, or dismantle objects and structures, and your damage against objects and structures is doubled. You can also pop a harmless flash or bang from a treated card at any point you can see within 60 feet — a distraction, a signal, or a very convincing bluff.",
+      "narration": "You look at a wall the way a card sharp looks at a table. The load-bearing beam, the tired mortar, the door that only pretends to be solid — you can see the whole ugly skeleton of a building and exactly where to hit it to make it stop being one.",
       "sheetSummary": "Study a structure/object 1 min: learn its weak points. Advantage on checks to break/breach objects; double damage vs objects and structures. Pop a harmless flash-bang at a point within 60 ft.",
       "meta": {
         "action": "Special",

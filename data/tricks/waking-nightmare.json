@@ -16,7 +16,8 @@
   "duration": "Instantaneous",
   "save": "Intelligence",
   "description": "You reach into a creature's mind within range and make it briefly, completely certain that it is being torn apart. The target must make an Intelligence saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}, taking [[3d8]] psychic damage on a failure, or half as much damage on a success. A creature immune to being frightened has advantage on this saving throw, since the illusion has nothing to take hold of.",
-  "sheetSummary": "Action, 60 ft, cooldown 2. Intelligence save vs trick save DC. Fail: [[3d8]] psychic damage. Success: half. Fear-immune creatures have advantage on the save.",
+  "narration": "You do not show them anything real. You simply remind their nerves what being torn apart used to feel like, and let the body take it from there.",
+  "sheetSummary": "Action, 60 ft, cooldown 2. Intelligence save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[3d8]] psychic damage. Success: half. Fear-immune creatures have advantage on the save.",
   "classes": [
     "illusionist"
   ]

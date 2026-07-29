@@ -8,7 +8,10 @@
     {
       "level": 3,
       "name": "Mark",
+      "role": "combat",
       "description": "As a bonus action, you can Mark one creature you can see — a cold read of its guard and rhythm. Until the end of your next turn, your thrown implements score a critical hit against the Marked creature on a roll of 19 or 20, and the first of your implements to hit it each turn deals extra damage equal to your {{Intelligence modifier|set from your stats on your character sheet}}. You can have only one creature Marked at a time; Marking a new one ends the old.",
+      "narration": "You watch one of them for a moment — the guard, the rhythm, the tell in the shoulder before it commits. After that you are not really aiming any more; you are just waiting for the gap you already know is coming.",
+      "sheetSummary": "Bonus action, one creature at a time, within sight. Until the end of your next turn your thrown implements crit against it on a 19 or 20, and your first implement to hit it each turn deals extra damage equal to your {{Intelligence modifier|set from your stats on your character sheet}}.",
       "meta": {
         "action": "Bonus Action",
         "uses": "1 creature at a time",
@@ -18,7 +21,10 @@
     {
       "level": 3,
       "name": "Impossible Shot",
+      "role": "combat",
       "description": "Your calculations beat the battlefield. Your thrown implements ignore half and three-quarters cover, and they suffer no disadvantage anywhere within their full range: a normal throw reaches 20 feet, and you simply ignore the long-range penalty that would otherwise apply on throws from 20 out to 60 feet. Every angle is a clean angle.",
+      "narration": "Cover is a suggestion. You throw through gaps that were not gaps a moment ago, off angles that should not connect, at ranges where anyone else would be guessing, and it all lands as though the room had been arranged for it.",
+      "sheetSummary": "Passive. Your thrown implements ignore half and three-quarters cover and take no long-range disadvantage anywhere within their full 60-ft range.",
       "meta": {
         "action": "Passive"
       }
@@ -28,6 +34,7 @@
       "name": "Sideshow Precision",
       "role": "roleplay",
       "description": "You have split apples on volunteers' heads for years, and you have never once hit the volunteer. Your thrown implements automatically hit any stationary object target you can see within range — no roll needed. You can pin a willing or unaware creature's clothing to a nearby surface with a throw, holding it in place until it spends an action tearing free. You never hit an unintended creature with a thrown implement, and you have advantage on Charisma (Performance) checks built around throwing.",
+      "narration": "Years of splitting apples on volunteers' heads, and never once the volunteer. You can pin a sleeve to a post without touching the arm inside it, and everyone who has ever stood against your board knows exactly how steady your hand is.",
       "sheetSummary": "Thrown implements auto-hit stationary objects in range. Pin a willing/unaware creature's clothing to a surface (it spends an action to tear free). Never hit bystanders by accident. Advantage on throwing-act Performance checks.",
       "meta": {
         "action": "Passive"

@@ -8,7 +8,10 @@
     {
       "level": 3,
       "name": "Aerial Anchor",
-      "description": "Your mastery of the trapeze frees you from needing real rigging. You can use Trapeze Swing at any time, even when no rope, chandelier, banner, or similar structure is within reach, treating open air as your line. Additionally, when you use Trapeze Swing, you may bring one willing or incapacitated Medium or smaller creature within 5 feet of you along the swing; that creature moves with you at no cost to your own movement and does not provoke opportunity attacks during the swing. Trapeze Swing remains a signature move when used this way, so it still generates Momentum.",
+      "role": "combat",
+      "description": "Your mastery of the trapeze frees you from needing real rigging. You can use Trapeze Swing at any time, even when no rope, chandelier, banner, or similar structure is within reach, treating open air as your line. Additionally, when you use Trapeze Swing, you may bring one willing or incapacitated Medium or smaller creature within 5 feet of you along the swing; that creature moves with you at no cost to your own movement and does not provoke opportunity attacks during the swing. Trapeze Swing remains a signature move when used this way, so it still generates Momentum. From 5th level, your lines reach anywhere you can see. When a creature you can see within 30 feet of you hits an ally with an attack, you can use your reaction to drop onto a line out of nowhere and swing to an unoccupied space within 5 feet of that attacker, then make one melee weapon attack against it — punishing the opening the instant it commits. As always, this aerial style is flashy, not safe: leaving a creature's reach as you swing provokes opportunity attacks as normal. It does not count as your Trapeze Swing for the turn and generates no Momentum. It uses the same single reaction as Parry, so on a turn when Flowing Reflexes (3rd level) returns your reaction after a clean Parry, you can both defend yourself and swing to a struck ally's aid in the same round.",
+      "narration": "You do not need rigging any more; open air is a line if you decide it is. You take passengers now, and when something goes after a friend across the room you drop out of nowhere on a line that was not there, arriving between them.",
+      "sheetSummary": "Passive. Trapeze Swing needs no real rigging — open air works. When you Swing you may bring one willing or incapacitated Medium or smaller creature within 5 ft along, at no cost to your movement and without it provoking. From 5th level, when a creature within 30 ft hits an ally, use your reaction to swing to a space within 5 ft of it and make one melee weapon attack; leaving reach still provokes. Doesn't count as your Trapeze Swing and generates no Momentum.",
       "meta": {
         "action": "Passive (enhances Trapeze Swing)"
       }
@@ -16,20 +19,13 @@
     {
       "level": 3,
       "name": "Featherweight Landing",
+      "role": "combat",
       "description": "Your body has learned to always find purchase. You take no damage from a fall of 30 feet or less, and for any longer fall you calculate damage as though you had fallen 30 feet less than you actually did. In addition, whenever you fall or would be knocked prone as a result of your own fall or your own signature move (such as a failed Wall-Run or Trapeze Swing), you can spend 1 Momentum (no action required) to land on your feet instead, ending the fall without becoming prone, provided you end it in a space you could normally occupy. This does not apply to being knocked prone or forcibly moved by a hostile creature's attack, spell, or ability.",
+      "narration": "Your body has stopped believing in falling. Long drops end with a soft roll and a stand, and even the ones that go wrong — a slipped wall-run, a swing that came apart — end with your feet under you and your hands out as though it was choreography.",
+      "sheetSummary": "Passive. No damage from a fall of 30 ft or less; longer falls count as 30 ft shorter. When you fall or would be knocked prone by your own fall or your own signature move, spend 1 Momentum (no action) to land on your feet in a space you could occupy. Never applies to a hostile creature's attack, spell, or ability.",
       "meta": {
         "action": "Passive",
         "cost": "1 Momentum (land on feet)"
-      }
-    },
-    {
-      "level": 5,
-      "name": "Intercepting Swing",
-      "description": "Your lines reach anywhere you can see. When a creature you can see within 30 feet of you hits an ally with an attack, you can use your reaction to drop onto a line out of nowhere and swing to an unoccupied space within 5 feet of that attacker, then make one melee weapon attack against it — punishing the opening the instant it commits. As with Trapeze Swing, this aerial style is flashy, not safe: leaving a creature's reach as you swing provokes opportunity attacks as normal. This does not count as your Trapeze Swing for the turn and generates no Momentum. It uses the same single reaction as Parry, so on a turn when Flowing Reflexes (4th level) returns your reaction after a clean Parry, you can both defend yourself and swing to a struck ally's aid in the same round.",
-      "meta": {
-        "action": "Reaction",
-        "uses": "1 / round",
-        "range": "30 ft"
       }
     },
     {
@@ -37,6 +33,7 @@
       "name": "Show Rigging",
       "role": "roleplay",
       "description": "The lines you conjure don't have to be for you alone. As an action outside combat, you can conjure up to 60 feet of shimmering rigging anchored to any two points you can see — a climbable rope, a rope ladder, or a taut line. It holds up to 500 pounds, lasts 10 minutes or until you dismiss it (no action required), and you can maintain only one at a time. You also have advantage on ability checks involving ropes, knots, and rigging.",
+      "narration": "The lines are not only for you. You conjure rope, ladder, and taut line out of nothing, anchored to two points nobody thought were connected, and the whole party goes up.",
       "sheetSummary": "Action (out of combat): conjure up to 60 ft of climbable rigging between two visible anchor points (holds 500 lb, lasts 10 min, one at a time). Advantage on rope/knot/rigging checks.",
       "meta": {
         "action": "Action",

@@ -8,17 +8,23 @@
     {
       "level": 3,
       "name": "Shattering Reflection",
+      "role": "combat",
       "description": "Your Clones don't break quietly. Whenever a creature destroys one of your Clones with an attack roll (including a Clone destroyed by an attack redirected onto it via Mirror Image, but never a Clone you destroy yourself through one of your own features), that creature must make a Dexterity saving throw against your {{save DC|8 + proficiency bonus + Constitution modifier}}. On a failed save, it takes [[1d6+Con]] psychic damage as shards of the shattered illusion rake across it, and it has disadvantage on the next attack roll it makes before the end of its next turn. On a successful save, it takes half as much damage and suffers no other effect. This triggers at most once per turn (no matter how many Clones are destroyed that turn) and requires no action or reaction from you to resolve.",
+      "narration": "Your reflections do not break quietly. Whoever strikes one down is standing far too close when it goes — a hard bright spray of edges, all of them briefly showing that creature its own face, and then not.",
+      "sheetSummary": "Automatic, 1/turn, no action. When a creature destroys one of your Clones with an attack roll (never a Clone you destroy yourself), it makes a Dexterity save vs your {{save DC|8 + proficiency bonus + Constitution modifier}}. Fail: [[1d6+Con]] psychic and disadvantage on its next attack roll before the end of its next turn. Success: half damage only.",
       "meta": {
         "action": "Passive (auto)",
         "uses": "1 / turn",
-        "save": "Dex save vs your DC"
+        "save": "Dex save vs {{save DC|8 + proficiency bonus + Constitution modifier}}"
       }
     },
     {
       "level": 3,
       "name": "Vanishing Trick",
+      "role": "combat",
       "description": "Your Swap doubles as a parting insult. Once per turn, when you use Swap, you may choose one creature within 5 feet of the space you just left that could see you there: that creature has disadvantage on the next attack roll it makes before the end of your next turn, having lunged for a reflection that was never really there. This requires no action or reaction beyond using Swap itself, and doesn't change how Swap otherwise works. In addition, once per combat you may Swap defensively: when a creature you can see hits you with an attack, before its damage is dealt, you can use your reaction to Swap with one of your Clones within Swap's range — you trade places, the blow lands on the Clone now standing in the space you left (destroying it), and you take no damage. This defensive use costs your reaction (unlike the disadvantage effect above) and needs a Clone available to Swap with.",
+      "narration": "You are gone before the space you left has finished being empty, and the thing nearest it commits to a lunge at nothing. On the occasions you leave it later than that, you trade places with the blow already falling and let the reflection catch what was yours.",
+      "sheetSummary": "Free with Swap, 1/turn: one creature within 5 ft of the space you left has disadvantage on its next attack roll before the end of your next turn. Separately, 1/combat as a reaction: when a creature you can see hits you, Swap with a Clone in range before damage — the blow destroys that Clone and you take none.",
       "meta": {
         "action": "Free with Swap / Reaction (defensive)",
         "uses": "Disadv 1 / turn; defensive Swap 1 / combat",
@@ -30,7 +36,8 @@
       "name": "Flawless Forgery",
       "role": "roleplay",
       "description": "A reflection doesn't have to stay in the glass. As an action, you can create a mirror-copy of a Small or smaller nonmagical object you have held within the last minute. The copy is identical to close inspection but is all surface: it shatters into harmless light if it takes any damage, and dissolves on its own after 1 hour. A forged key opens nothing and a forged coin won't survive a bite test — but for a swap, a con, or a decoy on a cushion, it is perfect. You can use this feature a number of times equal to your {{proficiency bonus|set from your stats on your character sheet}}, regaining all expended uses when you finish a long rest.",
-      "sheetSummary": "Action: create a mirror-copy of a Small or smaller nonmagical object held in the last minute — perfect to inspection, shatters on any damage, lasts 1 h. Prof bonus uses / long rest.",
+      "narration": "A reflection does not have to stay in the glass. You lift a copy of something you were holding a moment ago — perfect down to the wear on the handle, flawless right up until anybody treats it like a real object.",
+      "sheetSummary": "Action, {{proficiency bonus|set from your level on your character sheet}} uses per long rest, 1 hour. Create a mirror-copy of a Small or smaller nonmagical object you held in the last minute: perfect to inspection, shatters on any damage.",
       "meta": {
         "action": "Action",
         "uses": "Prof bonus / long rest",

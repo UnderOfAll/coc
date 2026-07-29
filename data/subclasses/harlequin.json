@@ -8,7 +8,10 @@
     {
       "level": 3,
       "name": "Reckless Grin",
+      "role": "combat",
       "description": "As a bonus action, spend 1 Mayhem to throw caution to the wind until the start of your next turn: you have advantage on melee attack rolls you make with a finesse weapon you're proficient with, but attack rolls against you also have advantage until the start of your next turn. You can only be under the effect of Reckless Grin once at a time; using it again while it is already active changes nothing and doesn't cost additional Mayhem.",
+      "narration": "You stop defending. The grin arrives first and then you do, swinging into range with your guard nowhere at all, and for a few glorious seconds you are hitting a great deal harder than anybody hitting you can quite believe — and they are all hitting you.",
+      "sheetSummary": "Bonus action, 1 Mayhem. Until the start of your next turn you have advantage on melee attacks with a finesse weapon you're proficient with, and attack rolls against you have advantage. Doesn't stack with itself.",
       "meta": {
         "action": "Bonus Action",
         "cost": "1 Mayhem",
@@ -18,7 +21,10 @@
     {
       "level": 3,
       "name": "Center of the Ring",
+      "role": "combat",
       "description": "You thrive surrounded by danger. At the start of your turn, if you are within 5 feet of at least two hostile creatures, you gain temporary hit points equal to your {{Charisma modifier (min 1)|set from your stats on your character sheet}}, and for the rest of the turn moving through a space occupied by a hostile creature costs you no extra movement (you still can't end your movement there). As with temporary hit points from any other source, these don't stack — if you already have some, keep whichever total is higher.",
+      "narration": "You are happiest with the ring closed around you. Surrounded, outnumbered, laughing — something in you sits up and starts working, and you slip between them like they are scenery rather than people.",
+      "sheetSummary": "Passive, 5 ft. At the start of your turn, if at least two hostiles are within 5 ft, gain temporary hit points equal to your {{Charisma modifier (min 1)|set from your stats on your character sheet}}, and for that turn moving through a hostile's space costs no extra movement. Temporary hit points don't stack.",
       "meta": {
         "action": "Passive",
         "range": "5 ft"
@@ -29,6 +35,7 @@
       "name": "Jester's License",
       "role": "roleplay",
       "description": "The fool may say what the courtier cannot. When you frame it as performance — a jest, a song, a pantomime — you can deliver insults, accusations, and uncomfortable truths without your audience turning violent: creatures may eject you, despise you, or plot quietly, but they don't move to harm you for the words alone. You also have advantage on Charisma (Performance) checks, and on Charisma (Persuasion) checks made while playing the fool.",
+      "narration": "The fool says what the courtier cannot. Wrap it in a song, a jest, a bit of pantomime, and the truth goes down where a plain sentence would have got you killed — they may loathe you, they may throw you out, but they laugh first.",
       "sheetSummary": "Insults/accusations/hard truths delivered as performance don't provoke violence (targets may still eject or resent you). Advantage on Performance checks and on Persuasion while playing the fool.",
       "meta": {
         "action": "Passive"

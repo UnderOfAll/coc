@@ -16,7 +16,8 @@
   "duration": "1 round",
   "save": "Wisdom",
   "description": "You call one creature you can see within range into the spotlight, and it can't help but oblige. The target makes a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure, until the start of your next turn the target must target you with its next attack, spell, or other harmful single-target effect, if you are a legal target for it. If you are not a legal target when it acts, the effect simply lapses for that action. A creature that succeeds on the save is unaffected, and a creature immune to being charmed automatically succeeds.",
-  "sheetSummary": "Bonus action, 60 ft, cooldown 3. Wis save vs trick save DC. Fail: target must direct its next single-target attack or spell at you (if you're a legal target) before the start of your next turn. Charm-immune creatures auto-succeed.",
+  "narration": "You strut into view with your arms wide and your painted grin blazing — *me, look at ME* — and gods help them, they look.",
+  "sheetSummary": "Bonus action, 60 ft, cooldown 3. Wis save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: target must direct its next single-target attack or spell at you (if you're a legal target) before the start of your next turn. Charm-immune creatures auto-succeed.",
   "classes": [
     "jester"
   ]

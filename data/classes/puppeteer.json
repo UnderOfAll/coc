@@ -35,7 +35,7 @@
     "resourceType": "tokens",
     "description": "Lengths of near-invisible wire you fix to creatures around you. A String is not spent like currency — it is an attachment that stays in place, keying your control features to whatever it's tied to, until you choose to let go of it or something forces you to.",
     "generation": "Attach a String to a creature you can see within 60 feet as a bonus action, or automatically at no action cost when you hit a creature with your Control Wires. You may never have more Strings attached at once than your String cap; attaching a new one beyond your cap requires detaching an existing String first (no action).",
-    "spend": "Strings aren't consumed to use your control features — they are the prerequisite for them. Manipulate, Tangle, Disrupting Pull, Guiding Pull, and Grand Marionette all require a String already attached to the target; using them doesn't remove the String. A String stays attached until you detach it (no action), the creature moves beyond your 60-foot leash range, or you become incapacitated, in which case all of your Strings snap at once.",
+    "spend": "Strings aren't consumed to use your control features — they are the prerequisite for them. Manipulate, Tangle, Disrupting Pull, Guiding Pull, and Grand Marionette all require a String already attached to the target; using them doesn't remove the String. A String stays attached until you detach it (no action), the creature moves beyond your 60-foot leash range, or you become incapacitated, in which case all of your Strings snap at once. Strings are per-combat like every other engine in this system: every String you have snaps the moment combat ends, and you enter every fight with none. Strings can never be attached before a fight starts or carried out of one.",
     "cap": "2 (L1–4) · 3 (L5–8) · 4 (L9+) — Web of Strings adds +1 from L5",
     "capFormula": "equal to your proficiency bonus"
   },
@@ -44,6 +44,8 @@
       "level": 1,
       "name": "Strings",
       "description": "You gain the Strings engine. As a bonus action, you attach a String to a creature you can see within 60 feet (90 at 5th level) — or attach one for free when you hit a creature with your Control Wires. You can maintain up to your String cap (your proficiency bonus) at once. Every other control feature you have keys off a creature you already have a String on; see your Strings engine for how Strings are maintained and lost.",
+      "narration": "A wire goes out from your fingers and finds them, so fine it is mostly invisible until it catches the light. They may not even notice it land. From that moment there is a line between you, and everything you do to them travels down it.",
+      "sheetSummary": "Bonus action, 60 ft (90 at L5). Attach a String to a creature you can see, or for free when you hit with Control Wires. Maintain up to your String cap. Every other control feature requires a String already on the target.",
       "meta": {
         "action": "Bonus Action",
         "uses": "Cap = prof bonus",
@@ -54,6 +56,8 @@
       "level": 1,
       "name": "Strings of Will",
       "description": "Your art runs on focus and anticipation, not muscle or bluster: you use your Wisdom modifier for attack and damage rolls made with a finesse weapon you're proficient with (your Control Wires, Dagger, or Whip). Any saving throw a Puppeteer feature forces on a creature uses your {{control DC|8 + proficiency bonus + Wisdom modifier}}.",
+      "narration": "You do not overpower anyone. You watch, you wait for the moment the weight shifts, and you pull exactly then — the whole art is knowing which half-second a body cannot correct itself in.",
+      "sheetSummary": "Passive. Use your Wisdom modifier for attack and damage rolls with a finesse weapon you're proficient with. Every save a Puppeteer feature forces uses your {{control DC|8 + proficiency bonus + Wisdom modifier}}.",
       "meta": {
         "action": "Passive"
       }
@@ -62,6 +66,8 @@
       "level": 1,
       "name": "Bodyguard Strings",
       "description": "You never meant to take a hit yourself. A number of times equal to your {{Wisdom modifier (min 1)|set from your stats on your character sheet}}, which you regain when you finish a long rest, when you are hit by an attack while you have a String attached to another creature within 10 feet of you, you can redirect the attack's damage onto that stringed creature instead of resolving it against you: it takes the full damage of the hit and you take none. Redirecting resolves the attack, so you cannot also Parry the same hit, and it costs you no action or reaction. The wire yanks it into the path — an unwilling creature gets no save; a willing ally may choose to refuse.",
+      "narration": "The blow is already coming and you do not move. You pull instead, and something else arrives in the space where you were standing — dragged in by the wire, arriving just in time to take what was meant for you.",
+      "sheetSummary": "Free, {{Wisdom modifier (min 1)|set from your stats on your character sheet}} times per long rest. When hit while a String is on another creature within 10 ft, redirect the attack's full damage onto that creature; you take none. Resolves the attack, so you can't also Parry it. No save for an unwilling creature; a willing ally may refuse.",
       "meta": {
         "action": "Free",
         "uses": "Wis mod / long rest",
@@ -71,38 +77,46 @@
     {
       "level": 1,
       "name": "Manipulate",
-      "description": "As an action, choose any number of creatures you currently have a String attached to, each within 60 feet of you. For each one, you pull or push it up to 15 feet in a direction of your choice; this forced movement doesn't provoke opportunity attacks and can drag a creature over or around minor obstacles it could normally cross, but never through solid objects or off a fall it can't survive without consent. An unwilling creature resists: it makes a Charisma saving throw against your control DC, and on a success it isn't moved. A willing creature — typically an ally — is simply moved, no save required, letting you yank a friend out of danger or into position exactly as freely as you yank a foe into a wall. Manipulate deals no damage on its own.",
+      "description": "As an action, choose any number of creatures you currently have a String attached to, each within 60 feet of you. For each one, you pull or push it up to 15 feet in a direction of your choice; this forced movement doesn't provoke opportunity attacks and can drag a creature over or around minor obstacles it could normally cross, but never through solid objects or off a fall it can't survive without consent. An unwilling creature resists: it makes a Strength saving throw against your control DC, and on a success it isn't moved. A willing creature — typically an ally — is simply moved, no save required, letting you yank a friend out of danger or into position exactly as freely as you yank a foe into a wall. Manipulate deals no damage on its own.",
+      "narration": "You lift a hand and they go where you point. Not thrown — walked, dragged, tipped, their own feet betraying them a step at a time while they fight the wire the whole way. An ally you can simply move; an enemy has to be worth the effort.",
+      "sheetSummary": "Action, 60 ft, any number of Stringed creatures. Pull or push each up to 15 ft; no opportunity attacks provoked. Unwilling: Strength save vs {{control DC|8 + proficiency bonus + Wisdom modifier}} to resist. Willing: moved automatically. No damage.",
       "meta": {
         "action": "Action",
         "range": "60 ft",
-        "save": "Cha save vs Control DC (unwilling)"
+        "save": "Str save vs {{control DC|8 + proficiency bonus + Wisdom modifier}} (unwilling)"
       }
     },
     {
       "level": 2,
       "name": "Tangle",
-      "description": "As an action, choose one creature you have a String attached to within 60 feet. If it is unwilling, it must succeed on a Charisma saving throw against your control DC or become restrained as wire cinches tight around it; at the end of each of its turns it may repeat the save, ending the restrained condition on a success. If it is willing — an ally you're steadying rather than binding — you instead brace it with your strings, granting it advantage on the next Strength or Dexterity saving throw it makes before the start of your next turn. Measured control: this holds a target in place or steadies a friend, it doesn't end a fight by itself.",
+      "description": "As an action, choose one creature you have a String attached to within 60 feet. If it is unwilling, it must succeed on a Strength saving throw against your control DC or become restrained as wire cinches tight around it; at the end of each of its turns it may repeat the save, ending the restrained condition on a success. If it is willing — an ally you're steadying rather than binding — you instead brace it with your strings, granting it advantage on the next Strength or Dexterity saving throw it makes before the start of your next turn. Measured control: this holds a target in place or steadies a friend, it doesn't end a fight by itself.",
+      "narration": "The wire goes around and then goes tight. It finds elbows, throat, the backs of the knees, and pulls all of them toward each other at once until the thing you caught is a knot standing where it used to be a fighter.",
+      "sheetSummary": "Action, 60 ft, one Stringed creature. Unwilling: Strength save vs {{control DC|8 + proficiency bonus + Wisdom modifier}} or restrained, repeating the save at the end of each of its turns. Willing: advantage on its next Strength or Dexterity save before the start of your next turn.",
       "meta": {
         "action": "Action",
         "range": "60 ft",
-        "save": "Cha save vs Control DC"
+        "save": "Str save vs {{control DC|8 + proficiency bonus + Wisdom modifier}}"
       }
     },
     {
       "level": 2,
       "name": "Disrupting Pull",
-      "description": "When a creature you have a String attached to makes an attack roll, you can use your reaction to wrench its wire; it must succeed on a Charisma saving throw against your control DC or have disadvantage on that attack roll. Alternatively, when a creature you have a String attached to is about to take a reaction (an opportunity attack, for instance), you can use your reaction to yank its string instead; it must succeed on a Charisma saving throw against your control DC or that reaction fizzles, accomplishing nothing. Either use spends your one reaction for the round, the same reaction Parry and opportunity attacks draw from — you get one disruption, one Parry, or one opportunity attack per round, never a combination.",
+      "description": "When a creature you have a String attached to makes an attack roll, you can use your reaction to wrench its wire; it must succeed on a Strength saving throw against your control DC or have disadvantage on that attack roll. Alternatively, when a creature you have a String attached to is about to take a reaction (an opportunity attack, for instance), you can use your reaction to yank its string instead; it must succeed on a Strength saving throw against your control DC or that reaction fizzles, accomplishing nothing. Either use spends your one reaction for the round, the same reaction Parry and opportunity attacks draw from — you get one disruption, one Parry, or one opportunity attack per round, never a combination.",
+      "narration": "The swing is halfway out when you twitch two fingers. Something goes wrong in the middle of it — the elbow drops, the shoulder stalls — and the blow that arrives is not the blow that was thrown.",
+      "sheetSummary": "Reaction, 1/round, within leash. When a Stringed creature makes an attack roll, Strength save vs {{control DC|8 + proficiency bonus + Wisdom modifier}} or it has disadvantage. Or when it is about to take a reaction, Strength save or that reaction fizzles. Uses the same single reaction as Parry.",
       "meta": {
         "action": "Reaction",
         "uses": "1 / round",
         "range": "Leash (60 ft)",
-        "save": "Cha save vs Control DC"
+        "save": "Str save vs {{control DC|8 + proficiency bonus + Wisdom modifier}}"
       }
     },
     {
       "level": 3,
       "name": "Guiding Pull",
       "description": "When a creature you have a String attached to and that is willing to be moved (typically an ally) is targeted by an attack you can see, you can use your reaction to yank it up to 10 feet toward you or to another space within your leash range, before the attack roll is made. If this pulls the target out of the attacker's reach (for a melee attack) or breaks the attacker's line of sight or range (for a ranged attack), the attack automatically misses; otherwise it resolves normally against the target's new position. This draws on the same reaction as Parry, Disrupting Pull, and opportunity attacks — you still get only one reaction per round.",
+      "narration": "You see it coming before your ally does, and you pull. They are yanked half a step sideways with an undignified stumble and the strike closes on empty air behind them, and afterwards they will complain about the bruise on their collarbone.",
+      "sheetSummary": "Reaction, 1/round. Before an attack roll against a willing Stringed creature, pull it up to 10 ft toward you or elsewhere in leash. If that puts it out of reach, line of sight, or range, the attack misses automatically. Uses the same single reaction as Parry.",
       "meta": {
         "action": "Reaction",
         "uses": "1 / round",
@@ -112,18 +126,22 @@
     {
       "level": 5,
       "name": "Grand Marionette",
-      "description": "As an action, choose one hostile creature you have a String attached to within 60 feet. It must make a Charisma saving throw against your control DC. On a failure, you seize its body for this turn: you may move it up to its speed (its movement can provoke opportunity attacks as normal) and force it to make a single weapon attack, using its own statistics and weapon, against a target of your choice within its reach or range. Resolve that attack normally, with the creature rolling its own attack and damage. This is your only 'puppet an action' effect at these levels — it grants exactly one forced attack, not a full turn's worth of actions, and the controlled creature otherwise loses the rest of its action and its bonus action for the turn (it keeps its reaction). You can use Grand Marionette once per turn, and only on a creature you already have a String on.",
+      "description": "As an action, choose one hostile creature you have a String attached to within 60 feet. It must make a Strength saving throw against your control DC. On a failure, you seize its body for this turn: you may move it up to its speed (its movement can provoke opportunity attacks as normal) and force it to make a single weapon attack, using its own statistics and weapon, against a target of your choice within its reach or range. Resolve that attack normally, with the creature rolling its own attack and damage. This is your only 'puppet an action' effect at these levels — it grants exactly one forced attack, not a full turn's worth of actions, and the controlled creature otherwise loses the rest of its action and its bonus action for the turn (it keeps its reaction). You can use Grand Marionette once per turn, and only on a creature you already have a String on.",
+      "narration": "You take the whole body. The wires go rigid, the head comes up, and for one horrible moment it walks and strikes exactly as you decide — fighting you the entire time, screaming behind a face that is doing what you told it to.",
+      "sheetSummary": "Action, 1/turn, 60 ft, one hostile Stringed creature. Strength save vs {{control DC|8 + proficiency bonus + Wisdom modifier}}. On a failure, move it up to its speed (provoking as normal) and force one weapon attack with its own statistics against a target you choose. It loses the rest of its action and its bonus action, keeping its reaction.",
       "meta": {
         "action": "Action",
         "uses": "1 / turn",
         "range": "60 ft",
-        "save": "Cha save vs Control DC"
+        "save": "Str save vs {{control DC|8 + proficiency bonus + Wisdom modifier}}"
       }
     },
     {
       "level": 5,
       "name": "Web of Strings",
       "description": "Your control reaches farther and holds more of it at once: your leash range increases from 60 to 90 feet for every String-based feature you have, and your String cap increases by 1 in addition to whatever your proficiency bonus already grants it.",
+      "narration": "Your reach has stopped being a room and started being a stage. The lines run further than anyone can see the end of, and there are more of them than there are people left standing in front of you.",
+      "sheetSummary": "Passive. Leash range increases from 60 ft to 90 ft for every String feature. String cap +1 on top of your proficiency bonus.",
       "meta": {
         "action": "Passive"
       }

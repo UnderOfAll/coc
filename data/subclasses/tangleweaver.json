@@ -8,18 +8,24 @@
     {
       "level": 3,
       "name": "Snare Weave",
-      "description": "As an action, you weave loose wire across the ground in a 15-foot square within 60 feet of you, filling it with a low, near-invisible lattice that lasts for 1 minute or until you dismiss it (no action required). The area is difficult terrain to any creature without a String attached to you. Any creature other than you that enters the area for the first time on a turn or starts its turn there must succeed on a Charisma saving throw against your control DC or become restrained by the wire. A creature restrained this way can repeat the save at the end of each of its turns, ending the restrained condition on itself on a success, or use its action to make a Strength or Dexterity check (its choice) against your control DC to tear free instead. You can use Snare Weave a number of times equal to your {{Wisdom modifier (min 1)|set from your stats on your character sheet}}, regaining all expended uses when you finish a long rest.",
+      "role": "combat",
+      "description": "As an action, you weave loose wire across the ground in a 15-foot square within 60 feet of you, filling it with a low, near-invisible lattice that lasts for 1 minute or until you dismiss it (no action required). The area is difficult terrain to any creature without a String attached to you. Any creature other than you that enters the area for the first time on a turn or starts its turn there must succeed on a Strength saving throw against your control DC or become restrained by the wire. A creature restrained this way can repeat the save at the end of each of its turns, ending the restrained condition on itself on a success, or use its action to make a Strength or Dexterity check (its choice) against your control DC to tear free instead. You can use Snare Weave a number of times equal to your {{Wisdom modifier (min 1)|set from your stats on your character sheet}}, regaining all expended uses when you finish a long rest.",
+      "narration": "You lay wire across the floor in a low, glittering lattice nobody notices until their ankle finds it. Crossing it is a decision; standing in it is a mistake that tightens.",
+      "sheetSummary": "Action, {{Wisdom modifier (min 1)|set from your stats on your character sheet}} times per long rest, 15-ft square within 60 ft, 1 minute. Difficult terrain for anyone without your String. Entering it for the first time on a turn or starting a turn there forces a Strength save vs {{control DC|8 + proficiency bonus + Wisdom modifier}} or restrained; repeat at the end of each turn, or use an action for a Strength or Dexterity check to tear free.",
       "meta": {
         "action": "Action",
         "uses": "Wis mod / long rest",
         "range": "60 ft (15-ft square)",
-        "save": "Cha save vs Control DC"
+        "save": "Str save vs {{control DC|8 + proficiency bonus + Wisdom modifier}}"
       }
     },
     {
       "level": 3,
       "name": "Binding Knots",
+      "role": "combat",
       "description": "Your bindings compound on themselves. When you use Tangle, you can target one additional creature you have a String attached to within range, provided the two targets are within 15 feet of each other and you don't mix a willing target with an unwilling one in the same use. You can use this double-target option a number of times equal to your {{Wisdom modifier (min 1)|set from your stats on your character sheet}}, regaining all expended uses when you finish a long rest.",
+      "narration": "One knot pulls the next. The wire you put on one of them runs through the one beside it, and when you cinch it down they both go rigid at once, tangled into each other's mistakes.",
+      "sheetSummary": "Passive with Tangle, {{Wisdom modifier (min 1)|set from your stats on your character sheet}} times per long rest. Tangle may target one additional Stringed creature within 15 ft of the first. Both targets must be willing or both unwilling.",
       "meta": {
         "action": "Passive (with Tangle)",
         "uses": "Wis mod / long rest",
@@ -31,11 +37,12 @@
       "name": "Wired Room",
       "role": "roleplay",
       "description": "You never sleep anywhere you haven't strung first. Over 10 minutes, you can rig an area up to a 30-foot square — a room, a campsite, a corridor — with a lattice of near-invisible trip-lines that lasts 8 hours or until you dismantle it. You know instantly when a Small or larger creature enters the area (and roughly where). When you rig the area, you can include one snare: the first creature to trigger it must succeed on a Dexterity saving throw against your Control DC or be caught, restrained until it or an ally uses an action to cut it free.",
-      "sheetSummary": "10 min: wire up to a 30-ft square for 8 h — know instantly when a Small or larger creature enters. Optional snare: first trigger, Dex save vs Control DC or restrained until cut free (action).",
+      "narration": "You have not slept in an unstrung room in years. Ten minutes with the doorways and the corners and the place tells you, in a small tug against your finger, the moment anything crosses it.",
+      "sheetSummary": "10 min: wire up to a 30-ft square for 8 h — know instantly when a Small or larger creature enters. Optional snare: first trigger, Dex save vs {{control DC|8 + proficiency bonus + Wisdom modifier}} or restrained until cut free (action).",
       "meta": {
         "action": "Special",
         "range": "30-ft square",
-        "save": "Dex vs Control DC"
+        "save": "Dex vs {{control DC|8 + proficiency bonus + Wisdom modifier}}"
       }
     }
   ]

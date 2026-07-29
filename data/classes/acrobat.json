@@ -35,14 +35,16 @@
     "resourceType": "pool",
     "description": "A personal pool of kinetic flow built from constant motion — sprints, spins, swings, and falls turned into finesse. The Acrobat's sole resource.",
     "generation": "You build Momentum through motion, and only through motion — no technique that spends Momentum ever also grants it. Gain 1 Momentum (at most once per turn from this movement source) when you move at least 10 feet toward, away from, or around a hostile creature on your turn, or when you take the Dash or Disengage action. You also gain 1 Momentum the first time each turn you use Wall-Run. Trapeze Swing, Strike-and-Vanish, Momentum Strike, Flow State, and Riposte only spend Momentum — they never generate it.",
-    "spend": "Spend Momentum in 1-point increments, at no action cost beyond the triggering action, to fuel your features (bonus damage, forced movement, extra mobility, or momentum-gated attacks). Unspent Momentum carries over between rounds but drains to 0 if you finish a short or long rest without spending it.",
-    "cap": "5 (6 at 4th level, see Momentum Reserve)"
+    "spend": "Spend Momentum in 1-point increments, at no action cost beyond the triggering action, to fuel your features (bonus damage, forced movement, extra mobility, or momentum-gated attacks). Unspent Momentum carries over between rounds, but never between fights: you start every combat with 0 Momentum and any left over is lost the moment the fight ends. Momentum is a per-combat currency like every other engine in this system — it is built during a fight and cannot be banked before one.",
+    "cap": "5 (L1-4) · 6 (L5+) — Momentum Reserve raises it at 5th level"
   },
   "features": [
     {
       "level": 1,
       "name": "Momentum",
       "description": "You gain the Momentum pool, a resource built by moving with speed and spent to fuel your acrobatics and strikes. See your Momentum engine for how it is generated, spent, and capped.",
+      "narration": "You are never quite still. Between one exchange and the next you are rolling a shoulder, shifting your weight, drifting a half-step — and the longer the fight runs, the more of that motion you have stored up and the less anyone can predict where you will be. When you finally spend it, it looks less like effort than like the fight simply going the way you already were.",
+      "sheetSummary": "You gain the Momentum pool. See the Momentum engine for generation, spending, and cap.",
       "meta": {
         "action": "Passive"
       }
@@ -51,6 +53,8 @@
       "level": 1,
       "name": "Counterflow",
       "description": "Turning a blow aside leaves the attacker overextended, and you flow straight into the opening. When you successfully Parry an attack — a Full Dodge or a Grazing Parry, meaning your Parry d20 comes up at least equal to your effective Parry DC — the next attack roll you make before the end of your next turn has advantage. An Overcommitted Parry (a roll below your DC) grants nothing. Because you have only one reaction, this triggers at most once per round.",
+      "narration": "The blade goes past your ribs and you go with it, turning inside its arc while the arm is still committed. For one breath your attacker is stretched out over their own swing with nothing behind it, and you are already reading the gap they left. Everyone watching sees the same thing: they missed, and you noticed.",
+      "sheetSummary": "No action, 1/round. On a successful Parry (Full Dodge or Grazing Parry), your next attack roll before the end of your next turn has advantage. Overcommitted grants nothing.",
       "meta": {
         "action": "No action",
         "uses": "1 / round",
@@ -61,6 +65,8 @@
       "level": 1,
       "name": "Wall-Run",
       "description": "As part of your movement, once per turn, you can run up to half your speed along a vertical surface or across something that couldn't normally support your weight (a wall, a taut rope, a row of chairs), provided you end that move on solid ground or something you can grab. This is a signature move: it generates Momentum.",
+      "narration": "You hit the wall at a dead sprint and simply do not stop — three, four strides straight up the brickwork, along the rope, across the backs of the chairs, whatever happens to be there. Gravity gets a vote eventually, but not until you have already landed where you meant to be. The crowd gasps a half-second late, every time.",
+      "sheetSummary": "Movement, 1/turn. Move up to half your speed along a vertical or unsupporting surface; must end on solid footing. Signature move: generates Momentum.",
       "meta": {
         "action": "Movement",
         "uses": "1 / turn",
@@ -71,6 +77,8 @@
       "level": 2,
       "name": "Trapeze Swing",
       "description": "As a bonus action and a signature move, you conjure your own rigging from nowhere — a bar, rope, or ring that appears exactly where you need it — and swing up to 30 feet in any direction, ignoring difficult terrain, for 5 feet of movement and 1 Momentum. Your aerial style is flashy, not safe: leaving a creature's reach during the swing provokes opportunity attacks as normal. At the end of the swing you can make one melee weapon attack against a creature within 5 feet. As a flourish, you may spend 3 additional Momentum to make that attack against every hostile creature you pass within 5 feet during the swing instead of just one, each targeted once. You can use Trapeze Swing at most once per turn. (See Flow State at 5th level: on a turn where you use Trapeze Swing, you cannot also trigger Flow State's extra attack.)",
+      "narration": "You reach up and a bar is there — you conjured it out of nothing, and it holds. The room tilts, the floor drops away, and you come down out of the air at a completely different angle from the one everyone was watching. It is not safe and it is not subtle: you go through the fight, not around it, and anything you leave behind gets a free swing at you as you go.",
+      "sheetSummary": "Bonus action, 1/turn, 1 Momentum + 5 ft of movement. Swing up to 30 ft in any direction ignoring difficult terrain; provokes opportunity attacks. Then one melee weapon attack within 5 ft. Flourish (+3 Momentum): make that attack against every hostile you pass within 5 ft. Excludes Flow State this turn.",
       "meta": {
         "action": "Bonus Action",
         "cost": "1 Momentum (+3: hit all in path)",
@@ -82,17 +90,21 @@
       "level": 2,
       "name": "Momentum Strike",
       "description": "When you hit a Large or smaller creature with a melee weapon attack, you can spend 1 Momentum to deal an extra [[1d6]] damage and force it to make a Strength saving throw against your {{save DC|8 + proficiency bonus + Dexterity modifier}}. On a failed save, you shove it 5 feet or knock it prone (your choice).",
+      "narration": "You do not so much hit as arrive. Every step of the approach goes into the blow, and the target does not just take it — it gets moved, staggered off its line or put flat on its back with the wind gone out of it. This is the strike that reminds people a tumbler is still hitting them with their entire body weight.",
+      "sheetSummary": "On a melee hit vs Large or smaller, 1 Momentum. Extra [[1d6]] damage and a Strength save vs your {{save DC|8 + proficiency bonus + Dexterity modifier}} or be shoved 5 ft or knocked prone (your choice).",
       "meta": {
         "action": "On a hit",
         "cost": "1 Momentum",
         "range": "Melee",
-        "save": "Str save vs your DC"
+        "save": "Str save vs {{save DC|8 + proficiency bonus + Dexterity modifier}}"
       }
     },
     {
       "level": 3,
       "name": "Strike-and-Vanish",
       "description": "After you hit a creature with a melee weapon attack, you can spend 2 Momentum to move up to half your speed without provoking opportunity attacks and attempt to Hide (per the normal Hide rules — you become hidden only if you end with total cover or out of the target's line of sight). As a flourish, you may spend 2 additional Momentum (4 total) to move your full speed instead of half — a clean disengage out of every enemy's reach (still no invisibility). You can use Strike-and-Vanish once per turn at 3rd level, twice per turn at 5th, three times at 9th, and four times at 12th. This is a signature move.",
+      "narration": "You land the hit and you are already gone — a roll, a shoulder past somebody's hip, a shadow behind a pillar — before the sound of it finishes. Nobody swings at you on the way out, because nobody has worked out which way out you took. If there is anywhere at all to disappear into, that is where you are.",
+      "sheetSummary": "After a melee hit, 2 Momentum, 1/turn (2 at L5, 3 at L9, 4 at L12). Move half your speed without provoking and attempt to Hide. Flourish (+2 Momentum, 4 total): full speed instead. Signature move.",
       "meta": {
         "action": "After you hit",
         "cost": "2 Momentum (+2: full move)",
@@ -101,18 +113,22 @@
       }
     },
     {
-      "level": 4,
+      "level": 3,
       "name": "Flowing Reflexes",
       "description": "A clean parry doesn't end your turn's rhythm — it feeds it. Once per turn, when you successfully Parry an attack (a Full Dodge or a Grazing Parry), you immediately regain your reaction. This regained reaction cannot be spent to Parry again — use it for an opportunity attack or another reaction feature. If your Parry d20 came up a natural 20, you regain two reactions this way instead of one (still none able to Parry again). Any reaction regained this way lasts only until the start of your next turn; if you have not spent it by then, it is lost. Because a Parry still stops only one attack per round, this never makes you a surer dodger — it turns a clean deflection into extra tempo.",
+      "narration": "Turning a blade aside does not cost you your footing — it gives you your footing. The block flows straight back into the rhythm you were already keeping, and by the time the attacker recovers you are somehow ready again, still watching, still loose, as though you were never interrupted at all.",
+      "sheetSummary": "Passive, 1/turn. On a successful Parry you regain your reaction (two on a natural 20). The regained reaction can never Parry and is lost at the start of your next turn.",
       "meta": {
         "action": "Passive",
         "uses": "1 / turn"
       }
     },
     {
-      "level": 4,
+      "level": 5,
       "name": "Momentum Reserve",
-      "description": "Your Momentum cap increases to 6, and moving through a space occupied by an ally no longer costs extra movement.",
+      "description": "Your reserve of flow runs deeper than another acrobat's. Your Momentum cap increases to 6, and moving through a space occupied by an ally no longer costs extra movement.",
+      "narration": "You have learned to keep more in the tank than a body should. The flow does not run out where it used to, and a friend standing in your way is no longer in your way — you go over, under, or around them without slowing, and they barely feel you pass.",
+      "sheetSummary": "Passive. Momentum cap becomes 6. Moving through an ally's space costs no extra movement.",
       "meta": {
         "action": "Passive"
       }
@@ -121,6 +137,8 @@
       "level": 5,
       "name": "Aerial Evasion",
       "description": "You are the one class whose dodging reaches beyond attack rolls. When you are subjected to an effect that allows you to make a Dexterity saving throw for half damage (a fireball, a trap, a breath weapon, or similar area effect), you instead take no damage on a success and only half damage on a failure. This is the sole exception to the rule that saving-throw and area effects can't be Parried.",
+      "narration": "The blast goes off and you are simply not in it. Everyone else is bracing; you are already airborne, twisting through the one seam in the fire where nothing is burning. Even when you misjudge it and clip the edge, you take it moving, rolling out the far side with your coat smoking and your feet under you.",
+      "sheetSummary": "Passive. On an effect allowing a Dexterity save for half damage: no damage on a success, half on a failure. The one exception to Parry answering attack rolls only.",
       "meta": {
         "action": "Passive"
       }
@@ -129,6 +147,8 @@
       "level": 5,
       "name": "Flow State",
       "description": "Once on each of your turns, if you have 3 or more Momentum and have not already gained an attack this turn from Trapeze Swing, you can spend 3 Momentum to make one additional weapon attack as part of the same action you used to make a melee weapon attack. Flow State's extra attack and Trapeze Swing's attack are mutually exclusive within a single turn — at most one of the two can add an attack on top of your normal action-attack, so no single creature can be struck by more than two of your attacks in a turn (your action attack plus one). Trapeze Swing's flourish can still spread additional single hits across several different creatures you pass within 5 feet — that is crowd damage, not focused damage, and it costs Momentum and provokes an opportunity attack from every creature you leave.",
+      "narration": "Somewhere in the middle of the fight it stops being a series of decisions. The dodge is the step is the strike is the next dodge, all one motion, and you land blows in gaps that were not there a moment ago because you are moving faster than anyone is thinking. It never lasts long. While it does, you are the best thing in the room.",
+      "sheetSummary": "1/turn, 3 Momentum. One additional weapon attack as part of your melee Attack action. Mutually exclusive with Trapeze Swing's attack in the same turn.",
       "meta": {
         "action": "Extra Attack",
         "cost": "3 Momentum",
@@ -146,7 +166,7 @@
     },
     {
       "label": "Momentum Cap",
-      "value": "5 (6 at level 4)",
+      "value": "5 (L1-4) · 6 (L5+)",
       "note": "Most Momentum you can hold at once."
     },
     {

@@ -8,7 +8,10 @@
     {
       "level": 3,
       "name": "Ignite",
+      "role": "combat",
       "description": "Your implements trail fire. A creature hit by at least one of your implements on your turn is set alight and takes [[1d4]] fire damage at the start of its next turn — this is added on top of the implement's normal damage, not a replacement for it, and the die scales as your implements do. The flames flare at the start of the creature's turn and then gutter out, so there is no window for it to smother them first; hit it again and it simply burns again the following turn.",
+      "narration": "Everything that leaves your hands is trailing flame. It catches on whatever it touches, and a moment later the thing you hit remembers it is burning, usually at the worst possible point in its own swing.",
+      "sheetSummary": "Passive. A creature hit by at least one implement on your turn takes [[1d4]] fire damage at the start of its next turn, on top of the implement's normal damage.",
       "meta": {
         "action": "Passive"
       }
@@ -16,7 +19,10 @@
     {
       "level": 3,
       "name": "Wildfire",
+      "role": "combat",
       "description": "Once on each of your turns, one implement you throw can burst on impact instead of ricocheting: each creature within 10 feet of the space it strikes must make a Dexterity saving throw against your {{Trick Shot DC|6 + proficiency bonus + Intelligence modifier}}, taking [[2d4]] fire damage on a failure or half as much on a success. That space then burns until the start of your next turn — the first time a creature enters it on a turn, or ends its turn there, it takes [[1d4]] fire damage.",
+      "narration": "One of them does not carom off — it bursts, a low orange bloom that goes out sideways and leaves the floor burning behind it. That patch stays lit and stays angry, and anyone who wants to cross it is going to have opinions about it afterwards.",
+      "sheetSummary": "Part of your Barrage, 1/turn, 10-ft burst. One implement bursts instead of ricocheting: Dexterity save vs your {{Trick Shot DC|6 + proficiency bonus + Intelligence modifier}}, [[2d4]] fire on a failure, half on a success. That space burns until the start of your next turn, dealing [[1d4]] fire the first time a creature enters it on a turn or ends its turn there.",
       "meta": {
         "action": "Part of your Barrage",
         "uses": "1 / turn",
@@ -29,6 +35,7 @@
       "name": "Fire-Eater's Trade",
       "role": "roleplay",
       "description": "Before the fire was a weapon, it was the act. You can eat, breathe, and dance with flame harmlessly for a crowd. You can light or snuff any mundane flame you can see within 30 feet — a candle, a torch, a campfire — at will, no action required on your turn. Ordinary open flames can't harm you (fire damage from attacks, spells, and hazards still can), your implements can burn as torches without being consumed, and you have advantage on Charisma (Performance) checks that use fire.",
+      "narration": "Before it was a weapon it was the finale: flame swallowed, flame breathed, flame walked along your knuckles for a paying crowd. Fire is a colleague, not a hazard, and every candle in the room answers you.",
       "sheetSummary": "Light/snuff any mundane flame within 30 ft at will. Ordinary open flames can't harm you (fire damage from attacks/spells/hazards still can). Implements burn as torches unconsumed. Advantage on fire Performance checks.",
       "meta": {
         "action": "Free",

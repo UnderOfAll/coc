@@ -15,6 +15,7 @@
   ],
   "duration": "1 round",
   "description": "You call a quiet promise to an ally: no fall is final tonight. Choose one ally you can see within range. It gains [[1d6]] temporary hit points, and until the start of your next turn it has advantage on saving throws against being frightened or charmed.",
+  "narration": "There is always a net under the wire. Tonight it is you — a quiet promise called across the room to someone who is about to need it.",
   "sheetSummary": "Bonus action, 30 ft, cooldown 2. Chosen ally gains [[1d6]] temporary hit points and advantage on saves vs frightened/charmed until the start of your next turn.",
   "classes": [
     "jester"

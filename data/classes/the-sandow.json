@@ -38,7 +38,7 @@
     "resourceType": "pool",
     "description": "A pool of raw physical fortitude and adrenaline built from being in the thick of a fight — trading blows, absorbing them, hurling anything not nailed down. The Sandow's sole resource. This baseline generation is shared by every Sandow from 1st level; your Strongman's Act (chosen at 3rd level) layers its own primary Grit stream on top of it — a defensive Act builds more from taking hits, an offensive Act more from dealing them, and Human Cannonball from impacts and forced movement.",
     "generation": "Gain 1 Grit the first time each turn you hit a creature with a melee attack, AND gain 1 Grit the first time each turn you are targeted by an attack from any source — whether that attack hits or misses — two separate sources, each capped at once per turn (landing a hit and being attacked in the same turn grants 2 Grit total; further hits you land or attacks made against you that same turn grant no additional Grit from that source). This works from 1st level, before any subclass is chosen.",
-    "spend": "Spend Grit in 1-point increments to fuel Heave, Brace, and the other feats of strength described in your features. Unspent Grit carries over between rounds but drains to 0 if you finish a short or long rest without spending it.",
+    "spend": "Spend Grit in 1-point increments to fuel Heave, Brace, and the other feats of strength described in your features. Unspent Grit carries over between rounds, but never between fights: you start every combat with 0 Grit and any left over is lost the moment the fight ends. Grit is a per-combat currency like every other engine in this system — it is built during a fight and cannot be banked before one.",
     "cap": "≈4 (L1–4) · 5–6 (L5+)",
     "capFormula": "Constitution modifier + proficiency bonus (minimum 3)"
   },
@@ -47,6 +47,8 @@
       "level": 1,
       "name": "Grit",
       "description": "You gain the Grit pool, a resource built from being in the fray — landing blows and taking them — and spent to fuel your feats of strength. See your Grit engine for exactly how it is generated, spent, and capped.",
+      "narration": "The fight winds you up rather than wearing you down. Every blow you land and every one you take settles into your shoulders as something coiled and useful, and you spend it the way a strongman spends a breath before the lift.",
+      "sheetSummary": "You gain the Grit pool. See the Grit engine for generation, spending, and cap.",
       "meta": {
         "action": "Passive"
       }
@@ -55,6 +57,8 @@
       "level": 1,
       "name": "Mighty Build",
       "description": "You count as one size larger than your actual size for the purpose of carrying capacity, and for determining whether you can grapple, shove, or throw a creature — treat a Large creature as though it were Medium, a Huge creature as though it were Large, and so on. This extends to Heave below: you can grapple and throw creatures up to one size larger than the normal rules would otherwise allow.",
+      "narration": "You are built on the wrong scale for the room. Things that ought to be too big to shift come off the ground when you decide they will, and people who have never been picked up before find out what it is like.",
+      "sheetSummary": "Passive. Count as one size larger for carrying capacity and for grappling, shoving, or throwing a creature (Large counts as Medium, Huge as Large, and so on). Extends to Heave.",
       "meta": {
         "action": "Passive"
       }
@@ -63,17 +67,21 @@
       "level": 1,
       "name": "Iron Grip",
       "description": "When you hit a creature no larger than Mighty Build allows with a melee attack, you can immediately try to grab it — no extra action or attack, it rides the same hit. The target must succeed on a Strength saving throw against your {{save DC|8 + proficiency bonus + Strength modifier}} or be caught: while held it is grappled by you (its speed becomes 0) and has disadvantage on attack rolls it makes against you — pinned against your own frame, its swings at you go wide (its attacks against other creatures are unaffected). The hold has no time limit — the creature does not slip free on its own. It stays grabbed until you cash the hold in by Crushing it (see Crushing Grip) or Heaving it, until you let go or are incapacitated, or until it escapes on its turn by using its action to make a Strength (Athletics) or Dexterity (Acrobatics) check against your save DC. When a creature escapes this way it shakes free entirely and can't be caught by your Iron Grip again until the end of its next turn — so you can't chain-grab the same target, though you're free to set your hands on a different one in the meantime. (Ending the hold yourself by Crushing or Heaving the creature does not grant it this reprieve.) You can hold only one creature in your Iron Grip at a time — catching a new target releases the last. A creature held this way counts as grappled by you, so it is a valid target for Heave. Forced movement you cause with your own features (such as a Juggernaut's Bulldozer Charge) never breaks this hold — the creature is dragged with you rather than shoved free.",
+      "narration": "You catch it. Not a hold — a decision — and once your hand closes, the fight it was having with everyone else is over and the fight it is having with you has started. It can swing at you all it likes from there, pressed against your chest with nothing behind the punches.",
+      "sheetSummary": "Free on a melee hit, one creature at a time, reach. Strength save vs your {{save DC|8 + proficiency bonus + Strength modifier}} or grappled (speed 0) with disadvantage on attacks against you. No time limit; it ends when you Crush or Heave it, let go, are incapacitated, or it escapes with an action (Athletics or Acrobatics vs {{save DC|8 + proficiency bonus + Strength modifier}}). An escapee can't be re-caught until the end of its next turn. Your own forced movement never breaks the hold.",
       "meta": {
         "action": "Free (on a melee hit)",
         "uses": "One creature at a time",
         "range": "Reach",
-        "save": "Str save vs your DC"
+        "save": "Str save vs {{save DC|8 + proficiency bonus + Strength modifier}}"
       }
     },
     {
       "level": 1,
       "name": "Heave",
       "description": "You grab something heavy — a creature you have grappled, or an object you're holding like a bench, a barrel, or a cage bar — and hurl it. This is used in place of one of your attacks when you take the Attack action (so at 1st level it replaces your single attack; with Extra Attack you can Heave and still swing). Spend 1 to 3 Grit: the thrown target flies 10 feet per point of Grit spent in a direction of your choice and lands in the nearest unoccupied space. What happens on landing depends on the target:",
+      "narration": "You pick it up and you throw it. A man, a bench, a cage bar, a friend who agreed to this — it goes up, it goes out, and it lands somewhere the fight was not expecting a body to land.",
+      "sheetSummary": "In place of one attack, 1-3 Grit. Throw a grappled creature or a held object 10 ft per Grit spent; it lands in the nearest unoccupied space. Landing effects depend on the target.",
       "options": [
         {
           "name": "Unwilling creature or object",
@@ -94,6 +102,8 @@
       "level": 2,
       "name": "Hold the Line",
       "description": "When a hostile creature within your reach makes a melee attack against a creature other than you, you can use your reaction to make one melee weapon attack against the attacker. Additionally, whenever a hostile creature within your reach moves in a way that provokes an opportunity attack from you and you hit it with that opportunity attack, its speed becomes 0 for the rest of the current turn — it's stopped where it stands instead of completing its move. Hold the Line draws on the same single reaction as Parry and any other reaction-costed feature you have: punish an attacker or a fleeing creature, or hold your reaction in reserve to Parry — never both on the same round. This is not mind control: a creature is never forced to act against its will, only stopped or made to pay for what it already chose to do.",
+      "narration": "You are standing where you are standing and that is the end of the discussion. Something tries to go past you toward someone smaller, and you make it regret the attempt before it gets there.",
+      "sheetSummary": "Reaction, 1/round, reach. When a hostile in reach melee-attacks someone other than you, make one melee weapon attack against it. Also, when you hit with an opportunity attack, that creature's speed becomes 0 for the rest of its turn. Uses the same single reaction as Parry.",
       "meta": {
         "action": "Reaction",
         "uses": "1 / round",
@@ -104,6 +114,8 @@
       "level": 2,
       "name": "Brace",
       "description": "When you take damage from an attack — including one you failed to Parry, or one you had no reaction available to Parry — you can spend Grit, in 1-point increments and at no action cost, to reduce that damage by your {{Brace Soak|2 + your Sandow level}} per point of Grit spent, applied after any Parry multiplier and before the damage is otherwise resolved. The soak climbs with every Sandow level rather than sitting at a flat number that bigger hits quickly outpace, so a point of Grit spent on Brace stays worth it at high levels. Because Brace costs no action or reaction, it stacks with whatever reaction-costed response (or lack of one) you used for the same hit, including a round where your reaction already went to Hold the Line or a Parry. You can spend at most 2 Grit against a single instance of damage, and Brace cannot reduce damage below 0.",
+      "narration": "You see it coming and you set your feet, drop your weight, and take it on the meat of your shoulder. It still hurts. It just does not do what it was supposed to do.",
+      "sheetSummary": "Free, 1-2 Grit per instance of damage. Reduce damage taken by an attack by your {{Brace Soak|2 + your Sandow level}} per Grit spent, applied after any Parry multiplier. Costs no action or reaction, so it stacks with whatever you did with your reaction. Never reduces damage below 0.",
       "meta": {
         "action": "Free",
         "cost": "1-2 Grit",
@@ -114,6 +126,8 @@
       "level": 3,
       "name": "Crushing Grip",
       "description": "Your hold is a weapon in its own right. While you have a creature caught in your Iron Grip, two things become true. First, the grip turns mobile and sticky: you can drag the held creature with you when you move (it moves with you at no extra cost, staying grappled), and it has disadvantage on any check it makes to escape your grip. Second, you can crush it: in place of one attack when you take the Attack action, spend 1 Grit to deal [[1d6+Str]] bludgeoning damage to the held creature — no attack roll, the grip crushes down and the damage simply lands. You then slam the wrung-out body to the ground: the crushed creature is knocked prone, and the impact ripples outward as a shockwave — each other creature within 5 feet of it must succeed on a Strength saving throw against your save DC or be knocked prone as well. Crushing spends the hold: once you Crush a creature it is no longer grabbed, so to lock it again you must catch it fresh with a new hit. With Extra Attack you can Crush with one attack and make a normal attack with the other to re-catch it (or catch a different target), so a target barely leaves your hands. Unlike Heave, Crushing Grip moves no one — it's a stationary finisher that flattens the held creature and staggers everything pressed in around it.",
+      "narration": "You stop carrying it and start closing your hands. There is no swing to dodge, nothing to parry — just pressure, and then the wrung-out body slammed down flat hard enough that everyone pressed in around it feels the floor jump.",
+      "sheetSummary": "Passive while a creature is in your Iron Grip: drag it with you when you move at no extra cost, and it has disadvantage on escape checks. In place of one attack, 1 Grit: deal [[1d6+Str]] bludgeoning to the held creature with no attack roll, knock it prone, and each other creature within 5 ft makes a Strength save vs {{save DC|8 + proficiency bonus + Strength modifier}} or is knocked prone. Crushing releases the hold.",
       "meta": {
         "action": "In place of 1 attack",
         "cost": "1 Grit",
@@ -125,6 +139,8 @@
       "level": 5,
       "name": "Extra Attack",
       "description": "You can attack twice, instead of once, whenever you take the Attack action on your turn.",
+      "narration": "One swing was never really your rhythm. You work in pairs now, the second already loading while the first lands.",
+      "sheetSummary": "Passive. Attack twice instead of once when you take the Attack action.",
       "meta": {
         "action": "Passive"
       }
@@ -133,12 +149,14 @@
       "level": 5,
       "name": "Earthshaker",
       "description": "As an action, spend 3 Grit to slam a weapon, fist, or heavy object into the ground and send a shockwave through every creature of your choice within 15 feet of you. Each must succeed on a Strength saving throw against your {{save DC|8 + proficiency bonus + Strength modifier}} or be pushed 5 feet directly away from you and knocked prone. Earthshaker deals no damage on its own — it's forced movement and control, a battlefield reset, not another source of hurt. You can use Earthshaker once per turn.",
+      "narration": "You bring everything you have down into the floor. The boards jump, the dust comes off the rafters, and everyone standing near you discovers they are no longer standing.",
+      "sheetSummary": "Action, 1/turn, 3 Grit, 15-ft radius, creatures of your choice. Strength save vs your {{save DC|8 + proficiency bonus + Strength modifier}} or pushed 5 ft away from you and knocked prone. No damage.",
       "meta": {
         "action": "Action",
         "cost": "3 Grit",
         "uses": "1 / turn",
         "range": "15-ft radius",
-        "save": "Str save vs your DC"
+        "save": "Str save vs {{save DC|8 + proficiency bonus + Strength modifier}}"
       }
     }
   ],

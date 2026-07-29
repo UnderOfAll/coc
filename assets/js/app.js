@@ -121,6 +121,18 @@ function wireEvents() {
     trickGrouping = btn.dataset.trickGroup;
     renderList("tricks");
   });
+  // How it works / In play: flips ONE entry's body, never the whole page.
+  document.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-fview]");
+    if (!btn) return;
+    const box = btn.closest(".tabbed");
+    if (!box) return;
+    const want = btn.dataset.fview;
+    box.querySelectorAll(":scope > .group-toggle > .toggle-btn")
+       .forEach((b) => b.classList.toggle("active", b.dataset.fview === want));
+    box.querySelectorAll(":scope > .fbody")
+       .forEach((b) => b.classList.toggle("hidden", b.dataset.body !== want));
+  });
   // Tap-to-toggle tooltips: touchscreens can't hover, so a tap opens the formula /
   // scaling-die box; tapping the same term again or anywhere else closes it.
   document.addEventListener("click", (e) => {
@@ -454,10 +466,11 @@ function cardMeta(key, it) {
   }
 }
 
-function showDetail(key, id) {
+function showDetail(key, id, keepScroll) {
   const it = store[key].find((x) => slug(x) === id);
   if (!it) { selectCategory(key); return; }
   const content = $(".content");
+  const at = keepScroll && content ? content.scrollTop : 0;
   // Remember where the list was scrolled so Back can return to that spot.
   if (content && !$("#list-view").classList.contains("hidden")) listScroll[current] = content.scrollTop;
   current = key;
@@ -465,7 +478,7 @@ function showDetail(key, id) {
   $("#detail-view").classList.remove("hidden");
   const renderer = CATEGORIES.find((c) => c.key === key).render;
   $("#detail").innerHTML = renderer(it);
-  if (content) content.scrollTop = 0;
+  if (content) content.scrollTop = at;
 }
 
 /* ---------- renderers (one per category) ---------- */
@@ -481,15 +494,43 @@ function stat(label, value) {
 function statHTML(label, html) {
   return `<div class="stat"><div class="label">${esc(label)}</div><div class="value">${html}</div></div>`;
 }
+/* Every describable thing carries its OWN pair of tabs (MECHANICS §5): "How it works" is the
+   numbers — the meta chips, the save, the dice, the conditions — and "In play" is how the thing
+   looks when it happens at the table. The old blended description is no longer rendered anywhere:
+   mixing the two is what made these pages a wall of text.
+
+   The switch is per-entry, not per-page: flipping Counterflow to "In play" leaves every other
+   feature on the sheet exactly as it was. Both bodies are rendered up front and one is hidden, so
+   flipping a tab is a class change on one element — no re-render, no lost scroll position, and
+   each feature keeps its own state for as long as the page is open. */
+const VIEW_TABS = [["rules", "How it works"], ["play", "In play"]];
+function tabbed(rulesHTML, playHTML) {
+  const btns = VIEW_TABS.map(([mode, label]) =>
+    `<button class="toggle-btn${mode === "rules" ? " active" : ""}" data-fview="${mode}">${esc(label)}</button>`
+  ).join("");
+  return `<div class="tabbed">
+    <div class="group-toggle view-toggle">${btns}</div>
+    <div class="fbody" data-body="rules">${rulesHTML}</div>
+    <div class="fbody hidden" data-body="play">${playHTML}</div>
+  </div>`;
+}
+
+/* The "In play" body. Falls back to a plain note rather than an empty panel, so an unwritten
+   narration reads as missing instead of looking broken. */
+function narrationHTML(n) {
+  return n
+    ? `<p class="narration">${fmtDesc(n)}</p>`
+    : `<p class="narration muted">No in-play description written for this yet.</p>`;
+}
+
 function features(list) {
   if (!Array.isArray(list) || !list.length) return "";
   return `<h2>Features</h2>` + list.map((f) => {
-    const body = Array.isArray(f.options) && f.options.length
-      ? `<br>${fmtDesc(f.description || "")}${optionTable(f.options)}`
-      : renderFeatureDesc(f.description);
     const roleBadge = f.role === "roleplay" ? `<span class="role-badge">Roleplay</span>` : "";
+    const rules = metaRow(f.meta) + `${fmtDesc(f.sheetSummary || f.description || "")}` +
+      (Array.isArray(f.options) && f.options.length ? optionTable(f.options) : "");
     return `<div class="feature"><span class="lvl">Level ${esc(f.level ?? "—")}:</span>
-     <strong>${esc(f.name || "")}</strong>${roleBadge}${metaRow(f.meta)}${body}</div>`;
+     <strong>${esc(f.name || "")}</strong>${roleBadge}${tabbed(rules, narrationHTML(f.narration))}</div>`;
   }).join("");
 }
 
@@ -500,20 +541,22 @@ function metaRow(m) {
   // "Cost" = the action economy plus any resource spent, in one chip.
   const cost = [m.action, m.cost].filter(Boolean).join(" · ");
   const fields = [["Cost", cost], ["Uses", m.uses], ["Range", m.range], ["Save", m.save]];
+  // Values run through fmtDesc so a chip can carry a {{Label|formula}} tooltip (the save DC is
+  // never spelled out inline) or a [[XdY]] scaling die.
   const chips = fields.filter(([, v]) => v).map(([k, v]) =>
-    `<span class="fmeta"><span class="fk">${esc(k)}</span><span class="fv">${esc(v)}</span></span>`).join("");
+    `<span class="fmeta"><span class="fk">${esc(k)}</span><span class="fv">${fmtDesc(v)}</span></span>`).join("");
   return chips ? `<div class="feature-meta">${chips}</div>` : "";
 }
 
 /* A feature's structured `options` (a pick-one menu or a random table) as a table. A `roll`
    on any option makes it a random table (numbered column); otherwise it's a choice menu. */
-function optionTable(opts) {
+function optionTable(opts, ladder) {
   const hasRoll = opts.some((o) => o.roll != null);
   const nameHdr = hasRoll ? "Result" : "Option";
   const headCells = (hasRoll ? "<th>Roll</th>" : "") + `<th>${nameHdr}</th><th>Effect</th>`;
   const rows = opts.map((o) => {
     const rollCell = hasRoll ? `<td class="col-num">${esc(o.roll ?? "")}</td>` : "";
-    return `<tr>${rollCell}<td>${fmtDesc(o.name || "")}</td><td>${fmtDesc(o.effect || "")}</td></tr>`;
+    return `<tr>${rollCell}<td>${fmtDesc(o.name || "", ladder)}</td><td>${fmtDesc(o.effect || "", ladder)}</td></tr>`;
   }).join("");
   return `<table class="data-table option-table">
       <thead><tr>${headCells}</tr></thead>
@@ -524,12 +567,12 @@ function optionTable(opts) {
 /* A feature whose text embeds a numbered option list — "(1) Name: effect. (2) …" — renders
    that list as a table (e.g. the Joker's Wild Card d8 table). Any feature without the pattern
    renders as plain text, exactly as before. */
-function renderFeatureDesc(desc) {
+function renderFeatureDesc(desc, ladder) {
   const t = extractNumberedTable(desc);
-  if (!t) return `<br>${fmtDesc(desc || "")}`;
+  if (!t) return `<br>${fmtDesc(desc || "", ladder)}`;
   const body = t.rows.map((r) =>
-    `<tr><td class="col-num">${esc(r.n)}</td><td>${fmtDesc(r.name)}</td><td>${fmtDesc(r.effect)}</td></tr>`).join("");
-  return (t.lead ? `<br>${fmtDesc(t.lead)}` : "") +
+    `<tr><td class="col-num">${esc(r.n)}</td><td>${fmtDesc(r.name, ladder)}</td><td>${fmtDesc(r.effect, ladder)}</td></tr>`).join("");
+  return (t.lead ? `<br>${fmtDesc(t.lead, ladder)}` : "") +
     `<table class="data-table option-table">
        <thead><tr><th>#</th><th>Result</th><th>Effect</th></tr></thead>
        <tbody>${body}</tbody>
@@ -537,9 +580,33 @@ function renderFeatureDesc(desc) {
 }
 
 /* Escape description text, expanding any [[XdY]] Scaling Die token (MECHANICS.md §3) into
-   its base die plus a marker whose tooltip lists the level 1/5/11/17 progression. */
+   its base die plus a marker whose tooltip lists the level progression.
+
+   There are TWO ladders (MECHANICS §3). Everything steps at 5 · 11 · 17, EXCEPT a half-caster's
+   Turns, which step at 5 · 11 and then stop — so they end one die size behind a full caster's.
+   Which ladder applies is a property of the CLASS (its caster grade), not of the trick, exactly
+   like the casting start level in §4.9b; only the trick's own tier is read off the trick. */
 const DIE_CHAIN = [4, 6, 8, 10, 12];
-function fmtDesc(s) {
+const LADDERS = {
+  full:     { steps: 3, note: "die steps up at levels 5 · 11 · 17" },
+  halfTurn: { steps: 2, note: "die steps up at levels 5 · 11, then stops (half-caster Turn)" },
+  mixed:    { steps: 3, note: "die steps up at levels 5 · 11 · 17 — a half-caster stops at 11" },
+};
+
+/* A half-caster's Turns use the short ladder; its Pledges and Prestiges do not, and no full
+   caster ever does. `mixed` is a safety net, not a supported state: a damaging Turn shared across
+   the two grades is banned by MECHANICS §3.1a and validate.py fails the gate on one, so this path
+   should be unreachable — it exists so a bad file degrades into an honest caveat rather than
+   silently showing one grade the other's numbers. */
+function trickLadder(t) {
+  if (!t || t.tier !== "turn") return "full";
+  const grades = new Set((t.classes || []).map((c) => (CASTER_GRADE[c] || {}).grade));
+  if (!grades.size || grades.has(undefined)) return "full";
+  if (grades.size > 1) return "mixed";
+  return grades.has("Half-caster") ? "halfTurn" : "full";
+}
+
+function fmtDesc(s, ladder) {
   if (s == null) return "";
   const str = String(s);
   // Two inline tokens: [[XdY]] or [[XdY+Abil]] scaling die (Abil = Str/Dex/Con/Int/Wis/Cha,
@@ -550,7 +617,7 @@ function fmtDesc(s) {
   let out = "", last = 0, m;
   while ((m = re.exec(str)) !== null) {
     out += esc(str.slice(last, m.index));
-    if (m[1]) out += scalingDieHTML(parseInt(m[1], 10), parseInt(m[2], 10), m[3]);
+    if (m[1]) out += scalingDieHTML(parseInt(m[1], 10), parseInt(m[2], 10), m[3], ladder);
     else out += tipTermHTML(m[4], m[5]);
     last = re.lastIndex;
   }
@@ -611,20 +678,29 @@ function propsHTML(list) {
   }).join(", ");
 }
 
-function scalingDieHTML(count, size, abil) {
+function scalingDieHTML(count, size, abil, ladder) {
+  const rung = LADDERS[ladder] || LADDERS.full;
   const i = DIE_CHAIN.indexOf(size);
   const base = `${count}d${size}`;
   // Optional "+ ability modifier" folded into the tooltip (kept out of the visible prose).
   const ab = abil && ABILITY_NAMES[String(abil).toLowerCase()];
   const modLine = ab ? ` + your ${ab} modifier` : "";
   if (i < 0) return esc(base + (ab ? ` + ${ab} mod` : "")); // non-standard die: no scaling tooltip
-  const seq = [0, 1, 2, 3].map((k) => count + "d" + DIE_CHAIN[Math.min(i + k, DIE_CHAIN.length - 1)]);
-  const title = `Damage: ${seq.join(" · ")} (die steps up at levels 5 · 11 · 17)${modLine}`;
+  // Past the top of the chain a step can't grow the die, so it adds another d12 instead
+  // (MECHANICS §3.1b) — a step is never worth nothing, least of all the level-17 one.
+  const seq = [];
+  for (let k = 0; k <= rung.steps; k++) {
+    const idx = i + k;
+    seq.push(idx < DIE_CHAIN.length
+      ? count + "d" + DIE_CHAIN[idx]
+      : (count + idx - DIE_CHAIN.length + 1) + "d12");
+  }
+  const title = `Damage: ${seq.join(" · ")} (${rung.note})${modLine}`;
   return `<span class="scaling-die" title="${esc(title)}">${esc(base)}<sup class="scale-mark">▲</sup>` +
     `<span class="scale-tip" role="tooltip">
        <span class="scale-tip-title">${ab ? "Damage" : "Scaling die"}</span>
        <span class="scale-tip-row">${esc(seq.join(" · "))}</span>
-       <span class="scale-tip-lv">die steps up at levels 5 · 11 · 17</span>
+       <span class="scale-tip-lv">${esc(rung.note)}</span>
        ${ab ? `<span class="scale-tip-lv">+ your ${esc(ab)} modifier</span>` : ""}
      </span></span>`;
 }
@@ -852,12 +928,15 @@ function prestigeUsesHTML(t) {
 
 function renderTrick(t) {
   const tier = t.tier || "";
+  const ladder = trickLadder(t);
   const badge = TIERS[tier]
     ? `<span class="tier-badge tier-${esc(tier)}">${tipTermHTML(cap(tier), TIERS[tier])}</span>`
     : "";
-  return head(t.name, `${t.discipline || ""} trick`) +
-    (badge ? `<div class="tier-row">${badge}</div>` : "") +
-    (t.flavor ? `<p class="detail-flavor">${esc(t.flavor)}</p>` : "") +
+  const play = `<div class="detail-body">
+      ${t.flavor ? `<p class="detail-flavor">${esc(t.flavor)}</p>` : ""}
+      ${narrationHTML(t.narration)}
+    </div>`;
+  const rules =
     `<div class="detail-grid">
       ${stat("Casting Time", t.castingTime || "—")}
       ${stat("Range", t.range || "—")}
@@ -870,16 +949,20 @@ function renderTrick(t) {
         "This is the trick's own level gate. A half-caster (Puppeteer, Doppelganger, Joker) casts nothing before level 2, so for them the later of the two applies — see the Class view for your class's actual level."))}
     </div>
     <div class="detail-body">
-      ${renderFeatureDesc(t.description || "")}
-      ${Array.isArray(t.options) && t.options.length ? optionTable(t.options) : ""}
+      ${renderFeatureDesc(t.sheetSummary || t.description || "", ladder)}
+      ${Array.isArray(t.options) && t.options.length ? optionTable(t.options, ladder) : ""}
       ${Array.isArray(t.classes) && t.classes.length
         ? `<p class="muted">Classes: ${esc(t.classes.map(className).join(", "))}</p>` : ""}
     </div>`;
+  return head(t.name, `${t.discipline || ""} trick`) +
+    (badge ? `<div class="tier-row">${badge}</div>` : "") +
+    tabbed(rules, play);
 }
 
 function renderSkill(s) {
   return head(s.name, s.ability ? s.ability + " skill" : "") +
-    `<div class="detail-body"><p>${esc(s.description || "")}</p></div>`;
+    tabbed(`<div class="detail-body"><p>${fmtDesc(s.description || "")}</p></div>`,
+           `<div class="detail-body">${narrationHTML(s.narration)}</div>`);
 }
 
 function renderPassive(p) {

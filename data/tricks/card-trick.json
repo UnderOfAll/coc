@@ -14,6 +14,7 @@
   ],
   "duration": "Instantaneous",
   "description": "You snap a razor-edged card at a creature you can see within range. Make a {{trick attack|d20 + proficiency bonus + your trick ability modifier}} against the target; on a hit it takes [[1d6]] slashing damage. Because this is an attack roll and not a saving throw, it can be parried like any other attack.",
+  "narration": "A flick of the wrist and the top card leaves the deck edge-first, humming as it goes. It should be paper. It arrives like a razor.",
   "sheetSummary": "Action, 30 ft. Ranged trick attack ({{trick attack|d20 + proficiency bonus + your trick ability modifier}}). Hit: [[1d6]] slashing. Scales at 5/11/17. Can be parried.",
   "classes": [
     "joker"

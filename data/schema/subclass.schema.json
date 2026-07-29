@@ -23,6 +23,10 @@
             "enum": ["combat", "roleplay"],
             "description": "What the feature is for. Omitted = combat. COMPOSITION RULE: every subclass has exactly 3 features — 2 combat + 1 roleplay (for dialogue, exploration, improvised attempts). Acrobat disciplines are the sanctioned 4-feature exception (their L5 reaction feature)."
           },
+          "narration": {
+            "type": "string",
+            "description": "The IN-PLAY tab: how this looks, sounds, and is performed at the table when it happens mid-fight \u2014 the swing, the dodge, the wire going taut, what the crowd sees. Pure fiction, ZERO numbers: never restate a die, a DC, a range, a cost, or a condition name here (those live in the mechanics tab). 2-4 sentences. Written second person, present tense."
+          },
           "sheetSummary": {
             "type": "string",
             "description": "REQUIRED EVENTUALLY on every feature (backfill before character creation ships). The condensed text shown on a player's character sheet: ONLY what it does — effect, damage + type, conditions applied, cost/uses. Cut all flavor and all 'why/how the class performs it' prose. Features with `options` keep their full options table on the sheet regardless (Wild Card and the like are pertinent info)."

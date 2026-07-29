@@ -13,9 +13,10 @@
     "Flourish",
     "Prop (a scrap of borrowed clothing)"
   ],
-  "duration": "10 minutes",
+  "duration": "1 hour",
   "description": "You reshape your face, voice, and build into those of a specific Small or Medium humanoid you have seen before, or into a generic member of a humanoid race you have seen. Your clothing and gear don't change in appearance, but you can present them as part of the disguise. A creature that interacts with you can see through the disguise only if it succeeds on an Intelligence (Investigation) check against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. The disguise ends early if you attack, cast another trick with a visible Flourish, or dismiss it yourself (no action).",
-  "sheetSummary": "Action, self, cooldown 2, 10 min. Disguises you as a specific or generic humanoid seen before. Investigation check vs trick DC to see through. Ends on attacking or casting another visible-Flourish trick.",
+  "narration": "Your face reorganises itself around somebody else's — the build, the voice, the way they hold their shoulders when they are tired. The clothes are still yours; the room stops noticing.",
+  "sheetSummary": "Action, self, cooldown 2, 1 hour. Disguises you as a specific or generic humanoid seen before. Investigation check vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} to see through. Ends on attacking or casting another visible-Flourish trick.",
   "classes": [
     "doppelganger"
   ]

@@ -4,18 +4,53 @@
   "definitions": {
     "skill": {
       "type": "object",
-      "required": ["name", "ability", "description"],
+      "required": [
+        "name",
+        "ability",
+        "description"
+      ],
       "properties": {
-        "id": { "type": "string", "description": "kebab-case unique id; defaults to slug of name" },
-        "name": { "type": "string" },
-        "ability": { "type": "string", "enum": ["Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma"] },
-        "source": { "type": "string", "default": "5e SRD" },
-        "description": { "type": "string" }
+        "id": {
+          "type": "string",
+          "description": "kebab-case unique id; defaults to slug of name"
+        },
+        "name": {
+          "type": "string"
+        },
+        "ability": {
+          "type": "string",
+          "enum": [
+            "Strength",
+            "Dexterity",
+            "Constitution",
+            "Intelligence",
+            "Wisdom",
+            "Charisma"
+          ]
+        },
+        "source": {
+          "type": "string",
+          "default": "5e SRD"
+        },
+        "description": {
+          "type": "string"
+        },
+        "narration": {
+          "type": "string",
+          "description": "The IN-PLAY tab: how this looks, sounds, and is performed at the table when it happens mid-fight — the swing, the dodge, the wire going taut, what the crowd sees. Pure fiction, ZERO numbers: never restate a die, a DC, a range, a cost, or a condition name here (those live in the mechanics tab). 2-4 sentences. Written second person, present tense."
+        }
       }
     }
   },
   "oneOf": [
-    { "$ref": "#/definitions/skill" },
-    { "type": "array", "items": { "$ref": "#/definitions/skill" } }
+    {
+      "$ref": "#/definitions/skill"
+    },
+    {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/skill"
+      }
+    }
   ]
 }

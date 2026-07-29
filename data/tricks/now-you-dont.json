@@ -15,6 +15,7 @@
   ],
   "duration": "1 round",
   "description": "You vanish behind a snap of silk and misdirection, becoming invisible until the start of your next turn or until you make an attack roll, force a saving throw, or force an ability check, whichever comes first. As part of casting this, you may also move up to 10 feet without provoking opportunity attacks - the last thing anyone saw of you was already the wrong direction.",
+  "narration": "The curtain drops for exactly one second. When it lifts you are not where anyone is looking, and the fight has to start its search over.",
   "sheetSummary": "Bonus action, self, cooldown 3. Invisible until start of your next turn or until you attack/force a save or check; may move 10 ft without provoking opportunity attacks as part of the trick.",
   "classes": [
     "illusionist"

@@ -16,6 +16,7 @@
   "duration": "Instantaneous",
   "save": "Wisdom or Constitution",
   "description": "You snip the wire fixed to a creature you have a String attached to within range, and its own body betrays it. Choose one effect below; the target resists with the listed saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}, and on a success it is unaffected. You must already have a String attached to the target to use this trick.",
+  "narration": "A snip of the fingers on a wire you already laid, and whatever was holding them up simply is not. The sword leaves the hand, or the knees leave the argument.",
   "options": [
     {
       "name": "Disarm (Wisdom save)",

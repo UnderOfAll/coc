@@ -8,7 +8,10 @@
     {
       "level": 3,
       "name": "Warding Pull",
+      "role": "combat",
       "description": "When a creature you have a String attached to is hit by an attack, you can use your reaction to snap its wire taut, guiding it half a step aside at the last instant and granting it resistance to the damage from that attack. This draws on the same reaction as Parry, Disrupting Pull, and Guiding Pull — you still get only one reaction per round, so protecting an ally this way costs the same reaction you'd otherwise spend defending yourself or disrupting a foe.",
+      "narration": "The blow is landing and there is no time to stop it, so you do not — you snap the wire and move them half a step into it instead, turning something that would have gone through them into something that only glances.",
+      "sheetSummary": "Reaction, 1/round, within leash. When a Stringed creature is hit by an attack, grant it resistance to that attack's damage. Uses the same single reaction as Parry.",
       "meta": {
         "action": "Reaction",
         "uses": "1 / round",
@@ -18,7 +21,10 @@
     {
       "level": 3,
       "name": "Steadfast Line",
+      "role": "combat",
       "description": "A willing creature you have a String attached to has advantage on saving throws made to avoid being knocked prone or forcibly moved, as long as it remains within your leash range — your wire keeps it steady on its feet. Additionally, if such a creature is knocked prone anyway, it can spend only 5 feet of movement (instead of half its speed) to stand back up, guided upright by the string.",
+      "narration": "There is a line on them and the line does not let go. Shoves land and they stay upright, and if they do go down the wire has them on their feet again almost before they have finished falling.",
+      "sheetSummary": "Passive, within leash. A willing Stringed creature has advantage on saves against being knocked prone or forcibly moved, and needs only 5 ft of movement to stand up from prone.",
       "meta": {
         "action": "Passive",
         "range": "Leash"
@@ -28,8 +34,9 @@
       "level": 3,
       "name": "Keeper's Thread",
       "role": "roleplay",
-      "description": "Some strings aren't for pulling — they're for holding on. Over 1 minute, you can tie a hair-fine thread to a willing creature you touch. For the next 24 hours, while the creature is within 1 mile of you, you know its direction and its general condition (unharmed, wounded, unconscious, or dead), and if it is in danger while you sleep, the thread's tug wakes you instantly. You can maintain a number of threads equal to your {{Charisma modifier (min 1)|set from your stats on your character sheet}}.",
-      "sheetSummary": "1-min ritual, touch, willing creature: for 24 h know its direction + condition (unharmed/wounded/unconscious/dead) within 1 mile; its danger wakes you from sleep. Cha mod threads at once (min 1).",
+      "description": "Some strings aren't for pulling — they're for holding on. Over 1 minute, you can tie a hair-fine thread to a willing creature you touch. For the next 24 hours, while the creature is within 1 mile of you, you know its direction and its general condition (unharmed, wounded, unconscious, or dead), and if it is in danger while you sleep, the thread's tug wakes you instantly. You can maintain a number of threads equal to your {{Wisdom modifier (min 1)|set from your stats on your character sheet}}.",
+      "narration": "Some strings are not for pulling. A hair-fine thread, tied in a quiet minute, and for a day afterwards you know which way they are and roughly how they are doing — and if something goes badly wrong out there, you are awake before you know why.",
+      "sheetSummary": "1-minute ritual, touch, one willing creature, 24 hours. Know its direction and rough condition (unharmed, wounded, unconscious, dead) within 1 mile, and its danger wakes you from sleep. Hold {{Wisdom modifier (min 1)|set from your stats on your character sheet}} threads at once.",
       "meta": {
         "action": "Special",
         "uses": "Cha mod active threads",
