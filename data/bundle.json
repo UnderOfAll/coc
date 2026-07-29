@@ -1972,19 +1972,19 @@
       "name": "Buffoon",
       "parentClass": "jester",
       "source": "Circus of Chaos",
-      "flavor": "The bit is that you will not stop. They hit you, you get up, you make the joke again. Eventually it stops being funny for them.",
+      "flavor": "The bit is that you will not stop. They hit you, you get up, you make the joke again. Eventually it stops being funny for them. The Buffoon is the Jester who keeps the company upright — the only source of true healing anywhere in the circus.",
       "features": [
         {
           "level": 3,
           "name": "Take the Fall",
           "role": "combat",
-          "description": "When an attack hits an ally within 5 feet of you, you can use your reaction to shove them clear and wear it yourself: the attack hits you instead, and you take half the damage it would have dealt. You must be able to see the attacker, and this cannot be used against an effect that does not make an attack roll.",
-          "sheetSummary": "Reaction, 5 ft, attacker must be visible. An attack that hits an adjacent ally hits you instead and you take HALF its damage. Attack rolls only.",
+          "description": "When an attack hits an ally within 10 feet of you, you can use your reaction to shove them clear and wear it yourself: the attack hits you instead, and you take half the damage it would have dealt. You must be able to see the attacker, and this cannot be used against an effect that does not make an attack roll.",
+          "sheetSummary": "Reaction, 10 ft, attacker must be visible. An attack that hits an ally within 10 ft hits you instead and you take HALF its damage. Attack rolls only.",
           "narration": "You get in the way in the most undignified manner available — a shoulder, a shove, an outraged yelp — and take it across the back with the timing of a man who has been falling over professionally since he was nine.",
           "meta": {
             "action": "Reaction",
             "uses": "1 / round",
-            "range": "5 ft"
+            "range": "10 ft"
           }
         },
         {
@@ -2125,18 +2125,19 @@
       "name": "Fatemonger",
       "parentClass": "jester",
       "source": "Circus of Chaos",
-      "flavor": "Luck is a resource like any other. It belongs to whoever is paying attention, and nobody in this company pays attention like you.",
+      "flavor": "Luck is a resource like any other. It belongs to whoever is paying attention, and nobody in this company pays attention like you. The Fatemonger is the Jester who makes misfortune land on someone — the damage discipline of a class that otherwise buffs and mends.",
       "features": [
         {
           "level": 3,
           "name": "Loaded Odds",
           "role": "combat",
-          "description": "Once on each of your turns, when an ally you can see within 30 feet rolls a 1 on a d20 for an attack roll, ability check, or saving throw, you can use no action to make them reroll it. They must use the new roll.",
-          "sheetSummary": "No action, 1/turn, 30 ft. When an ally rolls a 1 on a d20 for an attack, check, or save, they reroll and must use the new result.",
-          "narration": "You see it come up and you simply refuse it — a click of the tongue, a flick of the wrist — and the moment rewinds half a second into something survivable.",
+          "description": "You do not let a bad roll stand. When an ally you can see within 30 feet rolls a 1 on a d20 for an attack roll, ability check, or saving throw, you can make them reroll it for free — no action, once on each of your turns. Separately, once on each of your turns you can spend 1 Mirth to make an ally within 30 feet reroll ANY d20 they just rolled, whatever the number was. Either way they must use the new result.",
+          "sheetSummary": "No action, 30 ft. Free, 1/turn: an ally who rolls a 1 on a d20 rerolls it. Also 1/turn, for 1 Mirth: an ally rerolls ANY d20 they just rolled. They must use the new result.",
+          "narration": "You tut, or click your tongue, or simply look at them — and the moment gets a second go at itself. Nobody has ever been able to explain how you do it, least of all you.",
           "meta": {
             "action": "No action",
-            "uses": "1 / turn",
+            "cost": "Free on a 1, else 1 Mirth",
+            "uses": "1 / turn each",
             "range": "30 ft"
           }
         },
@@ -2144,8 +2145,8 @@
           "level": 3,
           "name": "The House Always Collects",
           "role": "combat",
-          "description": "Fortune runs both ways at your table. When a creature within 30 feet that you can see rolls a natural 20 on an attack roll against one of your allies, you gain 1 Mirth — the worse it gets, the better your material.",
-          "sheetSummary": "Gain 1 Mirth whenever a creature within 30 ft rolls a natural 20 on an attack roll against one of your allies.",
+          "description": "Fortune runs both ways at your table, and you take a cut of every swing of it. You gain 1 Mirth whenever a creature you can see within 30 feet rolls a natural 20 or a natural 1 on an attack roll — the disaster and the miracle are both material, and you were watching either way.",
+          "sheetSummary": "Gain 1 Mirth whenever a creature you can see within 30 ft rolls a natural 20 or a natural 1 on an attack roll.",
           "narration": "The worst possible thing happens and you laugh first, because a disaster is just a setup with better timing, and you have already worked out what it is setting up.",
           "meta": {
             "action": "Passive",
@@ -2705,18 +2706,18 @@
       "name": "Ringleader",
       "parentClass": "jester",
       "source": "Circus of Chaos",
-      "flavor": "Somebody has to run the show. It was never going to be the strongman.",
+      "flavor": "Somebody has to run the show. It was never going to be the strongman. The Ringleader is the Jester who moves everyone else around the stage — the buff-and-debuff discipline, and the only one that never deals damage at all.",
       "features": [
         {
           "level": 3,
           "name": "Cue the Next Act",
           "role": "combat",
-          "description": "As a bonus action, choose one ally you can see within 30 feet. It may immediately use its reaction to move up to half its speed without provoking opportunity attacks. You can use this a number of times equal to your {{Charisma modifier (min 1)|set from your stats on your character sheet}}, regaining all expended uses when you finish a long rest.",
-          "sheetSummary": "Bonus action, 30 ft, {{Charisma modifier (min 1)|set from your stats on your character sheet}} uses per long rest. One ally may immediately use its reaction to move up to half its speed without provoking opportunity attacks.",
+          "description": "As a bonus action, choose one ally you can see within 30 feet. It may immediately use its reaction to move up to half its speed without provoking opportunity attacks. You can do this once per combat, and again each time you spend Mirth on a Prestige.",
+          "sheetSummary": "Bonus action, 30 ft, once per combat (and again whenever you cast a Prestige). One ally may immediately use its reaction to move up to half its speed without provoking opportunity attacks.",
           "narration": "You call it like a cue, because it is one — a name, a gesture, a stamp of the foot — and they are moving before they have decided to.",
           "meta": {
             "action": "Bonus Action",
-            "uses": "Cha mod / long rest",
+            "uses": "1 / combat",
             "range": "30 ft"
           }
         },
@@ -2724,9 +2725,9 @@
           "level": 3,
           "name": "Everyone Watch This",
           "role": "combat",
-          "description": "When you cast a Turn that affects one or more enemies, each ally you can see within 30 feet has advantage on the first attack roll they make against one of those enemies before the start of your next turn. This applies at most once per turn.",
-          "sheetSummary": "1/turn. When you cast a Turn affecting one or more enemies, each ally within 30 ft has advantage on their first attack roll against one of those enemies before the start of your next turn.",
-          "narration": "You point at it and announce it to the room. Suddenly it is not a fight, it is the bit everyone came to see, and five people are looking at the same target for the same reason.",
+          "description": "You point, and one of your people takes the shot. Once on each of your turns, when you cast a Turn that affects one or more enemies, choose one ally you can see within 30 feet: that ally has advantage on its next attack roll against one of those enemies, made before the start of your next turn. **One ally, one attack** — you are handing a single person an opening, not calling the whole company down on one target.",
+          "sheetSummary": "1/turn. When you cast a Turn affecting one or more enemies, ONE ally of your choice within 30 ft has advantage on its next attack roll against one of those enemies, before the start of your next turn.",
+          "narration": "You call it like a cue and half the room looks where you are pointing — including the one person you actually meant it for, who is already moving.",
           "meta": {
             "action": "Passive",
             "uses": "1 / turn",
@@ -3102,6 +3103,34 @@
         "doppelganger"
       ],
       "_file": "tricks/after-image.json"
+    },
+    {
+      "id": "bad-beat",
+      "name": "Bad Beat",
+      "source": "Circus of Chaos",
+      "tier": "turn",
+      "discipline": "Fortune",
+      "minLevel": 2,
+      "cooldown": 2,
+      "engineCost": 1,
+      "castingTime": "1 action",
+      "range": "60 feet",
+      "components": [
+        "Patter"
+      ],
+      "duration": "Instantaneous",
+      "save": "Dexterity",
+      "flavor": "Nothing you did. The rope was always frayed, the flagstone was always loose, and this was always the moment.",
+      "description": "You call the odds against one creature you can see within range and let them arrive. It makes a Dexterity saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure it takes [[2d6]] physical damage as something around it gives way — footing, fitting, its own weapon's grip — and it is knocked prone. On a success it takes half as much damage and stays on its feet. Casting this costs 1 Mirth, spent as you cast; like every costed Turn it generates none back.",
+      "narration": "You do not touch it and you do not point. You just say something that turns out to be true a half-second later, and the world does the rest.",
+      "sheetSummary": "Action, 60 ft, cooldown 2, costs 1 Mirth. Dexterity save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[2d6]] physical and knocked prone. Success: half damage, not prone.",
+      "classes": [
+        "jester"
+      ],
+      "subclasses": [
+        "fatemonger"
+      ],
+      "_file": "tricks/bad-beat.json"
     },
     {
       "id": "bad-break",
@@ -3613,6 +3642,33 @@
       "_file": "tricks/phantom-needle.json"
     },
     {
+      "id": "places-everyone",
+      "name": "Places, Everyone",
+      "source": "Circus of Chaos",
+      "tier": "turn",
+      "discipline": "Illusion",
+      "minLevel": 2,
+      "cooldown": 3,
+      "engineCost": 1,
+      "castingTime": "1 action",
+      "range": "30 feet",
+      "components": [
+        "Patter"
+      ],
+      "duration": "Instantaneous",
+      "flavor": "The call every company knows. Wherever they were standing, they are standing somewhere better one second later.",
+      "description": "You call the company to their marks. Each ally of your choice within range may immediately use its reaction to move up to half its speed without provoking opportunity attacks. An ally with no reaction available simply does not move. Casting this costs 1 Mirth, spent as you cast; like every costed Turn it generates none back.",
+      "narration": "One word, pitched to carry, in the voice that means it. Nobody argues with it and nobody is where they were.",
+      "sheetSummary": "Action, 30 ft, cooldown 3, costs 1 Mirth. Each ally of your choice may immediately use its reaction to move up to half its speed without provoking opportunity attacks. No reaction, no move.",
+      "classes": [
+        "jester"
+      ],
+      "subclasses": [
+        "ringleader"
+      ],
+      "_file": "tricks/places-everyone.json"
+    },
+    {
       "id": "powder-screen",
       "name": "Powder Screen",
       "source": "Circus of Chaos",
@@ -3911,6 +3967,62 @@
       "_file": "tricks/swap-the-cards.json"
     },
     {
+      "id": "thats-the-act",
+      "name": "That's the Act",
+      "source": "Circus of Chaos",
+      "tier": "turn",
+      "discipline": "Fortune",
+      "minLevel": 3,
+      "cooldown": 3,
+      "engineCost": 2,
+      "castingTime": "1 action",
+      "range": "30 feet",
+      "components": [
+        "Patter"
+      ],
+      "duration": "Until the start of your next turn",
+      "flavor": "Falling over is not the failure. Falling over is the bit. The failure would be staying down.",
+      "description": "You turn the whole miserable situation into the routine you have done a thousand times. Each ally of your choice within range gains [[2d6]] temporary hit points, and any of them that is prone may stand up without spending movement. Casting this costs 2 Mirth, spent as you cast; like every costed Turn it generates none back.",
+      "narration": "You take the worst thing happening to your friends and play it as though it were scripted — and it works, because they would rather be in on the joke than under it.",
+      "sheetSummary": "Action, 30 ft, cooldown 3, costs 2 Mirth. Each ally of your choice gains [[2d6]] temporary hit points, and any of them that is prone may stand without spending movement.",
+      "classes": [
+        "jester"
+      ],
+      "subclasses": [
+        "buffoon"
+      ],
+      "_file": "tricks/thats-the-act.json"
+    },
+    {
+      "id": "the-crowd-turns",
+      "name": "The Crowd Turns",
+      "source": "Circus of Chaos",
+      "tier": "turn",
+      "discipline": "Mesmerism",
+      "minLevel": 3,
+      "cooldown": 3,
+      "engineCost": 2,
+      "castingTime": "1 action",
+      "range": "60 feet",
+      "components": [
+        "Patter",
+        "Flourish"
+      ],
+      "duration": "Instantaneous",
+      "save": "Wisdom",
+      "flavor": "Every performer's nightmare, handed to somebody else: the room decides it does not like you, and you can feel it happen.",
+      "description": "You turn the mood of the room against creatures of your choice within a 15-foot radius of a point you can see within range. Each of them that can hear and understand you makes a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure it has disadvantage on attack rolls until the end of its next turn. This deals no damage. Casting this costs 2 Mirth, spent as you cast; like every costed Turn it generates none back.",
+      "narration": "You do not insult them. You simply let the room know how this is going, and they feel every eye in it land on them at once.",
+      "sheetSummary": "Action, 60 ft, 15-ft radius, cooldown 3, costs 2 Mirth. Creatures of your choice that can hear and understand you: Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or disadvantage on attack rolls until the end of its next turn. No damage.",
+      "classes": [
+        "jester"
+      ],
+      "subclasses": [
+        "ringleader"
+      ],
+      "_file": "tricks/the-crowd-turns.json"
+    },
+    {
       "id": "the-grand-illusion",
       "name": "The Grand Illusion",
       "source": "Circus of Chaos",
@@ -3936,6 +4048,35 @@
         "illusionist"
       ],
       "_file": "tricks/the-grand-illusion.json"
+    },
+    {
+      "id": "the-house-wins",
+      "name": "The House Wins",
+      "source": "Circus of Chaos",
+      "tier": "turn",
+      "discipline": "Fortune",
+      "minLevel": 3,
+      "cooldown": 3,
+      "engineCost": 2,
+      "castingTime": "1 action",
+      "range": "60 feet",
+      "components": [
+        "Patter",
+        "Flourish"
+      ],
+      "duration": "Instantaneous",
+      "save": "Dexterity",
+      "flavor": "Everyone gets a run. Nobody gets to keep it. You are simply the one who decides when the table closes.",
+      "description": "You call in everything a creature's luck has been borrowing. One creature you can see within range makes a Dexterity saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure it takes [[3d6]] physical damage and has disadvantage on the next d20 it rolls before the start of your next turn; on a success it takes half as much damage and rolls normally. Casting this costs 2 Mirth, spent as you cast; like every costed Turn it generates none back.",
+      "narration": "Its run of luck does not end so much as get repossessed, all at once, with interest — and for a moment afterwards nothing it tries quite works either.",
+      "sheetSummary": "Action, 60 ft, cooldown 3, costs 2 Mirth. Dexterity save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[3d6]] physical and disadvantage on its next d20 before the start of your next turn. Success: half damage only.",
+      "classes": [
+        "jester"
+      ],
+      "subclasses": [
+        "fatemonger"
+      ],
+      "_file": "tricks/the-house-wins.json"
     },
     {
       "id": "the-impossible-show",
@@ -4185,6 +4326,34 @@
         "illusionist"
       ],
       "_file": "tricks/waking-nightmare.json"
+    },
+    {
+      "id": "walk-it-off",
+      "name": "Walk It Off",
+      "source": "Circus of Chaos",
+      "tier": "turn",
+      "discipline": "Fortune",
+      "minLevel": 2,
+      "cooldown": 2,
+      "engineCost": 1,
+      "castingTime": "1 action",
+      "range": "30 feet",
+      "components": [
+        "Patter",
+        "Flourish"
+      ],
+      "duration": "Instantaneous",
+      "flavor": "You have been hit by a cannonball, a horse, and a man twice your size, and you got up every time. Mostly it is a matter of being told to.",
+      "description": "You haul one ally you can see within range back into the act — a slap on the back, a hand up, a line delivered too fast to argue with. It regains [[2d6+Cha]] hit points. This is the only true healing in the circus: nobody else in the company can put hit points back, which is why a Buffoon is worth having. Casting this costs 1 Mirth, spent as you cast; like every costed Turn it generates none back.",
+      "narration": "You are already talking before you reach them, and none of it is sympathetic. Somehow they are on their feet by the end of the sentence, insulted and breathing.",
+      "sheetSummary": "Action, 30 ft, cooldown 2, costs 1 Mirth. One ally regains [[2d6+Cha]] hit points.",
+      "classes": [
+        "jester"
+      ],
+      "subclasses": [
+        "buffoon"
+      ],
+      "_file": "tricks/walk-it-off.json"
     },
     {
       "id": "word-of-encouragement",

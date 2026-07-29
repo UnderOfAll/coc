@@ -3,18 +3,19 @@
   "name": "Fatemonger",
   "parentClass": "jester",
   "source": "Circus of Chaos",
-  "flavor": "Luck is a resource like any other. It belongs to whoever is paying attention, and nobody in this company pays attention like you.",
+  "flavor": "Luck is a resource like any other. It belongs to whoever is paying attention, and nobody in this company pays attention like you. The Fatemonger is the Jester who makes misfortune land on someone — the damage discipline of a class that otherwise buffs and mends.",
   "features": [
     {
       "level": 3,
       "name": "Loaded Odds",
       "role": "combat",
-      "description": "Once on each of your turns, when an ally you can see within 30 feet rolls a 1 on a d20 for an attack roll, ability check, or saving throw, you can use no action to make them reroll it. They must use the new roll.",
-      "sheetSummary": "No action, 1/turn, 30 ft. When an ally rolls a 1 on a d20 for an attack, check, or save, they reroll and must use the new result.",
-      "narration": "You see it come up and you simply refuse it — a click of the tongue, a flick of the wrist — and the moment rewinds half a second into something survivable.",
+      "description": "You do not let a bad roll stand. When an ally you can see within 30 feet rolls a 1 on a d20 for an attack roll, ability check, or saving throw, you can make them reroll it for free — no action, once on each of your turns. Separately, once on each of your turns you can spend 1 Mirth to make an ally within 30 feet reroll ANY d20 they just rolled, whatever the number was. Either way they must use the new result.",
+      "sheetSummary": "No action, 30 ft. Free, 1/turn: an ally who rolls a 1 on a d20 rerolls it. Also 1/turn, for 1 Mirth: an ally rerolls ANY d20 they just rolled. They must use the new result.",
+      "narration": "You tut, or click your tongue, or simply look at them — and the moment gets a second go at itself. Nobody has ever been able to explain how you do it, least of all you.",
       "meta": {
         "action": "No action",
-        "uses": "1 / turn",
+        "cost": "Free on a 1, else 1 Mirth",
+        "uses": "1 / turn each",
         "range": "30 ft"
       }
     },
@@ -22,8 +23,8 @@
       "level": 3,
       "name": "The House Always Collects",
       "role": "combat",
-      "description": "Fortune runs both ways at your table. When a creature within 30 feet that you can see rolls a natural 20 on an attack roll against one of your allies, you gain 1 Mirth — the worse it gets, the better your material.",
-      "sheetSummary": "Gain 1 Mirth whenever a creature within 30 ft rolls a natural 20 on an attack roll against one of your allies.",
+      "description": "Fortune runs both ways at your table, and you take a cut of every swing of it. You gain 1 Mirth whenever a creature you can see within 30 feet rolls a natural 20 or a natural 1 on an attack roll — the disaster and the miracle are both material, and you were watching either way.",
+      "sheetSummary": "Gain 1 Mirth whenever a creature you can see within 30 ft rolls a natural 20 or a natural 1 on an attack roll.",
       "narration": "The worst possible thing happens and you laugh first, because a disaster is just a setup with better timing, and you have already worked out what it is setting up.",
       "meta": {
         "action": "Passive",

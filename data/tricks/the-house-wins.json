@@ -1,0 +1,28 @@
+{
+  "id": "the-house-wins",
+  "name": "The House Wins",
+  "source": "Circus of Chaos",
+  "tier": "turn",
+  "discipline": "Fortune",
+  "minLevel": 3,
+  "cooldown": 3,
+  "engineCost": 2,
+  "castingTime": "1 action",
+  "range": "60 feet",
+  "components": [
+    "Patter",
+    "Flourish"
+  ],
+  "duration": "Instantaneous",
+  "save": "Dexterity",
+  "flavor": "Everyone gets a run. Nobody gets to keep it. You are simply the one who decides when the table closes.",
+  "description": "You call in everything a creature's luck has been borrowing. One creature you can see within range makes a Dexterity saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure it takes [[3d6]] physical damage and has disadvantage on the next d20 it rolls before the start of your next turn; on a success it takes half as much damage and rolls normally. Casting this costs 2 Mirth, spent as you cast; like every costed Turn it generates none back.",
+  "narration": "Its run of luck does not end so much as get repossessed, all at once, with interest — and for a moment afterwards nothing it tries quite works either.",
+  "sheetSummary": "Action, 60 ft, cooldown 3, costs 2 Mirth. Dexterity save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[3d6]] physical and disadvantage on its next d20 before the start of your next turn. Success: half damage only.",
+  "classes": [
+    "jester"
+  ],
+  "subclasses": [
+    "fatemonger"
+  ]
+}

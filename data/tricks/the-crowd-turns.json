@@ -1,0 +1,28 @@
+{
+  "id": "the-crowd-turns",
+  "name": "The Crowd Turns",
+  "source": "Circus of Chaos",
+  "tier": "turn",
+  "discipline": "Mesmerism",
+  "minLevel": 3,
+  "cooldown": 3,
+  "engineCost": 2,
+  "castingTime": "1 action",
+  "range": "60 feet",
+  "components": [
+    "Patter",
+    "Flourish"
+  ],
+  "duration": "Instantaneous",
+  "save": "Wisdom",
+  "flavor": "Every performer's nightmare, handed to somebody else: the room decides it does not like you, and you can feel it happen.",
+  "description": "You turn the mood of the room against creatures of your choice within a 15-foot radius of a point you can see within range. Each of them that can hear and understand you makes a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure it has disadvantage on attack rolls until the end of its next turn. This deals no damage. Casting this costs 2 Mirth, spent as you cast; like every costed Turn it generates none back.",
+  "narration": "You do not insult them. You simply let the room know how this is going, and they feel every eye in it land on them at once.",
+  "sheetSummary": "Action, 60 ft, 15-ft radius, cooldown 3, costs 2 Mirth. Creatures of your choice that can hear and understand you: Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or disadvantage on attack rolls until the end of its next turn. No damage.",
+  "classes": [
+    "jester"
+  ],
+  "subclasses": [
+    "ringleader"
+  ]
+}

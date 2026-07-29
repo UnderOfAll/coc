@@ -3,18 +3,18 @@
   "name": "Ringleader",
   "parentClass": "jester",
   "source": "Circus of Chaos",
-  "flavor": "Somebody has to run the show. It was never going to be the strongman.",
+  "flavor": "Somebody has to run the show. It was never going to be the strongman. The Ringleader is the Jester who moves everyone else around the stage — the buff-and-debuff discipline, and the only one that never deals damage at all.",
   "features": [
     {
       "level": 3,
       "name": "Cue the Next Act",
       "role": "combat",
-      "description": "As a bonus action, choose one ally you can see within 30 feet. It may immediately use its reaction to move up to half its speed without provoking opportunity attacks. You can use this a number of times equal to your {{Charisma modifier (min 1)|set from your stats on your character sheet}}, regaining all expended uses when you finish a long rest.",
-      "sheetSummary": "Bonus action, 30 ft, {{Charisma modifier (min 1)|set from your stats on your character sheet}} uses per long rest. One ally may immediately use its reaction to move up to half its speed without provoking opportunity attacks.",
+      "description": "As a bonus action, choose one ally you can see within 30 feet. It may immediately use its reaction to move up to half its speed without provoking opportunity attacks. You can do this once per combat, and again each time you spend Mirth on a Prestige.",
+      "sheetSummary": "Bonus action, 30 ft, once per combat (and again whenever you cast a Prestige). One ally may immediately use its reaction to move up to half its speed without provoking opportunity attacks.",
       "narration": "You call it like a cue, because it is one — a name, a gesture, a stamp of the foot — and they are moving before they have decided to.",
       "meta": {
         "action": "Bonus Action",
-        "uses": "Cha mod / long rest",
+        "uses": "1 / combat",
         "range": "30 ft"
       }
     },
@@ -22,9 +22,9 @@
       "level": 3,
       "name": "Everyone Watch This",
       "role": "combat",
-      "description": "When you cast a Turn that affects one or more enemies, each ally you can see within 30 feet has advantage on the first attack roll they make against one of those enemies before the start of your next turn. This applies at most once per turn.",
-      "sheetSummary": "1/turn. When you cast a Turn affecting one or more enemies, each ally within 30 ft has advantage on their first attack roll against one of those enemies before the start of your next turn.",
-      "narration": "You point at it and announce it to the room. Suddenly it is not a fight, it is the bit everyone came to see, and five people are looking at the same target for the same reason.",
+      "description": "You point, and one of your people takes the shot. Once on each of your turns, when you cast a Turn that affects one or more enemies, choose one ally you can see within 30 feet: that ally has advantage on its next attack roll against one of those enemies, made before the start of your next turn. **One ally, one attack** — you are handing a single person an opening, not calling the whole company down on one target.",
+      "sheetSummary": "1/turn. When you cast a Turn affecting one or more enemies, ONE ally of your choice within 30 ft has advantage on its next attack roll against one of those enemies, before the start of your next turn.",
+      "narration": "You call it like a cue and half the room looks where you are pointing — including the one person you actually meant it for, who is already moving.",
       "meta": {
         "action": "Passive",
         "uses": "1 / turn",

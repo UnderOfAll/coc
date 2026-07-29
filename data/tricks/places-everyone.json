@@ -1,0 +1,26 @@
+{
+  "id": "places-everyone",
+  "name": "Places, Everyone",
+  "source": "Circus of Chaos",
+  "tier": "turn",
+  "discipline": "Illusion",
+  "minLevel": 2,
+  "cooldown": 3,
+  "engineCost": 1,
+  "castingTime": "1 action",
+  "range": "30 feet",
+  "components": [
+    "Patter"
+  ],
+  "duration": "Instantaneous",
+  "flavor": "The call every company knows. Wherever they were standing, they are standing somewhere better one second later.",
+  "description": "You call the company to their marks. Each ally of your choice within range may immediately use its reaction to move up to half its speed without provoking opportunity attacks. An ally with no reaction available simply does not move. Casting this costs 1 Mirth, spent as you cast; like every costed Turn it generates none back.",
+  "narration": "One word, pitched to carry, in the voice that means it. Nobody argues with it and nobody is where they were.",
+  "sheetSummary": "Action, 30 ft, cooldown 3, costs 1 Mirth. Each ally of your choice may immediately use its reaction to move up to half its speed without provoking opportunity attacks. No reaction, no move.",
+  "classes": [
+    "jester"
+  ],
+  "subclasses": [
+    "ringleader"
+  ]
+}

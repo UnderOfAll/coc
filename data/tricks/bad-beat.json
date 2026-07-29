@@ -1,0 +1,27 @@
+{
+  "id": "bad-beat",
+  "name": "Bad Beat",
+  "source": "Circus of Chaos",
+  "tier": "turn",
+  "discipline": "Fortune",
+  "minLevel": 2,
+  "cooldown": 2,
+  "engineCost": 1,
+  "castingTime": "1 action",
+  "range": "60 feet",
+  "components": [
+    "Patter"
+  ],
+  "duration": "Instantaneous",
+  "save": "Dexterity",
+  "flavor": "Nothing you did. The rope was always frayed, the flagstone was always loose, and this was always the moment.",
+  "description": "You call the odds against one creature you can see within range and let them arrive. It makes a Dexterity saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure it takes [[2d6]] physical damage as something around it gives way — footing, fitting, its own weapon's grip — and it is knocked prone. On a success it takes half as much damage and stays on its feet. Casting this costs 1 Mirth, spent as you cast; like every costed Turn it generates none back.",
+  "narration": "You do not touch it and you do not point. You just say something that turns out to be true a half-second later, and the world does the rest.",
+  "sheetSummary": "Action, 60 ft, cooldown 2, costs 1 Mirth. Dexterity save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[2d6]] physical and knocked prone. Success: half damage, not prone.",
+  "classes": [
+    "jester"
+  ],
+  "subclasses": [
+    "fatemonger"
+  ]
+}

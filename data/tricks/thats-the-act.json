@@ -1,0 +1,26 @@
+{
+  "id": "thats-the-act",
+  "name": "That's the Act",
+  "source": "Circus of Chaos",
+  "tier": "turn",
+  "discipline": "Fortune",
+  "minLevel": 3,
+  "cooldown": 3,
+  "engineCost": 2,
+  "castingTime": "1 action",
+  "range": "30 feet",
+  "components": [
+    "Patter"
+  ],
+  "duration": "Until the start of your next turn",
+  "flavor": "Falling over is not the failure. Falling over is the bit. The failure would be staying down.",
+  "description": "You turn the whole miserable situation into the routine you have done a thousand times. Each ally of your choice within range gains [[2d6]] temporary hit points, and any of them that is prone may stand up without spending movement. Casting this costs 2 Mirth, spent as you cast; like every costed Turn it generates none back.",
+  "narration": "You take the worst thing happening to your friends and play it as though it were scripted — and it works, because they would rather be in on the joke than under it.",
+  "sheetSummary": "Action, 30 ft, cooldown 3, costs 2 Mirth. Each ally of your choice gains [[2d6]] temporary hit points, and any of them that is prone may stand without spending movement.",
+  "classes": [
+    "jester"
+  ],
+  "subclasses": [
+    "buffoon"
+  ]
+}
