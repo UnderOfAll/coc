@@ -2346,7 +2346,7 @@
       "name": "Hypnotist",
       "parentClass": "illusionist",
       "source": "Circus of Chaos",
-      "flavor": "You do not need them to see anything. You need them to agree with you, and people agree with far more than they think they do.",
+      "flavor": "You do not need them to see anything. You need them to agree with you, and people agree with far more than they think they do. The Hypnotist is the Illusionist who works on the mind directly — and the only one who adds tricks to his own list.",
       "features": [
         {
           "level": 3,
@@ -2366,12 +2366,13 @@
           "level": 3,
           "name": "Sympathetic Response",
           "role": "combat",
-          "description": "A mind you have already touched keeps answering. When a creature fails a saving throw against one of your Mesmerism tricks, the next attack roll made against that creature before the start of your next turn has advantage. This applies at most once per turn, however many creatures fail.",
-          "sheetSummary": "1/turn. When a creature fails a save against one of your Mesmerism tricks, the next attack roll against it before the start of your next turn has advantage.",
-          "narration": "Its attention is still half on you when the blade arrives. It never even turns to look.",
+          "description": "Taking this discipline adds three Mesmerism tricks to your list, free and permanent: **Pay No Attention** (level 1), **Lull** (level 2) and **The Suggestion** (level 3). They are yours alone — no other Illusionist learns them — and they are what this feature is built on, because the base Illusionist list carries almost no Mesmerism at all. On top of that: a mind you have already touched keeps answering. Once per turn, when a creature fails a saving throw against one of your Mesmerism tricks, the next attack roll made against that creature before the start of your next turn has advantage.",
+          "sheetSummary": "Adds Pay No Attention (L1), Lull (L2) and The Suggestion (L3) to your trick list. Also: 1/turn, when a creature fails a save against one of your Mesmerism tricks, the next attack roll against it before the start of your next turn has advantage.",
+          "narration": "You have three routines no other illusionist bothers to learn, because they are not about showing anyone anything. Its attention is still half on you when the blade arrives, and it never even turns to look.",
           "meta": {
             "action": "Passive",
-            "uses": "1 / turn"
+            "uses": "1 / turn",
+            "range": "Your Mesmerism tricks"
           }
         },
         {
@@ -3307,6 +3308,34 @@
       "_file": "tricks/idle-image.json"
     },
     {
+      "id": "lull",
+      "name": "Lull",
+      "source": "Circus of Chaos",
+      "flavor": "Watch the hand. Listen to the count. There is nothing in this room that needs you right now.",
+      "tier": "turn",
+      "discipline": "Mesmerism",
+      "minLevel": 2,
+      "cooldown": 3,
+      "castingTime": "1 action",
+      "range": "30 feet",
+      "components": [
+        "Patter",
+        "Flourish"
+      ],
+      "duration": "Until the end of the target's next turn",
+      "save": "Wisdom",
+      "description": "You take one creature that can see and hear you within range through the old parlour routine — the voice, the count, the slow hand — and its shoulders come down. The target makes a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure it is charmed by you until the end of its next turn: its speed becomes 0 and it cannot take actions or reactions, though it is fully aware and remembers everything afterwards. **Any damage ends the effect immediately**, so it removes a creature from the fight only for as long as your allies leave it alone — waking it is always an option and often the right one.",
+      "narration": "The voice does the work. Their weapon lowers, their weight settles, and for a few seconds they stand in the middle of a fight looking mildly interested in nothing at all.",
+      "sheetSummary": "Action, 30 ft, cooldown 3. Target must see and hear you. Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or charmed until the end of its next turn: speed 0, no actions or reactions, still aware. ANY damage ends it immediately.",
+      "classes": [
+        "illusionist"
+      ],
+      "subclasses": [
+        "hypnotist"
+      ],
+      "_file": "tricks/lull.json"
+    },
+    {
       "id": "marionette-hand",
       "name": "Marionette Hand",
       "source": "Circus of Chaos",
@@ -3427,6 +3456,31 @@
         "doppelganger"
       ],
       "_file": "tricks/parting-shot.json"
+    },
+    {
+      "id": "pay-no-attention",
+      "name": "Pay No Attention",
+      "source": "Circus of Chaos",
+      "flavor": "Not a lie and not a compulsion — just a small, reasonable suggestion, delivered in the voice people agree with.",
+      "tier": "pledge",
+      "discipline": "Mesmerism",
+      "minLevel": 1,
+      "castingTime": "1 action",
+      "range": "30 feet",
+      "components": [
+        "Patter"
+      ],
+      "duration": "Up to 1 minute",
+      "description": "You name one ordinary thing within sight — a door, a sound, a person standing quietly, a bag on a table — to one creature that can see and hear you and is not hostile to you. For the duration it simply does not find that thing worth its attention: it will not comment on it, investigate it, or raise it with anyone. The suggestion breaks instantly if the thing does something dangerous or obviously wrong, if the creature is harmed, or if anyone else draws its attention to it. It never works on a creature already hostile to you and it forces no saving throw, because it never asks for anything a bored person would refuse.",
+      "narration": "You mention it in passing, in the tone people use for things that do not matter, and their eyes slide off it for the rest of the conversation.",
+      "sheetSummary": "Action, 30 ft, up to 1 minute. One non-hostile creature that can see and hear you ignores one ordinary thing you name. Breaks if that thing turns dangerous, if the creature is harmed, or if anyone points it out. No save; never works on a hostile creature.",
+      "classes": [
+        "illusionist"
+      ],
+      "subclasses": [
+        "hypnotist"
+      ],
+      "_file": "tricks/pay-no-attention.json"
     },
     {
       "id": "peals-of-laughter",
@@ -3848,6 +3902,43 @@
         "illusionist"
       ],
       "_file": "tricks/the-quick-change.json"
+    },
+    {
+      "id": "the-suggestion",
+      "name": "The Suggestion",
+      "source": "Circus of Chaos",
+      "flavor": "You do not tell them what to do. You tell them what they were already about to do, and they are far too polite to argue.",
+      "tier": "turn",
+      "discipline": "Mesmerism",
+      "minLevel": 3,
+      "cooldown": 2,
+      "castingTime": "1 action",
+      "range": "60 feet",
+      "components": [
+        "Patter"
+      ],
+      "duration": "The target's next turn",
+      "save": "Wisdom",
+      "description": "You hand one creature that can hear and understand you a course of action it believes was its own idea. Choose one option below as you cast. The target makes a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}; on a failure it must obey on its next turn. It is never made to harm itself or its allies, and the compulsion ends the moment it takes damage from you or your companions.",
+      "options": [
+        {
+          "name": "Take a walk",
+          "effect": "On its next turn it must use its action to Dash, moving as directly away from you as its path allows."
+        },
+        {
+          "name": "Nothing worth doing",
+          "effect": "On its next turn it must use its action to Dodge, and it takes no bonus action."
+        }
+      ],
+      "narration": "You say it plainly, as though confirming something already agreed, and they nod along with a decision they never made.",
+      "sheetSummary": "Action, 60 ft, cooldown 2. Target must hear and understand you. Choose an option as you cast; Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or it must obey on its next turn. Never made to harm itself or its allies; ends if you or your allies damage it.",
+      "classes": [
+        "illusionist"
+      ],
+      "subclasses": [
+        "hypnotist"
+      ],
+      "_file": "tricks/the-suggestion.json"
     },
     {
       "id": "the-whole-audience-laughs",

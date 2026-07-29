@@ -1,0 +1,24 @@
+{
+  "id": "pay-no-attention",
+  "name": "Pay No Attention",
+  "source": "Circus of Chaos",
+  "flavor": "Not a lie and not a compulsion — just a small, reasonable suggestion, delivered in the voice people agree with.",
+  "tier": "pledge",
+  "discipline": "Mesmerism",
+  "minLevel": 1,
+  "castingTime": "1 action",
+  "range": "30 feet",
+  "components": [
+    "Patter"
+  ],
+  "duration": "Up to 1 minute",
+  "description": "You name one ordinary thing within sight — a door, a sound, a person standing quietly, a bag on a table — to one creature that can see and hear you and is not hostile to you. For the duration it simply does not find that thing worth its attention: it will not comment on it, investigate it, or raise it with anyone. The suggestion breaks instantly if the thing does something dangerous or obviously wrong, if the creature is harmed, or if anyone else draws its attention to it. It never works on a creature already hostile to you and it forces no saving throw, because it never asks for anything a bored person would refuse.",
+  "narration": "You mention it in passing, in the tone people use for things that do not matter, and their eyes slide off it for the rest of the conversation.",
+  "sheetSummary": "Action, 30 ft, up to 1 minute. One non-hostile creature that can see and hear you ignores one ordinary thing you name. Breaks if that thing turns dangerous, if the creature is harmed, or if anyone points it out. No save; never works on a hostile creature.",
+  "classes": [
+    "illusionist"
+  ],
+  "subclasses": [
+    "hypnotist"
+  ]
+}

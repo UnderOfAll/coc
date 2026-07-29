@@ -1,0 +1,36 @@
+{
+  "id": "the-suggestion",
+  "name": "The Suggestion",
+  "source": "Circus of Chaos",
+  "flavor": "You do not tell them what to do. You tell them what they were already about to do, and they are far too polite to argue.",
+  "tier": "turn",
+  "discipline": "Mesmerism",
+  "minLevel": 3,
+  "cooldown": 2,
+  "castingTime": "1 action",
+  "range": "60 feet",
+  "components": [
+    "Patter"
+  ],
+  "duration": "The target's next turn",
+  "save": "Wisdom",
+  "description": "You hand one creature that can hear and understand you a course of action it believes was its own idea. Choose one option below as you cast. The target makes a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}; on a failure it must obey on its next turn. It is never made to harm itself or its allies, and the compulsion ends the moment it takes damage from you or your companions.",
+  "options": [
+    {
+      "name": "Take a walk",
+      "effect": "On its next turn it must use its action to Dash, moving as directly away from you as its path allows."
+    },
+    {
+      "name": "Nothing worth doing",
+      "effect": "On its next turn it must use its action to Dodge, and it takes no bonus action."
+    }
+  ],
+  "narration": "You say it plainly, as though confirming something already agreed, and they nod along with a decision they never made.",
+  "sheetSummary": "Action, 60 ft, cooldown 2. Target must hear and understand you. Choose an option as you cast; Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or it must obey on its next turn. Never made to harm itself or its allies; ends if you or your allies damage it.",
+  "classes": [
+    "illusionist"
+  ],
+  "subclasses": [
+    "hypnotist"
+  ]
+}

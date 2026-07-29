@@ -457,6 +457,12 @@ function className(id) {
   return c ? c.name : cap(String(id).replace(/-/g, " "));
 }
 
+/* Display name for a subclass id, mirroring className() for classes. */
+function subclassName(id) {
+  const s = (store.subclasses || []).find((x) => (x.id || x.name) === id);
+  return s ? s.name : cap(String(id || "").replace(/-/g, " "));
+}
+
 function cardMeta(key, it) {
   switch (key) {
     case "rules":      return it.summary || "";
@@ -464,7 +470,11 @@ function cardMeta(key, it) {
     case "subclasses": return `${className(it.parentClass) || "?"} subclass`;
     // No level here: it's a heading in the Class view, and a raw minLevel would contradict it
     // (Sleight is minLevel 1 but sits at Level 2 for a half-caster).
-    case "tricks":     return `${cap(it.tier || "")} · ${it.discipline || ""}`;
+    // A subclass-granted trick (MECHANICS §4.9d) is named, or the class ladder would imply
+    // every member of the class has it.
+    case "tricks":     return `${cap(it.tier || "")} · ${it.discipline || ""}` +
+                              (Array.isArray(it.subclasses) && it.subclasses.length
+                                ? ` · ${it.subclasses.map(subclassName).join("/")} only` : "");
     case "skills":     return `${it.ability || ""}`;
     case "passives":   return `${it.type || "Feature"}`;
     case "weapons":    return `${it.category ? cap(it.category) : ""} · ${it.damage && it.damage.type ? it.damage.type : ""}`;
@@ -984,8 +994,10 @@ function renderTrick(t) {
     <div class="detail-body">
       ${renderFeatureDesc(t.sheetSummary || t.description || "", ladder)}
       ${Array.isArray(t.options) && t.options.length ? optionTable(t.options, ladder) : ""}
-      ${Array.isArray(t.classes) && t.classes.length
-        ? `<p class="muted">Classes: ${esc(t.classes.map(className).join(", "))}</p>` : ""}
+      ${Array.isArray(t.subclasses) && t.subclasses.length
+        ? `<p class="muted">Granted by: ${esc(t.subclasses.map(subclassName).join(", "))} — only that subclass learns this trick.</p>`
+        : (Array.isArray(t.classes) && t.classes.length
+          ? `<p class="muted">Classes: ${esc(t.classes.map(className).join(", "))}</p>` : "")}
     </div>`;
   return head(t.name, `${t.discipline || ""} trick`) +
     (badge ? `<div class="tier-row">${badge}</div>` : "") +

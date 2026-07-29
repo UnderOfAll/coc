@@ -134,6 +134,13 @@
       "items": {
         "type": "string"
       }
+    },
+    "subclasses": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Subclass ids that grant this trick (MECHANICS 4.9d). A trick listed here is NOT on the parent class's general list — only a character of that subclass knows it, and it is granted free on taking the subclass. If set, `classes` must still name the parent class so the trick files under the right ladder."
     }
   },
   "allOf": [

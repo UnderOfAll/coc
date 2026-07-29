@@ -76,6 +76,9 @@ def main():
     errors = []
     class_ids = set()
     subclass_parents = []
+    subclass_ids = set()
+    subclass_parent = {}
+    granted_tricks = []
 
     for cat, stem in SCHEMA.items():
         schema_path = DATA / "schema" / f"{stem}.schema.json"
@@ -90,11 +93,16 @@ def main():
                         class_ids.add(obj.get("id") or obj.get("name"))
                     if cat == "subclasses":
                         subclass_parents.append((f.name, obj.get("parentClass")))
+                        sid = obj.get("id") or obj.get("name")
+                        subclass_ids.add(sid)
+                        subclass_parent[sid] = obj.get("parentClass")
                     if cat == "subclasses":
                         bad = composition(obj)
                         if bad:
                             errors.append(f"subclasses/{f.name}: {bad}")
                     if cat == "tricks":
+                        if obj.get("subclasses"):
+                            granted_tricks.append((f.name, obj["subclasses"], obj.get("classes") or []))
                         bad = cross_grade_turn(obj)
                         if bad:
                             errors.append(f"tricks/{f.name}: {bad}")
@@ -107,6 +115,16 @@ def main():
     for fname, parent in subclass_parents:
         if parent not in class_ids:
             errors.append(f"subclasses/{fname}: parentClass {parent!r} is not an existing class")
+
+    # a subclass-granted trick must name a real subclass AND file under its parent class,
+    # or the Tricks tab has nowhere to put it (MECHANICS 4.9d)
+    for fname, subs, classes in granted_tricks:
+        for sid in subs:
+            if sid not in subclass_ids:
+                errors.append(f"tricks/{fname}: subclasses lists {sid!r}, which is not an existing subclass")
+            elif subclass_parent.get(sid) not in classes:
+                errors.append(f"tricks/{fname}: granted by {sid!r} but its parent class "
+                              f"{subclass_parent.get(sid)!r} is not in this trick's `classes`")
 
     if errors:
         print("SCHEMA VALIDATION FAILED:", file=sys.stderr)
