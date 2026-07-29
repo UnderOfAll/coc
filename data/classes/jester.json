@@ -35,7 +35,7 @@
     "resourceType": "pool",
     "description": "The room's goodwill, measured. Mirth is what builds when the company is laughing with you and the enemy is not — every joke that lands, every ally who gets back up because you were there, wound up into something you eventually cash in all at once. It is the Jester's sole resource, and like the Illusionist he is a full caster: casting IS the class, so casting is what feeds it.",
     "generation": "You gain 1 Mirth each time you cast a Turn. You gain 1 additional Mirth the first time each turn one of your tricks helps an ally — granting them a bonus, temporary hit points, a reroll, resistance, or removing something afflicting them. Pledges generate nothing and a Prestige generates nothing; the Prestige is where the goodwill gets spent, not made.",
-    "spend": "Mirth is spent three ways, and you have all three from 2nd level. **Play It Up:** as you cast a trick that helps an ally, spend 1 Mirth to double what that ally gets from it — the temporary hit points, the bonus die, the number of rerolls. **Heckle:** Heckler's Timing costs 1 Mirth and your reaction. **Costed Turns:** a few of your better Turns carry a price of their own (Killing It costs 2) — the mid-fight payoff you bank the meter for, long before a Prestige is on the table. A Prestige then spends most of what is left. Unspent Mirth carries over between rounds, but never between fights: you start every combat with 0 Mirth and any left over is lost the moment the fight ends. Mirth is a per-combat currency like every other engine in this system — it is built during a fight and cannot be banked before one.",
+    "spend": "Mirth is spent three ways, and you have all three from 2nd level. **Play It Up:** as you cast a trick that helps an ally, spend 1 Mirth to double what that ally gets from it — the temporary hit points, the bonus die, the number of rerolls. **Heckle:** Heckler's Timing costs 1 Mirth and your reaction, and either softens a blow or spoils a saving throw. **Costed Turns:** a few of your better Turns carry a price of their own (Killing It costs 2) — the mid-fight payoff you bank the meter for, long before a Prestige is on the table. A Prestige then spends most of what is left. Unspent Mirth carries over between rounds, but never between fights: you start every combat with 0 Mirth and any left over is lost the moment the fight ends. Mirth is a per-combat currency like every other engine in this system — it is built during a fight and cannot be banked before one.",
     "cap": "≈6 (L1-4) · 7+ (L5+)",
     "capFormula": "proficiency bonus + Charisma modifier (minimum 3)"
   },
@@ -116,15 +116,25 @@
       "level": 2,
       "name": "Heckler's Timing",
       "role": "combat",
-      "description": "Your interruptions land where they hurt. When a creature within 30 feet of you that can hear and understand you makes an attack roll, ability check, or saving throw, you can use your reaction and spend 1 Mirth to say precisely the wrong thing at precisely the right moment: it subtracts 1d6 from the roll. You must decide before the roll is made. This uses the same single reaction as your Parry, so on any given round you are choosing between defending yourself and ruining somebody else's moment.",
-      "sheetSummary": "Reaction, 30 ft, costs 1 Mirth, declared before the roll. Target must hear and understand you. It subtracts 1d6 from that attack roll, ability check, or saving throw. Uses the same single reaction as Parry.",
-      "narration": "You wait for the exact instant before it commits and then say the one thing guaranteed to get in. It is petty, it is unfair, and the wince costs it the shot.",
+      "description": "Your interruptions land where they hurt, but only in the two places a heckle can actually reach. Spend your reaction and 1 Mirth to aim it at one creature within 30 feet that can hear and understand you, choosing one of the applications below. **It never touches an attack roll or an ability check** — you cannot talk someone out of a swing they have already started.",
+      "sheetSummary": "Reaction, 30 ft, costs 1 Mirth. Target must hear and understand you. Choose one application below. Never applies to an attack roll or an ability check. Uses the same single reaction as Parry.",
+      "narration": "You wait for the exact instant before it commits and then say the one thing guaranteed to get in. It is petty, it is unfair, and the wince is worth every penny.",
       "meta": {
         "action": "Reaction",
         "cost": "1 Mirth",
         "uses": "1 / round (your reaction)",
         "range": "30 ft"
-      }
+      },
+      "options": [
+        {
+          "name": "Take the sting out (damage)",
+          "effect": "When the creature deals damage, reduce that damage by 1d6, to a minimum of 0. Declared after the damage is rolled."
+        },
+        {
+          "name": "Spoil the moment (saving throw)",
+          "effect": "When the creature makes a saving throw, it subtracts 1d6 from the roll. Declared before the roll is made."
+        }
+      ]
     },
     {
       "level": 3,
