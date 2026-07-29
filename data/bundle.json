@@ -97,14 +97,14 @@
         {
           "heading": "Which ability?",
           "paragraphs": [
-            "Melee weapons normally use Strength; finesse and ranged weapons use Dexterity. Some classes change this: the Puppeteer's Strings of Will lets his Control Wires use Charisma instead. A class feature always tells you when a different ability applies."
+            "Melee weapons normally use Strength; finesse and ranged weapons use Dexterity. Some classes change this: the Puppeteer's Strings of Will lets his Control Wires use Wisdom instead. A class feature always tells you when a different ability applies."
           ]
         },
         {
           "heading": "Damage on a hit",
           "paragraphs": [
             "A hit deals the weapon's damage die plus the same ability modifier you used to attack. A Rapier (1d8) with a +3 modifier deals 1d8 + 3.",
-            "Class features can add more. The Puppeteer's Puppet's Spite adds an extra Charisma modifier against a strung enemy, so a Control Wires hit — normally 1d4 + Charisma via Strings of Will — becomes 1d4 + Charisma + Charisma on a strung foe."
+            "Class features can add more. The Puppeteer's Puppet's Spite adds an extra Wisdom modifier against a strung enemy, so a Control Wires hit — normally 1d4 + Wisdom via Strings of Will — becomes 1d4 + Wisdom + Wisdom on a strung foe."
           ]
         },
         {
@@ -941,7 +941,7 @@
         "resourceType": "pool",
         "description": "The room's goodwill, measured. Mirth is what builds when the company is laughing with you and the enemy is not — every joke that lands, every ally who gets back up because you were there, wound up into something you eventually cash in all at once. It is the Jester's sole resource, and like the Illusionist he is a full caster: casting IS the class, so casting is what feeds it.",
         "generation": "You gain 1 Mirth each time you cast a FREE Turn. You gain 1 additional Mirth the first time each turn one of your tricks helps an ally — granting them a bonus, temporary hit points, a reroll, resistance, or removing something afflicting them. Pledges generate nothing and a Prestige generates nothing; the Prestige is where the goodwill gets spent, not made. **A costed Turn generates nothing** — neither for being cast nor from anything it goes on to do. A trick you paid the meter for never pays part of itself back.",
-        "spend": "Mirth is spent three ways, and you have all three from 2nd level. **Play It Up:** as you cast a trick that helps an ally, spend 1 Mirth to double what that ally gets from it — the temporary hit points, the bonus die, the number of rerolls. **Heckle:** Heckler's Timing costs 1 Mirth and your reaction, and either softens a blow or spoils a saving throw. **Costed Turns:** a few of your better Turns carry a price of their own (Killing It costs 2) — the mid-fight payoff you bank the meter for, long before a Prestige is on the table. A Prestige then spends most of what is left. Unspent Mirth carries over between rounds, but never between fights: you start every combat with 0 Mirth and any left over is lost the moment the fight ends. Mirth is a per-combat currency like every other engine in this system — it is built during a fight and cannot be banked before one.",
+        "spend": "Mirth is spent three ways, and you have all three from 1st level. **Play It Up:** as you cast a trick that helps an ally, spend 1 Mirth to double what that ally gets from it — the temporary hit points, the bonus die, the number of rerolls. **Heckle:** Heckler's Timing costs 1 Mirth and your reaction, and either softens a blow or spoils a saving throw. **Costed Turns:** a few of your better Turns carry a price of their own (Killing It costs 2) — the mid-fight payoff you bank the meter for, long before a Prestige is on the table. A Prestige then spends most of what is left. Unspent Mirth carries over between rounds, but never between fights: you start every combat with 0 Mirth and any left over is lost the moment the fight ends. Mirth is a per-combat currency like every other engine in this system — it is built during a fight and cannot be banked before one.",
         "cap": "≈6 (L1-4) · 7+ (L5+)",
         "capFormula": "proficiency bonus + Charisma modifier (minimum 3)"
       },
@@ -983,7 +983,7 @@
           "level": 1,
           "name": "Mirth",
           "role": "combat",
-          "description": "You gain the Mirth pool. Casting a Turn builds it and helping an ally builds it, and you spend it from 2nd level: 1 Mirth to double what an ally gets from a supporting trick (Play It Up), 1 Mirth and your reaction to heckle, and whatever a costed Turn or a Prestige asks for. See your Mirth engine for generation and cap.",
+          "description": "You gain the Mirth pool. Casting a Turn builds it and helping an ally builds it, and you spend it from 1st level: 1 Mirth to double what an ally gets from a supporting trick (Play It Up), 1 Mirth and your reaction to heckle, and whatever a costed Turn or a Prestige asks for. See your Mirth engine for generation and cap.",
           "sheetSummary": "You gain the Mirth pool. Spend 1: double what one ally gets from a supporting trick you are casting. Spend 1 (+ your reaction): Heckler's Timing. Costed Turns and Prestiges spend more. Starts every combat at 0.",
           "narration": "You can hear it building — the company loosening up, the fight turning into a show — and you have learned exactly when to spend it and on whom.",
           "meta": {
@@ -1580,8 +1580,8 @@
         "description": "Lengths of near-invisible wire you fix to creatures around you. A String is not spent like currency — it is an attachment that stays in place, keying your control features to whatever it's tied to, until you choose to let go of it or something forces you to.",
         "generation": "Attach a String to a creature you can see within 60 feet as a bonus action, or automatically at no action cost when you hit a creature with your Control Wires. You may never have more Strings attached at once than your String cap; attaching a new one beyond your cap requires detaching an existing String first (no action).",
         "spend": "Strings aren't consumed to use your control features — they are the prerequisite for them. Manipulate, Tangle, Disrupting Pull, Guiding Pull, and Grand Marionette all require a String already attached to the target; using them doesn't remove the String. A String stays attached until you detach it (no action), the creature moves beyond your 60-foot leash range, or you become incapacitated, in which case all of your Strings snap at once. Strings are per-combat like every other engine in this system: every String you have snaps the moment combat ends, and you enter every fight with none. Strings can never be attached before a fight starts or carried out of one.",
-        "cap": "2 (L1–4) · 3 (L5–8) · 4 (L9+) — Web of Strings adds +1 from L5",
-        "capFormula": "equal to your proficiency bonus"
+        "cap": "2 (L1–4) · 4 (L5–8) · 5 (L9+) — proficiency bonus, plus 1 from Web of Strings at 5th level",
+        "capFormula": "your proficiency bonus, plus 1 from Web of Strings at 5th level"
       },
       "features": [
         {
@@ -1714,8 +1714,8 @@
         },
         {
           "label": "Strings Cap",
-          "value": "2 (L1–4) · 3 (L5–8) · 4 (L9+)",
-          "formula": "equal to your proficiency bonus",
+          "value": "2 (L1–4) · 4 (L5–8) · 5 (L9+)",
+          "formula": "your proficiency bonus, plus 1 from Web of Strings at 5th level",
           "note": "Most active Strings you can maintain."
         },
         {
@@ -2247,7 +2247,7 @@
           "level": 3,
           "name": "Stacked Deck",
           "role": "combat",
-          "description": "You've learned to load the deck in your favor. A number of times equal to your {{Charisma modifier (min 1)|set from your stats on your character sheet}}, which you regain when you finish a long rest, you can do one of the following, no action required: choose the result of a Wild Card draw instead of rolling the d8; reroll a d20 you just rolled for your own attack roll, ability check, or saving throw and use the new result; or target one creature within 30 feet of you that just made an attack roll or saving throw, forcing it to succeed on a Charisma saving throw against your gambit DC or reroll that d20 and use the new result. These uses don't cost Mayhem and are separate from your Gambit's Rewrite the Draw option — the two don't share a pool.",
+          "description": "You've learned to load the deck in your favor. A number of times equal to your {{Charisma modifier (min 1)|set from your stats on your character sheet}}, which you regain when you finish a long rest, you can do one of the following, no action required: choose the result of a Wild Card draw instead of rolling the d8; reroll a d20 you just rolled for your own attack roll, ability check, or saving throw and use the new result; or target one creature within 30 feet of you that just made an attack roll or saving throw, forcing it to succeed on a Charisma saving throw against your gambit DC or reroll that d20 and use the new result. These uses cost no Mayhem and draw on nothing else you have.",
           "narration": "The deck was never honest and neither were you. When the moment matters you simply arrange for the result you needed — or reach across the table and make somebody else take theirs again, which is worse.",
           "sheetSummary": "Free, {{Charisma modifier (min 1)|set from your stats on your character sheet}} times per long rest, 30 ft. Choose one: pick a Wild Card result instead of rolling; reroll your own d20 attack, check, or save and use the new result; or force a creature that just rolled a d20 to make a Charisma save vs {{gambit DC|8 + proficiency bonus + Charisma modifier}} or reroll and use the new result. Costs no Mayhem.",
           "meta": {
@@ -3095,7 +3095,7 @@
           "sheetSummary": "1-minute ritual, touch, one willing creature, 24 hours. Know its direction and rough condition (unharmed, wounded, unconscious, dead) within 1 mile, and its danger wakes you from sleep. Hold {{Wisdom modifier (min 1)|set from your stats on your character sheet}} threads at once.",
           "meta": {
             "action": "Special",
-            "uses": "Cha mod active threads",
+            "uses": "Wis mod active threads",
             "range": "Touch / 1 mile"
           }
         }

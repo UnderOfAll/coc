@@ -147,6 +147,22 @@ function wireEvents() {
     const term = e.target.closest(".tip-term, .scaling-die");
     if (term) clampTip(term);
   });
+  // Keyboard parity: these are spans, so Tab focuses them and Enter/Space opens the same box a
+  // mouse hover or a tap would. Escape closes it.
+  document.addEventListener("keydown", (e) => {
+    const term = e.target.closest && e.target.closest(".tip-term, .scaling-die");
+    if (term && (e.key === "Enter" || e.key === " ")) {
+      e.preventDefault();
+      term.classList.toggle("tip-open");
+      clampTip(term);
+    } else if (e.key === "Escape") {
+      document.querySelectorAll(".tip-open").forEach((n) => n.classList.remove("tip-open"));
+    }
+  });
+  document.addEventListener("focusin", (e) => {
+    const term = e.target.closest && e.target.closest(".tip-term, .scaling-die");
+    if (term) clampTip(term);
+  });
 }
 
 /* Short, always-available rules reference — summarizes the shared Parry
@@ -534,6 +550,10 @@ function clampTip(term) {
   if (box.left < area.left + pad) dx = (area.left + pad) - box.left;
   else if (box.right > area.right - pad) dx = (area.right - pad) - box.right;
   if (dx) tip.style.setProperty("--nudge", Math.round(dx) + "px");
+  // Vertical: the box sits above its term by default, which puts it off the top of the reading
+  // area for any term near the top — the tier badge is the first thing on every trick page. Flip
+  // it below the term instead of letting it render out of view.
+  term.classList.toggle("tip-below", box.top < area.top + pad);
 }
 
 function showDetail(key, id, keepScroll) {
@@ -718,8 +738,8 @@ const ABILITY_NAMES = {
 // A hover/tap tooltip term for an inline derived number (e.g. a save DC): shows the label + ⓘ,
 // reveals the formula on hover/tap. Mirrors the keyStats formula tooltip so descriptions stay clean.
 function tipTermHTML(label, formula) {
-  return `<span class="tip-term" title="${esc(formula)}">${esc(label)}<sup class="tip-mark">&#9432;</sup>` +
-    `<span class="term-tip">${esc(formula)}</span></span>`;
+  return `<span class="tip-term" tabindex="0" title="${esc(formula)}">${esc(label)}<sup class="tip-mark">&#9432;</sup>` +
+    `<span class="term-tip" role="tooltip">${esc(formula)}</span></span>`;
 }
 
 /* Weapon Mastery (data/rules/weapon-mastery.json): the default maneuver any proficient wielder
@@ -783,7 +803,7 @@ function scalingDieHTML(count, size, abil, ladder) {
   });
   const plain = seq.map((r) => `L${r.lv} ${r.die}`).join(" · ");
   const title = `Scales: ${plain}${rung.note ? ` (${rung.note})` : ""}${modLine}`;
-  return `<span class="scaling-die" title="${esc(title)}">${esc(base)}<sup class="scale-mark">▲</sup>` +
+  return `<span class="scaling-die" tabindex="0" title="${esc(title)}">${esc(base)}<sup class="scale-mark">▲</sup>` +
     `<span class="scale-tip" role="tooltip">
        <span class="scale-tip-title">Scaling die</span>
        <span class="scale-tip-row">${seq.map((r) =>
@@ -1096,7 +1116,7 @@ function renderPassive(p) {
   return head(p.name, p.type || "Feature") +
     `<div class="detail-body">
       ${p.prerequisite ? `<p class="muted">Prerequisite: ${esc(p.prerequisite)}</p>` : ""}
-      <p>${esc(p.description || "")}</p>
+      <p>${fmtDesc(p.description || "")}</p>
     </div>`;
 }
 

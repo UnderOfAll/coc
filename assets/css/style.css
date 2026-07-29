@@ -286,7 +286,6 @@ h1 { font-family: var(--serif); font-weight: 600; margin: 0 0 1.25rem; }
   max-width: min(320px, 70vw); font-size: 0.9rem; line-height: 1.35;
 }
 .scale-tip-title { color: var(--gold); font-family: var(--serif); font-size: 0.8rem; letter-spacing: 0.5px; }
-.scale-tip-row { font-weight: 600; }
 .scale-tip-lv { color: var(--muted); font-size: 0.78rem; }
 .scale-tip::after {
   content: ""; position: absolute; top: 100%;
@@ -443,3 +442,11 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 }
 .content a:hover,
 .content a:focus-visible { color: var(--accent-soft); border-bottom-color: var(--accent-soft); }
+
+/* A tooltip whose term sits near the top of the reading area flips below it instead of
+   rendering off-screen (clampTip in app.js sets this). */
+.tip-below .term-tip, .tip-below .scale-tip { bottom: auto; top: 145%; }
+.tip-below .term-tip::after, .tip-below .scale-tip::after {
+  top: auto; bottom: 100%; border-top-color: transparent; border-bottom-color: var(--gold);
+}
+.tip-term:focus-visible, .scaling-die:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }

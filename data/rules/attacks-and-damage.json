@@ -14,14 +14,14 @@
     {
       "heading": "Which ability?",
       "paragraphs": [
-        "Melee weapons normally use Strength; finesse and ranged weapons use Dexterity. Some classes change this: the Puppeteer's Strings of Will lets his Control Wires use Charisma instead. A class feature always tells you when a different ability applies."
+        "Melee weapons normally use Strength; finesse and ranged weapons use Dexterity. Some classes change this: the Puppeteer's Strings of Will lets his Control Wires use Wisdom instead. A class feature always tells you when a different ability applies."
       ]
     },
     {
       "heading": "Damage on a hit",
       "paragraphs": [
         "A hit deals the weapon's damage die plus the same ability modifier you used to attack. A Rapier (1d8) with a +3 modifier deals 1d8 + 3.",
-        "Class features can add more. The Puppeteer's Puppet's Spite adds an extra Charisma modifier against a strung enemy, so a Control Wires hit — normally 1d4 + Charisma via Strings of Will — becomes 1d4 + Charisma + Charisma on a strung foe."
+        "Class features can add more. The Puppeteer's Puppet's Spite adds an extra Wisdom modifier against a strung enemy, so a Control Wires hit — normally 1d4 + Wisdom via Strings of Will — becomes 1d4 + Wisdom + Wisdom on a strung foe."
       ]
     },
     {

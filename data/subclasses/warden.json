@@ -39,7 +39,7 @@
       "sheetSummary": "1-minute ritual, touch, one willing creature, 24 hours. Know its direction and rough condition (unharmed, wounded, unconscious, dead) within 1 mile, and its danger wakes you from sleep. Hold {{Wisdom modifier (min 1)|set from your stats on your character sheet}} threads at once.",
       "meta": {
         "action": "Special",
-        "uses": "Cha mod active threads",
+        "uses": "Wis mod active threads",
         "range": "Touch / 1 mile"
       }
     }
