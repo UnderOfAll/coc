@@ -424,3 +424,9 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 .scale-tip-row { display: flex; gap: 0.7rem; flex-wrap: wrap; justify-content: center; }
 .scale-step { display: inline-flex; align-items: baseline; gap: 0.25rem; }
 .scale-lv { color: var(--muted); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.4px; }
+
+/* An options table split into labelled groups (always-on effects vs a menu you choose from). */
+.option-group {
+  font-family: var(--serif); color: var(--gold); font-size: 0.9rem;
+  margin: 1rem 0 0.35rem;
+}

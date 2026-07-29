@@ -16,32 +16,37 @@
   ],
   "duration": "Up to 10 minutes",
   "save": "Wisdom",
-  "description": "You remake a piece of the world. A 60-foot cube within range fills with a fully realised illusory environment — sight, sound, temperature, even scent — and it can be anything you can picture: a collapsed tunnel, a wall of roaring fire, a chasm where the floor used to be, a cheering crowd of a hundred phantom performers. It needs no concentration and holds for the duration while you do whatever else you like. It is still an image: it deals no damage, supports no weight, and stops nothing that does not care what it sees.",
-  "narration": "The tent is gone. In its place is a rockfall, or a fire, or a drop into nothing — cold on your face, loud in your ears, entirely in the way, and nobody caught inside it can think straight. It holds until one person stops and really looks, and then there was never anything there at all.",
-  "sheetSummary": "Once per combat. Action, 120 ft, 60-ft cube, costs 3 Phantasm, up to 10 minutes, no concentration. Deals no damage and supports no weight. Its four standing effects and its one-off dramatic moment are listed below.",
+  "description": "A 60-foot cube within range becomes a fully realised illusory environment — sight, sound, temperature and scent — of anything you can picture. It requires no concentration and holds for the duration. It has no substance: it deals no damage, supports no weight, and does not impede anything that does not rely on sight. Any creature may spend its action to attempt an Intelligence (Investigation) check against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}} to see through it, and a creature shoving through the cube may attempt that check as part of the movement; on any success the illusion collapses immediately and entirely, for every creature at once.",
+  "narration": "The tent is gone. In its place is a rockfall, or a wall of fire, or a drop into nothing — cold on your face, loud in your ears, and entirely in the way. Nobody caught inside it can think straight, because nobody fights well in the middle of a disaster they believe in. It holds until one person stops, really looks, and says so out loud — and then there was never anything there at all.",
+  "sheetSummary": "Once per combat. Action, 120 ft, 60-ft cube, costs 3 Phantasm, up to 10 minutes, no concentration. Deals no damage and supports no weight. Its effects, its one-off dramatic moment and how it can be ended early are listed below.",
   "classes": [
     "illusionist"
   ],
   "options": [
     {
+      "group": "While it stands (all three apply)",
       "name": "Blocks sight",
       "effect": "Line of sight cannot be traced through the cube."
     },
     {
+      "group": "While it stands (all three apply)",
       "name": "Difficult terrain",
-      "effect": "The whole area is difficult terrain — nobody walks briskly through a rockfall they believe in."
+      "effect": "The cube's area is difficult terrain."
     },
     {
-      "name": "Nobody thinks straight inside",
-      "effect": "Every creature inside the cube has disadvantage on every attack roll, ability check and saving throw it makes. This applies to your allies too: place it as a hazard to work around, not a blanket to fight under."
+      "group": "While it stands (all three apply)",
+      "name": "Disadvantage inside",
+      "effect": "Every creature inside the cube, allies included, has disadvantage on every attack roll, ability check and saving throw."
     },
     {
-      "name": "Seeing through it ends everything",
-      "effect": "A creature can spend its action to study the illusion and make an Intelligence (Investigation) check against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}; a creature that shoves through it makes that check as part of the movement. On ANY success the illusion collapses immediately and entirely, for every creature at once."
+      "group": "Once before it ends — you choose when",
+      "name": "The dramatic moment (bonus action)",
+      "effect": "Each creature of your choice inside the cube or within 10 ft of it makes a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure it is frightened of the illusion until the end of its next turn and, if it has a reaction available, must use that reaction to move as far from the illusion as its speed allows."
     },
     {
-      "name": "The dramatic moment (once, bonus action)",
-      "effect": "The phantom army charges, the fire roars up, the floor gives way. Every creature of your choice inside the cube or within 10 feet of it makes a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or is frightened of it until the end of its next turn and, if it has a reaction available, uses that reaction to move as far from the illusion as its speed allows."
+      "group": "Ending it early",
+      "name": "Seeing through it",
+      "effect": "A creature may spend its action to attempt an Intelligence (Investigation) check against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}, or attempt that check as part of shoving through the cube. On any success the illusion collapses immediately and entirely, for every creature at once."
     }
   ]
 }

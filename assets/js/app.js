@@ -620,7 +620,20 @@ function metaRow(m) {
 
 /* A feature's structured `options` (a pick-one menu or a random table) as a table. A `roll`
    on any option makes it a random table (numbered column); otherwise it's a choice menu. */
+/* Rows may carry a `group` label; each group becomes its own table under that heading, so
+   always-on effects are never listed alongside a menu the player picks from. */
 function optionTable(opts, ladder) {
+  const groups = [...new Set(opts.map((o) => o.group || ""))];
+  if (groups.length > 1 || groups[0]) {
+    return groups.map((g) => {
+      const rows = opts.filter((o) => (o.group || "") === g);
+      return (g ? `<h4 class="option-group">${esc(g)}</h4>` : "") + oneOptionTable(rows, ladder);
+    }).join("");
+  }
+  return oneOptionTable(opts, ladder);
+}
+
+function oneOptionTable(opts, ladder) {
   const hasRoll = opts.some((o) => o.roll != null);
   const nameHdr = hasRoll ? "Result" : "Option";
   const headCells = (hasRoll ? "<th>Roll</th>" : "") + `<th>${nameHdr}</th><th>Effect</th>`;

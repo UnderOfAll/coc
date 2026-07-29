@@ -119,6 +119,7 @@
           "roll": {
             "type": "string"
           },
+                "group": { "type": "string", "description": "Optional grouping label. Rows sharing a label render as their own table under that heading, so effects that always apply are never mixed in with a menu you pick from. Omit it and all rows render as one table, as before." },
           "name": {
             "type": "string"
           },

@@ -63,6 +63,7 @@
               "required": ["name", "effect"],
               "properties": {
                 "roll": { "type": ["integer", "string"], "description": "Optional die result for a random table (e.g. 1-8 for a d8). Omit for a pick-one menu." },
+                "group": { "type": "string", "description": "Optional grouping label. Rows sharing a label render as their own table under that heading, so effects that always apply are never mixed in with a menu you pick from. Omit it and all rows render as one table, as before." },
                 "name": { "type": "string", "description": "Short name of the option/result." },
                 "effect": { "type": "string", "description": "What it does. May contain [[XdY]] scaling-die tokens." }
               }

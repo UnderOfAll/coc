@@ -36,7 +36,7 @@
       "name": "Second Nature",
       "role": "roleplay",
       "description": "Sleight of hand has stopped requiring your attention. You can palm, plant, swap, or produce any object small enough to fit in one hand without being noticed, with no check, provided nobody is deliberately watching your hands. Against a creature that IS watching your hands, you have advantage on the check. You can also perform any Pledge without any visible gesture at all, so nobody can tell you cast anything.",
-      "sheetSummary": "Palm, plant, swap, or produce a hand-sized object with no check unless someone is deliberately watching your hands (advantage if they are). You can cast any Pledge with no visible gesture, so nobody can tell you cast it.",
+      "sheetSummary": "Palm, plant, swap, or produce a hand-sized object with no check. A creature deliberately watching your hands makes it a Sleight of Hand check at advantage instead. You can cast any Pledge with no visible somatic component.",
       "narration": "The hands do it without being asked any more. You have handed back a stolen ring while apologising for the theft and nobody in the room, including the owner, saw either half.",
       "meta": {
         "action": "Passive"
