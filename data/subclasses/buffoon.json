@@ -11,7 +11,7 @@
       "role": "combat",
       "description": "When an attack **hits** an ally within 10 feet of you, you can use your reaction to get in the way. This resolves after the attack has already hit: **nothing is re-rolled and your own AC never comes into it** — the blow was always going to land, and you are only deciding who it lands on. You take the damage in your ally's place, and you take **half** of it. Because your reaction is spent doing this, you cannot Parry the same blow, and this never counts as a Parry.",
       "sheetSummary": "Reaction, 10 ft, attacker must be visible, attack rolls only. When an attack hits an ally, you take the damage instead and take HALF of it. Nothing is re-rolled and your AC is not used. Costs your reaction, so you cannot Parry the same blow.",
-      "narration": "You are not fast enough to stop it and you have never once tried. You get in the way in the most undignified manner available — a shoulder, a shove, an outraged yelp — and take it across the back with the timing of a man who has been falling over professionally since he was nine. It still hurts. It just hurts the correct person.",
+      "narration": "You do not push anybody. You could not shift the strongman if you tried, and you have never once got there in time. What you do is trip — a beautifully judged, entirely deliberate accident that puts you in the path with your feet already going out from under you. The blow catches you on the way down instead of square on, and you ride it into the floor, roll through it, and come up talking. It is the oldest thing you know how to do: you have been falling over professionally since you were nine, and the whole craft of it is that the floor never gets you as hard as it should.",
       "meta": {
         "action": "Reaction",
         "uses": "1 / round",
@@ -46,7 +46,7 @@
       "role": "combat",
       "description": "You have been thrown off more stages than you can count. You have resistance to bludgeoning damage from falls, collisions, and being thrown, and whenever you are knocked prone you can stand up for 5 feet of movement instead of half your speed.",
       "sheetSummary": "Resistance to bludgeoning damage from falls, collisions, and being thrown. Standing up from prone costs 5 ft of movement instead of half your speed.",
-      "narration": "You bounce. That is genuinely the whole of it — you have hit enough floors from enough heights that your body has stopped taking it personally, and you are upright again before the laugh finishes.",
+      "narration": "Same trick, all the time, whether anybody threw anything or not. You go down the way a dropped coat goes down — loose, folding, nothing locked — and the ground takes almost nothing off you. Getting back up is the easy half; you have never once had to think about it.",
       "meta": {
         "action": "Passive"
       }
