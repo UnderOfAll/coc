@@ -3915,7 +3915,7 @@
       "save": "Wisdom",
       "description": "A 60-foot cube within range becomes a fully realised illusory environment — sight, sound, temperature and scent — of anything you can picture. It requires no concentration and holds for the duration. It has no substance: it deals no damage, supports no weight, and does not impede anything that does not rely on sight. Any creature may spend its action to attempt an Intelligence (Investigation) check against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}} to see through it, and a creature shoving through the cube may attempt that check as part of the movement; on any success the illusion collapses immediately and entirely, for every creature at once.",
       "narration": "The tent is gone. In its place is a rockfall, or a wall of fire, or a drop into nothing — cold on your face, loud in your ears, and entirely in the way. Nobody caught inside it can think straight, because nobody fights well in the middle of a disaster they believe in. It holds until one person stops, really looks, and says so out loud — and then there was never anything there at all.",
-      "sheetSummary": "Once per combat. Action, 120 ft, 60-ft cube, costs 3 Phantasm, up to 10 minutes, no concentration. Deals no damage and supports no weight. Its effects, its one-off dramatic moment and how it can be ended early are listed below.",
+      "sheetSummary": "Once per combat. Action, 120 ft, 60-ft cube, costs 3 Phantasm, up to 10 minutes, no concentration. Deals no damage, supports no weight, and never blocks movement. Its effects, its one-off dramatic moment and how it can be ended early are listed below.",
       "classes": [
         "illusionist"
       ],
@@ -3928,7 +3928,7 @@
         {
           "group": "While it stands (all three apply)",
           "name": "Difficult terrain",
-          "effect": "The cube's area is difficult terrain."
+          "effect": "The cube's area is difficult terrain. It never blocks movement — the illusion has no substance — so any creature may enter, cross or leave it at any time, simply paying the doubled cost."
         },
         {
           "group": "While it stands (all three apply)",
@@ -3943,7 +3943,7 @@
         {
           "group": "Ending it early",
           "name": "Seeing through it",
-          "effect": "A creature may spend its action to attempt an Intelligence (Investigation) check against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}, or attempt that check as part of shoving through the cube. On any success the illusion collapses immediately and entirely, for every creature at once."
+          "effect": "A creature may spend its action to attempt an Intelligence (Investigation) check against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}, or attempt that check for free as part of moving into or through the cube. On any success the illusion collapses immediately and entirely, for every creature at once. **A failed check has no further effect:** the creature is not stuck, not stopped and not harmed — it simply still believes what it is looking at, and may move and try again as often as it likes."
         }
       ],
       "_file": "tricks/the-impossible-show.json"
