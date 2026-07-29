@@ -658,9 +658,11 @@ function renderFeatureDesc(desc, ladder) {
    like the casting start level in §4.9b; only the trick's own tier is read off the trick. */
 const DIE_CHAIN = [4, 6, 8, 10, 12];
 const LADDERS = {
-  full:     { steps: 3, note: "die steps up at levels 5 · 11 · 17" },
-  halfTurn: { steps: 2, note: "die steps up at levels 5 · 11, then stops (half-caster Turn)" },
-  mixed:    { steps: 3, note: "die steps up at levels 5 · 11 · 17 — a half-caster stops at 11" },
+  // `levels` includes the level-1 base, so every value shown is labelled with the level it applies
+  // from. Listing four dice under "steps up at 5 · 11 · 17" read as four steps for three levels.
+  full:     { levels: [1, 5, 11, 17], note: "" },
+  halfTurn: { levels: [1, 5, 11],     note: "half-caster Turn: it stops here, one size short" },
+  mixed:    { levels: [1, 5, 11, 17], note: "a half-caster stops at level 11" },
 };
 
 /* A half-caster's Turns use the short ladder; its Pledges and Prestiges do not, and no full
@@ -750,6 +752,7 @@ function propsHTML(list) {
 
 function scalingDieHTML(count, size, abil, ladder) {
   const rung = LADDERS[ladder] || LADDERS.full;
+  const levels = rung.levels;
   const i = DIE_CHAIN.indexOf(size);
   const base = `${count}d${size}`;
   // Optional "+ ability modifier" folded into the tooltip (kept out of the visible prose).
@@ -758,19 +761,21 @@ function scalingDieHTML(count, size, abil, ladder) {
   if (i < 0) return esc(base + (ab ? ` + ${ab} mod` : "")); // non-standard die: no scaling tooltip
   // Past the top of the chain a step can't grow the die, so it adds another d12 instead
   // (MECHANICS §3.1b) — a step is never worth nothing, least of all the level-17 one.
-  const seq = [];
-  for (let k = 0; k <= rung.steps; k++) {
+  const seq = levels.map((lv, k) => {
     const idx = i + k;
-    seq.push(idx < DIE_CHAIN.length
+    const die = idx < DIE_CHAIN.length
       ? count + "d" + DIE_CHAIN[idx]
-      : (count + idx - DIE_CHAIN.length + 1) + "d12");
-  }
-  const title = `Damage: ${seq.join(" · ")} (${rung.note})${modLine}`;
+      : (count + idx - DIE_CHAIN.length + 1) + "d12";
+    return { lv, die };
+  });
+  const plain = seq.map((r) => `L${r.lv} ${r.die}`).join(" · ");
+  const title = `Damage: ${plain}${rung.note ? ` (${rung.note})` : ""}${modLine}`;
   return `<span class="scaling-die" title="${esc(title)}">${esc(base)}<sup class="scale-mark">▲</sup>` +
     `<span class="scale-tip" role="tooltip">
        <span class="scale-tip-title">${ab ? "Damage" : "Scaling die"}</span>
-       <span class="scale-tip-row">${esc(seq.join(" · "))}</span>
-       <span class="scale-tip-lv">${esc(rung.note)}</span>
+       <span class="scale-tip-row">${seq.map((r) =>
+         `<span class="scale-step"><span class="scale-lv">L${esc(r.lv)}</span>${esc(r.die)}</span>`).join("")}</span>
+       ${rung.note ? `<span class="scale-tip-lv">${esc(rung.note)}</span>` : ""}
        ${ab ? `<span class="scale-tip-lv">+ your ${esc(ab)} modifier</span>` : ""}
      </span></span>`;
 }

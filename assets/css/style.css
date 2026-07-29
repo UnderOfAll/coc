@@ -418,3 +418,9 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
   font-size: 0.95rem; margin: 0 0 0.4rem;
 }
 .granted-note { color: var(--muted); font-family: var(--sans); font-size: 0.8rem; font-weight: 400; }
+
+/* Scaling-die tooltip: every die is labelled with the level it applies from, so the number of
+   values can never look like it disagrees with the number of breakpoints. */
+.scale-tip-row { display: flex; gap: 0.7rem; flex-wrap: wrap; justify-content: center; }
+.scale-step { display: inline-flex; align-items: baseline; gap: 0.25rem; }
+.scale-lv { color: var(--muted); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.4px; }

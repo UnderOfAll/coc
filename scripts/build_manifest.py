@@ -37,6 +37,12 @@ def entries(path):
 # Tokens whose contents are the SANCTIONED place for math — stripped before linting.
 # {{Label|formula}} = a derived-number tooltip; [[XdY]] / [[XdY+Abil]] = a scaling-damage die.
 TOKEN_RE = re.compile(r"\{\{[^}]*\}\}|\[\[[^\]]*\]\]")
+# A {{Label|formula}} token shows the LABEL and hides the formula. Writing it the other way
+# round renders the maths inline - the exact thing the tooltip rule exists to prevent - and it
+# has slipped through twice, so it is linted rather than eyeballed.
+REVERSED_TOKEN_RE = re.compile(
+    r"\{\{\s*[^|{}]*(?:d20\s*\+|proficiency bonus\s*\+|\d+\s*\+\s*(?:your\s+)?proficiency|"
+    r"equal to your\s+[A-Za-z]+\s+modifier)[^|{}]*\|", re.I)
 INLINE_FORMULA_RES = [
     # DC / derived-number formulas spelled out (must be a {{Label|formula}} token).
     re.compile(r"\d+\s*\+\s*(?:your\s+)?proficiency bonus", re.I),
@@ -50,11 +56,14 @@ INLINE_FORMULA_RES = [
 ]
 # Rules pages exist to TEACH the math, so their formulas stay inline (lint-exempt).
 LINT_EXEMPT_CATEGORIES = {"rules"}
-# Keys whose free-text values are player-facing prose to lint. NOTE: `sheetSummary` is
-# deliberately excluded — it is condensed character-sheet text that the sheet renders with
-# the real computed numbers, so it may keep compact "1d6 + Con" style shorthand.
+# Keys whose free-text values are player-facing prose to lint.
+# `sheetSummary` USED to be excluded, on the grounds that it was invisible character-sheet text.
+# That stopped being true when the two-tab view shipped: sheetSummary is now the PRIMARY rendered
+# text of the "How it works" tab, and the exemption is exactly why two reversed tokens reached the
+# live site. `narration` is linted too — it is the "In play" tab and is supposed to carry no maths
+# at all.
 PROSE_KEYS = {"description", "effect", "summary", "flavor", "note", "text",
-              "paragraphs", "parryReskin", "riposte"}
+              "paragraphs", "parryReskin", "riposte", "sheetSummary", "narration"}
 
 
 def _iter_prose(obj):
@@ -75,6 +84,9 @@ def lint_inline_formulas(obj, rel):
     out = []
     for _key, text in _iter_prose(obj):
         stripped = TOKEN_RE.sub("", text)
+        for m in REVERSED_TOKEN_RE.finditer(text):
+            out.append(f"reversed token in {rel} ({_key}): {m.group(0)[:60]!r} — the LABEL is the "
+                       f"maths; {{Label|formula}} must hide the formula, not show it")
         for rx in INLINE_FORMULA_RES:
             m = rx.search(stripped)
             if m:
