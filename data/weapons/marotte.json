@@ -1,0 +1,24 @@
+{
+  "id": "marotte",
+  "name": "Marotte",
+  "source": "Circus of Chaos",
+  "flavor": "A fool's sceptre: your own face carved on the end of a stick, grinning, with bells. It is a joke right up until the weighted head comes round.",
+  "category": "signature",
+  "damage": {
+    "die": "1d6",
+    "type": "bludgeoning"
+  },
+  "properties": [
+    "light"
+  ],
+  "parryProfile": {
+    "canParry": true,
+    "parryRange": "melee",
+    "dcMod": 0,
+    "note": "You catch the blow on the carved head — the little face takes it, and the bells make the whole thing sound like it was part of the act."
+  },
+  "mastery": "Sap",
+  "proficientClasses": [
+    "jester"
+  ]
+}

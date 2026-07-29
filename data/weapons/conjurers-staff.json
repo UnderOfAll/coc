@@ -1,0 +1,25 @@
+{
+  "id": "conjurers-staff",
+  "name": "Conjurer's Staff",
+  "source": "Circus of Chaos",
+  "flavor": "Six feet of lacquered stage prop, weighted at one end, and every illusionist in the show has cracked someone's shins with it at least once.",
+  "category": "martial",
+  "damage": {
+    "die": "1d6",
+    "type": "bludgeoning"
+  },
+  "versatileDamage": "1d8",
+  "properties": [
+    "versatile"
+  ],
+  "parryProfile": {
+    "canParry": true,
+    "parryRange": "melee",
+    "dcMod": -1,
+    "note": "A long haft held in two hands is the easiest thing in the arsenal to put between yourself and a blade."
+  },
+  "mastery": "Topple",
+  "proficientClasses": [
+    "illusionist"
+  ]
+}

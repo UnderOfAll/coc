@@ -1,0 +1,158 @@
+{
+  "id": "illusionist",
+  "name": "Illusionist",
+  "source": "Circus of Chaos",
+  "flavor": "A stage magician who stopped pretending. What he shows you is not there, and knowing that has never once been enough to save anybody.",
+  "hitDie": 6,
+  "primaryAbility": "Intelligence",
+  "savingThrows": [
+    "Intelligence",
+    "Wisdom"
+  ],
+  "subclassLevel": 3,
+  "proficiencies": {
+    "armor": [
+      "Light armor"
+    ],
+    "weapons": [
+      "Phantom Blade",
+      "Conjurer's Staff",
+      "Dagger"
+    ],
+    "tools": [
+      "Disguise kit",
+      "Painter's supplies"
+    ],
+    "skills": "Choose two from Arcana, Deception, Insight, Investigation, Performance, and Sleight of Hand"
+  },
+  "spellcasting": null,
+  "parryBaseDC": 14,
+  "defenseAbility": "Intelligence",
+  "parryReskin": "You do not move — the picture of you does. The blade goes through a smear of afterimage while the real body leans a hand's width out of the line, and for one beat nobody in the room including the attacker is sure which was which.",
+  "riposte": "On a Full Dodge (your Parry d20 roll comes up strictly above your effective Parry DC), the attacker's certainty cracks: it has disadvantage on the next attack roll it makes before the start of your next turn. Having just watched its blade pass through you, it swings at the next one expecting the same. No damage, no action, no Phantasm.",
+  "engine": {
+    "name": "Phantasm",
+    "resourceType": "pool",
+    "description": "The banked weight of everything the room currently believes that is not true. Phantasm is not mana — it is credibility. Every trick you perform leaves an impression behind, and the more of them the audience is carrying at once, the more they will accept when you finally ask for something enormous. It is the Illusionist's sole resource, and unlike the part-casters, casting is what builds it: your Turns are not a garnish on a weapon, they ARE the class.",
+    "generation": "You gain 1 Phantasm each time you cast a Turn — the trick lands, the audience files it away, and you are one step closer to the thing you are really building toward. You gain 1 additional Phantasm the first time each turn a creature fails a saving throw against one of your tricks, because nothing sells the next lie like the last one working. Pledges generate nothing (they are too small to be remembered) and a Prestige generates nothing (it spends the belief rather than building it).",
+    "spend": "Only a Prestige spends Phantasm, and it spends a great deal of it — see your trick list for what each one costs. Nothing else in your kit draws on the pool. Unspent Phantasm carries over between rounds, but never between fights: you start every combat with 0 Phantasm and any left over is lost the moment the fight ends. Phantasm is a per-combat currency like every other engine in this system — it is built during a fight and cannot be banked before one.",
+    "cap": "≈6 (L1-4) · 7+ (L5+)",
+    "capFormula": "proficiency bonus + Intelligence modifier (minimum 3)"
+  },
+  "keyStats": [
+    {
+      "label": "Trick DC",
+      "value": "≈13 (L1) · 16 (L8) · 19 (L17)",
+      "formula": "8 + proficiency bonus + Intelligence modifier",
+      "note": "Save DC for every trick you cast and every Illusionist effect that forces a save."
+    },
+    {
+      "label": "Phantasm Cap",
+      "value": "≈6 (L1-4) · 7+ (L5+)",
+      "formula": "proficiency bonus + Intelligence modifier (minimum 3)",
+      "note": "Most Phantasm you can hold at once. Starts every combat at 0."
+    },
+    {
+      "label": "Parry Base DC",
+      "value": "14",
+      "note": "Second-worst parrier in the roster; lower is better."
+    }
+  ],
+  "features": [
+    {
+      "level": 1,
+      "name": "Tricks",
+      "role": "combat",
+      "description": "You are a full caster: you perform Tricks from 1st level, and they are your primary way of affecting a fight. You know every trick on the Illusionist list, with no preparation and no choosing — each one becomes available at the level shown on your class trick ladder, and once available it is always available. Your disciplines are Illusion, Mesmerism, and Legerdemain. Your trick ability is Intelligence, so your trick save DC is {{trick save DC|8 + proficiency bonus + Intelligence modifier}} and any trick that makes an attack roll uses {{your trick attack|d20 + proficiency bonus + Intelligence modifier}}. Pledges are at-will, Turns cost you nothing but carry a cooldown in rounds, and a Prestige spends Phantasm and can be performed only once per combat. See the Tricks and Casting rules page for the full engine.",
+      "sheetSummary": "Full caster from level 1. You know the entire Illusionist trick list; each unlocks at its listed level. Disciplines: Illusion, Mesmerism, Legerdemain. Trick save DC {{trick save DC|8 + proficiency bonus + Intelligence modifier}}; trick attacks use {{d20 + proficiency bonus + Intelligence modifier|your trick attack bonus}}. Pledges at-will, Turns on cooldown, Prestiges spend Phantasm and are once per combat.",
+      "narration": "You do not cast so much as perform. The gesture is small and unhurried — a turned wrist, a word delivered to the back row — and the room accepts the result before it has time to check whether it should.",
+      "meta": {
+        "action": "Varies by trick",
+        "uses": "Whole class list",
+        "range": "Varies by trick",
+        "save": "Str/Dex/Con/Int/Wis/Cha vs {{trick save DC|8 + proficiency bonus + Intelligence modifier}}"
+      }
+    },
+    {
+      "level": 1,
+      "name": "Phantasm",
+      "role": "combat",
+      "description": "You gain the Phantasm pool. Casting a Turn builds it and only a Prestige spends it; see your Phantasm engine for generation, spending, and cap.",
+      "sheetSummary": "You gain the Phantasm pool. See the Phantasm engine for generation, spending, and cap. Starts every combat at 0.",
+      "narration": "Everything you have made them believe tonight is still in the room, stacked up behind their eyes. You can feel the weight of it, and you know exactly how much more it will take before you can ask for something impossible.",
+      "meta": {
+        "action": "Passive"
+      }
+    },
+    {
+      "level": 1,
+      "name": "Unreal Assurance",
+      "role": "combat",
+      "description": "An illusion of yours is not dispelled merely by being disbelieved. When a creature spends its action to study one of your tricks and determine that it is false, it must succeed on an Intelligence (Investigation) check against your {{trick save DC|8 + proficiency bonus + Intelligence modifier}}; only on a success does it see through that trick, and even then only for itself — every other creature still perceives it normally. A creature that has seen through one of your tricks gains no advantage against the next one.",
+      "sheetSummary": "A creature must use its action to study a trick and succeed on an Investigation check vs {{trick save DC|8 + proficiency bonus + Intelligence modifier}} to see through it. Seeing through it applies only to that creature and only that trick; everyone else still perceives it normally, and it gains no advantage against your next trick.",
+      "narration": "They can decide it is not real. It goes on being there anyway, patient and detailed, waiting for the part of them that is not making decisions to flinch first.",
+      "meta": {
+        "action": "Passive",
+        "save": "Investigation check vs {{trick save DC|8 + proficiency bonus + Intelligence modifier}}"
+      }
+    },
+    {
+      "level": 2,
+      "name": "Misdirection",
+      "role": "combat",
+      "description": "The audience looks where you tell it to. Once on each of your turns, immediately after you cast a trick, you can move up to 10 feet without provoking opportunity attacks. This movement costs no action and does not use your movement for the turn — every eye in the room is on the thing you just did, and none of them are on your feet.",
+      "sheetSummary": "1/turn, immediately after casting a trick: move up to 10 ft without provoking opportunity attacks. Costs no action and doesn't use your movement.",
+      "narration": "The whole room is watching the hand you wanted it to watch. You are somewhere else by the time anybody thinks to check the rest of you.",
+      "meta": {
+        "action": "Free (after casting)",
+        "uses": "1 / turn",
+        "range": "10 ft"
+      }
+    },
+    {
+      "level": 2,
+      "name": "Layered Performance",
+      "role": "combat",
+      "description": "You can hold more than one lie in the air at once. You may have two of your Turns with an ongoing duration active at the same time; without this feature, casting a second duration trick ends the first. Neither trick's cooldown is affected, and this never lets you cast two tricks in one action.",
+      "sheetSummary": "You may keep two duration Turns active at once instead of one. Doesn't change cooldowns and never allows casting two tricks in one action.",
+      "narration": "Two performances running at the same time, in the same room, neither interfering with the other. You are the only person present tracking both.",
+      "meta": {
+        "action": "Passive"
+      }
+    },
+    {
+      "level": 3,
+      "name": "Illusionist's Discipline",
+      "role": "combat",
+      "description": "You commit to a school of the art: choose the Nightmare, Hypnotist, or Trickster discipline. Your choice grants you features at 3rd level.",
+      "sheetSummary": "Choose a discipline: Nightmare, Hypnotist, or Trickster. It grants features at 3rd level.",
+      "narration": "Every illusionist eventually decides what the trick is FOR — the wound that is not there, the mind that agrees with you, or the empty stage where a man used to be standing.",
+      "meta": {
+        "action": "Passive"
+      }
+    },
+    {
+      "level": 5,
+      "name": "Vivid Cruelty",
+      "role": "combat",
+      "description": "Your phantasms have stopped being pictures. When a creature fails a saving throw against one of your tricks that deals psychic damage, it also has disadvantage on the next attack roll it makes before the end of its next turn. This applies at most once per turn, however many creatures fail.",
+      "sheetSummary": "1/turn. A creature that fails a save against one of your psychic-damage tricks also has disadvantage on its next attack roll before the end of its next turn.",
+      "narration": "It is not the pain, it is the detail. Whatever you showed them is still there when they blink, and their next swing goes wide because half of them is still looking at it.",
+      "meta": {
+        "action": "Passive",
+        "uses": "1 / turn"
+      }
+    },
+    {
+      "level": 5,
+      "name": "Sustained Illusion",
+      "role": "combat",
+      "description": "The performance no longer needs your full attention. Reduce the cooldown of every Turn on your list by 1 round, to a minimum of 1. A trick with a cooldown of 1 is unaffected.",
+      "sheetSummary": "Every Turn on your list has its cooldown reduced by 1 round, minimum 1.",
+      "narration": "The room has stopped requiring you to sell it. You can leave a thing standing and walk away from it, and it holds together on its own long enough for you to start the next one.",
+      "meta": {
+        "action": "Passive"
+      }
+    }
+  ]
+}

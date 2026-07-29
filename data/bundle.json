@@ -615,6 +615,20 @@
         },
         {
           "level": 2,
+          "name": "Tricks",
+          "role": "combat",
+          "description": "You are a half-caster: your magic is real but it is not the point of you, and it arrives late. From 2nd level you can perform Tricks. You know every trick on the Doppelganger list — a short one — with no preparation and no choosing; each becomes available at the level shown on your class trick ladder, and once available it is always available. Your disciplines are Illusion and Legerdemain. Your trick ability is your Constitution, so your trick save DC is the same number as your Save DC, {{save DC|8 + proficiency bonus + Constitution modifier}}, and any trick that makes an attack roll uses {{your trick attack|d20 + proficiency bonus + Constitution modifier}}. Pledges are at-will and Turns cost you nothing but carry a cooldown in rounds; a Prestige spends Clones and can be performed only once per combat. Casting NEVER generates Clones — that is the full casters' loop, not yours, so a Prestige always comes out of the resource your core kit already needs. A damaging Turn of yours also scales more slowly than a full caster's: see the Tricks and Casting rules page.",
+          "sheetSummary": "Half-caster: tricks from level 2. You know the entire Doppelganger list; each unlocks at its listed level. Disciplines: Illusion and Legerdemain. Trick save DC is the same number as your Save DC, {{save DC|8 + proficiency bonus + Constitution modifier}}; trick attacks use {{d20 + proficiency bonus + Constitution modifier|your trick attack bonus}}. Pledges at-will, Turns on cooldown, Prestiges spend Clones and are once per combat. Casting never generates Clones.",
+          "narration": "You have spent so long making copies of yourself that you have got good at making copies of other things — a face, a wound, a moment that never happened.",
+          "meta": {
+            "action": "Varies by trick",
+            "uses": "Whole class list, from L2",
+            "range": "Varies by trick",
+            "save": "Str/Dex/Con/Int/Wis/Cha vs {{save DC|8 + proficiency bonus + Constitution modifier}}"
+          }
+        },
+        {
+          "level": 2,
           "name": "Decoy Detonation",
           "description": "As an action, you cause one of your Clones to burst in a flash of shattering reflections, destroying it. Because you choose which Clone, you decide where the blast lands — spawn a Clone into a cluster of enemies, or Swap one there, then detonate it. Each creature within 5 feet of that Clone must make a Dexterity saving throw against your {{save DC|8 + proficiency bonus + Constitution modifier}}. On a failed save a creature takes [[1d6+Con]] psychic damage and is shoved 5 feet straight away from the Clone's space; on a success it takes half as much damage and is not moved. From 3rd level, Splintered Reflexes also lets you trigger Decoy Detonation as a reaction on another creature's turn. You can trigger Decoy Detonation at most once per turn.",
           "narration": "You let one of them go. The Clone comes apart all at once, not into smoke but into a bursting sphere of edged reflections, and everything close enough is briefly looking at a hundred small pictures of its own surprised face before the shards go through it.",
@@ -679,7 +693,7 @@
           "label": "Save DC",
           "value": "≈13 (L1) · 16 (L8) · 19 (L17)",
           "formula": "8 + proficiency bonus + Constitution modifier",
-          "note": "Save DC for effects your features force (e.g. Decoy Detonation)."
+          "note": "Save DC for effects your features force (e.g. Decoy Detonation). This same number is your trick save DC."
         },
         {
           "label": "Clones Cap",
@@ -699,6 +713,328 @@
         }
       ],
       "_file": "classes/doppelganger.json"
+    },
+    {
+      "id": "illusionist",
+      "name": "Illusionist",
+      "source": "Circus of Chaos",
+      "flavor": "A stage magician who stopped pretending. What he shows you is not there, and knowing that has never once been enough to save anybody.",
+      "hitDie": 6,
+      "primaryAbility": "Intelligence",
+      "savingThrows": [
+        "Intelligence",
+        "Wisdom"
+      ],
+      "subclassLevel": 3,
+      "proficiencies": {
+        "armor": [
+          "Light armor"
+        ],
+        "weapons": [
+          "Phantom Blade",
+          "Conjurer's Staff",
+          "Dagger"
+        ],
+        "tools": [
+          "Disguise kit",
+          "Painter's supplies"
+        ],
+        "skills": "Choose two from Arcana, Deception, Insight, Investigation, Performance, and Sleight of Hand"
+      },
+      "spellcasting": null,
+      "parryBaseDC": 14,
+      "defenseAbility": "Intelligence",
+      "parryReskin": "You do not move — the picture of you does. The blade goes through a smear of afterimage while the real body leans a hand's width out of the line, and for one beat nobody in the room including the attacker is sure which was which.",
+      "riposte": "On a Full Dodge (your Parry d20 roll comes up strictly above your effective Parry DC), the attacker's certainty cracks: it has disadvantage on the next attack roll it makes before the start of your next turn. Having just watched its blade pass through you, it swings at the next one expecting the same. No damage, no action, no Phantasm.",
+      "engine": {
+        "name": "Phantasm",
+        "resourceType": "pool",
+        "description": "The banked weight of everything the room currently believes that is not true. Phantasm is not mana — it is credibility. Every trick you perform leaves an impression behind, and the more of them the audience is carrying at once, the more they will accept when you finally ask for something enormous. It is the Illusionist's sole resource, and unlike the part-casters, casting is what builds it: your Turns are not a garnish on a weapon, they ARE the class.",
+        "generation": "You gain 1 Phantasm each time you cast a Turn — the trick lands, the audience files it away, and you are one step closer to the thing you are really building toward. You gain 1 additional Phantasm the first time each turn a creature fails a saving throw against one of your tricks, because nothing sells the next lie like the last one working. Pledges generate nothing (they are too small to be remembered) and a Prestige generates nothing (it spends the belief rather than building it).",
+        "spend": "Only a Prestige spends Phantasm, and it spends a great deal of it — see your trick list for what each one costs. Nothing else in your kit draws on the pool. Unspent Phantasm carries over between rounds, but never between fights: you start every combat with 0 Phantasm and any left over is lost the moment the fight ends. Phantasm is a per-combat currency like every other engine in this system — it is built during a fight and cannot be banked before one.",
+        "cap": "≈6 (L1-4) · 7+ (L5+)",
+        "capFormula": "proficiency bonus + Intelligence modifier (minimum 3)"
+      },
+      "keyStats": [
+        {
+          "label": "Trick DC",
+          "value": "≈13 (L1) · 16 (L8) · 19 (L17)",
+          "formula": "8 + proficiency bonus + Intelligence modifier",
+          "note": "Save DC for every trick you cast and every Illusionist effect that forces a save."
+        },
+        {
+          "label": "Phantasm Cap",
+          "value": "≈6 (L1-4) · 7+ (L5+)",
+          "formula": "proficiency bonus + Intelligence modifier (minimum 3)",
+          "note": "Most Phantasm you can hold at once. Starts every combat at 0."
+        },
+        {
+          "label": "Parry Base DC",
+          "value": "14",
+          "note": "Second-worst parrier in the roster; lower is better."
+        }
+      ],
+      "features": [
+        {
+          "level": 1,
+          "name": "Tricks",
+          "role": "combat",
+          "description": "You are a full caster: you perform Tricks from 1st level, and they are your primary way of affecting a fight. You know every trick on the Illusionist list, with no preparation and no choosing — each one becomes available at the level shown on your class trick ladder, and once available it is always available. Your disciplines are Illusion, Mesmerism, and Legerdemain. Your trick ability is Intelligence, so your trick save DC is {{trick save DC|8 + proficiency bonus + Intelligence modifier}} and any trick that makes an attack roll uses {{your trick attack|d20 + proficiency bonus + Intelligence modifier}}. Pledges are at-will, Turns cost you nothing but carry a cooldown in rounds, and a Prestige spends Phantasm and can be performed only once per combat. See the Tricks and Casting rules page for the full engine.",
+          "sheetSummary": "Full caster from level 1. You know the entire Illusionist trick list; each unlocks at its listed level. Disciplines: Illusion, Mesmerism, Legerdemain. Trick save DC {{trick save DC|8 + proficiency bonus + Intelligence modifier}}; trick attacks use {{d20 + proficiency bonus + Intelligence modifier|your trick attack bonus}}. Pledges at-will, Turns on cooldown, Prestiges spend Phantasm and are once per combat.",
+          "narration": "You do not cast so much as perform. The gesture is small and unhurried — a turned wrist, a word delivered to the back row — and the room accepts the result before it has time to check whether it should.",
+          "meta": {
+            "action": "Varies by trick",
+            "uses": "Whole class list",
+            "range": "Varies by trick",
+            "save": "Str/Dex/Con/Int/Wis/Cha vs {{trick save DC|8 + proficiency bonus + Intelligence modifier}}"
+          }
+        },
+        {
+          "level": 1,
+          "name": "Phantasm",
+          "role": "combat",
+          "description": "You gain the Phantasm pool. Casting a Turn builds it and only a Prestige spends it; see your Phantasm engine for generation, spending, and cap.",
+          "sheetSummary": "You gain the Phantasm pool. See the Phantasm engine for generation, spending, and cap. Starts every combat at 0.",
+          "narration": "Everything you have made them believe tonight is still in the room, stacked up behind their eyes. You can feel the weight of it, and you know exactly how much more it will take before you can ask for something impossible.",
+          "meta": {
+            "action": "Passive"
+          }
+        },
+        {
+          "level": 1,
+          "name": "Unreal Assurance",
+          "role": "combat",
+          "description": "An illusion of yours is not dispelled merely by being disbelieved. When a creature spends its action to study one of your tricks and determine that it is false, it must succeed on an Intelligence (Investigation) check against your {{trick save DC|8 + proficiency bonus + Intelligence modifier}}; only on a success does it see through that trick, and even then only for itself — every other creature still perceives it normally. A creature that has seen through one of your tricks gains no advantage against the next one.",
+          "sheetSummary": "A creature must use its action to study a trick and succeed on an Investigation check vs {{trick save DC|8 + proficiency bonus + Intelligence modifier}} to see through it. Seeing through it applies only to that creature and only that trick; everyone else still perceives it normally, and it gains no advantage against your next trick.",
+          "narration": "They can decide it is not real. It goes on being there anyway, patient and detailed, waiting for the part of them that is not making decisions to flinch first.",
+          "meta": {
+            "action": "Passive",
+            "save": "Investigation check vs {{trick save DC|8 + proficiency bonus + Intelligence modifier}}"
+          }
+        },
+        {
+          "level": 2,
+          "name": "Misdirection",
+          "role": "combat",
+          "description": "The audience looks where you tell it to. Once on each of your turns, immediately after you cast a trick, you can move up to 10 feet without provoking opportunity attacks. This movement costs no action and does not use your movement for the turn — every eye in the room is on the thing you just did, and none of them are on your feet.",
+          "sheetSummary": "1/turn, immediately after casting a trick: move up to 10 ft without provoking opportunity attacks. Costs no action and doesn't use your movement.",
+          "narration": "The whole room is watching the hand you wanted it to watch. You are somewhere else by the time anybody thinks to check the rest of you.",
+          "meta": {
+            "action": "Free (after casting)",
+            "uses": "1 / turn",
+            "range": "10 ft"
+          }
+        },
+        {
+          "level": 2,
+          "name": "Layered Performance",
+          "role": "combat",
+          "description": "You can hold more than one lie in the air at once. You may have two of your Turns with an ongoing duration active at the same time; without this feature, casting a second duration trick ends the first. Neither trick's cooldown is affected, and this never lets you cast two tricks in one action.",
+          "sheetSummary": "You may keep two duration Turns active at once instead of one. Doesn't change cooldowns and never allows casting two tricks in one action.",
+          "narration": "Two performances running at the same time, in the same room, neither interfering with the other. You are the only person present tracking both.",
+          "meta": {
+            "action": "Passive"
+          }
+        },
+        {
+          "level": 3,
+          "name": "Illusionist's Discipline",
+          "role": "combat",
+          "description": "You commit to a school of the art: choose the Nightmare, Hypnotist, or Trickster discipline. Your choice grants you features at 3rd level.",
+          "sheetSummary": "Choose a discipline: Nightmare, Hypnotist, or Trickster. It grants features at 3rd level.",
+          "narration": "Every illusionist eventually decides what the trick is FOR — the wound that is not there, the mind that agrees with you, or the empty stage where a man used to be standing.",
+          "meta": {
+            "action": "Passive"
+          }
+        },
+        {
+          "level": 5,
+          "name": "Vivid Cruelty",
+          "role": "combat",
+          "description": "Your phantasms have stopped being pictures. When a creature fails a saving throw against one of your tricks that deals psychic damage, it also has disadvantage on the next attack roll it makes before the end of its next turn. This applies at most once per turn, however many creatures fail.",
+          "sheetSummary": "1/turn. A creature that fails a save against one of your psychic-damage tricks also has disadvantage on its next attack roll before the end of its next turn.",
+          "narration": "It is not the pain, it is the detail. Whatever you showed them is still there when they blink, and their next swing goes wide because half of them is still looking at it.",
+          "meta": {
+            "action": "Passive",
+            "uses": "1 / turn"
+          }
+        },
+        {
+          "level": 5,
+          "name": "Sustained Illusion",
+          "role": "combat",
+          "description": "The performance no longer needs your full attention. Reduce the cooldown of every Turn on your list by 1 round, to a minimum of 1. A trick with a cooldown of 1 is unaffected.",
+          "sheetSummary": "Every Turn on your list has its cooldown reduced by 1 round, minimum 1.",
+          "narration": "The room has stopped requiring you to sell it. You can leave a thing standing and walk away from it, and it holds together on its own long enough for you to start the next one.",
+          "meta": {
+            "action": "Passive"
+          }
+        }
+      ],
+      "_file": "classes/illusionist.json"
+    },
+    {
+      "id": "jester",
+      "name": "Jester",
+      "source": "Circus of Chaos",
+      "flavor": "The one member of the company nobody takes seriously, which is exactly why he is still standing. He does not win fights. He decides who does.",
+      "hitDie": 6,
+      "primaryAbility": "Charisma",
+      "savingThrows": [
+        "Charisma",
+        "Constitution"
+      ],
+      "subclassLevel": 3,
+      "proficiencies": {
+        "armor": [
+          "Light armor"
+        ],
+        "weapons": [
+          "Marotte",
+          "Slapstick",
+          "Dagger"
+        ],
+        "tools": [
+          "Any one musical instrument",
+          "Disguise kit"
+        ],
+        "skills": "Choose two from Acrobatics, Deception, Insight, Performance, Persuasion, and Sleight of Hand"
+      },
+      "spellcasting": null,
+      "parryBaseDC": 13,
+      "defenseAbility": "Charisma",
+      "parryReskin": "You do not parry so much as make the whole thing look like a bit. A pratfall that happens to take you out of the line, an outraged squawk, the marotte thrown up at the last possible instant — it plays as comedy right up until you are standing and the swing is not.",
+      "riposte": "On a Full Dodge (your Parry d20 roll comes up strictly above your effective Parry DC), you turn the miss into material: one ally you can see within 30 feet gains {{temporary hit points equal to your Charisma modifier (minimum 1)|set from your stats on your character sheet}}. Nothing lifts a company like watching the fool make an idiot of the thing trying to kill them. No damage, no action, no Mirth.",
+      "engine": {
+        "name": "Mirth",
+        "resourceType": "pool",
+        "description": "The room's goodwill, measured. Mirth is what builds when the company is laughing with you and the enemy is not — every joke that lands, every ally who gets back up because you were there, wound up into something you eventually cash in all at once. It is the Jester's sole resource, and like the Illusionist he is a full caster: casting IS the class, so casting is what feeds it.",
+        "generation": "You gain 1 Mirth each time you cast a Turn. You gain 1 additional Mirth the first time each turn one of your tricks helps an ally — granting them a bonus, temporary hit points, a reroll, resistance, or removing something afflicting them. Pledges generate nothing and a Prestige generates nothing; the Prestige is where the goodwill gets spent, not made.",
+        "spend": "Only a Prestige spends Mirth, and it takes most of the pool — see your trick list for the cost. Nothing else in your kit draws on it. Unspent Mirth carries over between rounds, but never between fights: you start every combat with 0 Mirth and any left over is lost the moment the fight ends. Mirth is a per-combat currency like every other engine in this system — it is built during a fight and cannot be banked before one.",
+        "cap": "≈6 (L1-4) · 7+ (L5+)",
+        "capFormula": "proficiency bonus + Charisma modifier (minimum 3)"
+      },
+      "keyStats": [
+        {
+          "label": "Trick DC",
+          "value": "≈13 (L1) · 16 (L8) · 19 (L17)",
+          "formula": "8 + proficiency bonus + Charisma modifier",
+          "note": "Save DC for every trick you cast and every Jester effect that forces a save."
+        },
+        {
+          "label": "Mirth Cap",
+          "value": "≈6 (L1-4) · 7+ (L5+)",
+          "formula": "proficiency bonus + Charisma modifier (minimum 3)",
+          "note": "Most Mirth you can hold at once. Starts every combat at 0."
+        },
+        {
+          "label": "Parry Base DC",
+          "value": "13",
+          "note": "A poor parrier; he survives by being helped, not by blocking. Lower is better."
+        }
+      ],
+      "features": [
+        {
+          "level": 1,
+          "name": "Tricks",
+          "role": "combat",
+          "description": "You are a full caster: you perform Tricks from 1st level, and they are your primary way of affecting a fight. You know every trick on the Jester list, with no preparation and no choosing — each one becomes available at the level shown on your class trick ladder, and once available it is always available. Your disciplines are Mesmerism, Fortune, Illusion, and Legerdemain. Your trick ability is Charisma, so your trick save DC is {{trick save DC|8 + proficiency bonus + Charisma modifier}} and any trick that makes an attack roll uses {{your trick attack|d20 + proficiency bonus + Charisma modifier}}. Pledges are at-will, Turns cost you nothing but carry a cooldown in rounds, and a Prestige spends Mirth and can be performed only once per combat. See the Tricks and Casting rules page for the full engine.",
+          "sheetSummary": "Full caster from level 1. You know the entire Jester trick list; each unlocks at its listed level. Disciplines: Mesmerism, Fortune, Illusion, Legerdemain. Trick save DC {{trick save DC|8 + proficiency bonus + Charisma modifier}}; trick attacks use {{d20 + proficiency bonus + Charisma modifier|your trick attack bonus}}. Pledges at-will, Turns on cooldown, Prestiges spend Mirth and are once per combat.",
+          "narration": "Everything you do is delivered to the room rather than aimed at a person — a line, a gesture, a bit of business with the marotte — and somewhere in the laugh, the actual work gets done.",
+          "meta": {
+            "action": "Varies by trick",
+            "uses": "Whole class list",
+            "range": "Varies by trick",
+            "save": "Str/Dex/Con/Int/Wis/Cha vs {{trick save DC|8 + proficiency bonus + Charisma modifier}}"
+          }
+        },
+        {
+          "level": 1,
+          "name": "Mirth",
+          "role": "combat",
+          "description": "You gain the Mirth pool. Casting a Turn builds it, helping an ally builds it, and only a Prestige spends it; see your Mirth engine for generation, spending, and cap.",
+          "sheetSummary": "You gain the Mirth pool. See the Mirth engine for generation, spending, and cap. Starts every combat at 0.",
+          "narration": "You can hear it building — the company loosening up, the fight turning into a show, the moment getting closer where you can ask the whole room for something ridiculous and get it.",
+          "meta": {
+            "action": "Passive"
+          }
+        },
+        {
+          "level": 1,
+          "name": "Never the Target",
+          "role": "combat",
+          "description": "Nobody's first instinct is to kill the clown. When a hostile creature can see both you and an ally within 5 feet of you, and it makes an attack roll against you, you may use no action to make it choose: it has disadvantage on that attack roll unless it has already attacked you this combat. Once a creature has attacked you in a fight, it has your measure and this no longer works on it for the rest of that fight.",
+          "sheetSummary": "No action. A hostile that can see both you and an ally within 5 ft has disadvantage on its attack against you — but only until it has attacked you once this combat. After that it is immune to this for the rest of the fight.",
+          "narration": "It looks at you, then at the armed and serious person beside you, and does the arithmetic everyone does. You are not a threat. You are a distraction with bells on. It swings at you like it is swatting something.",
+          "meta": {
+            "action": "No action",
+            "uses": "Once per creature, per combat",
+            "range": "Self"
+          }
+        },
+        {
+          "level": 2,
+          "name": "Play to the Room",
+          "role": "combat",
+          "description": "You can carry a joke to more than one person. When you cast a Turn that targets a single ally, you may target a second willing ally within 30 feet of the first with the same effect. You can do this a number of times equal to your {{Charisma modifier (min 1)|set from your stats on your character sheet}}, regaining all expended uses when you finish a long rest. This never doubles a trick aimed at an enemy.",
+          "sheetSummary": "{{Charisma modifier (min 1)|set from your stats on your character sheet}} uses per long rest. A Turn that targets a single ALLY may also target a second willing ally within 30 ft of the first. Never applies to a trick aimed at an enemy.",
+          "narration": "You deliver it to the pair of them at once, the way a good line is thrown to two people on opposite sides of the stage. Both of them get it. Both of them straighten up.",
+          "meta": {
+            "action": "Part of casting",
+            "uses": "Cha mod / long rest",
+            "range": "30 ft"
+          }
+        },
+        {
+          "level": 2,
+          "name": "Heckler's Timing",
+          "role": "combat",
+          "description": "Your interruptions land where they hurt. Once on each of your turns, when a creature within 30 feet of you that can hear you makes an attack roll, ability check, or saving throw, you can use no action to say precisely the wrong thing at precisely the right moment: it must subtract {{1d4|a die you roll when this triggers}} from the roll. A creature that cannot hear you, or that does not understand you, is unaffected.",
+          "sheetSummary": "No action, 1/turn, 30 ft, target must be able to hear and understand you. Subtract {{1d4|a die you roll when this triggers}} from its attack roll, ability check, or saving throw.",
+          "narration": "You wait for the exact instant before it commits and then say the one thing guaranteed to get in. It is petty, it is unfair, and the wince costs it the shot.",
+          "meta": {
+            "action": "No action",
+            "uses": "1 / turn",
+            "range": "30 ft"
+          }
+        },
+        {
+          "level": 3,
+          "name": "Jester's Repertoire",
+          "role": "combat",
+          "description": "You settle into the kind of fool you are: choose the Fatemonger, Ringleader, or Buffoon repertoire. Your choice grants you features at 3rd level.",
+          "sheetSummary": "Choose a repertoire: Fatemonger, Ringleader, or Buffoon. It grants features at 3rd level.",
+          "narration": "Every fool works out eventually which part of the act is really his — the rigged odds, the room in his hand, or the sheer punishing stupidity of refusing to fall down.",
+          "meta": {
+            "action": "Passive"
+          }
+        },
+        {
+          "level": 5,
+          "name": "The Show Must Go On",
+          "role": "combat",
+          "description": "You do not let a performance end badly. When an ally you can see within 30 feet is reduced to 0 hit points, you can use your reaction to keep them upright: they drop to 1 hit point instead. Once you do this, you cannot do it again until you finish a short or long rest.",
+          "sheetSummary": "Reaction, 30 ft, once per short or long rest. When an ally you can see drops to 0 hit points, they drop to 1 instead.",
+          "narration": "You are already talking before they hit the ground — some rubbish about the second act, delivered at a shout — and somehow it is enough to keep their feet under them for one more round.",
+          "meta": {
+            "action": "Reaction",
+            "uses": "1 / short or long rest",
+            "range": "30 ft"
+          }
+        },
+        {
+          "level": 5,
+          "name": "Practised Patter",
+          "role": "combat",
+          "description": "The material is worn smooth from use. Reduce the cooldown of every Turn on your list by 1 round, to a minimum of 1. A trick with a cooldown of 1 is unaffected.",
+          "sheetSummary": "Every Turn on your list has its cooldown reduced by 1 round, minimum 1.",
+          "narration": "You have done all of this a thousand times, in worse rooms, to harder crowds. The timing no longer requires thought — it simply comes round again sooner.",
+          "meta": {
+            "action": "Passive"
+          }
+        }
+      ],
+      "_file": "classes/jester.json"
     },
     {
       "id": "joker",
@@ -845,6 +1181,20 @@
         },
         {
           "level": 2,
+          "name": "Tricks",
+          "role": "combat",
+          "description": "You are a half-caster: your magic is real but it is not the point of you, and it arrives late. From 2nd level you can perform Tricks. You know every trick on the Joker list — a short one — with no preparation and no choosing; each becomes available at the level shown on your class trick ladder, and once available it is always available. Your disciplines are Legerdemain, Fortune, and Pyrotechnics. Your trick ability is your Charisma, so your trick save DC is the same number as your Gambit DC, {{gambit DC|8 + proficiency bonus + Charisma modifier}}, and any trick that makes an attack roll uses {{your trick attack|d20 + proficiency bonus + Charisma modifier}}. Pledges are at-will and Turns cost you nothing but carry a cooldown in rounds; a Prestige spends Mayhem and can be performed only once per combat. Casting NEVER generates Mayhem — that is the full casters' loop, not yours, so a Prestige always comes out of the resource your core kit already needs. A damaging Turn of yours also scales more slowly than a full caster's: see the Tricks and Casting rules page.",
+          "sheetSummary": "Half-caster: tricks from level 2. You know the entire Joker list; each unlocks at its listed level. Disciplines: Legerdemain, Fortune, and Pyrotechnics. Trick save DC is the same number as your Gambit DC, {{gambit DC|8 + proficiency bonus + Charisma modifier}}; trick attacks use {{d20 + proficiency bonus + Charisma modifier|your trick attack bonus}}. Pledges at-will, Turns on cooldown, Prestiges spend Mayhem and are once per combat. Casting never generates Mayhem.",
+          "narration": "You start doing things with the cards that the cards do not really do. Nobody in the company can tell where the sleight stops and the magic starts, and you have never volunteered the answer.",
+          "meta": {
+            "action": "Varies by trick",
+            "uses": "Whole class list, from L2",
+            "range": "Varies by trick",
+            "save": "Str/Dex/Con/Int/Wis/Cha vs {{gambit DC|8 + proficiency bonus + Charisma modifier}}"
+          }
+        },
+        {
+          "level": 2,
           "name": "Gambit",
           "description": "As a bonus action, spend 1 Mayhem to attempt a Gambit — a small, rule-bending trick. Choose one:",
           "narration": "You try something the fight has no rule for. It is fast, it is cheap, it is beneath you, and the moment it works everyone watching hates that it worked.",
@@ -928,7 +1278,7 @@
           "label": "Gambit DC",
           "value": "≈13 (L1) · 16 (L8) · 19 (L17)",
           "formula": "8 + proficiency bonus + Charisma modifier",
-          "note": "Save DC for Wild Cards, Gambits, and every other Joker effect that forces a save."
+          "note": "Save DC for Wild Cards, Gambits, and every other Joker effect that forces a save. This same number is your trick save DC."
         },
         {
           "label": "Mayhem Cap",
@@ -1238,6 +1588,20 @@
         },
         {
           "level": 2,
+          "name": "Tricks",
+          "role": "combat",
+          "description": "You are a half-caster: your magic is real but it is not the point of you, and it arrives late. From 2nd level you can perform Tricks. You know every trick on the Puppeteer list — a short one — with no preparation and no choosing; each becomes available at the level shown on your class trick ladder, and once available it is always available. Your disciplines are Animation and Legerdemain. Your trick ability is your Wisdom, so your trick save DC is the same number as your Control DC, {{control DC|8 + proficiency bonus + Wisdom modifier}}, and any trick that makes an attack roll uses {{your trick attack|d20 + proficiency bonus + Wisdom modifier}}. Pledges are at-will and Turns cost you nothing but carry a cooldown in rounds; a Prestige spends Strings and can be performed only once per combat. Casting NEVER generates Strings — that is the full casters' loop, not yours, so a Prestige always comes out of the resource your core kit already needs. A damaging Turn of yours also scales more slowly than a full caster's: see the Tricks and Casting rules page.",
+          "sheetSummary": "Half-caster: tricks from level 2. You know the entire Puppeteer list; each unlocks at its listed level. Disciplines: Animation and Legerdemain. Trick save DC is the same number as your Control DC, {{control DC|8 + proficiency bonus + Wisdom modifier}}; trick attacks use {{d20 + proficiency bonus + Wisdom modifier|your trick attack bonus}}. Pledges at-will, Turns on cooldown, Prestiges spend Strings and are once per combat. Casting never generates Strings.",
+          "narration": "The wires stop needing to be attached to anything. You work a hand in the empty air and something across the room moves the way a puppet moves, and there is no line anybody can see holding it.",
+          "meta": {
+            "action": "Varies by trick",
+            "uses": "Whole class list, from L2",
+            "range": "Varies by trick",
+            "save": "Str/Dex/Con/Int/Wis/Cha vs {{control DC|8 + proficiency bonus + Wisdom modifier}}"
+          }
+        },
+        {
+          "level": 2,
           "name": "Tangle",
           "description": "As an action, choose one creature you have a String attached to within 60 feet. If it is unwilling, it must succeed on a Strength saving throw against your control DC or become restrained as wire cinches tight around it; at the end of each of its turns it may repeat the save, ending the restrained condition on a success. If it is willing — an ally you're steadying rather than binding — you instead brace it with your strings, granting it advantage on the next Strength or Dexterity saving throw it makes before the start of your next turn. Measured control: this holds a target in place or steadies a friend, it doesn't end a fight by itself.",
           "narration": "The wire goes around and then goes tight. It finds elbows, throat, the backs of the knees, and pulls all of them toward each other at once until the thing you caught is a knot standing where it used to be a fighter.",
@@ -1302,7 +1666,7 @@
           "label": "Control DC",
           "value": "≈13 (L1) · 16 (L8) · 19 (L17)",
           "formula": "8 + proficiency bonus + Wisdom modifier",
-          "note": "Save DC for your String control effects (Manipulate, Tangle, Grand Marionette, etc.)."
+          "note": "Save DC for your String control effects (Manipulate, Tangle, Grand Marionette, etc.). This same number is your trick save DC."
         },
         {
           "label": "Strings Cap",
@@ -1560,6 +1924,51 @@
       "_file": "subclasses/anarchist.json"
     },
     {
+      "id": "buffoon",
+      "name": "Buffoon",
+      "parentClass": "jester",
+      "source": "Circus of Chaos",
+      "flavor": "The bit is that you will not stop. They hit you, you get up, you make the joke again. Eventually it stops being funny for them.",
+      "features": [
+        {
+          "level": 3,
+          "name": "Take the Fall",
+          "role": "combat",
+          "description": "When an attack hits an ally within 5 feet of you, you can use your reaction to shove them clear and wear it yourself: the attack hits you instead, and you take half the damage it would have dealt. You must be able to see the attacker, and this cannot be used against an effect that does not make an attack roll.",
+          "sheetSummary": "Reaction, 5 ft, attacker must be visible. An attack that hits an adjacent ally hits you instead and you take HALF its damage. Attack rolls only.",
+          "narration": "You get in the way in the most undignified manner available — a shoulder, a shove, an outraged yelp — and take it across the back with the timing of a man who has been falling over professionally since he was nine.",
+          "meta": {
+            "action": "Reaction",
+            "uses": "1 / round",
+            "range": "5 ft"
+          }
+        },
+        {
+          "level": 3,
+          "name": "Rubber Bones",
+          "role": "combat",
+          "description": "You have been thrown off more stages than you can count. You have resistance to bludgeoning damage from falls, collisions, and being thrown, and whenever you are knocked prone you can stand up for 5 feet of movement instead of half your speed.",
+          "sheetSummary": "Resistance to bludgeoning damage from falls, collisions, and being thrown. Standing up from prone costs 5 ft of movement instead of half your speed.",
+          "narration": "You bounce. That is genuinely the whole of it — you have hit enough floors from enough heights that your body has stopped taking it personally, and you are upright again before the laugh finishes.",
+          "meta": {
+            "action": "Passive"
+          }
+        },
+        {
+          "level": 3,
+          "name": "Beneath Contempt",
+          "role": "roleplay",
+          "description": "Nobody guards their tongue in front of the fool. Guards, servants, courtiers, and hired muscle routinely discuss things in front of you that they would never say to an armed stranger, and you have advantage on Charisma (Deception) checks made to be dismissed as harmless. A creature that has already seen you do something dangerous is immune to this for as long as it remembers.",
+          "sheetSummary": "People speak freely in front of you as though you don't count. Advantage on Deception checks made to be dismissed as harmless. A creature that has seen you do something dangerous is immune while it remembers.",
+          "narration": "They look straight through you and carry on the conversation. You are furniture that occasionally makes a noise, and you have built an entire career out of what people say in front of furniture.",
+          "meta": {
+            "action": "Passive"
+          }
+        }
+      ],
+      "_file": "subclasses/buffoon.json"
+    },
+    {
       "id": "bulwark",
       "name": "Bulwark",
       "parentClass": "the-sandow",
@@ -1666,6 +2075,52 @@
         }
       ],
       "_file": "subclasses/contortionist.json"
+    },
+    {
+      "id": "fatemonger",
+      "name": "Fatemonger",
+      "parentClass": "jester",
+      "source": "Circus of Chaos",
+      "flavor": "Luck is a resource like any other. It belongs to whoever is paying attention, and nobody in this company pays attention like you.",
+      "features": [
+        {
+          "level": 3,
+          "name": "Loaded Odds",
+          "role": "combat",
+          "description": "Once on each of your turns, when an ally you can see within 30 feet rolls a 1 on a d20 for an attack roll, ability check, or saving throw, you can use no action to make them reroll it. They must use the new roll.",
+          "sheetSummary": "No action, 1/turn, 30 ft. When an ally rolls a 1 on a d20 for an attack, check, or save, they reroll and must use the new result.",
+          "narration": "You see it come up and you simply refuse it — a click of the tongue, a flick of the wrist — and the moment rewinds half a second into something survivable.",
+          "meta": {
+            "action": "No action",
+            "uses": "1 / turn",
+            "range": "30 ft"
+          }
+        },
+        {
+          "level": 3,
+          "name": "The House Always Collects",
+          "role": "combat",
+          "description": "Fortune runs both ways at your table. When a creature within 30 feet that you can see rolls a natural 20 on an attack roll against one of your allies, you gain 1 Mirth — the worse it gets, the better your material.",
+          "sheetSummary": "Gain 1 Mirth whenever a creature within 30 ft rolls a natural 20 on an attack roll against one of your allies.",
+          "narration": "The worst possible thing happens and you laugh first, because a disaster is just a setup with better timing, and you have already worked out what it is setting up.",
+          "meta": {
+            "action": "Passive",
+            "range": "30 ft"
+          }
+        },
+        {
+          "level": 3,
+          "name": "Never Pays to Bet Against Him",
+          "role": "roleplay",
+          "description": "You have an unnatural nose for a wager. You know instinctively whether a game of chance, a contract, or an offer put to you is rigged, though not how. Once per long rest, when you make a bet, a bargain, or a wager of any kind and lose, you may declare that you meant to — you recover whatever you staked, and everyone present remembers it as a joke you were making.",
+          "sheetSummary": "You instinctively know whether a game, contract, or offer is rigged, but not how. Once per long rest, when you lose a bet or bargain, declare you meant to: you recover your stake and everyone remembers it as a joke.",
+          "narration": "You lose spectacularly, take a bow for it, and by the time the laugh dies down the money is back in your hand and nobody can reconstruct how the bet was ever serious.",
+          "meta": {
+            "action": "Passive / 1 per long rest"
+          }
+        }
+      ],
+      "_file": "subclasses/fatemonger.json"
     },
     {
       "id": "firebrand",
@@ -1858,6 +2313,54 @@
       "_file": "subclasses/human-cannonball.json"
     },
     {
+      "id": "hypnotist",
+      "name": "Hypnotist",
+      "parentClass": "illusionist",
+      "source": "Circus of Chaos",
+      "flavor": "You do not need them to see anything. You need them to agree with you, and people agree with far more than they think they do.",
+      "features": [
+        {
+          "level": 3,
+          "name": "Suggestion Under the Patter",
+          "role": "combat",
+          "description": "As a bonus action, choose one creature within 30 feet that can hear and understand you. It must succeed on a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + Intelligence modifier}} or, on its next turn, it cannot willingly move closer to you and cannot target you with an attack — it may act freely otherwise. You can use this a number of times equal to your {{Intelligence modifier (min 1)|set from your stats on your character sheet}}, regaining all expended uses when you finish a long rest.",
+          "sheetSummary": "Bonus action, 30 ft, must hear and understand you. {{Intelligence modifier (min 1)|set from your stats on your character sheet}} uses per long rest. Wisdom save vs {{trick save DC|8 + proficiency bonus + Intelligence modifier}} or on its next turn it can't move closer to you or target you with an attack. It may act freely otherwise.",
+          "narration": "You keep talking. Nothing you say is an order and none of it sounds like magic, and somewhere in the middle of it the thing decides, entirely on its own, that you are not who it wants to be dealing with.",
+          "meta": {
+            "action": "Bonus Action",
+            "uses": "Int mod / long rest",
+            "range": "30 ft",
+            "save": "Wis save vs {{trick save DC|8 + proficiency bonus + Intelligence modifier}}"
+          }
+        },
+        {
+          "level": 3,
+          "name": "Sympathetic Response",
+          "role": "combat",
+          "description": "A mind you have already touched keeps answering. When a creature fails a saving throw against one of your Mesmerism tricks, the next attack roll made against that creature before the start of your next turn has advantage. This applies at most once per turn, however many creatures fail.",
+          "sheetSummary": "1/turn. When a creature fails a save against one of your Mesmerism tricks, the next attack roll against it before the start of your next turn has advantage.",
+          "narration": "Its attention is still half on you when the blade arrives. It never even turns to look.",
+          "meta": {
+            "action": "Passive",
+            "uses": "1 / turn"
+          }
+        },
+        {
+          "level": 3,
+          "name": "Stage Hypnosis",
+          "role": "roleplay",
+          "description": "The old parlour act still works. Over 1 minute of uninterrupted talk with a willing or unsuspecting creature that can hear and understand you, you can put it into a light trance. While entranced it is calm, suggestible, and answers questions truthfully as it understands them, and it remembers the conversation afterwards as pleasant and unremarkable. The trance ends instantly if it is harmed, threatened, or asked to do something it would refuse while awake. This does no combat work and never functions on a creature already hostile to you.",
+          "sheetSummary": "1 minute of uninterrupted talk with a willing or unsuspecting creature that can hear and understand you: it enters a light trance, answers truthfully as it understands things, and remembers the talk as unremarkable. Ends if harmed, threatened, or asked to do something it would refuse. Never works on an already-hostile creature; no combat use.",
+          "narration": "Watch the coin. Listen to the voice. There is nothing frightening about any of it — that is the whole craft — and ten minutes later they walk away pleased with a conversation they cannot quite recount.",
+          "meta": {
+            "action": "1 minute",
+            "range": "Conversation"
+          }
+        }
+      ],
+      "_file": "subclasses/hypnotist.json"
+    },
+    {
       "id": "impalement",
       "name": "Impalement",
       "parentClass": "juggler",
@@ -2047,6 +2550,52 @@
       "_file": "subclasses/mirror.json"
     },
     {
+      "id": "nightmare",
+      "name": "Nightmare",
+      "parentClass": "illusionist",
+      "source": "Circus of Chaos",
+      "flavor": "The illusions that stop being entertainment. You do not show them a monster — you show them the one they already had.",
+      "features": [
+        {
+          "level": 3,
+          "name": "It Gets Worse",
+          "role": "combat",
+          "description": "A creature that has already failed against you is easier to break the second time. When a creature makes a saving throw against one of your tricks and it has already failed a save against one of your tricks during this combat, it makes the new save with disadvantage.",
+          "sheetSummary": "A creature that has already failed a save against one of your tricks this combat makes every later save against your tricks with disadvantage.",
+          "narration": "The second one lands on ground you already broke. They know it is coming, they know what you are, and knowing has never once helped anybody.",
+          "meta": {
+            "action": "Passive",
+            "range": "Any of your tricks"
+          }
+        },
+        {
+          "level": 3,
+          "name": "Feed the Fear",
+          "role": "combat",
+          "description": "Terror is credibility. The first time each turn a creature fails a saving throw against one of your tricks that deals psychic damage, you gain 1 additional Phantasm, over and above whatever your engine already granted this turn.",
+          "sheetSummary": "1/turn. Gain 1 additional Phantasm the first time each turn a creature fails a save against one of your psychic-damage tricks.",
+          "narration": "You watch it land and something in you banks it. The scream is not the point. The scream is the receipt.",
+          "meta": {
+            "action": "Passive",
+            "uses": "1 / turn"
+          }
+        },
+        {
+          "level": 3,
+          "name": "Reader of Rooms",
+          "role": "roleplay",
+          "description": "You have spent your career finding the thing an audience is most afraid of and selling it back to them. After a minute of watching or talking to a creature, you learn what it fears most — a person, a memory, a manner of dying, a specific humiliation — as a single clear impression. The creature does not know you have done this. A creature that cannot be frightened yields nothing.",
+          "sheetSummary": "After 1 minute observing or talking to a creature, learn what it fears most as a single clear impression. It doesn't notice. Creatures immune to fear yield nothing.",
+          "narration": "You are not reading minds. You are reading a face across a minute of small talk, the way you have read ten thousand faces from a stage, and by the end of it you know exactly which thing to put in front of them.",
+          "meta": {
+            "action": "1 minute",
+            "range": "Sight/conversation"
+          }
+        }
+      ],
+      "_file": "subclasses/nightmare.json"
+    },
+    {
       "id": "puppet-master",
       "name": "Puppet Master",
       "parentClass": "puppeteer",
@@ -2094,6 +2643,54 @@
         }
       ],
       "_file": "subclasses/puppet-master.json"
+    },
+    {
+      "id": "ringleader",
+      "name": "Ringleader",
+      "parentClass": "jester",
+      "source": "Circus of Chaos",
+      "flavor": "Somebody has to run the show. It was never going to be the strongman.",
+      "features": [
+        {
+          "level": 3,
+          "name": "Cue the Next Act",
+          "role": "combat",
+          "description": "As a bonus action, choose one ally you can see within 30 feet. It may immediately use its reaction to move up to half its speed without provoking opportunity attacks. You can use this a number of times equal to your {{Charisma modifier (min 1)|set from your stats on your character sheet}}, regaining all expended uses when you finish a long rest.",
+          "sheetSummary": "Bonus action, 30 ft, {{Charisma modifier (min 1)|set from your stats on your character sheet}} uses per long rest. One ally may immediately use its reaction to move up to half its speed without provoking opportunity attacks.",
+          "narration": "You call it like a cue, because it is one — a name, a gesture, a stamp of the foot — and they are moving before they have decided to.",
+          "meta": {
+            "action": "Bonus Action",
+            "uses": "Cha mod / long rest",
+            "range": "30 ft"
+          }
+        },
+        {
+          "level": 3,
+          "name": "Everyone Watch This",
+          "role": "combat",
+          "description": "When you cast a Turn that affects one or more enemies, each ally you can see within 30 feet has advantage on the first attack roll they make against one of those enemies before the start of your next turn. This applies at most once per turn.",
+          "sheetSummary": "1/turn. When you cast a Turn affecting one or more enemies, each ally within 30 ft has advantage on their first attack roll against one of those enemies before the start of your next turn.",
+          "narration": "You point at it and announce it to the room. Suddenly it is not a fight, it is the bit everyone came to see, and five people are looking at the same target for the same reason.",
+          "meta": {
+            "action": "Passive",
+            "uses": "1 / turn",
+            "range": "30 ft"
+          }
+        },
+        {
+          "level": 3,
+          "name": "Top of the Bill",
+          "role": "roleplay",
+          "description": "You can run a room the way you run a ring. Given 10 minutes, you can organise any crowd of up to fifty ordinary people into doing one simple coordinated thing — clearing a square, forming a line, all looking the other way, moving somewhere together. They will not fight for you and they will not risk their lives, but they will follow a confident person with a plan, and you are always the most confident person present.",
+          "sheetSummary": "Given 10 minutes, organise up to fifty ordinary people into one simple coordinated action (clear a space, form a line, look away, move together). They will not fight or risk their lives for you.",
+          "narration": "You get up on something, you raise your voice into its carrying register, and a frightened mob becomes an audience with a job. It is the same skill as calling an act. It has never once failed to work.",
+          "meta": {
+            "action": "10 minutes",
+            "range": "Up to 50 people"
+          }
+        }
+      ],
+      "_file": "subclasses/ringleader.json"
     },
     {
       "id": "ringmaster",
@@ -2330,6 +2927,52 @@
         }
       ],
       "_file": "subclasses/trapeze.json"
+    },
+    {
+      "id": "trickster",
+      "name": "Trickster",
+      "parentClass": "illusionist",
+      "source": "Circus of Chaos",
+      "flavor": "Every illusion is misdirection with better staging. You cut out the staging.",
+      "features": [
+        {
+          "level": 3,
+          "name": "Two Places at Once",
+          "role": "combat",
+          "description": "When you use Misdirection to move after casting a trick, you may instead leave a silent, motionless illusory double of yourself in the space you left. The double lasts until the start of your next turn or until any creature touches it or hits it with an attack, at which point it vanishes. While it stands, a creature that has not seen through it must choose between you and the double at random when it targets you with an attack.",
+          "sheetSummary": "When Misdirection moves you, leave a motionless illusory double in the space you left. Lasts until the start of your next turn or until touched or hit. While it stands, a creature that hasn't seen through it picks at random between you and the double when it targets you with an attack.",
+          "narration": "You step away and something stays. It does not breathe and it does not blink, and in a busy fight nobody has time to notice either.",
+          "meta": {
+            "action": "Free (with Misdirection)",
+            "uses": "1 / turn",
+            "range": "Space you left"
+          }
+        },
+        {
+          "level": 3,
+          "name": "Palmed",
+          "role": "combat",
+          "description": "You can hide the real work inside the loud work. When you cast a Turn, you may also cast one Pledge as part of the same action, once on each of your turns. The Pledge resolves after the Turn.",
+          "sheetSummary": "1/turn. When you cast a Turn, also cast one Pledge as part of the same action; the Pledge resolves after the Turn.",
+          "narration": "The big gesture is the cover. The small one, the one that actually matters, happens inside it while everyone is busy applauding the wrong hand.",
+          "meta": {
+            "action": "Part of casting a Turn",
+            "uses": "1 / turn"
+          }
+        },
+        {
+          "level": 3,
+          "name": "Second Nature",
+          "role": "roleplay",
+          "description": "Sleight of hand has stopped requiring your attention. You can palm, plant, swap, or produce any object small enough to fit in one hand without being noticed, with no check, provided nobody is deliberately watching your hands. Against a creature that IS watching your hands, you have advantage on the check. You can also perform any Pledge without any visible gesture at all, so nobody can tell you cast anything.",
+          "sheetSummary": "Palm, plant, swap, or produce a hand-sized object with no check unless someone is deliberately watching your hands (advantage if they are). You can cast any Pledge with no visible gesture, so nobody can tell you cast it.",
+          "narration": "The hands do it without being asked any more. You have handed back a stolen ring while apologising for the theft and nobody in the room, including the owner, saw either half.",
+          "meta": {
+            "action": "Passive"
+          }
+        }
+      ],
+      "_file": "subclasses/trickster.json"
     },
     {
       "id": "warden",
@@ -3470,6 +4113,32 @@
       "_file": "weapons/cannonball.json"
     },
     {
+      "id": "conjurers-staff",
+      "name": "Conjurer's Staff",
+      "source": "Circus of Chaos",
+      "flavor": "Six feet of lacquered stage prop, weighted at one end, and every illusionist in the show has cracked someone's shins with it at least once.",
+      "category": "martial",
+      "damage": {
+        "die": "1d6",
+        "type": "bludgeoning"
+      },
+      "versatileDamage": "1d8",
+      "properties": [
+        "versatile"
+      ],
+      "parryProfile": {
+        "canParry": true,
+        "parryRange": "melee",
+        "dcMod": -1,
+        "note": "A long haft held in two hands is the easiest thing in the arsenal to put between yourself and a blade."
+      },
+      "mastery": "Topple",
+      "proficientClasses": [
+        "illusionist"
+      ],
+      "_file": "weapons/conjurers-staff.json"
+    },
+    {
       "id": "control-wires",
       "name": "Control Wires",
       "source": "Circus System",
@@ -3525,9 +4194,11 @@
         "note": "A small blade parries only passably — better than bare hands, worse than a dueling weapon. Once thrown it is gone, with nothing left in hand to parry with."
       },
       "proficientClasses": [
-        "puppeteer",
         "doppelganger",
-        "joker"
+        "illusionist",
+        "jester",
+        "joker",
+        "puppeteer"
       ],
       "mastery": "Nick",
       "_file": "weapons/dagger.json"
@@ -3641,6 +4312,31 @@
       "_file": "weapons/juggling-clubs.json"
     },
     {
+      "id": "marotte",
+      "name": "Marotte",
+      "source": "Circus of Chaos",
+      "flavor": "A fool's sceptre: your own face carved on the end of a stick, grinning, with bells. It is a joke right up until the weighted head comes round.",
+      "category": "signature",
+      "damage": {
+        "die": "1d6",
+        "type": "bludgeoning"
+      },
+      "properties": [
+        "light"
+      ],
+      "parryProfile": {
+        "canParry": true,
+        "parryRange": "melee",
+        "dcMod": 0,
+        "note": "You catch the blow on the carved head — the little face takes it, and the bells make the whole thing sound like it was part of the act."
+      },
+      "mastery": "Sap",
+      "proficientClasses": [
+        "jester"
+      ],
+      "_file": "weapons/marotte.json"
+    },
+    {
       "id": "mirror-blades",
       "name": "Mirror Blades",
       "source": "Circus System",
@@ -3664,6 +4360,32 @@
       ],
       "mastery": "Vex",
       "_file": "weapons/mirror-blades.json"
+    },
+    {
+      "id": "phantom-blade",
+      "name": "Phantom Blade",
+      "source": "Circus of Chaos",
+      "flavor": "There is no blade. There is the certainty of a blade, held in a hand that knows exactly where a blade would be — and the wound argues for itself.",
+      "category": "signature",
+      "damage": {
+        "die": "1d6",
+        "type": "psychic"
+      },
+      "properties": [
+        "finesse",
+        "light"
+      ],
+      "parryProfile": {
+        "canParry": true,
+        "parryRange": "melee",
+        "dcMod": 0,
+        "note": "It parries because the attacker believes it will. Steel stops on nothing and the arm behind it stops with it."
+      },
+      "mastery": "Vex",
+      "proficientClasses": [
+        "illusionist"
+      ],
+      "_file": "weapons/phantom-blade.json"
     },
     {
       "id": "rapier",
@@ -3742,6 +4464,32 @@
       ],
       "mastery": "Vex",
       "_file": "weapons/shortsword.json"
+    },
+    {
+      "id": "slapstick",
+      "name": "Slapstick",
+      "source": "Circus of Chaos",
+      "flavor": "Two slats of wood hinged to crack like a broken bone on contact. It hurts far less than it sounds and far more than anyone expects.",
+      "category": "signature",
+      "damage": {
+        "die": "1d4",
+        "type": "bludgeoning"
+      },
+      "properties": [
+        "finesse",
+        "light"
+      ],
+      "parryProfile": {
+        "canParry": true,
+        "parryRange": "melee",
+        "dcMod": 1,
+        "note": "You can get it in the way, but it is two bits of wood on a hinge — it slaps a blade aside rather than stopping it."
+      },
+      "mastery": "Vex",
+      "proficientClasses": [
+        "jester"
+      ],
+      "_file": "weapons/slapstick.json"
     },
     {
       "id": "strongmans-barbell",

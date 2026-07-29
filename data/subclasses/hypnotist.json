@@ -1,0 +1,47 @@
+{
+  "id": "hypnotist",
+  "name": "Hypnotist",
+  "parentClass": "illusionist",
+  "source": "Circus of Chaos",
+  "flavor": "You do not need them to see anything. You need them to agree with you, and people agree with far more than they think they do.",
+  "features": [
+    {
+      "level": 3,
+      "name": "Suggestion Under the Patter",
+      "role": "combat",
+      "description": "As a bonus action, choose one creature within 30 feet that can hear and understand you. It must succeed on a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + Intelligence modifier}} or, on its next turn, it cannot willingly move closer to you and cannot target you with an attack — it may act freely otherwise. You can use this a number of times equal to your {{Intelligence modifier (min 1)|set from your stats on your character sheet}}, regaining all expended uses when you finish a long rest.",
+      "sheetSummary": "Bonus action, 30 ft, must hear and understand you. {{Intelligence modifier (min 1)|set from your stats on your character sheet}} uses per long rest. Wisdom save vs {{trick save DC|8 + proficiency bonus + Intelligence modifier}} or on its next turn it can't move closer to you or target you with an attack. It may act freely otherwise.",
+      "narration": "You keep talking. Nothing you say is an order and none of it sounds like magic, and somewhere in the middle of it the thing decides, entirely on its own, that you are not who it wants to be dealing with.",
+      "meta": {
+        "action": "Bonus Action",
+        "uses": "Int mod / long rest",
+        "range": "30 ft",
+        "save": "Wis save vs {{trick save DC|8 + proficiency bonus + Intelligence modifier}}"
+      }
+    },
+    {
+      "level": 3,
+      "name": "Sympathetic Response",
+      "role": "combat",
+      "description": "A mind you have already touched keeps answering. When a creature fails a saving throw against one of your Mesmerism tricks, the next attack roll made against that creature before the start of your next turn has advantage. This applies at most once per turn, however many creatures fail.",
+      "sheetSummary": "1/turn. When a creature fails a save against one of your Mesmerism tricks, the next attack roll against it before the start of your next turn has advantage.",
+      "narration": "Its attention is still half on you when the blade arrives. It never even turns to look.",
+      "meta": {
+        "action": "Passive",
+        "uses": "1 / turn"
+      }
+    },
+    {
+      "level": 3,
+      "name": "Stage Hypnosis",
+      "role": "roleplay",
+      "description": "The old parlour act still works. Over 1 minute of uninterrupted talk with a willing or unsuspecting creature that can hear and understand you, you can put it into a light trance. While entranced it is calm, suggestible, and answers questions truthfully as it understands them, and it remembers the conversation afterwards as pleasant and unremarkable. The trance ends instantly if it is harmed, threatened, or asked to do something it would refuse while awake. This does no combat work and never functions on a creature already hostile to you.",
+      "sheetSummary": "1 minute of uninterrupted talk with a willing or unsuspecting creature that can hear and understand you: it enters a light trance, answers truthfully as it understands things, and remembers the talk as unremarkable. Ends if harmed, threatened, or asked to do something it would refuse. Never works on an already-hostile creature; no combat use.",
+      "narration": "Watch the coin. Listen to the voice. There is nothing frightening about any of it — that is the whole craft — and ten minutes later they walk away pleased with a conversation they cannot quite recount.",
+      "meta": {
+        "action": "1 minute",
+        "range": "Conversation"
+      }
+    }
+  ]
+}

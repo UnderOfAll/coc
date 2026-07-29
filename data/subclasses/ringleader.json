@@ -1,0 +1,47 @@
+{
+  "id": "ringleader",
+  "name": "Ringleader",
+  "parentClass": "jester",
+  "source": "Circus of Chaos",
+  "flavor": "Somebody has to run the show. It was never going to be the strongman.",
+  "features": [
+    {
+      "level": 3,
+      "name": "Cue the Next Act",
+      "role": "combat",
+      "description": "As a bonus action, choose one ally you can see within 30 feet. It may immediately use its reaction to move up to half its speed without provoking opportunity attacks. You can use this a number of times equal to your {{Charisma modifier (min 1)|set from your stats on your character sheet}}, regaining all expended uses when you finish a long rest.",
+      "sheetSummary": "Bonus action, 30 ft, {{Charisma modifier (min 1)|set from your stats on your character sheet}} uses per long rest. One ally may immediately use its reaction to move up to half its speed without provoking opportunity attacks.",
+      "narration": "You call it like a cue, because it is one — a name, a gesture, a stamp of the foot — and they are moving before they have decided to.",
+      "meta": {
+        "action": "Bonus Action",
+        "uses": "Cha mod / long rest",
+        "range": "30 ft"
+      }
+    },
+    {
+      "level": 3,
+      "name": "Everyone Watch This",
+      "role": "combat",
+      "description": "When you cast a Turn that affects one or more enemies, each ally you can see within 30 feet has advantage on the first attack roll they make against one of those enemies before the start of your next turn. This applies at most once per turn.",
+      "sheetSummary": "1/turn. When you cast a Turn affecting one or more enemies, each ally within 30 ft has advantage on their first attack roll against one of those enemies before the start of your next turn.",
+      "narration": "You point at it and announce it to the room. Suddenly it is not a fight, it is the bit everyone came to see, and five people are looking at the same target for the same reason.",
+      "meta": {
+        "action": "Passive",
+        "uses": "1 / turn",
+        "range": "30 ft"
+      }
+    },
+    {
+      "level": 3,
+      "name": "Top of the Bill",
+      "role": "roleplay",
+      "description": "You can run a room the way you run a ring. Given 10 minutes, you can organise any crowd of up to fifty ordinary people into doing one simple coordinated thing — clearing a square, forming a line, all looking the other way, moving somewhere together. They will not fight for you and they will not risk their lives, but they will follow a confident person with a plan, and you are always the most confident person present.",
+      "sheetSummary": "Given 10 minutes, organise up to fifty ordinary people into one simple coordinated action (clear a space, form a line, look away, move together). They will not fight or risk their lives for you.",
+      "narration": "You get up on something, you raise your voice into its carrying register, and a frightened mob becomes an audience with a job. It is the same skill as calling an act. It has never once failed to work.",
+      "meta": {
+        "action": "10 minutes",
+        "range": "Up to 50 people"
+      }
+    }
+  ]
+}

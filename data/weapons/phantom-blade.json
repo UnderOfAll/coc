@@ -1,0 +1,25 @@
+{
+  "id": "phantom-blade",
+  "name": "Phantom Blade",
+  "source": "Circus of Chaos",
+  "flavor": "There is no blade. There is the certainty of a blade, held in a hand that knows exactly where a blade would be — and the wound argues for itself.",
+  "category": "signature",
+  "damage": {
+    "die": "1d6",
+    "type": "psychic"
+  },
+  "properties": [
+    "finesse",
+    "light"
+  ],
+  "parryProfile": {
+    "canParry": true,
+    "parryRange": "melee",
+    "dcMod": 0,
+    "note": "It parries because the attacker believes it will. Steel stops on nothing and the arm behind it stops with it."
+  },
+  "mastery": "Vex",
+  "proficientClasses": [
+    "illusionist"
+  ]
+}

@@ -88,6 +88,20 @@
     },
     {
       "level": 2,
+      "name": "Tricks",
+      "role": "combat",
+      "description": "You are a half-caster: your magic is real but it is not the point of you, and it arrives late. From 2nd level you can perform Tricks. You know every trick on the Puppeteer list — a short one — with no preparation and no choosing; each becomes available at the level shown on your class trick ladder, and once available it is always available. Your disciplines are Animation and Legerdemain. Your trick ability is your Wisdom, so your trick save DC is the same number as your Control DC, {{control DC|8 + proficiency bonus + Wisdom modifier}}, and any trick that makes an attack roll uses {{your trick attack|d20 + proficiency bonus + Wisdom modifier}}. Pledges are at-will and Turns cost you nothing but carry a cooldown in rounds; a Prestige spends Strings and can be performed only once per combat. Casting NEVER generates Strings — that is the full casters' loop, not yours, so a Prestige always comes out of the resource your core kit already needs. A damaging Turn of yours also scales more slowly than a full caster's: see the Tricks and Casting rules page.",
+      "sheetSummary": "Half-caster: tricks from level 2. You know the entire Puppeteer list; each unlocks at its listed level. Disciplines: Animation and Legerdemain. Trick save DC is the same number as your Control DC, {{control DC|8 + proficiency bonus + Wisdom modifier}}; trick attacks use {{d20 + proficiency bonus + Wisdom modifier|your trick attack bonus}}. Pledges at-will, Turns on cooldown, Prestiges spend Strings and are once per combat. Casting never generates Strings.",
+      "narration": "The wires stop needing to be attached to anything. You work a hand in the empty air and something across the room moves the way a puppet moves, and there is no line anybody can see holding it.",
+      "meta": {
+        "action": "Varies by trick",
+        "uses": "Whole class list, from L2",
+        "range": "Varies by trick",
+        "save": "Str/Dex/Con/Int/Wis/Cha vs {{control DC|8 + proficiency bonus + Wisdom modifier}}"
+      }
+    },
+    {
+      "level": 2,
       "name": "Tangle",
       "description": "As an action, choose one creature you have a String attached to within 60 feet. If it is unwilling, it must succeed on a Strength saving throw against your control DC or become restrained as wire cinches tight around it; at the end of each of its turns it may repeat the save, ending the restrained condition on a success. If it is willing — an ally you're steadying rather than binding — you instead brace it with your strings, granting it advantage on the next Strength or Dexterity saving throw it makes before the start of your next turn. Measured control: this holds a target in place or steadies a friend, it doesn't end a fight by itself.",
       "narration": "The wire goes around and then goes tight. It finds elbows, throat, the backs of the knees, and pulls all of them toward each other at once until the thing you caught is a knot standing where it used to be a fighter.",
@@ -152,7 +166,7 @@
       "label": "Control DC",
       "value": "≈13 (L1) · 16 (L8) · 19 (L17)",
       "formula": "8 + proficiency bonus + Wisdom modifier",
-      "note": "Save DC for your String control effects (Manipulate, Tangle, Grand Marionette, etc.)."
+      "note": "Save DC for your String control effects (Manipulate, Tangle, Grand Marionette, etc.). This same number is your trick save DC."
     },
     {
       "label": "Strings Cap",

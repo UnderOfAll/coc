@@ -90,6 +90,20 @@
     },
     {
       "level": 2,
+      "name": "Tricks",
+      "role": "combat",
+      "description": "You are a half-caster: your magic is real but it is not the point of you, and it arrives late. From 2nd level you can perform Tricks. You know every trick on the Doppelganger list — a short one — with no preparation and no choosing; each becomes available at the level shown on your class trick ladder, and once available it is always available. Your disciplines are Illusion and Legerdemain. Your trick ability is your Constitution, so your trick save DC is the same number as your Save DC, {{save DC|8 + proficiency bonus + Constitution modifier}}, and any trick that makes an attack roll uses {{your trick attack|d20 + proficiency bonus + Constitution modifier}}. Pledges are at-will and Turns cost you nothing but carry a cooldown in rounds; a Prestige spends Clones and can be performed only once per combat. Casting NEVER generates Clones — that is the full casters' loop, not yours, so a Prestige always comes out of the resource your core kit already needs. A damaging Turn of yours also scales more slowly than a full caster's: see the Tricks and Casting rules page.",
+      "sheetSummary": "Half-caster: tricks from level 2. You know the entire Doppelganger list; each unlocks at its listed level. Disciplines: Illusion and Legerdemain. Trick save DC is the same number as your Save DC, {{save DC|8 + proficiency bonus + Constitution modifier}}; trick attacks use {{d20 + proficiency bonus + Constitution modifier|your trick attack bonus}}. Pledges at-will, Turns on cooldown, Prestiges spend Clones and are once per combat. Casting never generates Clones.",
+      "narration": "You have spent so long making copies of yourself that you have got good at making copies of other things — a face, a wound, a moment that never happened.",
+      "meta": {
+        "action": "Varies by trick",
+        "uses": "Whole class list, from L2",
+        "range": "Varies by trick",
+        "save": "Str/Dex/Con/Int/Wis/Cha vs {{save DC|8 + proficiency bonus + Constitution modifier}}"
+      }
+    },
+    {
+      "level": 2,
       "name": "Decoy Detonation",
       "description": "As an action, you cause one of your Clones to burst in a flash of shattering reflections, destroying it. Because you choose which Clone, you decide where the blast lands — spawn a Clone into a cluster of enemies, or Swap one there, then detonate it. Each creature within 5 feet of that Clone must make a Dexterity saving throw against your {{save DC|8 + proficiency bonus + Constitution modifier}}. On a failed save a creature takes [[1d6+Con]] psychic damage and is shoved 5 feet straight away from the Clone's space; on a success it takes half as much damage and is not moved. From 3rd level, Splintered Reflexes also lets you trigger Decoy Detonation as a reaction on another creature's turn. You can trigger Decoy Detonation at most once per turn.",
       "narration": "You let one of them go. The Clone comes apart all at once, not into smoke but into a bursting sphere of edged reflections, and everything close enough is briefly looking at a hundred small pictures of its own surprised face before the shards go through it.",
@@ -154,7 +168,7 @@
       "label": "Save DC",
       "value": "≈13 (L1) · 16 (L8) · 19 (L17)",
       "formula": "8 + proficiency bonus + Constitution modifier",
-      "note": "Save DC for effects your features force (e.g. Decoy Detonation)."
+      "note": "Save DC for effects your features force (e.g. Decoy Detonation). This same number is your trick save DC."
     },
     {
       "label": "Clones Cap",

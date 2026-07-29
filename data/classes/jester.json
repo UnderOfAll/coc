@@ -1,0 +1,162 @@
+{
+  "id": "jester",
+  "name": "Jester",
+  "source": "Circus of Chaos",
+  "flavor": "The one member of the company nobody takes seriously, which is exactly why he is still standing. He does not win fights. He decides who does.",
+  "hitDie": 6,
+  "primaryAbility": "Charisma",
+  "savingThrows": [
+    "Charisma",
+    "Constitution"
+  ],
+  "subclassLevel": 3,
+  "proficiencies": {
+    "armor": [
+      "Light armor"
+    ],
+    "weapons": [
+      "Marotte",
+      "Slapstick",
+      "Dagger"
+    ],
+    "tools": [
+      "Any one musical instrument",
+      "Disguise kit"
+    ],
+    "skills": "Choose two from Acrobatics, Deception, Insight, Performance, Persuasion, and Sleight of Hand"
+  },
+  "spellcasting": null,
+  "parryBaseDC": 13,
+  "defenseAbility": "Charisma",
+  "parryReskin": "You do not parry so much as make the whole thing look like a bit. A pratfall that happens to take you out of the line, an outraged squawk, the marotte thrown up at the last possible instant — it plays as comedy right up until you are standing and the swing is not.",
+  "riposte": "On a Full Dodge (your Parry d20 roll comes up strictly above your effective Parry DC), you turn the miss into material: one ally you can see within 30 feet gains {{temporary hit points equal to your Charisma modifier (minimum 1)|set from your stats on your character sheet}}. Nothing lifts a company like watching the fool make an idiot of the thing trying to kill them. No damage, no action, no Mirth.",
+  "engine": {
+    "name": "Mirth",
+    "resourceType": "pool",
+    "description": "The room's goodwill, measured. Mirth is what builds when the company is laughing with you and the enemy is not — every joke that lands, every ally who gets back up because you were there, wound up into something you eventually cash in all at once. It is the Jester's sole resource, and like the Illusionist he is a full caster: casting IS the class, so casting is what feeds it.",
+    "generation": "You gain 1 Mirth each time you cast a Turn. You gain 1 additional Mirth the first time each turn one of your tricks helps an ally — granting them a bonus, temporary hit points, a reroll, resistance, or removing something afflicting them. Pledges generate nothing and a Prestige generates nothing; the Prestige is where the goodwill gets spent, not made.",
+    "spend": "Only a Prestige spends Mirth, and it takes most of the pool — see your trick list for the cost. Nothing else in your kit draws on it. Unspent Mirth carries over between rounds, but never between fights: you start every combat with 0 Mirth and any left over is lost the moment the fight ends. Mirth is a per-combat currency like every other engine in this system — it is built during a fight and cannot be banked before one.",
+    "cap": "≈6 (L1-4) · 7+ (L5+)",
+    "capFormula": "proficiency bonus + Charisma modifier (minimum 3)"
+  },
+  "keyStats": [
+    {
+      "label": "Trick DC",
+      "value": "≈13 (L1) · 16 (L8) · 19 (L17)",
+      "formula": "8 + proficiency bonus + Charisma modifier",
+      "note": "Save DC for every trick you cast and every Jester effect that forces a save."
+    },
+    {
+      "label": "Mirth Cap",
+      "value": "≈6 (L1-4) · 7+ (L5+)",
+      "formula": "proficiency bonus + Charisma modifier (minimum 3)",
+      "note": "Most Mirth you can hold at once. Starts every combat at 0."
+    },
+    {
+      "label": "Parry Base DC",
+      "value": "13",
+      "note": "A poor parrier; he survives by being helped, not by blocking. Lower is better."
+    }
+  ],
+  "features": [
+    {
+      "level": 1,
+      "name": "Tricks",
+      "role": "combat",
+      "description": "You are a full caster: you perform Tricks from 1st level, and they are your primary way of affecting a fight. You know every trick on the Jester list, with no preparation and no choosing — each one becomes available at the level shown on your class trick ladder, and once available it is always available. Your disciplines are Mesmerism, Fortune, Illusion, and Legerdemain. Your trick ability is Charisma, so your trick save DC is {{trick save DC|8 + proficiency bonus + Charisma modifier}} and any trick that makes an attack roll uses {{your trick attack|d20 + proficiency bonus + Charisma modifier}}. Pledges are at-will, Turns cost you nothing but carry a cooldown in rounds, and a Prestige spends Mirth and can be performed only once per combat. See the Tricks and Casting rules page for the full engine.",
+      "sheetSummary": "Full caster from level 1. You know the entire Jester trick list; each unlocks at its listed level. Disciplines: Mesmerism, Fortune, Illusion, Legerdemain. Trick save DC {{trick save DC|8 + proficiency bonus + Charisma modifier}}; trick attacks use {{d20 + proficiency bonus + Charisma modifier|your trick attack bonus}}. Pledges at-will, Turns on cooldown, Prestiges spend Mirth and are once per combat.",
+      "narration": "Everything you do is delivered to the room rather than aimed at a person — a line, a gesture, a bit of business with the marotte — and somewhere in the laugh, the actual work gets done.",
+      "meta": {
+        "action": "Varies by trick",
+        "uses": "Whole class list",
+        "range": "Varies by trick",
+        "save": "Str/Dex/Con/Int/Wis/Cha vs {{trick save DC|8 + proficiency bonus + Charisma modifier}}"
+      }
+    },
+    {
+      "level": 1,
+      "name": "Mirth",
+      "role": "combat",
+      "description": "You gain the Mirth pool. Casting a Turn builds it, helping an ally builds it, and only a Prestige spends it; see your Mirth engine for generation, spending, and cap.",
+      "sheetSummary": "You gain the Mirth pool. See the Mirth engine for generation, spending, and cap. Starts every combat at 0.",
+      "narration": "You can hear it building — the company loosening up, the fight turning into a show, the moment getting closer where you can ask the whole room for something ridiculous and get it.",
+      "meta": {
+        "action": "Passive"
+      }
+    },
+    {
+      "level": 1,
+      "name": "Never the Target",
+      "role": "combat",
+      "description": "Nobody's first instinct is to kill the clown. When a hostile creature can see both you and an ally within 5 feet of you, and it makes an attack roll against you, you may use no action to make it choose: it has disadvantage on that attack roll unless it has already attacked you this combat. Once a creature has attacked you in a fight, it has your measure and this no longer works on it for the rest of that fight.",
+      "sheetSummary": "No action. A hostile that can see both you and an ally within 5 ft has disadvantage on its attack against you — but only until it has attacked you once this combat. After that it is immune to this for the rest of the fight.",
+      "narration": "It looks at you, then at the armed and serious person beside you, and does the arithmetic everyone does. You are not a threat. You are a distraction with bells on. It swings at you like it is swatting something.",
+      "meta": {
+        "action": "No action",
+        "uses": "Once per creature, per combat",
+        "range": "Self"
+      }
+    },
+    {
+      "level": 2,
+      "name": "Play to the Room",
+      "role": "combat",
+      "description": "You can carry a joke to more than one person. When you cast a Turn that targets a single ally, you may target a second willing ally within 30 feet of the first with the same effect. You can do this a number of times equal to your {{Charisma modifier (min 1)|set from your stats on your character sheet}}, regaining all expended uses when you finish a long rest. This never doubles a trick aimed at an enemy.",
+      "sheetSummary": "{{Charisma modifier (min 1)|set from your stats on your character sheet}} uses per long rest. A Turn that targets a single ALLY may also target a second willing ally within 30 ft of the first. Never applies to a trick aimed at an enemy.",
+      "narration": "You deliver it to the pair of them at once, the way a good line is thrown to two people on opposite sides of the stage. Both of them get it. Both of them straighten up.",
+      "meta": {
+        "action": "Part of casting",
+        "uses": "Cha mod / long rest",
+        "range": "30 ft"
+      }
+    },
+    {
+      "level": 2,
+      "name": "Heckler's Timing",
+      "role": "combat",
+      "description": "Your interruptions land where they hurt. Once on each of your turns, when a creature within 30 feet of you that can hear you makes an attack roll, ability check, or saving throw, you can use no action to say precisely the wrong thing at precisely the right moment: it must subtract {{1d4|a die you roll when this triggers}} from the roll. A creature that cannot hear you, or that does not understand you, is unaffected.",
+      "sheetSummary": "No action, 1/turn, 30 ft, target must be able to hear and understand you. Subtract {{1d4|a die you roll when this triggers}} from its attack roll, ability check, or saving throw.",
+      "narration": "You wait for the exact instant before it commits and then say the one thing guaranteed to get in. It is petty, it is unfair, and the wince costs it the shot.",
+      "meta": {
+        "action": "No action",
+        "uses": "1 / turn",
+        "range": "30 ft"
+      }
+    },
+    {
+      "level": 3,
+      "name": "Jester's Repertoire",
+      "role": "combat",
+      "description": "You settle into the kind of fool you are: choose the Fatemonger, Ringleader, or Buffoon repertoire. Your choice grants you features at 3rd level.",
+      "sheetSummary": "Choose a repertoire: Fatemonger, Ringleader, or Buffoon. It grants features at 3rd level.",
+      "narration": "Every fool works out eventually which part of the act is really his — the rigged odds, the room in his hand, or the sheer punishing stupidity of refusing to fall down.",
+      "meta": {
+        "action": "Passive"
+      }
+    },
+    {
+      "level": 5,
+      "name": "The Show Must Go On",
+      "role": "combat",
+      "description": "You do not let a performance end badly. When an ally you can see within 30 feet is reduced to 0 hit points, you can use your reaction to keep them upright: they drop to 1 hit point instead. Once you do this, you cannot do it again until you finish a short or long rest.",
+      "sheetSummary": "Reaction, 30 ft, once per short or long rest. When an ally you can see drops to 0 hit points, they drop to 1 instead.",
+      "narration": "You are already talking before they hit the ground — some rubbish about the second act, delivered at a shout — and somehow it is enough to keep their feet under them for one more round.",
+      "meta": {
+        "action": "Reaction",
+        "uses": "1 / short or long rest",
+        "range": "30 ft"
+      }
+    },
+    {
+      "level": 5,
+      "name": "Practised Patter",
+      "role": "combat",
+      "description": "The material is worn smooth from use. Reduce the cooldown of every Turn on your list by 1 round, to a minimum of 1. A trick with a cooldown of 1 is unaffected.",
+      "sheetSummary": "Every Turn on your list has its cooldown reduced by 1 round, minimum 1.",
+      "narration": "You have done all of this a thousand times, in worse rooms, to harder crowds. The timing no longer requires thought — it simply comes round again sooner.",
+      "meta": {
+        "action": "Passive"
+      }
+    }
+  ]
+}

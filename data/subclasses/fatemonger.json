@@ -1,0 +1,45 @@
+{
+  "id": "fatemonger",
+  "name": "Fatemonger",
+  "parentClass": "jester",
+  "source": "Circus of Chaos",
+  "flavor": "Luck is a resource like any other. It belongs to whoever is paying attention, and nobody in this company pays attention like you.",
+  "features": [
+    {
+      "level": 3,
+      "name": "Loaded Odds",
+      "role": "combat",
+      "description": "Once on each of your turns, when an ally you can see within 30 feet rolls a 1 on a d20 for an attack roll, ability check, or saving throw, you can use no action to make them reroll it. They must use the new roll.",
+      "sheetSummary": "No action, 1/turn, 30 ft. When an ally rolls a 1 on a d20 for an attack, check, or save, they reroll and must use the new result.",
+      "narration": "You see it come up and you simply refuse it — a click of the tongue, a flick of the wrist — and the moment rewinds half a second into something survivable.",
+      "meta": {
+        "action": "No action",
+        "uses": "1 / turn",
+        "range": "30 ft"
+      }
+    },
+    {
+      "level": 3,
+      "name": "The House Always Collects",
+      "role": "combat",
+      "description": "Fortune runs both ways at your table. When a creature within 30 feet that you can see rolls a natural 20 on an attack roll against one of your allies, you gain 1 Mirth — the worse it gets, the better your material.",
+      "sheetSummary": "Gain 1 Mirth whenever a creature within 30 ft rolls a natural 20 on an attack roll against one of your allies.",
+      "narration": "The worst possible thing happens and you laugh first, because a disaster is just a setup with better timing, and you have already worked out what it is setting up.",
+      "meta": {
+        "action": "Passive",
+        "range": "30 ft"
+      }
+    },
+    {
+      "level": 3,
+      "name": "Never Pays to Bet Against Him",
+      "role": "roleplay",
+      "description": "You have an unnatural nose for a wager. You know instinctively whether a game of chance, a contract, or an offer put to you is rigged, though not how. Once per long rest, when you make a bet, a bargain, or a wager of any kind and lose, you may declare that you meant to — you recover whatever you staked, and everyone present remembers it as a joke you were making.",
+      "sheetSummary": "You instinctively know whether a game, contract, or offer is rigged, but not how. Once per long rest, when you lose a bet or bargain, declare you meant to: you recover your stake and everyone remembers it as a joke.",
+      "narration": "You lose spectacularly, take a bow for it, and by the time the laugh dies down the money is back in your hand and nobody can reconstruct how the bet was ever serious.",
+      "meta": {
+        "action": "Passive / 1 per long rest"
+      }
+    }
+  ]
+}

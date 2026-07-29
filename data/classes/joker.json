@@ -143,6 +143,20 @@
     },
     {
       "level": 2,
+      "name": "Tricks",
+      "role": "combat",
+      "description": "You are a half-caster: your magic is real but it is not the point of you, and it arrives late. From 2nd level you can perform Tricks. You know every trick on the Joker list — a short one — with no preparation and no choosing; each becomes available at the level shown on your class trick ladder, and once available it is always available. Your disciplines are Legerdemain, Fortune, and Pyrotechnics. Your trick ability is your Charisma, so your trick save DC is the same number as your Gambit DC, {{gambit DC|8 + proficiency bonus + Charisma modifier}}, and any trick that makes an attack roll uses {{your trick attack|d20 + proficiency bonus + Charisma modifier}}. Pledges are at-will and Turns cost you nothing but carry a cooldown in rounds; a Prestige spends Mayhem and can be performed only once per combat. Casting NEVER generates Mayhem — that is the full casters' loop, not yours, so a Prestige always comes out of the resource your core kit already needs. A damaging Turn of yours also scales more slowly than a full caster's: see the Tricks and Casting rules page.",
+      "sheetSummary": "Half-caster: tricks from level 2. You know the entire Joker list; each unlocks at its listed level. Disciplines: Legerdemain, Fortune, and Pyrotechnics. Trick save DC is the same number as your Gambit DC, {{gambit DC|8 + proficiency bonus + Charisma modifier}}; trick attacks use {{d20 + proficiency bonus + Charisma modifier|your trick attack bonus}}. Pledges at-will, Turns on cooldown, Prestiges spend Mayhem and are once per combat. Casting never generates Mayhem.",
+      "narration": "You start doing things with the cards that the cards do not really do. Nobody in the company can tell where the sleight stops and the magic starts, and you have never volunteered the answer.",
+      "meta": {
+        "action": "Varies by trick",
+        "uses": "Whole class list, from L2",
+        "range": "Varies by trick",
+        "save": "Str/Dex/Con/Int/Wis/Cha vs {{gambit DC|8 + proficiency bonus + Charisma modifier}}"
+      }
+    },
+    {
+      "level": 2,
       "name": "Gambit",
       "description": "As a bonus action, spend 1 Mayhem to attempt a Gambit — a small, rule-bending trick. Choose one:",
       "narration": "You try something the fight has no rule for. It is fast, it is cheap, it is beneath you, and the moment it works everyone watching hates that it worked.",
@@ -226,7 +240,7 @@
       "label": "Gambit DC",
       "value": "≈13 (L1) · 16 (L8) · 19 (L17)",
       "formula": "8 + proficiency bonus + Charisma modifier",
-      "note": "Save DC for Wild Cards, Gambits, and every other Joker effect that forces a save."
+      "note": "Save DC for Wild Cards, Gambits, and every other Joker effect that forces a save. This same number is your trick save DC."
     },
     {
       "label": "Mayhem Cap",

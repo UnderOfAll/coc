@@ -1,0 +1,25 @@
+{
+  "id": "slapstick",
+  "name": "Slapstick",
+  "source": "Circus of Chaos",
+  "flavor": "Two slats of wood hinged to crack like a broken bone on contact. It hurts far less than it sounds and far more than anyone expects.",
+  "category": "signature",
+  "damage": {
+    "die": "1d4",
+    "type": "bludgeoning"
+  },
+  "properties": [
+    "finesse",
+    "light"
+  ],
+  "parryProfile": {
+    "canParry": true,
+    "parryRange": "melee",
+    "dcMod": 1,
+    "note": "You can get it in the way, but it is two bits of wood on a hinge — it slaps a blade aside rather than stopping it."
+  },
+  "mastery": "Vex",
+  "proficientClasses": [
+    "jester"
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "id": "trickster",
+  "name": "Trickster",
+  "parentClass": "illusionist",
+  "source": "Circus of Chaos",
+  "flavor": "Every illusion is misdirection with better staging. You cut out the staging.",
+  "features": [
+    {
+      "level": 3,
+      "name": "Two Places at Once",
+      "role": "combat",
+      "description": "When you use Misdirection to move after casting a trick, you may instead leave a silent, motionless illusory double of yourself in the space you left. The double lasts until the start of your next turn or until any creature touches it or hits it with an attack, at which point it vanishes. While it stands, a creature that has not seen through it must choose between you and the double at random when it targets you with an attack.",
+      "sheetSummary": "When Misdirection moves you, leave a motionless illusory double in the space you left. Lasts until the start of your next turn or until touched or hit. While it stands, a creature that hasn't seen through it picks at random between you and the double when it targets you with an attack.",
+      "narration": "You step away and something stays. It does not breathe and it does not blink, and in a busy fight nobody has time to notice either.",
+      "meta": {
+        "action": "Free (with Misdirection)",
+        "uses": "1 / turn",
+        "range": "Space you left"
+      }
+    },
+    {
+      "level": 3,
+      "name": "Palmed",
+      "role": "combat",
+      "description": "You can hide the real work inside the loud work. When you cast a Turn, you may also cast one Pledge as part of the same action, once on each of your turns. The Pledge resolves after the Turn.",
+      "sheetSummary": "1/turn. When you cast a Turn, also cast one Pledge as part of the same action; the Pledge resolves after the Turn.",
+      "narration": "The big gesture is the cover. The small one, the one that actually matters, happens inside it while everyone is busy applauding the wrong hand.",
+      "meta": {
+        "action": "Part of casting a Turn",
+        "uses": "1 / turn"
+      }
+    },
+    {
+      "level": 3,
+      "name": "Second Nature",
+      "role": "roleplay",
+      "description": "Sleight of hand has stopped requiring your attention. You can palm, plant, swap, or produce any object small enough to fit in one hand without being noticed, with no check, provided nobody is deliberately watching your hands. Against a creature that IS watching your hands, you have advantage on the check. You can also perform any Pledge without any visible gesture at all, so nobody can tell you cast anything.",
+      "sheetSummary": "Palm, plant, swap, or produce a hand-sized object with no check unless someone is deliberately watching your hands (advantage if they are). You can cast any Pledge with no visible gesture, so nobody can tell you cast it.",
+      "narration": "The hands do it without being asked any more. You have handed back a stolen ring while apologising for the theft and nobody in the room, including the owner, saw either half.",
+      "meta": {
+        "action": "Passive"
+      }
+    }
+  ]
+}

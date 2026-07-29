@@ -23,9 +23,11 @@
     "note": "A small blade parries only passably — better than bare hands, worse than a dueling weapon. Once thrown it is gone, with nothing left in hand to parry with."
   },
   "proficientClasses": [
-    "puppeteer",
     "doppelganger",
-    "joker"
+    "illusionist",
+    "jester",
+    "joker",
+    "puppeteer"
   ],
   "mastery": "Nick"
 }

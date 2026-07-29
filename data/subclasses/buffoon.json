@@ -1,0 +1,44 @@
+{
+  "id": "buffoon",
+  "name": "Buffoon",
+  "parentClass": "jester",
+  "source": "Circus of Chaos",
+  "flavor": "The bit is that you will not stop. They hit you, you get up, you make the joke again. Eventually it stops being funny for them.",
+  "features": [
+    {
+      "level": 3,
+      "name": "Take the Fall",
+      "role": "combat",
+      "description": "When an attack hits an ally within 5 feet of you, you can use your reaction to shove them clear and wear it yourself: the attack hits you instead, and you take half the damage it would have dealt. You must be able to see the attacker, and this cannot be used against an effect that does not make an attack roll.",
+      "sheetSummary": "Reaction, 5 ft, attacker must be visible. An attack that hits an adjacent ally hits you instead and you take HALF its damage. Attack rolls only.",
+      "narration": "You get in the way in the most undignified manner available — a shoulder, a shove, an outraged yelp — and take it across the back with the timing of a man who has been falling over professionally since he was nine.",
+      "meta": {
+        "action": "Reaction",
+        "uses": "1 / round",
+        "range": "5 ft"
+      }
+    },
+    {
+      "level": 3,
+      "name": "Rubber Bones",
+      "role": "combat",
+      "description": "You have been thrown off more stages than you can count. You have resistance to bludgeoning damage from falls, collisions, and being thrown, and whenever you are knocked prone you can stand up for 5 feet of movement instead of half your speed.",
+      "sheetSummary": "Resistance to bludgeoning damage from falls, collisions, and being thrown. Standing up from prone costs 5 ft of movement instead of half your speed.",
+      "narration": "You bounce. That is genuinely the whole of it — you have hit enough floors from enough heights that your body has stopped taking it personally, and you are upright again before the laugh finishes.",
+      "meta": {
+        "action": "Passive"
+      }
+    },
+    {
+      "level": 3,
+      "name": "Beneath Contempt",
+      "role": "roleplay",
+      "description": "Nobody guards their tongue in front of the fool. Guards, servants, courtiers, and hired muscle routinely discuss things in front of you that they would never say to an armed stranger, and you have advantage on Charisma (Deception) checks made to be dismissed as harmless. A creature that has already seen you do something dangerous is immune to this for as long as it remembers.",
+      "sheetSummary": "People speak freely in front of you as though you don't count. Advantage on Deception checks made to be dismissed as harmless. A creature that has seen you do something dangerous is immune while it remembers.",
+      "narration": "They look straight through you and carry on the conversation. You are furniture that occasionally makes a noise, and you have built an entire career out of what people say in front of furniture.",
+      "meta": {
+        "action": "Passive"
+      }
+    }
+  ]
+}

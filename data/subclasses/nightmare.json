@@ -1,0 +1,45 @@
+{
+  "id": "nightmare",
+  "name": "Nightmare",
+  "parentClass": "illusionist",
+  "source": "Circus of Chaos",
+  "flavor": "The illusions that stop being entertainment. You do not show them a monster — you show them the one they already had.",
+  "features": [
+    {
+      "level": 3,
+      "name": "It Gets Worse",
+      "role": "combat",
+      "description": "A creature that has already failed against you is easier to break the second time. When a creature makes a saving throw against one of your tricks and it has already failed a save against one of your tricks during this combat, it makes the new save with disadvantage.",
+      "sheetSummary": "A creature that has already failed a save against one of your tricks this combat makes every later save against your tricks with disadvantage.",
+      "narration": "The second one lands on ground you already broke. They know it is coming, they know what you are, and knowing has never once helped anybody.",
+      "meta": {
+        "action": "Passive",
+        "range": "Any of your tricks"
+      }
+    },
+    {
+      "level": 3,
+      "name": "Feed the Fear",
+      "role": "combat",
+      "description": "Terror is credibility. The first time each turn a creature fails a saving throw against one of your tricks that deals psychic damage, you gain 1 additional Phantasm, over and above whatever your engine already granted this turn.",
+      "sheetSummary": "1/turn. Gain 1 additional Phantasm the first time each turn a creature fails a save against one of your psychic-damage tricks.",
+      "narration": "You watch it land and something in you banks it. The scream is not the point. The scream is the receipt.",
+      "meta": {
+        "action": "Passive",
+        "uses": "1 / turn"
+      }
+    },
+    {
+      "level": 3,
+      "name": "Reader of Rooms",
+      "role": "roleplay",
+      "description": "You have spent your career finding the thing an audience is most afraid of and selling it back to them. After a minute of watching or talking to a creature, you learn what it fears most — a person, a memory, a manner of dying, a specific humiliation — as a single clear impression. The creature does not know you have done this. A creature that cannot be frightened yields nothing.",
+      "sheetSummary": "After 1 minute observing or talking to a creature, learn what it fears most as a single clear impression. It doesn't notice. Creatures immune to fear yield nothing.",
+      "narration": "You are not reading minds. You are reading a face across a minute of small talk, the way you have read ten thousand faces from a stage, and by the end of it you know exactly which thing to put in front of them.",
+      "meta": {
+        "action": "1 minute",
+        "range": "Sight/conversation"
+      }
+    }
+  ]
+}
