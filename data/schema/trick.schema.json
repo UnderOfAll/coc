@@ -61,12 +61,12 @@
       "type": "integer",
       "minimum": 1,
       "maximum": 5,
-      "description": "TURNS ONLY. Rounds the trick is 'Seen' before it can be cast again: you cannot cast it for this many of your turns. This is the sole balance dial for a Turn - a stronger effect gets a longer cooldown. Keep it 1-3; table bookkeeping is the real cost."
+      "description": "TURNS ONLY. Rounds the trick is 'Seen' before it can be cast again: you cannot cast it for this many of your turns. Every Turn has one. For a free Turn it is the sole balance dial - a stronger effect gets a longer cooldown; keep it 1-3. A costed Turn is dialled by its engineCost as well."
     },
     "engineCost": {
       "type": "integer",
       "minimum": 1,
-      "description": "PRESTIGES ONLY. How much of the caster's class engine (Phantasm/Mirth/Strings/Clones/Mayhem) this consumes. Price it to eat most of a built-up meter. NOTE: every Prestige is ALSO capped at once per combat - that is a tier-wide rule (MECHANICS 4.5), not a field, so there is nothing to set here and a new Prestige inherits it automatically."
+      "description": "How much of the caster's class engine (Phantasm/Mirth/Strings/Clones/Mayhem) this consumes. REQUIRED on a Prestige (price it to eat most of a built-up meter; every Prestige is also capped at once per combat - a tier-wide rule, nothing to set here). OPTIONAL on a Turn, and only for a FULL caster: a costed Turn is the reward for banking the meter, sitting between the free cooldown Turns and the once-per-combat Prestige. Keep a costed Turn well under a Prestige's price. A Pledge may never have one."
     },
     "castingTime": {
       "type": "string",
@@ -85,6 +85,10 @@
     },
     "duration": {
       "type": "string"
+    },
+    "concentration": {
+      "type": "boolean",
+      "description": "True if holding this trick requires concentration (MECHANICS 4.13). Set it whenever `duration` says Concentration. A caster holds ONE concentration trick at a time unless a feature says otherwise, and taking damage forces a concentration check."
     },
     "save": {
       "type": "string",
@@ -177,12 +181,7 @@
         "required": [
           "cooldown"
         ],
-        "not": {
-          "required": [
-            "engineCost"
-          ]
-        },
-        "description": "A Turn is limited by a cooldown and NEVER spends engine (Kayki's absolute rule)."
+        "description": "A Turn is always limited by a cooldown. It MAY also carry an engineCost: a costed Turn is the mid-tier payoff a caster grinds the meter for (MECHANICS 4.4a). Costed Turns are for FULL casters only - a half-caster's engine already pays for its core kit."
       }
     },
     {

@@ -14,6 +14,7 @@
     "Flourish"
   ],
   "duration": "Up to 1 minute (concentration)",
+  "concentration": true,
   "save": "Wisdom",
   "description": "You land a joke so devastatingly funny that one creature you can see within range doubles over. The target must succeed on a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or fall prone, incapacitated with helpless laughter for the duration. At the end of each of its turns, and whenever it takes damage, the target can make another Wisdom saving throw, ending the effect on itself on a success. A creature immune to being charmed automatically succeeds on its save.",
   "narration": "You tell the joke you have been saving all night, and it lands like a hammer. They fold in half laughing, hating it, entirely unable to stop.",

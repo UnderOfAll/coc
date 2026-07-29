@@ -17,7 +17,7 @@
       ],
       "list": [
         "Pledge — at-will. No cost, no cooldown, use it as often as you like. This is the reliable fallback that should never be your best option, only your always-available one. Damage Pledges grow at levels 5, 11, and 17.",
-        "Turn — the workhorse, and most of your repertoire. A Turn costs you NOTHING: it never spends your engine. Its only limit is a cooldown.",
+        "Turn — the workhorse, and most of your repertoire. Most Turns are free and limited only by a cooldown. A full caster (the Illusionist and the Jester) also has a few better Turns that cost some of their engine: those are what you bank the meter for before level 5. A half-caster's Turns are always free, because their engine is already paying for their ordinary attacks.",
         "Prestige — the showstopper. It spends your class engine, it is only available from level 5, and it is meant to be rare and memorable rather than reliable."
       ]
     },
@@ -27,13 +27,15 @@
         "When you cast a Turn, it becomes Seen — the audience caught the trick, and it will not land again until they have forgotten it. A trick's cooldown is a number of rounds.",
         "At the start of each of your turns, reduce each Seen trick's counter by one. At zero it is ready again. In practice: a cooldown of 2 means you cannot cast that trick again for 2 of your turns.",
         "Outside combat, rounds pass freely — treat a Turn as ready again after about a minute. Utility tricks are effectively at-will when nobody is trying to kill you.",
-        "A trick's cooldown is the whole reason it is balanced the way it is. A stronger Turn carries a longer cooldown. There is no upcasting and no spell level: one number does the work."
+        "A trick's cooldown is the whole reason it is balanced the way it is. A stronger Turn carries a longer cooldown. There is no upcasting and no spell level: one number does the work.",
+        "A Turn that costs engine still has a cooldown. The price does not replace the cooldown - it stacks on top of it, so a costed Turn is limited both by what you can afford and by how recently the crowd saw it."
       ]
     },
     {
       "heading": "Prestiges and your engine",
       "paragraphs": [
         "A Prestige is the only kind of magic that touches your class engine — your Phantasm, Mirth, Strings, Clones, or Mayhem. It costs a chunk of that meter, priced to eat most of what you have built up.",
+        "A full caster has one more use for the meter: a handful of their Turns carry a price of their own. Those sit between the free Turns and the Prestige — good enough to be worth saving up for, cheap enough to cast more than once in a fight. A half-caster never has these; their engine is already spoken for by their own class features.",
         "On top of that price, every Prestige is limited to once per combat, and it resets when the fight ends. Between the two, you cannot open a fight with a Prestige and you cannot do it twice: you have to earn it, and you only get the one.",
         "Note what is still absent — there is no per-day counter and no slot table. Every limit in this system runs on the same per-combat clock as everyone else's abilities, so a caster never walks out of a fight with their real power locked behind a night's sleep.",
         "For the Illusionist and the Jester, casting Turns is what builds the meter, so their whole loop is: cast Turns, bank the engine, unleash the Prestige.",
@@ -82,6 +84,16 @@
         "Pyrotechnics — flash, bang, fire-eating, the big finish. Deals fire damage.",
         "Animation — objects and bodies moved as though alive. The Puppeteer's alone; no other class learns it.",
         "Fortune — luck, fate, the rigged draw."
+      ]
+    },
+    {
+      "heading": "Concentration",
+      "paragraphs": [
+        "Some tricks do not end when you finish casting them - an illusion has to be held there. Those say Concentration in their duration, and holding one takes something from you.",
+        "You can hold one concentration trick at a time. Casting a second one ends the first, unless a class feature specifically lets you hold more.",
+        "Whenever you take damage while concentrating, roll a concentration check: a flat d20, with no modifier of any kind, exactly like a Parry roll. The DC is 10, or half the damage you just took if that is higher. Fail and the trick collapses immediately. Concentration also ends if you are incapacitated, if you die, or if you simply let it go, which takes no action.",
+        "If a feature lets you hold two concentration tricks at once, you roll separately for each one when you take damage - a single check never covers both. Holding two illusions is genuinely riskier than holding one, which is the point.",
+        "The roll uses no ability modifier on purpose. Every caster here runs on a single stat and a small hit die, and none of them has any reason to invest in Constitution, so tying concentration to it would have made the rule far harsher for them than the equivalent rule is elsewhere. A flat die keeps it equally hard for everybody."
       ]
     },
     {

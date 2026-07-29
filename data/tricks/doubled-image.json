@@ -13,6 +13,7 @@
     "Flourish"
   ],
   "duration": "Concentration, up to 1 minute",
+  "concentration": true,
   "description": "Illusory afterimages of yourself flicker into being every time you move, blurring exactly where your real body is. Attack rolls against you have disadvantage for the duration, unless the attacker doesn't rely on sight to locate you (a blind attacker, or one with truesight or another sense that sees through the illusion) or can otherwise track you by a non-visual sense.",
   "narration": "Afterimages of you flicker off every movement, half a beat behind and slightly to the left. Which one is real is the wrong question; the right one is which one anybody is actually swinging at.",
   "sheetSummary": "Bonus action, self, cooldown 3, concentration up to 1 min. Attack rolls against you have disadvantage (no effect on attackers who don't rely on sight, e.g. truesight or blind).",

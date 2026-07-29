@@ -13,6 +13,7 @@
     "Prop (a fistful of flash powder)"
   ],
   "duration": "Concentration, up to 10 minutes",
+  "concentration": true,
   "description": "You fill a 20-foot cube within range with a bank of illusory smoke and drifting false reflections. The area becomes heavily obscured for as long as you concentrate on this trick. The smoke has no substance - it doesn't impede movement and can't be dispersed by wind - and creatures relying on darkvision see only more illusory smoke, not through it. You may designate any number of creatures, including yourself, that see the area normally instead, letting you use the cloud as cover for yourself and your allies while it blinds everyone else.",
   "narration": "Fog rolls in and mirrors unfold out of nowhere, and suddenly nobody in the room — including the people you brought — is sure what they are looking at.",
   "sheetSummary": "Action, 60 ft, cooldown 2, concentration up to 10 min. Fills a 20-ft cube with illusory heavily-obscuring smoke (no wind dispersal, ignores darkvision); you may designate chosen creatures to see through it normally.",

@@ -200,7 +200,7 @@
           ],
           "list": [
             "Pledge — at-will. No cost, no cooldown, use it as often as you like. This is the reliable fallback that should never be your best option, only your always-available one. Damage Pledges grow at levels 5, 11, and 17.",
-            "Turn — the workhorse, and most of your repertoire. A Turn costs you NOTHING: it never spends your engine. Its only limit is a cooldown.",
+            "Turn — the workhorse, and most of your repertoire. Most Turns are free and limited only by a cooldown. A full caster (the Illusionist and the Jester) also has a few better Turns that cost some of their engine: those are what you bank the meter for before level 5. A half-caster's Turns are always free, because their engine is already paying for their ordinary attacks.",
             "Prestige — the showstopper. It spends your class engine, it is only available from level 5, and it is meant to be rare and memorable rather than reliable."
           ]
         },
@@ -210,13 +210,15 @@
             "When you cast a Turn, it becomes Seen — the audience caught the trick, and it will not land again until they have forgotten it. A trick's cooldown is a number of rounds.",
             "At the start of each of your turns, reduce each Seen trick's counter by one. At zero it is ready again. In practice: a cooldown of 2 means you cannot cast that trick again for 2 of your turns.",
             "Outside combat, rounds pass freely — treat a Turn as ready again after about a minute. Utility tricks are effectively at-will when nobody is trying to kill you.",
-            "A trick's cooldown is the whole reason it is balanced the way it is. A stronger Turn carries a longer cooldown. There is no upcasting and no spell level: one number does the work."
+            "A trick's cooldown is the whole reason it is balanced the way it is. A stronger Turn carries a longer cooldown. There is no upcasting and no spell level: one number does the work.",
+            "A Turn that costs engine still has a cooldown. The price does not replace the cooldown - it stacks on top of it, so a costed Turn is limited both by what you can afford and by how recently the crowd saw it."
           ]
         },
         {
           "heading": "Prestiges and your engine",
           "paragraphs": [
             "A Prestige is the only kind of magic that touches your class engine — your Phantasm, Mirth, Strings, Clones, or Mayhem. It costs a chunk of that meter, priced to eat most of what you have built up.",
+            "A full caster has one more use for the meter: a handful of their Turns carry a price of their own. Those sit between the free Turns and the Prestige — good enough to be worth saving up for, cheap enough to cast more than once in a fight. A half-caster never has these; their engine is already spoken for by their own class features.",
             "On top of that price, every Prestige is limited to once per combat, and it resets when the fight ends. Between the two, you cannot open a fight with a Prestige and you cannot do it twice: you have to earn it, and you only get the one.",
             "Note what is still absent — there is no per-day counter and no slot table. Every limit in this system runs on the same per-combat clock as everyone else's abilities, so a caster never walks out of a fight with their real power locked behind a night's sleep.",
             "For the Illusionist and the Jester, casting Turns is what builds the meter, so their whole loop is: cast Turns, bank the engine, unleash the Prestige.",
@@ -265,6 +267,16 @@
             "Pyrotechnics — flash, bang, fire-eating, the big finish. Deals fire damage.",
             "Animation — objects and bodies moved as though alive. The Puppeteer's alone; no other class learns it.",
             "Fortune — luck, fate, the rigged draw."
+          ]
+        },
+        {
+          "heading": "Concentration",
+          "paragraphs": [
+            "Some tricks do not end when you finish casting them - an illusion has to be held there. Those say Concentration in their duration, and holding one takes something from you.",
+            "You can hold one concentration trick at a time. Casting a second one ends the first, unless a class feature specifically lets you hold more.",
+            "Whenever you take damage while concentrating, roll a concentration check: a flat d20, with no modifier of any kind, exactly like a Parry roll. The DC is 10, or half the damage you just took if that is higher. Fail and the trick collapses immediately. Concentration also ends if you are incapacitated, if you die, or if you simply let it go, which takes no action.",
+            "If a feature lets you hold two concentration tricks at once, you roll separately for each one when you take damage - a single check never covers both. Holding two illusions is genuinely riskier than holding one, which is the point.",
+            "The roll uses no ability modifier on purpose. Every caster here runs on a single stat and a small hit die, and none of them has any reason to invest in Constitution, so tying concentration to it would have made the rule far harsher for them than the equivalent rule is elsewhere. A flat die keeps it equally hard for everybody."
           ]
         },
         {
@@ -751,7 +763,7 @@
         "resourceType": "pool",
         "description": "The banked weight of everything the room currently believes that is not true. Phantasm is not mana — it is credibility. Every trick you perform leaves an impression behind, and the more of them the audience is carrying at once, the more they will accept when you finally ask for something enormous. It is the Illusionist's sole resource, and unlike the part-casters, casting is what builds it: your Turns are not a garnish on a weapon, they ARE the class.",
         "generation": "You gain 1 Phantasm each time you cast a Turn — the trick lands, the audience files it away, and you are one step closer to the thing you are really building toward. You gain 1 additional Phantasm the first time each turn a creature fails a saving throw against one of your tricks, because nothing sells the next lie like the last one working. Pledges generate nothing (they are too small to be remembered) and a Prestige generates nothing (it spends the belief rather than building it).",
-        "spend": "Only a Prestige spends Phantasm, and it spends a great deal of it — see your trick list for what each one costs. Nothing else in your kit draws on the pool. Unspent Phantasm carries over between rounds, but never between fights: you start every combat with 0 Phantasm and any left over is lost the moment the fight ends. Phantasm is a per-combat currency like every other engine in this system — it is built during a fight and cannot be banked before one.",
+        "spend": "Phantasm is spent three ways, and you have all three from 1st level. **Sell It:** as you cast a trick that forces a saving throw, spend 1 Phantasm to give one target of it disadvantage on that save. **Hold It:** when you fail a concentration check, spend 1 Phantasm to succeed instead. **Costed Turns:** a few of your best Turns carry a price of their own (Waking Nightmare costs 3) — those are the mid-fight payoff you bank the meter for, long before a Prestige is on the table. A Prestige then spends most of what is left. Unspent Phantasm carries over between rounds, but never between fights: you start every combat with 0 Phantasm and any left over is lost the moment the fight ends. Phantasm is a per-combat currency like every other engine in this system — it is built during a fight and cannot be banked before one.",
         "cap": "≈6 (L1-4) · 7+ (L5+)",
         "capFormula": "proficiency bonus + Intelligence modifier (minimum 3)"
       },
@@ -793,11 +805,13 @@
           "level": 1,
           "name": "Phantasm",
           "role": "combat",
-          "description": "You gain the Phantasm pool. Casting a Turn builds it and only a Prestige spends it; see your Phantasm engine for generation, spending, and cap.",
-          "sheetSummary": "You gain the Phantasm pool. See the Phantasm engine for generation, spending, and cap. Starts every combat at 0.",
-          "narration": "Everything you have made them believe tonight is still in the room, stacked up behind their eyes. You can feel the weight of it, and you know exactly how much more it will take before you can ask for something impossible.",
+          "description": "You gain the Phantasm pool. Casting a Turn builds it, and you spend it from 1st level: 1 Phantasm to give one target disadvantage on its save against a trick you are casting (Sell It), 1 Phantasm to turn a failed concentration check into a success (Hold It), and whatever a costed Turn or a Prestige asks for. See your Phantasm engine for generation and cap.",
+          "sheetSummary": "You gain the Phantasm pool. Spend 1: give one target disadvantage on its save against a trick you are casting. Spend 1: turn a failed concentration check into a success. Costed Turns and Prestiges spend more. Starts every combat at 0.",
+          "narration": "Everything you have made them believe tonight is still in the room, stacked up behind their eyes. You can feel the weight of it, and you can lean on it — to push one more lie past someone's guard, to keep the last one standing when a blade finds you, or to spend the lot on something enormous.",
           "meta": {
-            "action": "Passive"
+            "action": "Free (as you cast / on a failed check)",
+            "cost": "1+ Phantasm",
+            "uses": "Any time you can pay"
           }
         },
         {
@@ -829,11 +843,12 @@
           "level": 2,
           "name": "Layered Performance",
           "role": "combat",
-          "description": "You can hold more than one lie in the air at once. You may have two of your Turns with an ongoing duration active at the same time; without this feature, casting a second duration trick ends the first. Neither trick's cooldown is affected, and this never lets you cast two tricks in one action.",
-          "sheetSummary": "You may keep two duration Turns active at once instead of one. Doesn't change cooldowns and never allows casting two tricks in one action.",
-          "narration": "Two performances running at the same time, in the same room, neither interfering with the other. You are the only person present tracking both.",
+          "description": "You can hold two lies in the air at once. You may concentrate on two tricks at the same time instead of one. This does not make either of them safer: when you take damage you roll a separate concentration check for each trick you are holding, against the same DC, so the second illusion is a second thing that can collapse. Casting a third concentration trick ends whichever of the two you choose.",
+          "sheetSummary": "Concentrate on two tricks at once instead of one. When you take damage you roll a SEPARATE concentration check for each, against the same DC. Casting a third ends one of your choice.",
+          "narration": "Two performances running at the same time, in the same room, neither interfering with the other — and both of them leaning on you. Get hit hard enough and you will feel one of them start to go.",
           "meta": {
-            "action": "Passive"
+            "action": "Passive",
+            "uses": "2 concentration tricks"
           }
         },
         {
@@ -3193,6 +3208,7 @@
         "Flourish"
       ],
       "duration": "Concentration, up to 1 minute",
+      "concentration": true,
       "description": "Illusory afterimages of yourself flicker into being every time you move, blurring exactly where your real body is. Attack rolls against you have disadvantage for the duration, unless the attacker doesn't rely on sight to locate you (a blind attacker, or one with truesight or another sense that sees through the illusion) or can otherwise track you by a non-visual sense.",
       "narration": "Afterimages of you flicker off every movement, half a beat behind and slightly to the left. Which one is real is the wrong question; the right one is which one anybody is actually swinging at.",
       "sheetSummary": "Bonus action, self, cooldown 3, concentration up to 1 min. Attack rolls against you have disadvantage (no effect on attackers who don't rely on sight, e.g. truesight or blind).",
@@ -3411,6 +3427,7 @@
         "Flourish"
       ],
       "duration": "Up to 1 minute (concentration)",
+      "concentration": true,
       "save": "Wisdom",
       "description": "You land a joke so devastatingly funny that one creature you can see within range doubles over. The target must succeed on a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or fall prone, incapacitated with helpless laughter for the duration. At the end of each of its turns, and whenever it takes damage, the target can make another Wisdom saving throw, ending the effect on itself on a success. A creature immune to being charmed automatically succeeds on its save.",
       "narration": "You tell the joke you have been saving all night, and it lands like a hammer. They fold in half laughing, hating it, entirely unable to stop.",
@@ -3436,9 +3453,9 @@
       ],
       "duration": "Instantaneous",
       "save": "Wisdom",
-      "description": "You point at a creature you can see within range, and for one vivid instant it feels exactly what a blade sliding between its ribs would feel like. The target must succeed on a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or take [[1d6]] psychic damage, flinching from a wound that was never there. On a success, the target takes no damage.",
+      "description": "You point at a creature you can see within range, and for one vivid instant it feels exactly what a blade sliding between its ribs would feel like. The target must succeed on a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or take [[1d8]] psychic damage, flinching from a wound that was never there. On a success, the target takes no damage.",
       "narration": "There is no blade in your hand. You point anyway, and somewhere three rows back a body doubles over clutching a rib that has not been touched, entirely convinced.",
-      "sheetSummary": "Action, 60 ft. Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[1d6]] psychic damage. Success: no effect.",
+      "sheetSummary": "Action, 60 ft. Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[1d8]] psychic damage. Success: no effect.",
       "classes": [
         "illusionist"
       ],
@@ -3631,6 +3648,7 @@
         "Prop (a fistful of flash powder)"
       ],
       "duration": "Concentration, up to 10 minutes",
+      "concentration": true,
       "description": "You fill a 20-foot cube within range with a bank of illusory smoke and drifting false reflections. The area becomes heavily obscured for as long as you concentrate on this trick. The smoke has no substance - it doesn't impede movement and can't be dispersed by wind - and creatures relying on darkvision see only more illusory smoke, not through it. You may designate any number of creatures, including yourself, that see the area normally instead, letting you use the cloud as cover for yourself and your allies while it blinds everyone else.",
       "narration": "Fog rolls in and mirrors unfold out of nowhere, and suddenly nobody in the room — including the people you brought — is sure what they are looking at.",
       "sheetSummary": "Action, 60 ft, cooldown 2, concentration up to 10 min. Fills a 20-ft cube with illusory heavily-obscuring smoke (no wind dispersal, ignores darkvision); you may designate chosen creatures to see through it normally.",
@@ -3638,6 +3656,31 @@
         "illusionist"
       ],
       "_file": "tricks/smoke-and-mirrors.json"
+    },
+    {
+      "id": "something-behind-you",
+      "name": "Something Behind You",
+      "source": "Circus of Chaos",
+      "flavor": "The oldest gag in the act, and it has never once stopped working: you look past their shoulder, and their whole body believes you before their mind gets a vote.",
+      "tier": "turn",
+      "discipline": "Illusion",
+      "minLevel": 1,
+      "cooldown": 2,
+      "castingTime": "1 action",
+      "range": "60 feet",
+      "components": [
+        "Patter",
+        "Flourish"
+      ],
+      "duration": "Instantaneous",
+      "save": "Wisdom",
+      "description": "You put a single vivid, wrong thing at a creature's shoulder — a shape, a breath, a hand closing — and let its own nerves do the work. The target makes a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure it takes [[2d6]] psychic damage as the fright goes through it like a shock; on a success it takes half as much. This is plain, reliable damage with no rider attached: it costs no Phantasm and it always works the same way, which is exactly what it is for.",
+      "narration": "Your eyes flick to a point just past their shoulder and your face does something honest. Whatever they turn to find is already gone, and the jolt of it hits them somewhere under the ribs.",
+      "sheetSummary": "Action, 60 ft, cooldown 2, no engine cost. Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[2d6]] psychic. Success: half damage. No rider.",
+      "classes": [
+        "illusionist"
+      ],
+      "_file": "tricks/something-behind-you.json"
     },
     {
       "id": "stage-fright",
@@ -3655,6 +3698,7 @@
         "Flourish"
       ],
       "duration": "Concentration, up to 1 minute",
+      "concentration": true,
       "save": "Wisdom",
       "description": "You plant a single, perfectly convincing image of its own doom in one creature's mind within range. The target must make a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure, it is frightened of you for the duration and, on each of its turns while frightened this way, must use its action to move as far away from you as it can by the safest available route, unless there is nowhere safer to move. A frightened target can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success. On a success, the target is unaffected.",
       "narration": "You show them, for one heartbeat, exactly how badly this could go for them. Nothing about it is real. Their body does not care.",
@@ -3705,6 +3749,7 @@
         "Prop (a folding fan or opera mask)"
       ],
       "duration": "Concentration, up to 1 minute",
+      "concentration": true,
       "save": "Wisdom",
       "description": "You spend a surge of banked Phantasm to seize the minds of every creature you choose within a 30-foot-radius sphere centred on a point within range, showing each of them their own private, tailored nightmare all at once. Each target must make a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure, a target takes [[5d6]] psychic damage and is frightened of you for the duration; on a success, it takes half as much damage and is not frightened. A frightened target can repeat the saving throw at the end of each of its turns, ending the frightened condition on itself on a success. This trick requires you to have at least 4 Phantasm banked, which are spent whether or not any target fails its save.",
       "narration": "Every eye in the tent turns to you at once, and what they see next they will never fully stop seeing.",
@@ -3803,6 +3848,7 @@
         "Flourish"
       ],
       "duration": "Up to 1 minute (concentration)",
+      "concentration": true,
       "save": "Wisdom",
       "description": "You choose any number of creatures you can see within range — you may freely exclude your allies from the effect, so your own company never has to make this save. Each remaining target must make a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure, a target falls prone and is incapacitated with helpless laughter for the duration. At the end of each of its turns, and whenever it takes damage, an affected target can make another Wisdom saving throw, ending the effect on itself on a success. A creature immune to being charmed automatically succeeds on its save.",
       "narration": "You deliver the biggest punchline of the show and it lands on everyone at once. Nobody in the room gets to decide whether it was funny.",
@@ -3844,6 +3890,7 @@
       "discipline": "Illusion",
       "minLevel": 3,
       "cooldown": 2,
+      "engineCost": 3,
       "castingTime": "1 action",
       "range": "60 feet",
       "components": [
@@ -3852,9 +3899,9 @@
       ],
       "duration": "Instantaneous",
       "save": "Intelligence",
-      "description": "You reach into a creature's mind within range and make it briefly, completely certain that it is being torn apart. The target must make an Intelligence saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}, taking [[3d8]] psychic damage on a failure, or half as much damage on a success. A creature immune to being frightened has advantage on this saving throw, since the illusion has nothing to take hold of.",
+      "description": "You reach into a creature's mind within range and make it briefly, completely certain that it is being torn apart. The target must make an Intelligence saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}, taking [[3d8]] psychic damage on a failure, or half as much damage on a success. A creature immune to being frightened has advantage on this saving throw, since the illusion has nothing to take hold of. Casting this costs 3 Phantasm — it is the payoff you bank the meter for, not something you open with, and the Phantasm is spent whether or not the target's mind gives way.",
       "narration": "You do not show them anything real. You simply remind their nerves what being torn apart used to feel like, and let the body take it from there.",
-      "sheetSummary": "Action, 60 ft, cooldown 2. Intelligence save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[3d8]] psychic damage. Success: half. Fear-immune creatures have advantage on the save.",
+      "sheetSummary": "Action, 60 ft, cooldown 2, costs 3 Phantasm. Intelligence save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[3d8]] psychic damage. Success: half. Fear-immune creatures have advantage on the save.",
       "classes": [
         "illusionist"
       ],

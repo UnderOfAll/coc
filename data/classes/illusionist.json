@@ -35,7 +35,7 @@
     "resourceType": "pool",
     "description": "The banked weight of everything the room currently believes that is not true. Phantasm is not mana — it is credibility. Every trick you perform leaves an impression behind, and the more of them the audience is carrying at once, the more they will accept when you finally ask for something enormous. It is the Illusionist's sole resource, and unlike the part-casters, casting is what builds it: your Turns are not a garnish on a weapon, they ARE the class.",
     "generation": "You gain 1 Phantasm each time you cast a Turn — the trick lands, the audience files it away, and you are one step closer to the thing you are really building toward. You gain 1 additional Phantasm the first time each turn a creature fails a saving throw against one of your tricks, because nothing sells the next lie like the last one working. Pledges generate nothing (they are too small to be remembered) and a Prestige generates nothing (it spends the belief rather than building it).",
-    "spend": "Only a Prestige spends Phantasm, and it spends a great deal of it — see your trick list for what each one costs. Nothing else in your kit draws on the pool. Unspent Phantasm carries over between rounds, but never between fights: you start every combat with 0 Phantasm and any left over is lost the moment the fight ends. Phantasm is a per-combat currency like every other engine in this system — it is built during a fight and cannot be banked before one.",
+    "spend": "Phantasm is spent three ways, and you have all three from 1st level. **Sell It:** as you cast a trick that forces a saving throw, spend 1 Phantasm to give one target of it disadvantage on that save. **Hold It:** when you fail a concentration check, spend 1 Phantasm to succeed instead. **Costed Turns:** a few of your best Turns carry a price of their own (Waking Nightmare costs 3) — those are the mid-fight payoff you bank the meter for, long before a Prestige is on the table. A Prestige then spends most of what is left. Unspent Phantasm carries over between rounds, but never between fights: you start every combat with 0 Phantasm and any left over is lost the moment the fight ends. Phantasm is a per-combat currency like every other engine in this system — it is built during a fight and cannot be banked before one.",
     "cap": "≈6 (L1-4) · 7+ (L5+)",
     "capFormula": "proficiency bonus + Intelligence modifier (minimum 3)"
   },
@@ -77,11 +77,13 @@
       "level": 1,
       "name": "Phantasm",
       "role": "combat",
-      "description": "You gain the Phantasm pool. Casting a Turn builds it and only a Prestige spends it; see your Phantasm engine for generation, spending, and cap.",
-      "sheetSummary": "You gain the Phantasm pool. See the Phantasm engine for generation, spending, and cap. Starts every combat at 0.",
-      "narration": "Everything you have made them believe tonight is still in the room, stacked up behind their eyes. You can feel the weight of it, and you know exactly how much more it will take before you can ask for something impossible.",
+      "description": "You gain the Phantasm pool. Casting a Turn builds it, and you spend it from 1st level: 1 Phantasm to give one target disadvantage on its save against a trick you are casting (Sell It), 1 Phantasm to turn a failed concentration check into a success (Hold It), and whatever a costed Turn or a Prestige asks for. See your Phantasm engine for generation and cap.",
+      "sheetSummary": "You gain the Phantasm pool. Spend 1: give one target disadvantage on its save against a trick you are casting. Spend 1: turn a failed concentration check into a success. Costed Turns and Prestiges spend more. Starts every combat at 0.",
+      "narration": "Everything you have made them believe tonight is still in the room, stacked up behind their eyes. You can feel the weight of it, and you can lean on it — to push one more lie past someone's guard, to keep the last one standing when a blade finds you, or to spend the lot on something enormous.",
       "meta": {
-        "action": "Passive"
+        "action": "Free (as you cast / on a failed check)",
+        "cost": "1+ Phantasm",
+        "uses": "Any time you can pay"
       }
     },
     {
@@ -113,11 +115,12 @@
       "level": 2,
       "name": "Layered Performance",
       "role": "combat",
-      "description": "You can hold more than one lie in the air at once. You may have two of your Turns with an ongoing duration active at the same time; without this feature, casting a second duration trick ends the first. Neither trick's cooldown is affected, and this never lets you cast two tricks in one action.",
-      "sheetSummary": "You may keep two duration Turns active at once instead of one. Doesn't change cooldowns and never allows casting two tricks in one action.",
-      "narration": "Two performances running at the same time, in the same room, neither interfering with the other. You are the only person present tracking both.",
+      "description": "You can hold two lies in the air at once. You may concentrate on two tricks at the same time instead of one. This does not make either of them safer: when you take damage you roll a separate concentration check for each trick you are holding, against the same DC, so the second illusion is a second thing that can collapse. Casting a third concentration trick ends whichever of the two you choose.",
+      "sheetSummary": "Concentrate on two tricks at once instead of one. When you take damage you roll a SEPARATE concentration check for each, against the same DC. Casting a third ends one of your choice.",
+      "narration": "Two performances running at the same time, in the same room, neither interfering with the other — and both of them leaning on you. Get hit hard enough and you will feel one of them start to go.",
       "meta": {
-        "action": "Passive"
+        "action": "Passive",
+        "uses": "2 concentration tricks"
       }
     },
     {
