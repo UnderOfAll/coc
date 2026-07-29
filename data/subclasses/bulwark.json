@@ -22,7 +22,7 @@
       "role": "combat",
       "description": "You make yourself the obstacle nothing gets past. Its protection works three ways:",
       "narration": "You plant yourself and become architecture. People who wanted to go somewhere discover that the somewhere is behind you, and the blow aimed past your shoulder finds your shoulder instead because you put it there.",
-      "sheetSummary": "Passive and free. Three effects: a 10-ft taunt, an intercept usable once per turn on an ally within 5 ft, and the wall's standing benefit. See the full text for each.",
+      "sheetSummary": "Passive and free. Three separate protections, listed in the table below: a 10-ft taunt, an intercept usable once per turn on an ally within 5 ft, and the wall's standing benefit.",
       "options": [
         {
           "name": "Challenge (taunt)",
