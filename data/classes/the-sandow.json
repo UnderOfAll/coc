@@ -59,12 +59,31 @@
     {
       "level": 1,
       "name": "Mighty Build",
-      "description": "You count as one size larger than your actual size for the purpose of carrying capacity, and for determining whether you can grapple, shove, or throw a creature — treat a Large creature as though it were Medium, and so on. **There is a hard ceiling: you can never grapple, shove, throw or Crush a creature larger than Huge, no matter your own size.** A Large Sandow gets the reach and the carrying capacity, but Gargantuan is off the table for everybody.",
-      "narration": "You are built on the wrong scale for the room. Things that ought to be too big to shift come off the ground when you decide they will — but there is a limit, and you have met it, and it was roughly the size of a barn.",
-      "sheetSummary": "Passive. Count as one size larger for carrying capacity and for grappling, shoving or throwing a creature. HARD CEILING: never a creature larger than Huge, whatever your own size.",
+      "description": "You are built on a scale the rules did not plan for. For carrying capacity, and for deciding whether you can grapple, shove, throw or Crush a creature, **you count as one size larger than you actually are** — and you may lay hands on any creature up to that effective size.",
+      "narration": "You are built on the wrong scale for the room. Things that ought to be far too big to shift come off the ground when you decide they will, and the look on their faces is most of the reason you do it. There is a limit. You have met it. It was roughly the size of a barn and it stayed exactly where it was.",
+      "sheetSummary": "Passive. Count as one size larger for carrying capacity and for grappling, shoving, throwing or Crushing — and you can handle a creature up to that effective size. See below for what that means at each size; Gargantuan is never available.",
       "meta": {
-        "action": "Passive"
-      }
+        "action": "Passive",
+        "range": "Reach",
+        "uses": "Effective size: one step up, Huge maximum"
+      },
+      "options": [
+        {
+          "group": "What you can get hold of",
+          "name": "If you are Medium",
+          "effect": "You count as Large, and can grapple, shove, throw or Crush a creature up to **Large**."
+        },
+        {
+          "group": "What you can get hold of",
+          "name": "If you are Large",
+          "effect": "You count as Huge, and can grapple, shove, throw or Crush a creature up to **Huge** — the biggest thing anyone in this game can get their hands on."
+        },
+        {
+          "group": "What you can get hold of",
+          "name": "Gargantuan, never",
+          "effect": "Nothing stacks past Huge. Your class caps at Large (see Size on this page), so a Huge target is the ceiling by arithmetic — and it stays the ceiling even if something else were ever to make you larger."
+        }
+      ]
     },
     {
       "level": 1,
