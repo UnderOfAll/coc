@@ -3,6 +3,7 @@
   "name": "Mirrorsilk Vestments",
   "source": "Circus of Chaos",
   "category": "clothing",
+  "trait": "Showpiece",
   "availability": "bought",
   "baseAC": 11,
   "maxDexBonus": null,

@@ -1183,12 +1183,16 @@ function renderArmor(a) {
       ${stat("Category", a.category ? cap(a.category) : "—")}
       ${stat("Availability", a.availability === "bought" ? "Bought" : "Starter")}
       ${a.strengthRequirement != null ? stat("Strength Req.", "Str " + a.strengthRequirement) : ""}
+      ${statHTML("Trait", armorTraitHTML(a.trait))}
       ${stat("Stealth", a.stealthDisadvantage ? "Disadvantage" : "Normal")}
     </div>
     <div class="detail-body">
       <p class="muted">Armor grants AC only — an attack must beat your AC to hit, and only a hit can then be Parried. ${a.category === "clothing"
         ? "Clothing needs <strong>no proficiency</strong> — anyone can wear it, including casters with no armor training. It is the unarmored baseline (10 + full Dex) in wearable form."
         : "Proficiency with an armor's category (Light / Medium / Heavy) comes from your class; wearing armor you aren't proficient with gives disadvantage on Strength- and Dexterity-based checks, attacks, and saves."}</p>
+      ${a.trait
+        ? `<h2>Armor Trait — ${esc(a.trait)}</h2><p>${esc(ARMOR_TRAITS[a.trait] || "")}</p><p class="muted">Every armour carries one always-on trait, the way every weapon carries a mastery. See the Rules tab (Armor Traits).</p>`
+        : `<h2>No Armor Trait</h2><p>This is the highest Armor Class in its category and tier, and it pays for that by carrying no trait at all. See the Rules tab (Armor Traits).</p>`}
       <p class="muted">${a.availability === "bought"
         ? "<strong>Bought</strong> — a premium upgrade acquired by purchase or loot during play, not owned at character creation."
         : "<strong>Starter</strong> — basic gear available at character creation."} Pricing is left to the DM / campaign.</p>

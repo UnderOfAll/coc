@@ -3,6 +3,7 @@
   "name": "Ringmaster's Bulwark",
   "source": "Circus of Chaos",
   "category": "shield",
+  "trait": "Anchored",
   "availability": "bought",
   "acBonus": 3,
   "stealthDisadvantage": false,

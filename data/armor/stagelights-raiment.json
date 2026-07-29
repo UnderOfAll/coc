@@ -6,6 +6,6 @@
   "availability": "bought",
   "baseAC": 12,
   "maxDexBonus": null,
-  "stealthDisadvantage": true,
+  "stealthDisadvantage": false,
   "flavor": "Layer on layer of stiffened brocade and mirrored plate-sequin — the closest thing to armour a performer can wear and still call it a costume. You are magnificent and you are audible from the back row."
 }

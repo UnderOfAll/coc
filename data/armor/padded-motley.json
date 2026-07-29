@@ -4,8 +4,9 @@
   "source": "Circus System",
   "flavor": "A quilted patchwork performer's costume — soft protection under bright colors, but it rustles with every step.",
   "category": "light",
+  "trait": "Cushioned",
   "baseAC": 11,
   "maxDexBonus": null,
-  "stealthDisadvantage": true,
+  "stealthDisadvantage": false,
   "availability": "starter"
 }

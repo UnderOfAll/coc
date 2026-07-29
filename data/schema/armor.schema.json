@@ -33,6 +33,20 @@
       ],
       "description": "5e armor category. clothing = baseAC 10-12 + full Dex and needs NO proficiency — it is the FULL CASTERS' lane (Illusionist, Jester), who have no armour proficiency at all. light = the half-casters, the Juggler and the Acrobat. medium = the Joker and the Sandow. heavy and shield = the Sandow alone."
     },
+    "trait": {
+      "type": "string",
+      "enum": [
+        "Warded",
+        "Deep Pockets",
+        "Supple",
+        "Cushioned",
+        "Showpiece",
+        "Quick-Change",
+        "Anchored",
+        "Ironclad"
+      ],
+      "description": "One always-on property, the armour equivalent of a weapon's mastery. This is what makes two items with the same AC a real choice — before traits existed, the only levers were AC and a stealth penalty nothing in this game punishes. Definitions live in data/rules/armor-traits.json and ARMOR_TRAITS in app.js. The highest-AC item in each tier deliberately has NO trait: that is the trade."
+    },
     "availability": {
       "type": "string",
       "enum": [
@@ -64,7 +78,7 @@
     "stealthDisadvantage": {
       "type": "boolean",
       "default": false,
-      "description": "true if wearing this armor imposes disadvantage on Dexterity (Stealth) checks."
+      "description": "true if wearing this armor imposes disadvantage on Dexterity (Stealth) checks. Thematic only, and kept for heavy armour where it is obvious — it is NOT a balancing lever, because nothing in this system leans on Stealth hard enough to be worth 1 AC. Differentiate with `trait` instead."
     }
   }
 }

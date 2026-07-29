@@ -2,6 +2,7 @@
   "rules": [
     "rules/ability-score-improvement.json",
     "rules/armor-and-ac.json",
+    "rules/armor-traits.json",
     "rules/attacks-and-damage.json",
     "rules/character-appearance-and-size.json",
     "rules/parry.json",

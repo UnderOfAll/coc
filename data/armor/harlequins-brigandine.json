@@ -3,6 +3,7 @@
   "name": "Harlequin's Brigandine",
   "source": "Circus of Chaos",
   "category": "medium",
+  "trait": "Showpiece",
   "availability": "starter",
   "baseAC": 13,
   "maxDexBonus": 2,

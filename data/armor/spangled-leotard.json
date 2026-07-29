@@ -3,6 +3,7 @@
   "name": "Spangled Leotard",
   "source": "Circus of Chaos",
   "category": "clothing",
+  "trait": "Supple",
   "availability": "starter",
   "baseAC": 10,
   "maxDexBonus": null,

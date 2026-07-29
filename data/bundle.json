@@ -96,6 +96,42 @@
       "_file": "rules/armor-and-ac.json"
     },
     {
+      "id": "armor-traits",
+      "name": "Armor Traits",
+      "source": "Circus of Chaos",
+      "summary": "Every armour carries one always-on trait — the armour equivalent of a weapon's mastery. It is what makes two items with the same AC a real choice, and why the highest-AC item in each tier has none.",
+      "sections": [
+        {
+          "heading": "Why traits exist",
+          "paragraphs": [
+            "A shopping list where every item is just \"one AC worse than the next one up\" is not a choice, it is a budget. Worse, the only drawback the old list had was a Stealth penalty, and nothing in this game leans on Stealth hard enough to be worth giving up armour for.",
+            "So AC is one axis and the trait is the other. Within a tier, the lower-AC pieces carry the useful traits, and the single highest-AC piece in each category deliberately carries none. That is the trade: wear the best protection, or wear the thing that does something."
+          ]
+        },
+        {
+          "heading": "The eight traits",
+          "list": [
+            "Warded — you have advantage on concentration checks. The reason a caster wears robes rather than nothing.",
+            "Deep Pockets — a creature trying to snatch one of your Props has disadvantage on the attempt.",
+            "Supple — advantage on checks and saves made to escape a grapple, a restraint, or bindings.",
+            "Cushioned — halve the bludgeoning damage you take from falling, from collisions, and from being thrown.",
+            "Showpiece — advantage on Charisma (Performance) checks made while wearing it.",
+            "Quick-Change — you can don or doff it as a bonus action.",
+            "Anchored — advantage on saves against being knocked prone or moved against your will.",
+            "Ironclad — reduce each instance of slashing, piercing or bludgeoning damage you take by 1."
+          ]
+        },
+        {
+          "heading": "Reading the list",
+          "paragraphs": [
+            "Two pieces at the same AC never share a trait, so there is never a wrong answer that is simply a worse version of the right one. Beasthide Wrap sits a point below the other mediums and pays you back in Cushioned; Serpent-Scale Mail is the best starter medium and pays for it with nothing at all.",
+            "Traits do not stack with themselves — a shield's Showpiece and a coat's Showpiece are still just advantage — and advantage from a trait works exactly like advantage from anywhere else."
+          ]
+        }
+      ],
+      "_file": "rules/armor-traits.json"
+    },
+    {
       "id": "attacks-and-damage",
       "name": "Attacks & Damage",
       "source": "Circus System",
@@ -5272,6 +5308,7 @@
       "name": "Aerialist's Second Skin",
       "source": "Circus of Chaos",
       "category": "light",
+      "trait": "Quick-Change",
       "availability": "bought",
       "baseAC": 13,
       "maxDexBonus": null,
@@ -5285,6 +5322,7 @@
       "source": "Circus System",
       "flavor": "Layered hides from the menagerie's beasts, roughly cured — crude, warm, and surprisingly tough.",
       "category": "medium",
+      "trait": "Cushioned",
       "baseAC": 12,
       "maxDexBonus": 2,
       "stealthDisadvantage": false,
@@ -5297,6 +5335,7 @@
       "source": "Circus System",
       "flavor": "Riveted iron bands over a canvas jack, built in the same shop that plates the cannon. Circus engineering: heavy, ugly, and it has never once come apart.",
       "category": "heavy",
+      "trait": "Ironclad",
       "baseAC": 17,
       "maxDexBonus": 0,
       "strengthRequirement": 15,
@@ -5322,6 +5361,7 @@
       "name": "Conjurer's Longcoat",
       "source": "Circus of Chaos",
       "category": "clothing",
+      "trait": "Deep Pockets",
       "availability": "starter",
       "baseAC": 10,
       "maxDexBonus": null,
@@ -5335,6 +5375,7 @@
       "source": "Circus System",
       "flavor": "Layered silks and star-charts — the working clothes of the tent mystics. No protection to speak of, but they need no training to wear, which is the whole point for someone whose defense is their mind, not their hide.",
       "category": "clothing",
+      "trait": "Warded",
       "baseAC": 10,
       "maxDexBonus": null,
       "availability": "starter",
@@ -5358,6 +5399,7 @@
       "name": "Harlequin's Brigandine",
       "source": "Circus of Chaos",
       "category": "medium",
+      "trait": "Showpiece",
       "availability": "starter",
       "baseAC": 13,
       "maxDexBonus": 2,
@@ -5371,6 +5413,7 @@
       "source": "Circus System",
       "flavor": "A heavy shirt of interlocking rings from the show's smith — dependable, weighty, and loud on a quiet night.",
       "category": "heavy",
+      "trait": "Anchored",
       "baseAC": 16,
       "maxDexBonus": 0,
       "strengthRequirement": 13,
@@ -5383,6 +5426,7 @@
       "name": "Mirrorsilk Vestments",
       "source": "Circus of Chaos",
       "category": "clothing",
+      "trait": "Showpiece",
       "availability": "bought",
       "baseAC": 11,
       "maxDexBonus": null,
@@ -5396,9 +5440,10 @@
       "source": "Circus System",
       "flavor": "A quilted patchwork performer's costume — soft protection under bright colors, but it rustles with every step.",
       "category": "light",
+      "trait": "Cushioned",
       "baseAC": 11,
       "maxDexBonus": null,
-      "stealthDisadvantage": true,
+      "stealthDisadvantage": false,
       "availability": "starter",
       "_file": "armor/padded-motley.json"
     },
@@ -5408,6 +5453,7 @@
       "source": "Circus System",
       "flavor": "A round, brightly painted shield twirled in the opening march — light enough to flourish, solid enough to turn a blade.",
       "category": "shield",
+      "trait": "Showpiece",
       "acBonus": 2,
       "stealthDisadvantage": false,
       "availability": "starter",
@@ -5418,6 +5464,7 @@
       "name": "Ringmaster's Bulwark",
       "source": "Circus of Chaos",
       "category": "shield",
+      "trait": "Anchored",
       "availability": "bought",
       "acBonus": 3,
       "stealthDisadvantage": false,
@@ -5432,7 +5479,7 @@
       "category": "medium",
       "baseAC": 14,
       "maxDexBonus": 2,
-      "stealthDisadvantage": true,
+      "stealthDisadvantage": false,
       "availability": "starter",
       "_file": "armor/serpent-scale-mail.json"
     },
@@ -5441,6 +5488,7 @@
       "name": "Spangled Leotard",
       "source": "Circus of Chaos",
       "category": "clothing",
+      "trait": "Supple",
       "availability": "starter",
       "baseAC": 10,
       "maxDexBonus": null,
@@ -5456,7 +5504,7 @@
       "availability": "bought",
       "baseAC": 12,
       "maxDexBonus": null,
-      "stealthDisadvantage": true,
+      "stealthDisadvantage": false,
       "flavor": "Layer on layer of stiffened brocade and mirrored plate-sequin — the closest thing to armour a performer can wear and still call it a costume. You are magnificent and you are audible from the back row.",
       "_file": "armor/stagelights-raiment.json"
     },
@@ -5466,6 +5514,7 @@
       "source": "Circus System",
       "flavor": "A fitted steel chest piece worn over the bare arms of a showman — solid protection that still lets the shoulders flex for a lift. Its edge over scale mail isn't AC — it's silence: the same 14 base, but no stealth penalty.",
       "category": "medium",
+      "trait": "Anchored",
       "baseAC": 14,
       "maxDexBonus": 2,
       "stealthDisadvantage": false,
@@ -5490,6 +5539,7 @@
       "source": "Circus System",
       "flavor": "A light mesh worn under the costume — quiet enough to tumble in, sturdier than leather. The middle-ground medium for a performer who still wants to move.",
       "category": "medium",
+      "trait": "Quick-Change",
       "baseAC": 13,
       "maxDexBonus": 2,
       "availability": "starter",
@@ -5502,6 +5552,7 @@
       "source": "Circus System",
       "flavor": "Supple, close-fitting leather that moves with the body — the acrobat's default, quiet and unrestrictive.",
       "category": "light",
+      "trait": "Supple",
       "baseAC": 11,
       "maxDexBonus": null,
       "stealthDisadvantage": false,

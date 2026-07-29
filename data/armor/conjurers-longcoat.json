@@ -3,6 +3,7 @@
   "name": "Conjurer's Longcoat",
   "source": "Circus of Chaos",
   "category": "clothing",
+  "trait": "Deep Pockets",
   "availability": "starter",
   "baseAC": 10,
   "maxDexBonus": null,

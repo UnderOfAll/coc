@@ -4,6 +4,7 @@
   "source": "Circus System",
   "flavor": "Supple, close-fitting leather that moves with the body — the acrobat's default, quiet and unrestrictive.",
   "category": "light",
+  "trait": "Supple",
   "baseAC": 11,
   "maxDexBonus": null,
   "stealthDisadvantage": false,

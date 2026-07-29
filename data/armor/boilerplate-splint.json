@@ -4,6 +4,7 @@
   "source": "Circus System",
   "flavor": "Riveted iron bands over a canvas jack, built in the same shop that plates the cannon. Circus engineering: heavy, ugly, and it has never once come apart.",
   "category": "heavy",
+  "trait": "Ironclad",
   "baseAC": 17,
   "maxDexBonus": 0,
   "strengthRequirement": 15,

@@ -4,6 +4,7 @@
   "source": "Circus System",
   "flavor": "A round, brightly painted shield twirled in the opening march — light enough to flourish, solid enough to turn a blade.",
   "category": "shield",
+  "trait": "Showpiece",
   "acBonus": 2,
   "stealthDisadvantage": false,
   "availability": "starter"

@@ -1,0 +1,35 @@
+{
+  "id": "armor-traits",
+  "name": "Armor Traits",
+  "source": "Circus of Chaos",
+  "summary": "Every armour carries one always-on trait — the armour equivalent of a weapon's mastery. It is what makes two items with the same AC a real choice, and why the highest-AC item in each tier has none.",
+  "sections": [
+    {
+      "heading": "Why traits exist",
+      "paragraphs": [
+        "A shopping list where every item is just \"one AC worse than the next one up\" is not a choice, it is a budget. Worse, the only drawback the old list had was a Stealth penalty, and nothing in this game leans on Stealth hard enough to be worth giving up armour for.",
+        "So AC is one axis and the trait is the other. Within a tier, the lower-AC pieces carry the useful traits, and the single highest-AC piece in each category deliberately carries none. That is the trade: wear the best protection, or wear the thing that does something."
+      ]
+    },
+    {
+      "heading": "The eight traits",
+      "list": [
+        "Warded — you have advantage on concentration checks. The reason a caster wears robes rather than nothing.",
+        "Deep Pockets — a creature trying to snatch one of your Props has disadvantage on the attempt.",
+        "Supple — advantage on checks and saves made to escape a grapple, a restraint, or bindings.",
+        "Cushioned — halve the bludgeoning damage you take from falling, from collisions, and from being thrown.",
+        "Showpiece — advantage on Charisma (Performance) checks made while wearing it.",
+        "Quick-Change — you can don or doff it as a bonus action.",
+        "Anchored — advantage on saves against being knocked prone or moved against your will.",
+        "Ironclad — reduce each instance of slashing, piercing or bludgeoning damage you take by 1."
+      ]
+    },
+    {
+      "heading": "Reading the list",
+      "paragraphs": [
+        "Two pieces at the same AC never share a trait, so there is never a wrong answer that is simply a worse version of the right one. Beasthide Wrap sits a point below the other mediums and pays you back in Cushioned; Serpent-Scale Mail is the best starter medium and pays for it with nothing at all.",
+        "Traits do not stack with themselves — a shield's Showpiece and a coat's Showpiece are still just advantage — and advantage from a trait works exactly like advantage from anywhere else."
+      ]
+    }
+  ]
+}

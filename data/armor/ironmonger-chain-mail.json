@@ -4,6 +4,7 @@
   "source": "Circus System",
   "flavor": "A heavy shirt of interlocking rings from the show's smith — dependable, weighty, and loud on a quiet night.",
   "category": "heavy",
+  "trait": "Anchored",
   "baseAC": 16,
   "maxDexBonus": 0,
   "strengthRequirement": 13,

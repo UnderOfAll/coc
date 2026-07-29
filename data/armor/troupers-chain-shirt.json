@@ -4,6 +4,7 @@
   "source": "Circus System",
   "flavor": "A light mesh worn under the costume — quiet enough to tumble in, sturdier than leather. The middle-ground medium for a performer who still wants to move.",
   "category": "medium",
+  "trait": "Quick-Change",
   "baseAC": 13,
   "maxDexBonus": 2,
   "availability": "starter",

@@ -4,6 +4,7 @@
   "source": "Circus System",
   "flavor": "A fitted steel chest piece worn over the bare arms of a showman — solid protection that still lets the shoulders flex for a lift. Its edge over scale mail isn't AC — it's silence: the same 14 base, but no stealth penalty.",
   "category": "medium",
+  "trait": "Anchored",
   "baseAC": 14,
   "maxDexBonus": 2,
   "stealthDisadvantage": false,
