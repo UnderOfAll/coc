@@ -3674,9 +3674,9 @@
       ],
       "duration": "Instantaneous",
       "save": "Wisdom",
-      "description": "You put a single vivid, wrong thing at a creature's shoulder — a shape, a breath, a hand closing — and let its own nerves do the work. The target makes a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure it takes [[2d6]] psychic damage as the fright goes through it like a shock; on a success it takes half as much. This is plain, reliable damage with no rider attached: it costs no Phantasm and it always works the same way, which is exactly what it is for.",
+      "description": "You put a single vivid, wrong thing at a creature's shoulder — a shape, a breath, a hand closing — and let its own nerves do the work. The target makes a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure it takes [[2d6]] psychic damage as the fright goes through it like a shock; on a success it takes half as much. This is plain, reliable damage with no rider attached — it always works the same way, which is exactly what it is for.",
       "narration": "Your eyes flick to a point just past their shoulder and your face does something honest. Whatever they turn to find is already gone, and the jolt of it hits them somewhere under the ribs.",
-      "sheetSummary": "Action, 60 ft, cooldown 2, no engine cost. Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[2d6]] psychic. Success: half damage. No rider.",
+      "sheetSummary": "Action, 60 ft, cooldown 2. Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[2d6]] psychic. Success: half damage. No rider.",
       "classes": [
         "illusionist"
       ],

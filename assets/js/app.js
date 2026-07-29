@@ -361,7 +361,7 @@ function groupByAvailability(items) {
    alphabetically: the tier is the first thing a player needs to know about a trick. */
 const TIER_LABELS = {
   pledge: "Pledges — at-will",
-  turn: "Turns — cooldown, no engine cost",
+  turn: "Turns — on a cooldown",
   prestige: "Prestiges — spend your engine",
 };
 function groupByTier(items) {
@@ -905,8 +905,8 @@ function renderSubclass(s) {
    has to leave the trick to remember how the casting system works (MECHANICS.md §4). */
 const TIERS = {
   pledge: "At-will. No cost and no cooldown — the basic trick a performer can always do.",
-  turn: "The workhorse. Costs no engine, but once cast the crowd has Seen it: you can't cast it again for its cooldown in rounds.",
-  prestige: "The showstopper. Spends your class engine, so you must build the meter with Turns first — OP but occasional by design.",
+  turn: "The workhorse. Once cast, the crowd has Seen it: you can't cast it again for its cooldown in rounds. Most Turns are free; a full caster also has a few that spend engine on top of the cooldown.",
+  prestige: "The showstopper. Spends most of your class engine and works only once per combat, so you must build the meter with Turns first — OP but occasional by design.",
 };
 
 /* The Patter/Flourish/Prop reskin of V/S/M. The mechanical hooks are unchanged, so the

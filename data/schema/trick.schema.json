@@ -36,7 +36,7 @@
         "turn",
         "prestige"
       ],
-      "description": "pledge = at-will cantrip equivalent, no cost/cooldown. turn = the workhorse; costs no engine, limited by cooldown. prestige = the showstopper; spends engine, minLevel 5+."
+      "description": "pledge = at-will cantrip equivalent, no cost and no cooldown. turn = the workhorse; always limited by a cooldown, and MAY also spend engine (full casters only, MECHANICS 4.4a). prestige = the showstopper; spends most of the meter, once per combat, minLevel 5+."
     },
     "discipline": {
       "type": "string",
