@@ -39,7 +39,12 @@
     "description": "A personal pool of kinetic flow built from constant motion — sprints, spins, swings, and falls turned into finesse. The Acrobat's sole resource.",
     "generation": "You build Momentum through motion, and only through motion — no technique that spends Momentum ever also grants it. Gain 1 Momentum (at most once per turn from this movement source) when you move at least 10 feet toward, away from, or around a hostile creature on your turn, or when you take the Dash or Disengage action. You also gain 1 Momentum the first time each turn you use Wall-Run. Trapeze Swing, Strike-and-Vanish, Momentum Strike, Flow State, and Riposte only spend Momentum — they never generate it.",
     "spend": "Spend Momentum in 1-point increments, at no action cost beyond the triggering action, to fuel your features (bonus damage, forced movement, extra mobility, or momentum-gated attacks). Unspent Momentum carries over between rounds, but never between fights: you start every combat with 0 Momentum and any left over is lost the moment the fight ends. Momentum is a per-combat currency like every other engine in this system — it is built during a fight and cannot be banked before one.",
-    "cap": "5 (L1-4) · 6 (L5+) — Momentum Reserve raises it at 5th level"
+    "cap": "5 (L1-4) · 6 (L5+) — Momentum Reserve raises it at 5th level",
+    "capFormula": "5, rising to 6 from 5th level (Momentum Reserve)",
+    "capMath": {
+      "base": 5,
+      "bonusAtLevel5": 1
+    }
   },
   "features": [
     {

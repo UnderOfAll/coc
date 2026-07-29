@@ -202,6 +202,55 @@
       "_file": "rules/character-appearance-and-size.json"
     },
     {
+      "id": "character-creation",
+      "name": "Character Creation",
+      "source": "Circus of Chaos",
+      "summary": "How to build one: pick a class, choose your size, assign six ability scores, take your skills and your starter gear. Hit points are taken rather than rolled, and there is no money yet.",
+      "sections": [
+        {
+          "heading": "The order it happens in",
+          "list": [
+            "Pick a class — it decides almost everything else, including which sizes you may be.",
+            "Pick your size from the one or two your class allows. Everything else about your appearance is free and has no mechanical weight.",
+            "Assign six ability scores by whichever of the three methods your table uses.",
+            "Choose your skill proficiencies from the list your class offers.",
+            "Take a starter armour and your class's weapons. Both are free.",
+            "At 3rd level, choose your subclass. Some subclasses also hand you extra tricks."
+          ]
+        },
+        {
+          "heading": "Ability scores: three ways",
+          "paragraphs": [
+            "Use whichever your table prefers — the app supports all three and none is the 'real' one.",
+            "The standard array is 15, 14, 13, 12, 10, 8, assigned however you like. Point buy gives you 27 points with the usual costs, and nothing starts above 15. Manual entry is for a table that rolled dice: type the numbers in and the app trusts you.",
+            "Your class's primary ability is the number that matters most — it drives your attacks, your save DC, the size of your engine, and how well you Parry. The app highlights it. It never picks for you."
+          ]
+        },
+        {
+          "heading": "Hit points are taken, not rolled",
+          "paragraphs": [
+            "At 1st level you get the maximum of your hit die plus your Constitution modifier. Every level after that you get the average of the die rounded up, plus your Constitution modifier again — 4 on a d6, 5 on a d8, 6 on a d10, 7 on a d12.",
+            "There is no rolling for hit points in this system. A bad roll at level 2 following you for twenty levels is not a decision, it is a tax."
+          ]
+        },
+        {
+          "heading": "Levels beyond 5",
+          "paragraphs": [
+            "You can build a character up to 20th level, but be aware of what you are getting: every class's features currently stop at 5th. Levels 6 to 20 give you hit points and Ability Score Improvements and nothing else yet.",
+            "The range is open so nobody is stopped from playing. Filling it in is work still to come."
+          ]
+        },
+        {
+          "heading": "There is no money yet",
+          "paragraphs": [
+            "Starter armour and your class's weapons are free at creation. The bought tier exists and is worth reading, but a fresh character does not own any of it — your DM awards it during play.",
+            "Prices, a starting purse and everything else about an economy are deliberately not built yet."
+          ]
+        }
+      ],
+      "_file": "rules/character-creation.json"
+    },
+    {
       "id": "parry",
       "name": "Parry & Dodging",
       "source": "Circus System",
@@ -484,7 +533,12 @@
         "description": "A personal pool of kinetic flow built from constant motion — sprints, spins, swings, and falls turned into finesse. The Acrobat's sole resource.",
         "generation": "You build Momentum through motion, and only through motion — no technique that spends Momentum ever also grants it. Gain 1 Momentum (at most once per turn from this movement source) when you move at least 10 feet toward, away from, or around a hostile creature on your turn, or when you take the Dash or Disengage action. You also gain 1 Momentum the first time each turn you use Wall-Run. Trapeze Swing, Strike-and-Vanish, Momentum Strike, Flow State, and Riposte only spend Momentum — they never generate it.",
         "spend": "Spend Momentum in 1-point increments, at no action cost beyond the triggering action, to fuel your features (bonus damage, forced movement, extra mobility, or momentum-gated attacks). Unspent Momentum carries over between rounds, but never between fights: you start every combat with 0 Momentum and any left over is lost the moment the fight ends. Momentum is a per-combat currency like every other engine in this system — it is built during a fight and cannot be banked before one.",
-        "cap": "5 (L1-4) · 6 (L5+) — Momentum Reserve raises it at 5th level"
+        "cap": "5 (L1-4) · 6 (L5+) — Momentum Reserve raises it at 5th level",
+        "capFormula": "5, rising to 6 from 5th level (Momentum Reserve)",
+        "capMath": {
+          "base": 5,
+          "bonusAtLevel5": 1
+        }
       },
       "features": [
         {
@@ -668,7 +722,11 @@
         "generation": "Create one Clone, as a bonus action, in an unoccupied space you can see within 30 feet of you; it appears already mimicking your exact appearance and current pose. You also gain a Clone at no action cost via Riposte, and via any other feature that says so. You may never have more Clones active at once than your Clone cap; creating a new one beyond your cap requires an existing Clone to drop first.",
         "spend": "Clones aren't spent from one fixed pool all at once — specific features use them in specific ways. Swap teleports you into a Clone's space without destroying it. Mirror Barrage has every Clone in reach make one half-damage attack, without destroying them. Mirror Image commits any number of Clones within 15 feet to a d6 gamble: on a redirect one of them is destroyed and absorbs the hit entirely, and on a failure every Clone you committed is destroyed for nothing. Decoy Detonation destroys a Clone to burst it for damage and knockback. Mirror Assault (5th level) consumes a Clone to deliver an extra attack from its space. A Clone also drops on its own, destroying no other resource, the moment it ends up more than 30 feet from you, the instant you become incapacitated (all your Clones drop at once), or the first time any attack roll succeeds against it — it shares your AC but has no hit points of its own, so one confirmed hit and it's gone. Clones are per-combat like every other engine in this system: every Clone you have drops the moment combat ends, and you enter every fight with none. Clones can never be banked before a fight or carried out of one.",
         "cap": "2 (L1–4) · 4 (L5–8) · 5 (L9+) — proficiency bonus, plus 1 from Hall of Mirrors at 5th level",
-        "capFormula": "equal to your proficiency bonus"
+        "capFormula": "your proficiency bonus, plus 1 from Hall of Mirrors at 5th level",
+        "capMath": {
+          "prof": 1,
+          "bonusAtLevel5": 1
+        }
       },
       "features": [
         {
@@ -862,7 +920,12 @@
         "generation": "You gain 1 Phantasm each time you cast a FREE Turn — the trick lands, the audience files it away, and you are one step closer to the thing you are really building toward. You gain 1 additional Phantasm the first time each turn a creature fails a saving throw against one of your tricks, because nothing sells the next lie like the last one working. Pledges generate nothing (they are too small to be remembered) and a Prestige generates nothing (it spends the belief rather than building it). **A costed Turn generates nothing** — neither for being cast nor from anything it goes on to do. A trick you paid the meter for never pays part of itself back.",
         "spend": "Phantasm is spent three ways, and you have all three from 1st level. **Sell It:** as you cast a trick that forces a saving throw, spend 1 Phantasm to give one target of it disadvantage on that save. **Hold It:** when you fail a concentration check, spend 1 Phantasm to succeed instead. **Costed Turns:** a few of your best Turns carry a price of their own (Waking Nightmare costs 3) — those are the mid-fight payoff you bank the meter for, long before a Prestige is on the table. A Prestige then spends most of what is left. Unspent Phantasm carries over between rounds, but never between fights: you start every combat with 0 Phantasm and any left over is lost the moment the fight ends. Phantasm is a per-combat currency like every other engine in this system — it is built during a fight and cannot be banked before one.",
         "cap": "≈6 (L1-4) · 7+ (L5+)",
-        "capFormula": "proficiency bonus + Intelligence modifier (minimum 3)"
+        "capFormula": "proficiency bonus + Intelligence modifier (minimum 3)",
+        "capMath": {
+          "prof": 1,
+          "ability": "Intelligence",
+          "min": 3
+        }
       },
       "keyStats": [
         {
@@ -1041,7 +1104,12 @@
         "generation": "You gain 1 Mirth each time you cast a FREE Turn. You gain 1 additional Mirth the first time each turn one of your tricks helps an ally — granting them a bonus, temporary hit points, a reroll, resistance, or removing something afflicting them. Pledges generate nothing and a Prestige generates nothing; the Prestige is where the goodwill gets spent, not made. **A costed Turn generates nothing** — neither for being cast nor from anything it goes on to do. A trick you paid the meter for never pays part of itself back.",
         "spend": "Mirth is spent three ways, and you have all three from 1st level. **Play It Up:** as you cast a trick that helps an ally, spend 1 Mirth to double what that ally gets from it — the temporary hit points, the bonus die, the number of rerolls. **Heckle:** Heckler's Timing costs 1 Mirth and your reaction, and either softens a blow or spoils a saving throw. **Costed Turns:** a few of your better Turns carry a price of their own (Killing It costs 2) — the mid-fight payoff you bank the meter for, long before a Prestige is on the table. A Prestige then spends most of what is left. Unspent Mirth carries over between rounds, but never between fights: you start every combat with 0 Mirth and any left over is lost the moment the fight ends. Mirth is a per-combat currency like every other engine in this system — it is built during a fight and cannot be banked before one.",
         "cap": "≈6 (L1-4) · 7+ (L5+)",
-        "capFormula": "proficiency bonus + Charisma modifier (minimum 3)"
+        "capFormula": "proficiency bonus + Charisma modifier (minimum 3)",
+        "capMath": {
+          "prof": 1,
+          "ability": "Charisma",
+          "min": 3
+        }
       },
       "keyStats": [
         {
@@ -1221,7 +1289,12 @@
         "generation": "Gain 1 Mayhem the first time each turn you deal damage to a creature, AND gain 1 Mayhem the first time each turn you take damage, AND gain 1 Mayhem the first time each turn you roll a natural 1 or a natural 20 on an attack roll, ability check, or saving throw — three separate sources, each capped at once per turn (all three triggering in the same turn grants 3 Mayhem total; a source that already triggered this turn grants no more). This works from 1st level. None of these sources ever trigger off a Trick: damage you deal with a Trick, and rolls you make as part of one, generate no Mayhem. Your Tricks are free precisely because they don't feed the meter.",
         "spend": "Spend Mayhem in 1-point increments, at no action cost beyond the triggering feature, to draw Wild Cards, fuel your Gambits, and pay for your other Mayhem-keyed features. Unspent Mayhem carries over between rounds, but never between fights: you start every combat with 0 Mayhem and any left over is lost the moment the fight ends. Mayhem is a per-combat currency like every other engine in this system — it is built during a fight and cannot be banked before one.",
         "cap": "≈4–5 (L1–4) · 6+ (L5+)",
-        "capFormula": "proficiency bonus + Charisma modifier (minimum 3)"
+        "capFormula": "proficiency bonus + Charisma modifier (minimum 3)",
+        "capMath": {
+          "prof": 1,
+          "ability": "Charisma",
+          "min": 3
+        }
       },
       "features": [
         {
@@ -1481,7 +1554,12 @@
         "generation": "At the start of each of your turns your set refills to full — you catch every implement back into the cascade, thrown or not. There is no other way to gain or lose implements; they are never spent for good.",
         "spend": "On your Attack action you throw any number of implements, from 0 up to your Set Size, as your Barrage. Each implement thrown leaves your hand until your set refills, and every one you have thrown worsens your Deflect (with none in hand you cannot Parry at all). Nothing carries between fights here either — but nothing needs to. Your Set refills to full at the start of each of your turns, so however a fight ended, your first turn of the next one opens with every implement back in hand.",
         "cap": "3 (L1–4) · 6 (L5–8) · 7 (L9+)",
-        "capFormula": "proficiency bonus + 1 (+2 more from Grand Cascade at L5)"
+        "capFormula": "proficiency bonus + 1 (+2 more from Grand Cascade at L5)",
+        "capMath": {
+          "base": 1,
+          "prof": 1,
+          "bonusAtLevel5": 2
+        }
       },
       "features": [
         {
@@ -1689,7 +1767,11 @@
         "generation": "Attach a String to a creature you can see within 60 feet as a bonus action, or automatically at no action cost when you hit a creature with your Control Wires. You may never have more Strings attached at once than your String cap; attaching a new one beyond your cap requires detaching an existing String first (no action).",
         "spend": "Strings aren't consumed to use your control features — they are the prerequisite for them. Manipulate, Tangle, Disrupting Pull, Guiding Pull, and Grand Marionette all require a String already attached to the target; using them doesn't remove the String. A String stays attached until you detach it (no action), the creature moves beyond your 60-foot leash range, or you become incapacitated, in which case all of your Strings snap at once. Strings are per-combat like every other engine in this system: every String you have snaps the moment combat ends, and you enter every fight with none. Strings can never be attached before a fight starts or carried out of one.",
         "cap": "2 (L1–4) · 4 (L5–8) · 5 (L9+) — proficiency bonus, plus 1 from Web of Strings at 5th level",
-        "capFormula": "your proficiency bonus, plus 1 from Web of Strings at 5th level"
+        "capFormula": "your proficiency bonus, plus 1 from Web of Strings at 5th level",
+        "capMath": {
+          "prof": 1,
+          "bonusAtLevel5": 1
+        }
       },
       "features": [
         {
@@ -1879,7 +1961,12 @@
         "generation": "Gain 1 Grit the first time each turn you hit a creature with a melee attack, AND gain 1 Grit the first time each turn you are targeted by an attack from any source — whether that attack hits or misses — two separate sources, each capped at once per turn (landing a hit and being attacked in the same turn grants 2 Grit total; further hits you land or attacks made against you that same turn grant no additional Grit from that source). This works from 1st level, before any subclass is chosen.",
         "spend": "Spend Grit in 1-point increments to fuel Heave, Brace, and the other feats of strength described in your features. Unspent Grit carries over between rounds, but never between fights: you start every combat with 0 Grit and any left over is lost the moment the fight ends. Grit is a per-combat currency like every other engine in this system — it is built during a fight and cannot be banked before one.",
         "cap": "≈4 (L1–4) · 5–6 (L5+)",
-        "capFormula": "Constitution modifier + proficiency bonus (minimum 3)"
+        "capFormula": "Constitution modifier + proficiency bonus (minimum 3)",
+        "capMath": {
+          "prof": 1,
+          "ability": "Constitution",
+          "min": 3
+        }
       },
       "features": [
         {

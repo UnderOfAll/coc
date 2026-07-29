@@ -84,13 +84,16 @@ async function boot() {
 /* Lookup indexes, built once after load. Six render paths used to linear-scan a store array —
    attacksSection did one scan per weapon per class page — which is fine at 141 entries and silly
    at any larger number. Rebuilt by buildIndexes() whenever the store changes. */
-const idx = { classes: new Map(), subclasses: new Map(), weaponsByName: new Map(), skillsByName: new Map() };
+const idx = { classes: new Map(), subclasses: new Map(), weaponsByName: new Map(), skillsByName: new Map(), armorById: new Map(), tricksById: new Map() };
 function buildIndexes() {
   idx.classes.clear(); idx.subclasses.clear(); idx.weaponsByName.clear(); idx.skillsByName.clear();
+  idx.armorById.clear(); idx.tricksById.clear();
   for (const c of store.classes || []) idx.classes.set(c.id || slug(c), c);
   for (const s of store.subclasses || []) idx.subclasses.set(s.id || s.name, s);
   for (const w of store.weapons || []) idx.weaponsByName.set(w.name, w);
   for (const k of store.skills || []) idx.skillsByName.set((k.name || "").toLowerCase(), k);
+  for (const a of store.armor || []) idx.armorById.set(a.id || slug(a), a);
+  for (const t of store.tricks || []) idx.tricksById.set(t.id || slug(t), t);
 }
 
 // Attach the searchable text blob and sort a category's entries by name.
@@ -137,6 +140,8 @@ function buildSidebar() {
 
 function wireEvents() {
   $("#back").addEventListener("click", () => { location.hash = "#/" + current; });
+  // Landing menu needs the sidebar built even before the compendium is first opened.
+
   $("#search").addEventListener("input", (e) => {
     const q = e.target.value.trim().toLowerCase();
     if (q) renderSearch(q); else selectCategory(current);
@@ -218,12 +223,38 @@ function legendHTML() {
       one.</p>`;
 }
 
+/* Which top-level view is on screen. The compendium is no longer the whole app: the landing menu
+   and the character tools (creator, manager, live sheet) are peers of it. Each tool route is handled
+   by creator.js, which registers itself in COC_ROUTES — so app.js never needs to know about them. */
+const COC_ROUTES = {};
+function showView(which) {
+  for (const [id, name] of [["menu-view", "menu"], ["compendium-view", "compendium"], ["tool-view", "tool"]]) {
+    const node = document.getElementById(id);
+    if (node) node.classList.toggle("hidden", name !== which);
+  }
+  const search = $("#search");
+  if (search) search.classList.toggle("hidden", which !== "compendium");
+}
+
 function routeFromHash() {
   const hash = location.hash.replace(/^#\/?/, "");
-  const [cat, ...rest] = hash.split("/");
-  const key = CATEGORIES.some((c) => c.key === cat) ? cat : "classes";
-  const id = rest.join("/");
-  if (id) showDetail(key, decodeURIComponent(id));
+  const [head, ...rest] = hash.split("/");
+  const arg = rest.join("/");
+
+  // Landing menu: the default, and what an empty hash means.
+  if (!head) {
+    showView("menu");
+    setStatus(typeof CocStore !== "undefined" ? CocStore.describe() : "");
+    return;
+  }
+
+  // Character tools, registered by creator.js.
+  if (COC_ROUTES[head]) { showView("tool"); COC_ROUTES[head](decodeURIComponent(arg)); return; }
+
+  // Otherwise the compendium.
+  showView("compendium");
+  const key = CATEGORIES.some((c) => c.key === head) ? head : "classes";
+  if (arg) showDetail(key, decodeURIComponent(arg));
   else selectCategory(key);
 }
 

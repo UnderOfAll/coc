@@ -39,7 +39,12 @@
     "generation": "At the start of each of your turns your set refills to full — you catch every implement back into the cascade, thrown or not. There is no other way to gain or lose implements; they are never spent for good.",
     "spend": "On your Attack action you throw any number of implements, from 0 up to your Set Size, as your Barrage. Each implement thrown leaves your hand until your set refills, and every one you have thrown worsens your Deflect (with none in hand you cannot Parry at all). Nothing carries between fights here either — but nothing needs to. Your Set refills to full at the start of each of your turns, so however a fight ended, your first turn of the next one opens with every implement back in hand.",
     "cap": "3 (L1–4) · 6 (L5–8) · 7 (L9+)",
-    "capFormula": "proficiency bonus + 1 (+2 more from Grand Cascade at L5)"
+    "capFormula": "proficiency bonus + 1 (+2 more from Grand Cascade at L5)",
+    "capMath": {
+      "base": 1,
+      "prof": 1,
+      "bonusAtLevel5": 2
+    }
   },
   "features": [
     {

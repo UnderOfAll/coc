@@ -1,0 +1,48 @@
+{
+  "id": "character-creation",
+  "name": "Character Creation",
+  "source": "Circus of Chaos",
+  "summary": "How to build one: pick a class, choose your size, assign six ability scores, take your skills and your starter gear. Hit points are taken rather than rolled, and there is no money yet.",
+  "sections": [
+    {
+      "heading": "The order it happens in",
+      "list": [
+        "Pick a class — it decides almost everything else, including which sizes you may be.",
+        "Pick your size from the one or two your class allows. Everything else about your appearance is free and has no mechanical weight.",
+        "Assign six ability scores by whichever of the three methods your table uses.",
+        "Choose your skill proficiencies from the list your class offers.",
+        "Take a starter armour and your class's weapons. Both are free.",
+        "At 3rd level, choose your subclass. Some subclasses also hand you extra tricks."
+      ]
+    },
+    {
+      "heading": "Ability scores: three ways",
+      "paragraphs": [
+        "Use whichever your table prefers — the app supports all three and none is the 'real' one.",
+        "The standard array is 15, 14, 13, 12, 10, 8, assigned however you like. Point buy gives you 27 points with the usual costs, and nothing starts above 15. Manual entry is for a table that rolled dice: type the numbers in and the app trusts you.",
+        "Your class's primary ability is the number that matters most — it drives your attacks, your save DC, the size of your engine, and how well you Parry. The app highlights it. It never picks for you."
+      ]
+    },
+    {
+      "heading": "Hit points are taken, not rolled",
+      "paragraphs": [
+        "At 1st level you get the maximum of your hit die plus your Constitution modifier. Every level after that you get the average of the die rounded up, plus your Constitution modifier again — 4 on a d6, 5 on a d8, 6 on a d10, 7 on a d12.",
+        "There is no rolling for hit points in this system. A bad roll at level 2 following you for twenty levels is not a decision, it is a tax."
+      ]
+    },
+    {
+      "heading": "Levels beyond 5",
+      "paragraphs": [
+        "You can build a character up to 20th level, but be aware of what you are getting: every class's features currently stop at 5th. Levels 6 to 20 give you hit points and Ability Score Improvements and nothing else yet.",
+        "The range is open so nobody is stopped from playing. Filling it in is work still to come."
+      ]
+    },
+    {
+      "heading": "There is no money yet",
+      "paragraphs": [
+        "Starter armour and your class's weapons are free at creation. The bought tier exists and is worth reading, but a fresh character does not own any of it — your DM awards it during play.",
+        "Prices, a starting purse and everything else about an economy are deliberately not built yet."
+      ]
+    }
+  ]
+}

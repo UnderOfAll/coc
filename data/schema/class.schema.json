@@ -286,6 +286,36 @@
         "capFormula": {
           "type": "string",
           "description": "Optional exact cap calculation shown in a hover/tap tooltip on the Cap value (mirrors keyStats.formula), e.g. 'Constitution modifier + proficiency bonus (minimum 3)'."
+        },
+        "capMath": {
+          "type": "object",
+          "description": "MACHINE-READABLE cap, so no code ever parses `capFormula`'s English to get a number. cap = base + (prof x proficiency bonus) + (ability modifier), raised to `min` if given, then + `bonusAtLevel5` from level 5. Keep it in step with capFormula, which is the human-facing version.",
+          "properties": {
+            "base": {
+              "type": "integer"
+            },
+            "prof": {
+              "type": "integer"
+            },
+            "ability": {
+              "type": "string",
+              "enum": [
+                "Strength",
+                "Dexterity",
+                "Constitution",
+                "Intelligence",
+                "Wisdom",
+                "Charisma"
+              ]
+            },
+            "min": {
+              "type": "integer"
+            },
+            "bonusAtLevel5": {
+              "type": "integer"
+            }
+          },
+          "additionalProperties": false
         }
       }
     }

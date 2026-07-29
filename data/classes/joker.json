@@ -41,7 +41,12 @@
     "generation": "Gain 1 Mayhem the first time each turn you deal damage to a creature, AND gain 1 Mayhem the first time each turn you take damage, AND gain 1 Mayhem the first time each turn you roll a natural 1 or a natural 20 on an attack roll, ability check, or saving throw — three separate sources, each capped at once per turn (all three triggering in the same turn grants 3 Mayhem total; a source that already triggered this turn grants no more). This works from 1st level. None of these sources ever trigger off a Trick: damage you deal with a Trick, and rolls you make as part of one, generate no Mayhem. Your Tricks are free precisely because they don't feed the meter.",
     "spend": "Spend Mayhem in 1-point increments, at no action cost beyond the triggering feature, to draw Wild Cards, fuel your Gambits, and pay for your other Mayhem-keyed features. Unspent Mayhem carries over between rounds, but never between fights: you start every combat with 0 Mayhem and any left over is lost the moment the fight ends. Mayhem is a per-combat currency like every other engine in this system — it is built during a fight and cannot be banked before one.",
     "cap": "≈4–5 (L1–4) · 6+ (L5+)",
-    "capFormula": "proficiency bonus + Charisma modifier (minimum 3)"
+    "capFormula": "proficiency bonus + Charisma modifier (minimum 3)",
+    "capMath": {
+      "prof": 1,
+      "ability": "Charisma",
+      "min": 3
+    }
   },
   "features": [
     {

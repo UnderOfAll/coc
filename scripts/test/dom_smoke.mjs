@@ -25,9 +25,15 @@ window.fetch = async (url) => {
   return { ok: true, status: 200, json: async () => JSON.parse(txt), text: async () => txt };
 };
 
-const s = window.document.createElement("script");
-s.textContent = appjs;
-window.document.body.appendChild(s);
+// Load the real script set the page loads, in the same order — config, storage, compendium,
+// character tools. Loading only app.js meant a missing sibling never showed up here.
+for (const f of ["assets/js/config.js", "assets/js/storage.js", "assets/js/app.js", "assets/js/creator.js"]) {
+  const p = path.join(REPO, f);
+  if (!fs.existsSync(p)) continue;
+  const s = window.document.createElement("script");
+  s.textContent = fs.readFileSync(p, "utf8");
+  window.document.body.appendChild(s);
+}
 
 const peek = (expr) => window.eval(expr);
 const deadline = Date.now() + 8000;
@@ -41,6 +47,12 @@ const $ = (sel) => window.document.querySelector(sel);
 let checked = 0, fails = 0;
 let totalScalingDice = 0, totalTipTerms = 0, totalAbilityMods = 0;
 const check = (cond, msg) => { if (!cond) { fails++; console.log("  FAIL: " + msg); } };
+
+// The page loads four scripts; assert the storage layer is present and which backend it picked,
+// so a missing sibling file or a wiped config is a test failure rather than a surprise in the browser.
+check(peek("typeof CocStore") === "object", "storage layer loaded");
+check(peek("CocStore.mode") === "firebase",
+  `storage backend is the cloud, not localStorage (got "${peek("CocStore.mode")}")`);
 
 // Render every entry in every category through its real renderer. New content types
 // (races, backgrounds, spells, …) are picked up automatically from the store.

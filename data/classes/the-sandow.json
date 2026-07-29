@@ -43,7 +43,12 @@
     "generation": "Gain 1 Grit the first time each turn you hit a creature with a melee attack, AND gain 1 Grit the first time each turn you are targeted by an attack from any source — whether that attack hits or misses — two separate sources, each capped at once per turn (landing a hit and being attacked in the same turn grants 2 Grit total; further hits you land or attacks made against you that same turn grant no additional Grit from that source). This works from 1st level, before any subclass is chosen.",
     "spend": "Spend Grit in 1-point increments to fuel Heave, Brace, and the other feats of strength described in your features. Unspent Grit carries over between rounds, but never between fights: you start every combat with 0 Grit and any left over is lost the moment the fight ends. Grit is a per-combat currency like every other engine in this system — it is built during a fight and cannot be banked before one.",
     "cap": "≈4 (L1–4) · 5–6 (L5+)",
-    "capFormula": "Constitution modifier + proficiency bonus (minimum 3)"
+    "capFormula": "Constitution modifier + proficiency bonus (minimum 3)",
+    "capMath": {
+      "prof": 1,
+      "ability": "Constitution",
+      "min": 3
+    }
   },
   "features": [
     {

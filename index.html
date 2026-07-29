@@ -3,33 +3,57 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Circus of Chaos — 5e Compendium</title>
-  <link rel="stylesheet" href="assets/css/style.css?v=56897c29" />
+  <meta name="color-scheme" content="dark" />
+  <title>Circus of Chaos</title>
+  <link rel="stylesheet" href="assets/css/style.css?v=fcc4f212" />
 </head>
 <body>
   <header class="topbar">
-    <div class="brand">
+    <a class="brand" href="#/" aria-label="Home">
       <span class="brand-mark">&#x2694;</span>
       <span class="brand-name">Circus of Chaos</span>
       <span class="brand-sub">5e Compendium</span>
-    </div>
+    </a>
     <input id="search" class="search" type="search" placeholder="Search everything&hellip;" autocomplete="off" />
     <button id="legend-btn" class="legend-btn" type="button">Parry</button>
   </header>
 
   <div id="legend-panel" class="legend-panel hidden"></div>
 
-  <div class="layout">
-    <nav id="sidebar" class="sidebar">
-      <!-- category buttons injected by app.js -->
-    </nav>
+  <!-- MENU: the landing page. Everything else is reached from here. -->
+  <section id="menu-view" class="menu-view hidden">
+    <div class="menu-hero">
+      <h1>Circus of Chaos</h1>
+      <p class="menu-tagline">Eight acts, no heroes. A tabletop system where defence is a roll you
+        make, magic is a performance on a cooldown, and every resource empties when the fight ends.</p>
+    </div>
+    <div class="menu-cards">
+      <a class="menu-card" href="#/create">
+        <span class="menu-icon">&#x2726;</span>
+        <span class="menu-card-title">Create a character</span>
+        <span class="menu-card-sub">Build one from scratch — class, size, abilities, skills, gear.</span>
+      </a>
+      <a class="menu-card" href="#/manage">
+        <span class="menu-icon">&#x1F5C2;</span>
+        <span class="menu-card-title">My characters</span>
+        <span class="menu-card-sub">Open a sheet with its six-digit code, or play a session with it.</span>
+      </a>
+      <a class="menu-card" href="#/classes">
+        <span class="menu-icon">&#x1F4D6;</span>
+        <span class="menu-card-title">Compendium</span>
+        <span class="menu-card-sub">Every class, subclass, trick, weapon, armour and rule.</span>
+      </a>
+    </div>
+  </section>
 
+  <!-- COMPENDIUM -->
+  <div id="compendium-view" class="layout hidden">
+    <nav id="sidebar" class="sidebar"><!-- injected by app.js --></nav>
     <main class="content">
       <section id="list-view">
         <h1 id="list-title">Classes</h1>
         <div id="list" class="cards"></div>
       </section>
-
       <section id="detail-view" class="detail-view hidden">
         <button id="back" class="back">&larr; Back</button>
         <div id="detail"></div>
@@ -37,10 +61,18 @@
     </main>
   </div>
 
+  <!-- CHARACTER TOOLS: creator, manager, and the live sheet -->
+  <main id="tool-view" class="content tool-view hidden">
+    <div id="tool"></div>
+  </main>
+
   <footer class="statusbar">
     <span id="status">Loading&hellip;</span>
   </footer>
 
-  <script src="assets/js/app.js?v=9f02351d" defer></script>
+  <script src="assets/js/config.js" defer></script>
+  <script src="assets/js/storage.js" defer></script>
+  <script src="assets/js/app.js?v=df8d4387" defer></script>
+  <script src="assets/js/creator.js" defer></script>
 </body>
 </html>

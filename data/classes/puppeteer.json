@@ -40,7 +40,11 @@
     "generation": "Attach a String to a creature you can see within 60 feet as a bonus action, or automatically at no action cost when you hit a creature with your Control Wires. You may never have more Strings attached at once than your String cap; attaching a new one beyond your cap requires detaching an existing String first (no action).",
     "spend": "Strings aren't consumed to use your control features — they are the prerequisite for them. Manipulate, Tangle, Disrupting Pull, Guiding Pull, and Grand Marionette all require a String already attached to the target; using them doesn't remove the String. A String stays attached until you detach it (no action), the creature moves beyond your 60-foot leash range, or you become incapacitated, in which case all of your Strings snap at once. Strings are per-combat like every other engine in this system: every String you have snaps the moment combat ends, and you enter every fight with none. Strings can never be attached before a fight starts or carried out of one.",
     "cap": "2 (L1–4) · 4 (L5–8) · 5 (L9+) — proficiency bonus, plus 1 from Web of Strings at 5th level",
-    "capFormula": "your proficiency bonus, plus 1 from Web of Strings at 5th level"
+    "capFormula": "your proficiency bonus, plus 1 from Web of Strings at 5th level",
+    "capMath": {
+      "prof": 1,
+      "bonusAtLevel5": 1
+    }
   },
   "features": [
     {

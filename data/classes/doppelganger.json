@@ -41,7 +41,11 @@
     "generation": "Create one Clone, as a bonus action, in an unoccupied space you can see within 30 feet of you; it appears already mimicking your exact appearance and current pose. You also gain a Clone at no action cost via Riposte, and via any other feature that says so. You may never have more Clones active at once than your Clone cap; creating a new one beyond your cap requires an existing Clone to drop first.",
     "spend": "Clones aren't spent from one fixed pool all at once — specific features use them in specific ways. Swap teleports you into a Clone's space without destroying it. Mirror Barrage has every Clone in reach make one half-damage attack, without destroying them. Mirror Image commits any number of Clones within 15 feet to a d6 gamble: on a redirect one of them is destroyed and absorbs the hit entirely, and on a failure every Clone you committed is destroyed for nothing. Decoy Detonation destroys a Clone to burst it for damage and knockback. Mirror Assault (5th level) consumes a Clone to deliver an extra attack from its space. A Clone also drops on its own, destroying no other resource, the moment it ends up more than 30 feet from you, the instant you become incapacitated (all your Clones drop at once), or the first time any attack roll succeeds against it — it shares your AC but has no hit points of its own, so one confirmed hit and it's gone. Clones are per-combat like every other engine in this system: every Clone you have drops the moment combat ends, and you enter every fight with none. Clones can never be banked before a fight or carried out of one.",
     "cap": "2 (L1–4) · 4 (L5–8) · 5 (L9+) — proficiency bonus, plus 1 from Hall of Mirrors at 5th level",
-    "capFormula": "equal to your proficiency bonus"
+    "capFormula": "your proficiency bonus, plus 1 from Hall of Mirrors at 5th level",
+    "capMath": {
+      "prof": 1,
+      "bonusAtLevel5": 1
+    }
   },
   "features": [
     {
