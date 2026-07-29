@@ -138,7 +138,14 @@ function wireEvents() {
   document.addEventListener("click", (e) => {
     const term = e.target.closest(".tip-term, .scaling-die");
     document.querySelectorAll(".tip-open").forEach((n) => { if (n !== term) n.classList.remove("tip-open"); });
-    if (term) { term.classList.toggle("tip-open"); e.stopPropagation(); }
+    if (term) { term.classList.toggle("tip-open"); clampTip(term); e.stopPropagation(); }
+  });
+  // A tooltip is centred on its term, which puts it off-screen (or under the sidebar) whenever
+  // the term sits near an edge — the tier badge at the top-left of a trick page was half-hidden.
+  // Measure on open and nudge it back inside the reading column; the arrow follows the term.
+  document.addEventListener("mouseover", (e) => {
+    const term = e.target.closest(".tip-term, .scaling-die");
+    if (term) clampTip(term);
   });
 }
 
@@ -464,6 +471,23 @@ function cardMeta(key, it) {
     case "armor":      return `${it.category ? cap(it.category) : ""}${it.category === "shield" ? " · +" + (it.acBonus ?? 0) + " AC" : " · AC " + (it.baseAC ?? "?")}${it.availability === "bought" ? " · Bought" : ""}`;
     default:           return "";
   }
+}
+
+/* Keep a tooltip inside the visible reading area. It is normally centred on its term via
+   translateX(-50%); this measures the box once it is laid out and sets a --nudge offset that
+   the CSS adds to that centring (and subtracts from the arrow, so the arrow keeps pointing at
+   the term). Runs on hover and on tap — both open the same box. */
+function clampTip(term) {
+  const tip = term.querySelector(".term-tip, .scale-tip");
+  if (!tip) return;
+  tip.style.setProperty("--nudge", "0px");
+  const area = ($(".content") || document.body).getBoundingClientRect();
+  const box = tip.getBoundingClientRect();
+  const pad = 10;
+  let dx = 0;
+  if (box.left < area.left + pad) dx = (area.left + pad) - box.left;
+  else if (box.right > area.right - pad) dx = (area.right - pad) - box.right;
+  if (dx) tip.style.setProperty("--nudge", Math.round(dx) + "px");
 }
 
 function showDetail(key, id, keepScroll) {

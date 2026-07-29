@@ -29,7 +29,7 @@
   "parryBaseDC": 13,
   "defenseAbility": "Charisma",
   "parryReskin": "You do not parry so much as make the whole thing look like a bit. A pratfall that happens to take you out of the line, an outraged squawk, the marotte thrown up at the last possible instant — it plays as comedy right up until you are standing and the swing is not.",
-  "riposte": "On a Full Dodge (your Parry d20 roll comes up strictly above your effective Parry DC), you turn the miss into material: one ally you can see within 30 feet gains {{temporary hit points equal to your Charisma modifier (minimum 1)|set from your stats on your character sheet}}. Nothing lifts a company like watching the fool make an idiot of the thing trying to kill them. No damage, no action, no Mirth.",
+  "riposte": "On a Full Dodge (your Parry d20 roll comes up strictly above your effective Parry DC), you turn the miss into material: one ally you can see within 30 feet gains {{temporary hit points|equal to your Charisma modifier (minimum 1), set from your stats on your character sheet}}. Nothing lifts a company like watching the fool make an idiot of the thing trying to kill them. No damage, no action, no Mirth.",
   "engine": {
     "name": "Mirth",
     "resourceType": "pool",
@@ -64,7 +64,7 @@
       "name": "Tricks",
       "role": "combat",
       "description": "You are a full caster: you perform Tricks from 1st level, and they are your primary way of affecting a fight. You know every trick on the Jester list, with no preparation and no choosing — each one becomes available at the level shown on your class trick ladder, and once available it is always available. Your disciplines are Mesmerism, Fortune, Illusion, and Legerdemain. Your trick ability is Charisma, so your trick save DC is {{trick save DC|8 + proficiency bonus + Charisma modifier}} and any trick that makes an attack roll uses {{your trick attack|d20 + proficiency bonus + Charisma modifier}}. Pledges are at-will, Turns cost you nothing but carry a cooldown in rounds, and a Prestige spends Mirth and can be performed only once per combat. See the Tricks and Casting rules page for the full engine.",
-      "sheetSummary": "Full caster from level 1. You know the entire Jester trick list; each unlocks at its listed level. Disciplines: Mesmerism, Fortune, Illusion, Legerdemain. Trick save DC {{trick save DC|8 + proficiency bonus + Charisma modifier}}; trick attacks use {{d20 + proficiency bonus + Charisma modifier|your trick attack bonus}}. Pledges at-will, Turns on cooldown, Prestiges spend Mirth and are once per combat.",
+      "sheetSummary": "Full caster from level 1. You know the entire Jester trick list; each unlocks at its listed level. Disciplines: Mesmerism, Fortune, Illusion, Legerdemain. Trick save DC {{trick save DC|8 + proficiency bonus + Charisma modifier}}; trick attacks use {{your trick attack|d20 + proficiency bonus + Charisma modifier}}. Pledges at-will, Turns on cooldown, Prestiges spend Mirth and are once per combat.",
       "narration": "Everything you do is delivered to the room rather than aimed at a person — a line, a gesture, a bit of business with the marotte — and somewhere in the laugh, the actual work gets done.",
       "meta": {
         "action": "Varies by trick",
@@ -114,8 +114,8 @@
       "level": 2,
       "name": "Heckler's Timing",
       "role": "combat",
-      "description": "Your interruptions land where they hurt. Once on each of your turns, when a creature within 30 feet of you that can hear you makes an attack roll, ability check, or saving throw, you can use no action to say precisely the wrong thing at precisely the right moment: it must subtract {{1d4|a die you roll when this triggers}} from the roll. A creature that cannot hear you, or that does not understand you, is unaffected.",
-      "sheetSummary": "No action, 1/turn, 30 ft, target must be able to hear and understand you. Subtract {{1d4|a die you roll when this triggers}} from its attack roll, ability check, or saving throw.",
+      "description": "Your interruptions land where they hurt. Once on each of your turns, when a creature within 30 feet of you that can hear you makes an attack roll, ability check, or saving throw, you can use no action to say precisely the wrong thing at precisely the right moment: it must subtract 1d4 from the roll. A creature that cannot hear you, or that does not understand you, is unaffected.",
+      "sheetSummary": "No action, 1/turn, 30 ft, target must be able to hear and understand you. Subtract 1d4 from its attack roll, ability check, or saving throw.",
       "narration": "You wait for the exact instant before it commits and then say the one thing guaranteed to get in. It is petty, it is unfair, and the wince costs it the shot.",
       "meta": {
         "action": "No action",
