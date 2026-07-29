@@ -246,12 +246,14 @@
         {
           "heading": "Components: Patter, Flourish, Prop",
           "paragraphs": [
-            "A trick lists what you need in order to perform it. Take the component away and the trick does not happen — which is exactly how you shut a performer down."
+            "A trick lists what you need in order to perform it. Take that away and the trick does not happen — this is how you shut a performer down, and it works on your enemies exactly as well as it works on you.",
+            "You never track how many props you have. A performer carries their act with them: casting never uses a prop up, and anything taken or broken during a fight is back in your kit by the end of it. Losing a prop costs you the scene, never the campaign.",
+            "A trick you cannot supply a component for simply cannot be cast. There is no partial version and no substitute. Denying one component only shuts off the tricks that need it, so gagging a caster is a real hit but never a full silence — and a class that leans on one prop for two tricks loses both at once, which is exactly why it is worth a DM's action to try."
           ],
           "list": [
-            "Patter — the voice: the line, the count, the misdirecting joke. Denied while gagged, silenced, or unable to speak.",
-            "Flourish — the hands: the pass, the gesture, the reveal. Denied while bound or grappled, or without a free hand.",
-            "Prop — a physical object: cards, silks, powder, a coin. Denied if the prop is lost, stolen, or destroyed."
+            "Patter — the voice: the line, the count, the misdirecting joke. Denied while gagged, magically silenced, or otherwise unable to speak. A creature that already has you grappled can use its action to gag you: it makes a Strength (Athletics) check contested by your Athletics or Acrobatics, your choice. You can pull the gag free with an action, or by escaping the grapple.",
+            "Flourish — the hands: the pass, the gesture, the reveal. Denied only when you have no free hand at all, whether because they are bound, restrained, or both full. Being grappled does not by itself stop you; a grapple holds you in place, not your wrists. Dropping something to free a hand takes no action.",
+            "Prop — a physical object: cards, silks, powder, wire, a coin. A creature within 5 feet can use its action to snatch one, making a Dexterity (Sleight of Hand) check against your passive Perception and taking a prop of its choice on a success. A prop can also be destroyed by anything that would plausibly destroy a small object."
           ]
         },
         {

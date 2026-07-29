@@ -994,9 +994,9 @@ const TIERS = {
 /* The Patter/Flourish/Prop reskin of V/S/M. The mechanical hooks are unchanged, so the
    tooltip states what denies each one. */
 const COMPONENTS = {
-  Patter: "The performer's voice — the line, the count, the misdirecting joke. Denied while gagged, silenced, or mute.",
-  Flourish: "The hands — the pass, the gesture, the reveal. Denied while bound, grappled, or without a free hand.",
-  Prop: "A physical object — cards, silks, powder, a coin. Denied if the prop is lost, stolen, or destroyed.",
+  Patter: "The performer's voice. Denied while gagged, silenced, or unable to speak — a creature grappling you can spend its action to gag you (contested Athletics vs your Athletics or Acrobatics).",
+  Flourish: "The hands. Denied only when you have no free hand — bound, restrained, or both hands full. Being grappled does not by itself stop you: a grapple holds you in place, not your wrists.",
+  Prop: "A physical object. A creature within 5 ft can spend its action to snatch one (Sleight of Hand vs your passive Perception). You cannot cast a trick whose prop is gone — but you replace it from your kit at the end of the fight.",
 };
 
 /* Components render as hover-terms so "Flourish" explains itself; a Prop's parenthetical
