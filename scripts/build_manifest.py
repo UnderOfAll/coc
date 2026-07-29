@@ -79,6 +79,31 @@ def _iter_prose(obj):
             yield from _iter_prose(v)
 
 
+def lint_summary_duplication(obj, rel):
+    """An entry with an `options` table must keep its sheetSummary to the intro line: cost, action,
+    range, duration, then a pointer at the table. Restating the rows there is the prose-blob problem
+    wearing a different hat, and it has been flagged by Kayki repeatedly."""
+    out = []
+    for f in _iter_optioned(obj):
+        s = f.get("sheetSummary") or ""
+        if len(s) > 320:
+            out.append(f"summary duplicates its options table in {rel} ({f.get('name')}): "
+                       f"{len(s)} chars — keep it to the intro line and let the table carry the rows")
+    return out
+
+
+def _iter_optioned(obj):
+    """Yield every dict that carries a non-empty `options` list."""
+    if isinstance(obj, dict):
+        if isinstance(obj.get("options"), list) and obj["options"]:
+            yield obj
+        for v in obj.values():
+            yield from _iter_optioned(v)
+    elif isinstance(obj, list):
+        for v in obj:
+            yield from _iter_optioned(v)
+
+
 def lint_inline_formulas(obj, rel):
     """Return a list of error strings for inline calculus found in prose (tokens exempt)."""
     out = []
@@ -143,6 +168,7 @@ def main():
                     seen_ids[key] = rel
                     if cat not in LINT_EXEMPT_CATEGORIES:
                         errors.extend(lint_inline_formulas(obj, rel))
+                        errors.extend(lint_summary_duplication(obj, rel))
                     obj["_file"] = rel
                     objs.append(obj)
                 files.append(rel)

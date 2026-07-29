@@ -2556,7 +2556,7 @@
           "role": "combat",
           "description": "Your Swap doubles as a parting insult, and in a pinch as an escape. It does two separate things:",
           "narration": "You are gone before the space you left has finished being empty, and the thing nearest it commits to a lunge at nothing. On the occasions you leave it later than that, you trade places with the blow already falling and let the reflection catch what was yours.",
-          "sheetSummary": "Two effects. Free with Swap, 1/turn: one creature within 5 ft of the space you left has disadvantage on its next attack roll before the end of your next turn. Separately, reaction, 1/combat: when a creature you can see hits you, Swap with a Clone in range before damage — the blow destroys that Clone and you take none.",
+          "sheetSummary": "Two separate effects, listed below: a free rider on your Swap (1/turn) and a defensive Swap (reaction, 1/combat).",
           "meta": {
             "action": "Free with Swap / Reaction (defensive)",
             "uses": "Disadv 1 / turn; defensive Swap 1 / combat",
@@ -3915,7 +3915,7 @@
       "save": "Wisdom",
       "description": "You remake a piece of the world. A 60-foot cube within range fills with a fully realised illusory environment — sight, sound, temperature, even scent — and it can be anything you can picture: a collapsed tunnel, a wall of roaring fire, a chasm where the floor used to be, a cheering crowd of a hundred phantom performers. It needs no concentration and holds for the duration while you do whatever else you like. It is still an image: it deals no damage, supports no weight, and stops nothing that does not care what it sees.",
       "narration": "The tent is gone. In its place is a rockfall, or a fire, or a drop into nothing — cold on your face, loud in your ears, entirely in the way, and nobody caught inside it can think straight. It holds until one person stops and really looks, and then there was never anything there at all.",
-      "sheetSummary": "Once per combat. Action, 120 ft, 60-ft cube, costs 3 Phantasm, up to 10 minutes, no concentration. While it stands: blocks line of sight, difficult terrain, and EVERY creature inside has disadvantage on all attack rolls, ability checks and saving throws — allies included. Any creature can spend its action (or push through it) to make an Investigation check vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}; ANY success collapses the whole illusion immediately for everyone. Once before it ends, bonus action: creatures of your choice inside or within 10 ft make a Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or are frightened until the end of their next turn and must use a reaction to flee it. Deals no damage.",
+      "sheetSummary": "Once per combat. Action, 120 ft, 60-ft cube, costs 3 Phantasm, up to 10 minutes, no concentration. Deals no damage and supports no weight. Its four standing effects and its one-off dramatic moment are listed below.",
       "classes": [
         "illusionist"
       ],

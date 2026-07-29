@@ -24,7 +24,7 @@
       "role": "combat",
       "description": "Your Swap doubles as a parting insult, and in a pinch as an escape. It does two separate things:",
       "narration": "You are gone before the space you left has finished being empty, and the thing nearest it commits to a lunge at nothing. On the occasions you leave it later than that, you trade places with the blow already falling and let the reflection catch what was yours.",
-      "sheetSummary": "Two effects. Free with Swap, 1/turn: one creature within 5 ft of the space you left has disadvantage on its next attack roll before the end of your next turn. Separately, reaction, 1/combat: when a creature you can see hits you, Swap with a Clone in range before damage — the blow destroys that Clone and you take none.",
+      "sheetSummary": "Two separate effects, listed below: a free rider on your Swap (1/turn) and a defensive Swap (reaction, 1/combat).",
       "meta": {
         "action": "Free with Swap / Reaction (defensive)",
         "uses": "Disadv 1 / turn; defensive Swap 1 / combat",
