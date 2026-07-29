@@ -2603,8 +2603,8 @@
           "level": 3,
           "name": "Feed the Fear",
           "role": "combat",
-          "description": "Terror is credibility. The first time each turn a creature fails a saving throw against one of your tricks that deals psychic damage, you gain 1 additional Phantasm, over and above whatever your engine already granted this turn.",
-          "sheetSummary": "1/turn. Gain 1 additional Phantasm the first time each turn a creature fails a save against one of your psychic-damage tricks.",
+          "description": "This discipline adds two tricks to your list, free and permanent: **Your Own Face** (level 2) and **Night Terrors** (level 3). They are yours alone — no other Illusionist learns them. Terror is credibility. The first time each turn a creature fails a saving throw against one of your tricks that deals psychic damage, you gain 1 additional Phantasm, over and above whatever your engine already granted this turn.",
+          "sheetSummary": "Adds Your Own Face (L2) and Night Terrors (L3) to your trick list. 1/turn. Gain 1 additional Phantasm the first time each turn a creature fails a save against one of your psychic-damage tricks.",
           "narration": "You watch it land and something in you banks it. The scream is not the point. The scream is the receipt.",
           "meta": {
             "action": "Passive",
@@ -2984,8 +2984,8 @@
           "level": 3,
           "name": "Palmed",
           "role": "combat",
-          "description": "You can hide the real work inside the loud work. When you cast a Turn, you may also cast one Pledge as part of the same action, once on each of your turns. The Pledge resolves after the Turn.",
-          "sheetSummary": "1/turn. When you cast a Turn, also cast one Pledge as part of the same action; the Pledge resolves after the Turn.",
+          "description": "This discipline adds two tricks to your list, free and permanent: **Wrong Pocket** (level 1) and **Swap the Cards** (level 3). They are yours alone — no other Illusionist learns them. You can hide the real work inside the loud work. When you cast a Turn, you may also cast one Pledge as part of the same action, once on each of your turns. The Pledge resolves after the Turn.",
+          "sheetSummary": "Adds Wrong Pocket (L1) and Swap the Cards (L3) to your trick list. 1/turn. When you cast a Turn, also cast one Pledge as part of the same action; the Pledge resolves after the Turn.",
           "narration": "The big gesture is the cover. The small one, the one that actually matters, happens inside it while everyone is busy applauding the wrong hand.",
           "meta": {
             "action": "Part of casting a Turn",
@@ -3409,6 +3409,35 @@
       "_file": "tricks/meat-shield.json"
     },
     {
+      "id": "night-terrors",
+      "name": "Night Terrors",
+      "source": "Circus of Chaos",
+      "flavor": "The trick is not the thing you show them. The trick is that it keeps coming back once you have stopped showing them anything.",
+      "tier": "turn",
+      "discipline": "Illusion",
+      "minLevel": 3,
+      "cooldown": 3,
+      "castingTime": "1 action",
+      "range": "60 feet",
+      "components": [
+        "Patter",
+        "Flourish"
+      ],
+      "duration": "Concentration, up to 1 minute",
+      "concentration": true,
+      "save": "Wisdom",
+      "description": "You leave something behind in a creature's head and let it work on its own. The target makes a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}; on a success nothing happens and the trick ends. On a failure the horror settles in: at the start of each of its turns it takes [[1d8]] psychic damage, and at the end of each of its turns it may repeat the saving throw, ending the effect on itself on a success. Because the target rolls against you again and again, this is the trick that keeps a Nightmare's other features fed.",
+      "narration": "You put it there and then you walk away and talk to somebody else. It comes back to them at the worst moment of every round, and each time it costs them something.",
+      "sheetSummary": "Action, 60 ft, cooldown 3, concentration up to 1 min. Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or: [[1d8]] psychic at the start of each of its turns, repeating the save at the end of each of its turns to end it.",
+      "classes": [
+        "illusionist"
+      ],
+      "subclasses": [
+        "nightmare"
+      ],
+      "_file": "tricks/night-terrors.json"
+    },
+    {
       "id": "now-you-dont",
       "name": "Now You Don't",
       "source": "Circus of Chaos",
@@ -3804,6 +3833,32 @@
       "_file": "tricks/steal-their-luck.json"
     },
     {
+      "id": "swap-the-cards",
+      "name": "Swap the Cards",
+      "source": "Circus of Chaos",
+      "flavor": "The card the audience picked is never the card that comes back. Neither, tonight, is the person.",
+      "tier": "turn",
+      "discipline": "Legerdemain",
+      "minLevel": 3,
+      "cooldown": 3,
+      "castingTime": "1 action",
+      "range": "30 feet",
+      "components": [
+        "Flourish"
+      ],
+      "duration": "Instantaneous",
+      "description": "You and one willing creature you can see within range instantly trade places, each appearing in the space the other just left and facing however you choose. Neither of you provokes opportunity attacks from the exchange, and neither of you can be moved into a space that would not hold you. This is the Trickster's answer to a companion standing in the wrong place: pull the wounded one out of reach and put yourself, or somebody better armoured, where the trouble already is.",
+      "narration": "Two quick gestures and a step that goes nowhere, and the pair of you are simply standing where the other one was. Nobody sees the move, including the person you moved.",
+      "sheetSummary": "Action, 30 ft, cooldown 3. You and one willing creature you can see instantly swap places. Neither provokes opportunity attacks; neither can arrive in a space that wouldn't hold them.",
+      "classes": [
+        "illusionist"
+      ],
+      "subclasses": [
+        "trickster"
+      ],
+      "_file": "tricks/swap-the-cards.json"
+    },
+    {
       "id": "the-grand-illusion",
       "name": "The Grand Illusion",
       "source": "Circus of Chaos",
@@ -4036,6 +4091,58 @@
         "jester"
       ],
       "_file": "tricks/word-of-encouragement.json"
+    },
+    {
+      "id": "wrong-pocket",
+      "name": "Wrong Pocket",
+      "source": "Circus of Chaos",
+      "flavor": "It was in your hand a second ago. Now it is in his, and he is going to have a difficult conversation about it.",
+      "tier": "pledge",
+      "discipline": "Legerdemain",
+      "minLevel": 1,
+      "castingTime": "1 action",
+      "range": "30 feet",
+      "components": [
+        "Flourish"
+      ],
+      "duration": "Instantaneous",
+      "description": "You move one object no larger than your hand and no heavier than 5 pounds, from anywhere you can see within range to anywhere else you can see within range. It can leave an unattended space, a table, an open pack, or a pocket, and it can arrive in any of those — including a pocket belonging to someone else. Taking something a creature is aware of, or planting something on a creature that is paying attention, requires a Dexterity (Sleight of Hand) check against that creature's passive Perception; everything else simply happens. It can never move a weapon a creature is holding, anything larger than a hand, or anything a creature is actively guarding.",
+      "narration": "Your fingers do something economical at the edge of everyone's vision, and the object is elsewhere. There is no flash and nothing to see, which is the entire point of the discipline.",
+      "sheetSummary": "Action, 30 ft. Move one hand-sized object under 5 lb between any two spots you can see, including in or out of a pocket. Sleight of Hand vs passive Perception if the creature is aware; automatic otherwise. Never a held weapon, an oversized object, or anything actively guarded.",
+      "classes": [
+        "illusionist"
+      ],
+      "subclasses": [
+        "trickster"
+      ],
+      "_file": "tricks/wrong-pocket.json"
+    },
+    {
+      "id": "your-own-face",
+      "name": "Your Own Face",
+      "source": "Circus of Chaos",
+      "flavor": "You do not invent anything. You simply show them the version of themselves they have been avoiding, and hold it up until they look.",
+      "tier": "turn",
+      "discipline": "Illusion",
+      "minLevel": 2,
+      "cooldown": 2,
+      "castingTime": "1 action",
+      "range": "60 feet",
+      "components": [
+        "Flourish"
+      ],
+      "duration": "Instantaneous",
+      "save": "Wisdom",
+      "description": "A creature you can see within range meets its own eyes in something that should not be a mirror — older, opened up, already finished. It makes a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure it takes [[2d6]] psychic damage and is frightened of you until the end of its next turn. On a success it takes half as much damage and is not frightened.",
+      "narration": "For a moment there is a second one of them standing in the room, wearing everything that is about to happen. Then there isn't, and the original will not look at you straight for the rest of the fight.",
+      "sheetSummary": "Action, 60 ft, cooldown 2. Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[2d6]] psychic and frightened of you until the end of its next turn. Success: half damage, no fear.",
+      "classes": [
+        "illusionist"
+      ],
+      "subclasses": [
+        "nightmare"
+      ],
+      "_file": "tricks/your-own-face.json"
     }
   ],
   "skills": [

@@ -1,0 +1,24 @@
+{
+  "id": "wrong-pocket",
+  "name": "Wrong Pocket",
+  "source": "Circus of Chaos",
+  "flavor": "It was in your hand a second ago. Now it is in his, and he is going to have a difficult conversation about it.",
+  "tier": "pledge",
+  "discipline": "Legerdemain",
+  "minLevel": 1,
+  "castingTime": "1 action",
+  "range": "30 feet",
+  "components": [
+    "Flourish"
+  ],
+  "duration": "Instantaneous",
+  "description": "You move one object no larger than your hand and no heavier than 5 pounds, from anywhere you can see within range to anywhere else you can see within range. It can leave an unattended space, a table, an open pack, or a pocket, and it can arrive in any of those — including a pocket belonging to someone else. Taking something a creature is aware of, or planting something on a creature that is paying attention, requires a Dexterity (Sleight of Hand) check against that creature's passive Perception; everything else simply happens. It can never move a weapon a creature is holding, anything larger than a hand, or anything a creature is actively guarding.",
+  "narration": "Your fingers do something economical at the edge of everyone's vision, and the object is elsewhere. There is no flash and nothing to see, which is the entire point of the discipline.",
+  "sheetSummary": "Action, 30 ft. Move one hand-sized object under 5 lb between any two spots you can see, including in or out of a pocket. Sleight of Hand vs passive Perception if the creature is aware; automatic otherwise. Never a held weapon, an oversized object, or anything actively guarded.",
+  "classes": [
+    "illusionist"
+  ],
+  "subclasses": [
+    "trickster"
+  ]
+}

@@ -430,25 +430,51 @@ function renderTricksByClass(container, items) {
     const section = el("section", "group");
     section.appendChild(el("h2", "group-title", esc(`${className(cid)} — ${g.grade}`)));
 
-    // Resolve the two gates: the trick's own minLevel vs this class's casting start level.
-    const byLevel = new Map();
+    // The class's own list and its subclasses' granted lists are kept visually apart
+    // (MECHANICS §4.9d): everyone of this class has the first set, and only one discipline
+    // has each of the others. Mixing them into one ladder implies a repertoire you don't have.
+    const base = mine.filter((t) => !(t.subclasses || []).length);
+    section.appendChild(levelLadder(base, g.startsAt));
+
+    const bySub = new Map();
     for (const t of mine) {
-      const lv = Math.max(t.minLevel || 1, g.startsAt);
-      if (!byLevel.has(lv)) byLevel.set(lv, []);
-      byLevel.get(lv).push(t);
+      for (const sid of t.subclasses || []) {
+        if (!bySub.has(sid)) bySub.set(sid, []);
+        bySub.get(sid).push(t);
+      }
     }
-    for (const lv of [...byLevel.keys()].sort((a, b) => a - b)) {
-      const block = el("div", "level-block");
-      block.appendChild(el("h3", "level-title", esc("Level " + lv)));
-      const grid = el("div", "cards");
-      const arr = byLevel.get(lv).sort((a, b) =>
-        TIER_ORDER[a.tier] - TIER_ORDER[b.tier] || a.name.localeCompare(b.name));
-      for (const t of arr) grid.appendChild(makeCard("tricks", t));
-      block.appendChild(grid);
-      section.appendChild(block);
+    for (const sid of [...bySub.keys()].sort((a, b) => subclassName(a).localeCompare(subclassName(b)))) {
+      const box = el("div", "granted-block");
+      box.appendChild(el("h3", "granted-title",
+        `${esc(subclassName(sid))} <span class="granted-note">— discipline tricks, this subclass only</span>`));
+      box.appendChild(levelLadder(bySub.get(sid), g.startsAt));
+      section.appendChild(box);
     }
     container.appendChild(section);
   }
+}
+
+/* A set of tricks as a level ladder, resolving the two gates: the trick's own minLevel vs the
+   class's casting start level (MECHANICS §4.9b — the later one wins). */
+function levelLadder(list, startsAt) {
+  const wrap = el("div", "ladder");
+  const byLevel = new Map();
+  for (const t of list) {
+    const lv = Math.max(t.minLevel || 1, startsAt);
+    if (!byLevel.has(lv)) byLevel.set(lv, []);
+    byLevel.get(lv).push(t);
+  }
+  for (const lv of [...byLevel.keys()].sort((a, b) => a - b)) {
+    const block = el("div", "level-block");
+    block.appendChild(el("h3", "level-title", esc("Level " + lv)));
+    const grid = el("div", "cards");
+    const arr = byLevel.get(lv).sort((a, b) =>
+      TIER_ORDER[a.tier] - TIER_ORDER[b.tier] || a.name.localeCompare(b.name));
+    for (const t of arr) grid.appendChild(makeCard("tricks", t));
+    block.appendChild(grid);
+    wrap.appendChild(block);
+  }
+  return wrap;
 }
 
 // Display name for a class id (e.g. "the-sandow" -> "The Sandow").

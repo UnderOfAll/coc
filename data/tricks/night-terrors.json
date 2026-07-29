@@ -1,0 +1,28 @@
+{
+  "id": "night-terrors",
+  "name": "Night Terrors",
+  "source": "Circus of Chaos",
+  "flavor": "The trick is not the thing you show them. The trick is that it keeps coming back once you have stopped showing them anything.",
+  "tier": "turn",
+  "discipline": "Illusion",
+  "minLevel": 3,
+  "cooldown": 3,
+  "castingTime": "1 action",
+  "range": "60 feet",
+  "components": [
+    "Patter",
+    "Flourish"
+  ],
+  "duration": "Concentration, up to 1 minute",
+  "concentration": true,
+  "save": "Wisdom",
+  "description": "You leave something behind in a creature's head and let it work on its own. The target makes a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}; on a success nothing happens and the trick ends. On a failure the horror settles in: at the start of each of its turns it takes [[1d8]] psychic damage, and at the end of each of its turns it may repeat the saving throw, ending the effect on itself on a success. Because the target rolls against you again and again, this is the trick that keeps a Nightmare's other features fed.",
+  "narration": "You put it there and then you walk away and talk to somebody else. It comes back to them at the worst moment of every round, and each time it costs them something.",
+  "sheetSummary": "Action, 60 ft, cooldown 3, concentration up to 1 min. Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or: [[1d8]] psychic at the start of each of its turns, repeating the save at the end of each of its turns to end it.",
+  "classes": [
+    "illusionist"
+  ],
+  "subclasses": [
+    "nightmare"
+  ]
+}

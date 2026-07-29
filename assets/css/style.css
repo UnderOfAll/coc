@@ -406,3 +406,15 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
   border-left: 3px solid var(--gold); background: var(--panel-2);
   border-radius: 0 6px 6px 0; font-style: italic; line-height: 1.65;
 }
+
+/* Tricks tab, Class view: a subclass's granted tricks sit in their own block below the class's
+   own ladder, so a discipline list never reads as part of the base repertoire (MECHANICS §4.9d). */
+.granted-block {
+  margin-top: 1.25rem; padding-left: 0.9rem;
+  border-left: 2px solid var(--gold);
+}
+.granted-title {
+  font-family: var(--serif); color: var(--gold);
+  font-size: 0.95rem; margin: 0 0 0.4rem;
+}
+.granted-note { color: var(--muted); font-family: var(--sans); font-size: 0.8rem; font-weight: 400; }

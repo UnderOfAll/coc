@@ -1,0 +1,26 @@
+{
+  "id": "your-own-face",
+  "name": "Your Own Face",
+  "source": "Circus of Chaos",
+  "flavor": "You do not invent anything. You simply show them the version of themselves they have been avoiding, and hold it up until they look.",
+  "tier": "turn",
+  "discipline": "Illusion",
+  "minLevel": 2,
+  "cooldown": 2,
+  "castingTime": "1 action",
+  "range": "60 feet",
+  "components": [
+    "Flourish"
+  ],
+  "duration": "Instantaneous",
+  "save": "Wisdom",
+  "description": "A creature you can see within range meets its own eyes in something that should not be a mirror — older, opened up, already finished. It makes a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure it takes [[2d6]] psychic damage and is frightened of you until the end of its next turn. On a success it takes half as much damage and is not frightened.",
+  "narration": "For a moment there is a second one of them standing in the room, wearing everything that is about to happen. Then there isn't, and the original will not look at you straight for the rest of the fight.",
+  "sheetSummary": "Action, 60 ft, cooldown 2. Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[2d6]] psychic and frightened of you until the end of its next turn. Success: half damage, no fear.",
+  "classes": [
+    "illusionist"
+  ],
+  "subclasses": [
+    "nightmare"
+  ]
+}

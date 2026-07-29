@@ -60,6 +60,7 @@
     "tricks/marionette-hand.json",
     "tricks/master-of-ceremonies.json",
     "tricks/meat-shield.json",
+    "tricks/night-terrors.json",
     "tricks/now-you-dont.json",
     "tricks/parting-shot.json",
     "tricks/pay-no-attention.json",
@@ -76,6 +77,7 @@
     "tricks/something-behind-you.json",
     "tricks/stage-fright.json",
     "tricks/steal-their-luck.json",
+    "tricks/swap-the-cards.json",
     "tricks/the-grand-illusion.json",
     "tricks/the-impossible-show.json",
     "tricks/the-prestige.json",
@@ -84,7 +86,9 @@
     "tricks/the-whole-audience-laughs.json",
     "tricks/vicious-jibe.json",
     "tricks/waking-nightmare.json",
-    "tricks/word-of-encouragement.json"
+    "tricks/word-of-encouragement.json",
+    "tricks/wrong-pocket.json",
+    "tricks/your-own-face.json"
   ],
   "skills": [
     "skills/skills.json"
