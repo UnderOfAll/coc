@@ -12,23 +12,25 @@
       ]
     },
     {
-      "heading": "The eight traits",
+      "heading": "The nine traits",
       "list": [
-        "Warded — you have advantage on concentration checks. The reason a caster wears robes rather than nothing.",
-        "Deep Pockets — a creature trying to snatch one of your Props has disadvantage on the attempt.",
-        "Supple — advantage on checks and saves made to escape a grapple, a restraint, or bindings.",
-        "Cushioned — halve the bludgeoning damage you take from falling, from collisions, and from being thrown.",
-        "Showpiece — advantage on Charisma (Performance) checks made while wearing it.",
-        "Quick-Change — you can don or doff it as a bonus action.",
-        "Anchored — advantage on saves against being knocked prone or moved against your will.",
-        "Ironclad — reduce each instance of slashing, piercing or bludgeoning damage you take by 1."
+        "Warded — advantage on concentration checks, the flat d20 you roll to keep a trick running when you take damage. The reason a caster wears robes rather than nothing.",
+        "Deep Pockets — a creature spending its action to snatch one of your Props makes that check with disadvantage.",
+        "Supple — advantage on every check and save to escape a grapple, a restraint, or being tied up.",
+        "Cushioned — halve the bludgeoning damage you take from falling, from collisions, and from being thrown, including by a friendly Sandow.",
+        "Showpiece — advantage on Charisma (Performance) checks: entertaining or holding a crowd with music, dance, acting, storytelling or acrobatics.",
+        "Unbound — nothing about it traps your arms, so you can perform a Flourish even while grappled or with only one hand free.",
+        "Costumed — advantage on Charisma (Deception) checks to pass as somebody else, or to be taken for part of a crowd or troupe.",
+        "Anchored — advantage on saves against being knocked prone and against being moved against your will.",
+        "Ironclad — reduce each instance of slashing, piercing or bludgeoning damage you take by 2."
       ]
     },
     {
       "heading": "Reading the list",
       "paragraphs": [
         "Two pieces at the same AC never share a trait, so there is never a wrong answer that is simply a worse version of the right one. Beasthide Wrap sits a point below the other mediums and pays you back in Cushioned; Serpent-Scale Mail is the best starter medium and pays for it with nothing at all.",
-        "Traits do not stack with themselves — a shield's Showpiece and a coat's Showpiece are still just advantage — and advantage from a trait works exactly like advantage from anywhere else."
+        "Traits do not stack with themselves — a shield's Showpiece and a coat's Showpiece are still just advantage — and advantage from a trait works exactly like advantage from anywhere else.",
+        "Every trait name on a card or a sheet is a hover term — point at it and it tells you what it does. You never have to remember this list."
       ]
     }
   ]

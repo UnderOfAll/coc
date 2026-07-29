@@ -326,11 +326,27 @@ function makeCard(key, it) {
   const card = el("div", "card");
   card.innerHTML = `<h3>${esc(it.name)}</h3>
     <div class="meta">${esc(cardMeta(key, it))}</div>
+    ${cardTermsHTML(key, it)}
     <div class="card-tags">
       <span class="tag">${esc(it.source || "5e")}</span>
     </div>`;
   card.addEventListener("click", () => { location.hash = "#/" + key + "/" + encodeURIComponent(slug(it)); });
   return card;
+}
+
+/* The property a player is actually choosing on, as a hover/tap term ON THE CARD — not only on the
+   detail page. Kayki: "all this can have tooltips to explain to the players when they are choosing
+   aswell, since if me that is the creator is having troubles understanding it, immagine the players."
+   Picking armour or a weapon means comparing traits and masteries, so the explanation has to be in
+   the list, not one click away. */
+function cardTermsHTML(key, it) {
+  if (key === "armor") {
+    return `<div class="card-terms">Trait: ${armorTraitHTML(it.trait)}</div>`;
+  }
+  if (key === "weapons" && it.mastery) {
+    return `<div class="card-terms">Mastery: ${masteryHTML(it.mastery)}</div>`;
+  }
+  return "";
 }
 
 /* Render a list split into labelled sections. `grouper` returns [label, items][]. */
@@ -422,6 +438,31 @@ const CASTER_GRADE = {
   joker:        { grade: "Half-caster",  startsAt: 2 },
 };
 const TRICK_CLASS_ORDER = ["illusionist", "jester", "puppeteer", "doppelganger", "joker"];
+
+/* Skills tab: grouped by the ability they scale with, in canonical 5e order, so a player looking
+   for "what does Dexterity cover" sees it in one block. */
+function groupBySkillAbility(items) {
+  const groups = new Map();
+  for (const it of items) {
+    const key = it.ability || "Other";
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(it);
+  }
+  const order = ABILITY_ORDER.filter((a) => groups.has(a)).concat([...groups.keys()].filter((k) => !ABILITY_ORDER.includes(k)));
+  return order.map((k) => [k, groups.get(k).sort((a, b) => a.name.localeCompare(b.name))]);
+}
+
+/* Subclasses tab: grouped under their parent class, classes in alphabetical order. */
+function groupBySubclassParent(items) {
+  const groups = new Map();
+  for (const it of items) {
+    const key = className(it.parentClass) || "Unassigned";
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(it);
+  }
+  return [...groups.keys()].sort((a, b) => a.localeCompare(b))
+    .map((k) => [k, groups.get(k).sort((a, b) => a.name.localeCompare(b.name))]);
+}
 
 const TIER_ORDER = { pledge: 0, turn: 1, prestige: 2 };
 let trickGrouping = "class";  // Class first: a player reads their own repertoire far more often than the tier shelves.
@@ -785,6 +826,26 @@ function masteryHTML(name) {
   const def = MASTERIES[name];
   if (!def) return esc(name);
   return `<span class="tip-term">${esc(name)}<span class="term-tip">${esc(def)}</span></span>`;
+}
+
+/* Armor traits (data/rules/armor-traits.json). One always-on property per piece — the armour
+   equivalent of a weapon's mastery, and the reason two items at the same AC are a real choice.
+   The highest-AC piece in each category deliberately has none. */
+const ARMOR_TRAITS = {
+  "Warded": "Advantage on concentration checks — the flat d20 you roll to keep a trick running when you take damage. The reason a caster wears robes rather than nothing.",
+  "Deep Pockets": "A creature spending its action to snatch one of your Props makes that Sleight of Hand check with disadvantage. Hidden pockets, false linings, sleeves that go further than they should.",
+  "Supple": "Advantage on every check and save you make to escape a grapple, a restraint, or being tied up. Nothing in the cut of it binds when you twist.",
+  "Cushioned": "Halve the bludgeoning damage you take from falling, from colliding with something, and from being thrown — including by a friendly Sandow.",
+  "Showpiece": "Advantage on Charisma (Performance) checks: entertaining or holding a crowd with music, dance, acting, storytelling or acrobatics. This is the costume you wear to win the room.",
+  "Unbound": "Nothing about it traps your arms. You can perform a Flourish — the hand component a trick needs — even while grappled, or with only one hand free.",
+  "Costumed": "Advantage on Charisma (Deception) checks made to pass as somebody else, or to be taken for part of a crowd or troupe you do not belong to.",
+  "Anchored": "Advantage on saving throws against being knocked prone and against being moved against your will. Roughly half the roster throws one of those two effects.",
+  "Ironclad": "Reduce each instance of slashing, piercing or bludgeoning damage you take by 2. Small per hit, and it adds up over a long fight — which is exactly what heavy armour is for.",
+};
+function armorTraitHTML(name) {
+  if (!name) return `<span class="muted">none — this is the highest AC in its category and tier</span>`;
+  const def = ARMOR_TRAITS[name];
+  return def ? `<span class="tip-term" tabindex="0">${esc(name)}<span class="term-tip" role="tooltip">${esc(def)}</span></span>` : esc(name);
 }
 
 /* Weapon property glossary (data/rules/weapon-properties.json). Drives the hover tooltip so

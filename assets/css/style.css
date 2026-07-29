@@ -461,3 +461,8 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
    by the scroll box when opened. Let the cells wrap instead. */
 .attack-table td, .attack-table th { word-break: normal; overflow-wrap: anywhere; }
 .attack-table td:nth-child(4) { min-width: 8rem; }
+
+/* The choosable property (armour trait, weapon mastery) shown on a list card, so a player can
+   compare without opening every entry. */
+.card-terms { margin-top: 0.4rem; font-size: 0.82rem; color: var(--muted); }
+.card-terms .tip-term { color: var(--gold); }

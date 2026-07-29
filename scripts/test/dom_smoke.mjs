@@ -53,6 +53,7 @@ for (const key of allKeys) {
     const h = $("#detail").innerHTML;
     checked++;
     check(!h.includes("[["), `${key}/${id}: raw [[ leaked`);
+    check(!h.includes("could not be rendered"), `${key}/${id}: renderer THREW (guard fallback shown)`);
     check(!h.includes("{{"), `${key}/${id}: raw {{ leaked`);
     check(h.length > 80, `${key}/${id}: empty render`);
     totalScalingDice += (h.match(/class="scaling-die"/g) || []).length;
@@ -65,6 +66,20 @@ for (const key of allKeys) {
 // Impersonator), which broke every time that content was legitimately rewritten. They now assert
 // the INVARIANT instead: across the whole library, both token types must render as tooltips
 // somewhere, and no page may leak a raw token. Content can change freely; the renderer cannot.
+// Every LIST view, not just detail pages: selectCategory() is a separate render path and was
+// never exercised. A deleted grouper emptied the Skills and Subclasses tabs while the gate stayed
+// green, because nothing here ever opened a list.
+for (const cat of peek("CATEGORIES.map(c => c.key)")) {
+  const n = peek(`store[${JSON.stringify(cat)}].length`);
+  if (!n) continue;
+  window.selectCategory(cat);
+  const listHTML = $("#list").innerHTML;
+  const cards = $("#list").querySelectorAll(".card, .class-field").length;
+  checked++;
+  check(cards > 0, `${cat} list: rendered ${cards} entries for ${n} items`);
+  check(!listHTML.includes("{{") && !listHTML.includes("[["), `${cat} list: raw token leaked`);
+}
+
 check(totalScalingDice > 0, `a [[XdY]] scaling die renders somewhere (found ${totalScalingDice})`);
 check(totalTipTerms > 0, `a {{Label|formula}} tooltip renders somewhere (found ${totalTipTerms})`);
 check(totalAbilityMods > 0, `an [[XdY+Abil]] ability-modifier tooltip renders somewhere (found ${totalAbilityMods})`);
