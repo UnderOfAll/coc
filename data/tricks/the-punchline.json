@@ -7,6 +7,7 @@
   "discipline": "Mesmerism",
   "minLevel": 1,
   "cooldown": 2,
+  "engineCost": 2,
   "castingTime": "1 action",
   "range": "60 feet",
   "components": [
@@ -14,9 +15,9 @@
   ],
   "duration": "Instantaneous",
   "save": "Wisdom",
-  "description": "You deliver the line you have been building toward at one creature that can hear and understand you within range. It makes a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure it takes [[2d6]] psychic damage; on a success it takes half as much. This is plain, reliable damage with nothing attached to it — it is what you do on a turn when nobody needs saving.",
+  "description": "You deliver the line you have been building toward at one creature that can hear and understand you within range. It makes a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure it takes [[2d6]] psychic damage; on a success it takes half as much. Casting this costs 2 Mirth, spent as you cast; like every costed Turn it generates none back. Your damage is something you build the room up to, not something you open with.",
   "narration": "The timing is everything and you have had all fight to find it. It lands somewhere behind the eyes, and the worst part is that everyone else in the room laughs.",
-  "sheetSummary": "Action, 60 ft, cooldown 2. Target must hear and understand you. Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[2d6]] psychic. Success: half damage. No rider.",
+  "sheetSummary": "Action, 60 ft, cooldown 2, costs 2 Mirth. Target must hear and understand you. Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[2d6]] psychic. Success: half damage.",
   "classes": [
     "jester"
   ]
