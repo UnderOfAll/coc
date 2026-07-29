@@ -7,6 +7,7 @@
   "discipline": "Fortune",
   "minLevel": 1,
   "cooldown": 2,
+  "engineCost": 1,
   "castingTime": "1 bonus action",
   "range": "30 feet",
   "components": [
@@ -14,9 +15,9 @@
     "Flourish"
   ],
   "duration": "1 round",
-  "description": "You call a quiet promise to an ally: no fall is final tonight. Choose one ally you can see within range. It gains [[1d6]] temporary hit points, and until the start of your next turn it has advantage on saving throws against being frightened or charmed.",
+  "description": "You call a quiet promise to an ally: no fall is final tonight. Choose one ally you can see within range. It gains [[1d6]] temporary hit points, and until the start of your next turn it has advantage on saving throws against being frightened or charmed. Casting this costs 1 Mirth, spent as you cast; like every costed Turn it generates none back.",
   "narration": "There is always a net under the wire. Tonight it is you — a quiet promise called across the room to someone who is about to need it.",
-  "sheetSummary": "Bonus action, 30 ft, cooldown 2. Chosen ally gains [[1d6]] temporary hit points and advantage on saves vs frightened/charmed until the start of your next turn.",
+  "sheetSummary": "Bonus action, 30 ft, cooldown 2, costs 1 Mirth. Chosen ally gains [[1d6]] temporary hit points and advantage on saves vs frightened/charmed until the start of your next turn.",
   "classes": [
     "jester"
   ]
