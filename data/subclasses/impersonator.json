@@ -21,16 +21,47 @@
     {
       "level": 3,
       "name": "Borrowed Trick",
-      "description": "You study how others fight and echo the shape of their strikes through your reflections. When a creature you can see attacks you or an ally within 30 feet of you — whether the attack hits or misses — you can memorize the damage type of that attack. You hold one memorized type at a time; memorizing a new one replaces it, and it fades when the fight ends. As a bonus action, you can destroy one of your Clones within 5 feet of a target: make your normal attack roll, and on a hit the Clone deals [[1d6+Con]] damage of the memorized type. The Clone copies only the damage type — never the original attack's damage dice, riders, or special effects. (If a paladin smites you, you don't gain the smite; your Clone simply deals this [[1d6]] as radiant.) You can do this {{uses per combat|1 at levels 1-4, 2 at 5-10, 3 at 11-16, 4 at 17+ — the same breakpoints the Scaling Die uses}} times per combat.",
-      "narration": "You watch how a thing fights and your reflections learn it. The next one you break open comes apart along the same lines — fire, frost, whatever it was — echoing the shape of a blow that was aimed at you a moment ago.",
+      "description": "You do not copy what a blow was made of — you copy the thing that made it. When a creature you can see within 30 feet makes an attack, hit or miss, you memorise that attack. You hold one at a time; memorising a new one replaces it, and it fades when the fight ends.\n\n**Once per combat, the next Clone you create comes out as a Mimic** — it wears that creature's face and build instead of yours. In every other respect it is an ordinary Clone: it counts against your cap, obeys your leash, and can be used by Swap, Mirror Image, Decoy Detonation and the rest.",
+      "narration": "You watch it swing once and that is all you need. The next reflection you leave behind is not wearing your face — it is wearing theirs, standing where you put it, holding the same weapon at the same angle. The look on the original's face is the entire reason you learned this.",
       "role": "combat",
-      "sheetSummary": "When a creature attacks you or an ally within 30 ft (hit or miss), memorize its damage type — you hold one at a time and it fades when the fight ends. Bonus action, {{uses per combat|1 at levels 1-4, 2 at 5-10, 3 at 11-16, 4 at 17+ — the same breakpoints the Scaling Die uses}} uses per combat: destroy a Clone within 5 ft of a target and make a normal attack roll; on a hit it deals [[1d6+Con]] of the memorized type. Copies the type only, never the attack's dice, riders, or effects.",
+      "sheetSummary": "Memorise an attack made by a creature you can see within 30 ft (hit or miss); you hold one at a time. Once per combat, your next Clone spawns as a Mimic of that creature. What it copies and its limits are listed below.",
       "meta": {
-        "action": "Bonus Action",
-        "cost": "1 Clone",
-        "uses": "Scaling: 1/2/3/4 per combat",
-        "range": "5 ft"
-      }
+        "action": "Free to memorise · Bonus Action to create",
+        "uses": "1 Mimic / combat",
+        "range": "30 ft"
+      },
+      "options": [
+        {
+          "group": "What a Mimic copies",
+          "name": "Its face and build",
+          "effect": "The Clone looks like the memorised creature rather than like you."
+        },
+        {
+          "group": "What a Mimic copies",
+          "name": "Its Armour Class",
+          "effect": "The Mimic uses the copied creature's AC instead of yours — which can be better or worse than your own."
+        },
+        {
+          "group": "What a Mimic copies",
+          "name": "That one attack, and nothing else",
+          "effect": "Whenever the Mimic attacks — through Mirror Barrage, Mirror Assault, or any feature that has a Clone strike — it makes the memorised attack, using the copied creature's attack bonus and damage, instead of your weapon and Constitution. It has no other action, trait or ability of that creature."
+        },
+        {
+          "group": "Limits",
+          "name": "Nothing bigger than you",
+          "effect": "You can only mimic a creature of your own size or smaller. A Medium Doppelganger can copy a Small or Medium creature and can never copy a Large or Huge one."
+        },
+        {
+          "group": "Limits",
+          "name": "It is still made of glass",
+          "effect": "A Mimic has no hit points. The first attack that hits it destroys it, exactly like any other Clone, however good the AC it borrowed."
+        },
+        {
+          "group": "Limits",
+          "name": "Half damage still applies",
+          "effect": "Mirror Barrage halves a Clone's damage as normal, including a Mimic's borrowed attack."
+        }
+      ]
     },
     {
       "level": 3,

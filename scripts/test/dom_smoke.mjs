@@ -39,6 +39,7 @@ if (!nClasses) { console.log("FAIL: store.classes empty after boot"); process.ex
 
 const $ = (sel) => window.document.querySelector(sel);
 let checked = 0, fails = 0;
+let totalScalingDice = 0, totalTipTerms = 0, totalAbilityMods = 0;
 const check = (cond, msg) => { if (!cond) { fails++; console.log("  FAIL: " + msg); } };
 
 // Render every entry in every category through its real renderer. New content types
@@ -54,17 +55,19 @@ for (const key of allKeys) {
     check(!h.includes("[["), `${key}/${id}: raw [[ leaked`);
     check(!h.includes("{{"), `${key}/${id}: raw {{ leaked`);
     check(h.length > 80, `${key}/${id}: empty render`);
+    totalScalingDice += (h.match(/class="scaling-die"/g) || []).length;
+    totalTipTerms    += (h.match(/class="tip-term"/g) || []).length;
+    totalAbilityMods += (h.match(/modifier<\/span>/g) || []).length;
   }
 }
 
-window.showDetail("subclasses", "impersonator");
-const ih = $("#detail").innerHTML;
-check(/scale-mark|scaling-die/.test(ih), "impersonator: damage die tooltip present");
-check(ih.includes("tip-term"), "impersonator: uses-count tooltip present");
-check(ih.includes("Constitution modifier"), "impersonator: Con mod in a tooltip");
-window.showDetail("classes", "the-sandow");
-const sh = $("#detail").innerHTML;
-check(sh.includes("tip-term"), "sandow: DC/value token present");
+// These used to assert specific words on one subclass page ("Constitution modifier" on the
+// Impersonator), which broke every time that content was legitimately rewritten. They now assert
+// the INVARIANT instead: across the whole library, both token types must render as tooltips
+// somewhere, and no page may leak a raw token. Content can change freely; the renderer cannot.
+check(totalScalingDice > 0, `a [[XdY]] scaling die renders somewhere (found ${totalScalingDice})`);
+check(totalTipTerms > 0, `a {{Label|formula}} tooltip renders somewhere (found ${totalTipTerms})`);
+check(totalAbilityMods > 0, `an [[XdY+Abil]] ability-modifier tooltip renders somewhere (found ${totalAbilityMods})`);
 
 console.log(`\nRendered ${checked} pages. jsdomErrors: ${consoleErrors.length}. failed checks: ${fails}.`);
 consoleErrors.forEach((e) => console.log("  " + e));
