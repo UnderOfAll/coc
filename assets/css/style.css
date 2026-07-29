@@ -408,18 +408,18 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
   border-radius: 0 6px 6px 0; font-style: italic; line-height: 1.65;
 }
 
-/* Tricks tab, Class view: a subclass's granted tricks sit in their own block below the class's
-   own ladder, so a discipline list never reads as part of the base repertoire (MECHANICS §4.9d). */
+/* A nested group inside a group: a subclass's granted tricks under its class (MECHANICS §4.9d),
+   and each armour category under its availability tier. */
 .ladder { display: block; }
-.granted-block {
+.sub-block {
   margin-top: 1.25rem; padding-left: 0.9rem;
   border-left: 2px solid var(--gold);
 }
-.granted-title {
+.sub-title {
   font-family: var(--serif); color: var(--gold);
   font-size: 0.95rem; margin: 0 0 0.4rem;
 }
-.granted-note { color: var(--muted); font-family: var(--sans); font-size: 0.8rem; font-weight: 400; }
+.sub-note { color: var(--muted); font-family: var(--sans); font-size: 0.8rem; font-weight: 400; }
 
 /* Scaling-die tooltip: every die is labelled with the level it applies from, so the number of
    values can never look like it disagrees with the number of breakpoints. */

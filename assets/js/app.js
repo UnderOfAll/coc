@@ -253,11 +253,50 @@ function renderList(key) {
   // Grouped views: skills by the ability they scale with, subclasses by parent class.
   if (key === "skills")     return renderGroupedList(list, key, items, groupBySkillAbility);
   if (key === "subclasses") return renderGroupedList(list, key, items, groupBySubclassParent);
-  // Armor: split into Starter (owned at creation) vs Bought (premium upgrades).
-  if (key === "armor")      return renderGroupedList(list, key, items, groupByAvailability);
+  // Armor: Starter vs Bought, each split again by category — the same nested shape the Tricks
+  // tab uses for a class and its disciplines.
+  if (key === "armor")      return renderArmorList(list, items);
   // Tricks: three ways to slice the same list — by tier, by class, or by unlock level.
   if (key === "tricks")     return renderTrickList(list, items);
   for (const it of items) list.appendChild(makeCard(key, it));
+}
+
+/* Armor tab: two tiers, each split into categories. A flat list made you read the category off
+   every card; this way the shape of the catalogue — what exists at each tier, and where the gaps
+   are — is visible at a glance. Same nested pattern as the Tricks class view. */
+const ARMOR_TIERS = [
+  ["starter", "Starter", "owned at character creation"],
+  ["bought", "Bought", "premium kit, if the purse allows"],
+];
+const ARMOR_CATEGORIES = [
+  ["clothing", "Clothing", "the full casters' lane; needs no proficiency"],
+  ["light", "Light", "adds your full Dexterity modifier"],
+  ["medium", "Medium", "adds up to +2 Dexterity"],
+  ["heavy", "Heavy", "no Dexterity, and a Strength requirement"],
+  ["shield", "Shields", "a flat bonus on top of your armour"],
+];
+function renderArmorList(list, items) {
+  list.className = "grouped";
+  for (const [tier, tierLabel, tierNote] of ARMOR_TIERS) {
+    const inTier = items.filter((a) => (a.availability || "starter") === tier);
+    if (!inTier.length) continue;
+    const section = el("section", "group");
+    section.appendChild(el("h2", "group-title",
+      `${esc(tierLabel)} <span class="sub-note">— ${esc(tierNote)}</span>`));
+    for (const [cat, catLabel, catNote] of ARMOR_CATEGORIES) {
+      const inCat = inTier.filter((a) => a.category === cat);
+      if (!inCat.length) continue;
+      const box = el("div", "sub-block");
+      box.appendChild(el("h3", "sub-title",
+        `${esc(catLabel)} <span class="sub-note">— ${esc(catNote)}</span>`));
+      const grid = el("div", "cards");
+      for (const a of inCat.sort((x, y) => (x.baseAC || x.acBonus || 0) - (y.baseAC || y.acBonus || 0)))
+        grid.appendChild(makeCard("armor", a));
+      box.appendChild(grid);
+      section.appendChild(box);
+    }
+    list.appendChild(section);
+  }
 }
 
 /* Classes tab: a vertical stack of fields, alphabetical, each with the class name on top, a
@@ -357,53 +396,6 @@ function makeSearchCard(key, it, q) {
   return card;
 }
 
-/* A short, escaped, highlighted window of text around the first match of q. */
-function snippet(text, q) {
-  const i = text.indexOf(q);
-  if (i < 0) return "";
-  const start = Math.max(0, i - 40), end = Math.min(text.length, i + q.length + 60);
-  const pre = (start > 0 ? "… " : "") + text.slice(start, i);
-  const post = text.slice(i + q.length, end) + (end < text.length ? " …" : "");
-  return esc(pre) + "<mark>" + esc(text.slice(i, i + q.length)) + "</mark>" + esc(post);
-}
-
-function groupBySkillAbility(items) {
-  const groups = new Map();
-  for (const it of items) {
-    const k = it.ability || "Other";
-    if (!groups.has(k)) groups.set(k, []);
-    groups.get(k).push(it);
-  }
-  const ordered = [];
-  for (const a of ABILITY_ORDER) if (groups.has(a)) ordered.push([a, groups.get(a)]);
-  for (const [k, v] of groups) if (!ABILITY_ORDER.includes(k)) ordered.push([k, v]);
-  return ordered;
-}
-
-function groupBySubclassParent(items) {
-  const groups = new Map();
-  for (const it of items) {
-    const k = it.parentClass || "Other";
-    if (!groups.has(k)) groups.set(k, []);
-    groups.get(k).push(it);
-  }
-  return [...groups.entries()]
-    .map(([id, arr]) => [className(id), arr])
-    .sort((a, b) => a[0].localeCompare(b[0]));
-}
-
-// Armor list split by availability: Starter gear first, then Bought upgrades.
-const AVAILABILITY_LABELS = { starter: "Starter armor", bought: "Bought — premium upgrades" };
-function groupByAvailability(items) {
-  const order = ["starter", "bought"];
-  const groups = new Map(order.map((k) => [k, []]));
-  for (const it of items) {
-    const k = it.availability === "bought" ? "bought" : "starter";
-    groups.get(k).push(it);
-  }
-  return order.filter((k) => groups.get(k).length)
-    .map((k) => [AVAILABILITY_LABELS[k], groups.get(k)]);
-}
 
 /* Tricks group by tier, in play order (at-will -> cooldown -> engine-gated) rather than
    alphabetically: the tier is the first thing a player needs to know about a trick. */
@@ -495,9 +487,9 @@ function renderTricksByClass(container, items) {
     // level, so a granted trick can never unlock before then however low its minLevel is.
     const subLv = subclassLevelOf(cid);
     for (const sid of [...bySub.keys()].sort((a, b) => subclassName(a).localeCompare(subclassName(b)))) {
-      const box = el("div", "granted-block");
-      box.appendChild(el("h3", "granted-title",
-        `${esc(subclassName(sid))} <span class="granted-note">— discipline tricks, this subclass only</span>`));
+      const box = el("div", "sub-block");
+      box.appendChild(el("h3", "sub-title",
+        `${esc(subclassName(sid))} <span class="sub-note">— discipline tricks, this subclass only</span>`));
       box.appendChild(levelLadder(bySub.get(sid), Math.max(g.startsAt, subLv)));
       section.appendChild(box);
     }
