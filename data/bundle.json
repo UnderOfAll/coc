@@ -1009,12 +1009,12 @@
           "level": 2,
           "name": "Play to the Room",
           "role": "combat",
-          "description": "You can carry a joke to more than one person. When you cast a Turn that targets a single ally, you may target a second willing ally within 30 feet of the first with the same effect. You can do this a number of times equal to your {{Charisma modifier (min 1)|set from your stats on your character sheet}}, regaining all expended uses when you finish a long rest. This never doubles a trick aimed at an enemy.",
-          "sheetSummary": "{{Charisma modifier (min 1)|set from your stats on your character sheet}} uses per long rest. A Turn that targets a single ALLY may also target a second willing ally within 30 ft of the first. Never applies to a trick aimed at an enemy.",
+          "description": "You can carry a joke to more than one person. When you cast a Turn that targets a single ally, you may target a second willing ally within 30 feet of the first with the same effect. You can do this {{uses per combat|1 at levels 1-4, 2 at 5-10, 3 at 11-16, 4 at 17+ — the same breakpoints the Scaling Die uses}} times per combat. This never doubles a trick aimed at an enemy.",
+          "sheetSummary": "{{uses per combat|1 at levels 1-4, 2 at 5-10, 3 at 11-16, 4 at 17+ — the same breakpoints the Scaling Die uses}} uses per combat. A Turn that targets a single ALLY may also target a second willing ally within 30 ft of the first. Never applies to a trick aimed at an enemy.",
           "narration": "You deliver it to the pair of them at once, the way a good line is thrown to two people on opposite sides of the stage. Both of them get it. Both of them straighten up.",
           "meta": {
             "action": "Part of casting",
-            "uses": "Cha mod / long rest",
+            "uses": "Scaling: 1/2/3/4 per combat",
             "range": "30 ft"
           }
         },
@@ -1057,12 +1057,12 @@
           "level": 5,
           "name": "The Show Must Go On",
           "role": "combat",
-          "description": "You do not let a performance end badly. When an ally you can see within 30 feet is reduced to 0 hit points, you can use your reaction to keep them upright: they drop to 1 hit point instead. Once you do this, you cannot do it again until you finish a short or long rest.",
-          "sheetSummary": "Reaction, 30 ft, once per short or long rest. When an ally you can see drops to 0 hit points, they drop to 1 instead.",
+          "description": "You do not let a performance end badly. When an ally you can see within 30 feet is reduced to 0 hit points, you can use your reaction to keep them upright: they drop to 1 hit point instead. You can do this once per combat.",
+          "sheetSummary": "Reaction, 30 ft, once per combat. When an ally you can see drops to 0 hit points, they drop to 1 instead.",
           "narration": "You are already talking before they hit the ground — some rubbish about the second act, delivered at a shout — and somehow it is enough to keep their feet under them for one more round.",
           "meta": {
             "action": "Reaction",
-            "uses": "1 / short or long rest",
+            "uses": "1 / combat",
             "range": "30 ft"
           }
         },
@@ -1214,12 +1214,12 @@
         {
           "level": 1,
           "name": "Trickster's Luck",
-          "description": "The deck looks after its own. A number of times equal to your {{Charisma modifier (min 1)|set from your stats on your character sheet}}, which you regain when you finish a long rest, when you roll below your effective Parry DC (an Overcommitted result), you can treat that Parry as a Grazing Parry instead — taking half damage rather than +50%. You decide after seeing the roll. This doesn't change your Parry DC, only how badly a failed one lands.",
+          "description": "The deck looks after its own. {{uses per combat|1 at levels 1-4, 2 at 5-10, 3 at 11-16, 4 at 17+ — the same breakpoints the Scaling Die uses}} times per combat, when you roll below your effective Parry DC (an Overcommitted result), you can treat that Parry as a Grazing Parry instead — taking half damage rather than +50%. You decide after seeing the roll. This doesn't change your Parry DC, only how badly a failed one lands.",
           "narration": "The blow that should have opened you up somehow only skims. A boot slips, a lamp swings, the floor is fractionally where it needed to be — the deck looks after its own, and you take the graze with an expression that suggests you arranged it.",
-          "sheetSummary": "Free, {{Charisma modifier (min 1)|set from your stats on your character sheet}} times per long rest. Treat an Overcommitted Parry as a Grazing Parry instead (half damage rather than +50%). Decided after seeing the roll; your Parry DC is unchanged.",
+          "sheetSummary": "Free, {{uses per combat|1 at levels 1-4, 2 at 5-10, 3 at 11-16, 4 at 17+ — the same breakpoints the Scaling Die uses}} times per combat. Treat an Overcommitted Parry as a Grazing Parry instead (half damage rather than +50%). Decided after seeing the roll; your Parry DC is unchanged.",
           "meta": {
             "action": "Free",
-            "uses": "Cha mod / long rest",
+            "uses": "Scaling: 1/2/3/4 per combat",
             "range": "Self"
           }
         },
@@ -1268,9 +1268,9 @@
         {
           "level": 2,
           "name": "Loaded Deck",
-          "description": "The first time each turn you hit a creature with a finesse weapon you're proficient with, you can spend 1 Mayhem to deal an extra [[1d6]] damage of that weapon's damage type. If the attack roll that hit was a natural 20, you deal this extra damage without spending Mayhem, and its dice are doubled along with the attack's other damage dice, as normal for a critical hit.",
+          "description": "The first time each turn you hit a creature with a finesse weapon you're proficient with, you can spend 1 Mayhem to deal an extra [[1d6]] damage of that weapon's damage type.\n\n**On a critical hit — whether it came up naturally on a 20 or was forced by Ace in the Hole — everything doubles together.** You double the weapon's damage dice as normal AND you double Loaded Deck's extra dice, because they are damage dice on the same attack. A natural 20 also means Loaded Deck costs you no Mayhem at all: the deck was already loaded.",
           "narration": "The card that leaves your hand is heavier than it has any right to be. It goes in past the guard at an angle a card should not hold, and the wound it opens is much worse than the sound it made.",
-          "sheetSummary": "1/turn, 1 Mayhem, on your first hit of the turn with a finesse weapon you're proficient with. Extra [[1d6]] damage of that weapon's type. On a natural 20 it costs no Mayhem and its dice are doubled with the crit.",
+          "sheetSummary": "1/turn, 1 Mayhem, on your first hit of the turn with a finesse weapon you're proficient with: extra [[1d6]] damage of that weapon's type. On ANY critical hit — natural 20 or forced by Ace in the Hole — the weapon's dice AND Loaded Deck's dice are both doubled. On a natural 20 it also costs no Mayhem.",
           "meta": {
             "action": "Part of Attack",
             "cost": "1 Mayhem",
@@ -1609,12 +1609,12 @@
         {
           "level": 1,
           "name": "Bodyguard Strings",
-          "description": "You never meant to take a hit yourself. A number of times equal to your {{Wisdom modifier (min 1)|set from your stats on your character sheet}}, which you regain when you finish a long rest, when you are hit by an attack while you have a String attached to another creature within 10 feet of you, you can redirect the attack's damage onto that stringed creature instead of resolving it against you: it takes the full damage of the hit and you take none. Redirecting resolves the attack, so you cannot also Parry the same hit, and it costs you no action or reaction. The wire yanks it into the path — an unwilling creature gets no save; a willing ally may choose to refuse. It works only on a blow with something to step in front of: an attack roll dealing physical or fire damage. It can never take a saving-throw effect, and it can never take psychic damage even from an attack roll — a phantom needle or a suggestion happens inside the target's head, and there is no trajectory to block.",
+          "description": "You never meant to take a hit yourself. {{uses per combat|1 at levels 1-4, 2 at 5-10, 3 at 11-16, 4 at 17+ — the same breakpoints the Scaling Die uses}} times per combat, when you are hit by an attack while you have a String attached to another creature within 10 feet of you, you can redirect the attack's damage onto that stringed creature instead of resolving it against you: it takes the full damage of the hit and you take none. Redirecting resolves the attack, so you cannot also Parry the same hit, and it costs you no action or reaction. The wire yanks it into the path — an unwilling creature gets no save; a willing ally may choose to refuse. It works only on a blow with something to step in front of: an attack roll dealing physical or fire damage. It can never take a saving-throw effect, and it can never take psychic damage even from an attack roll — a phantom needle or a suggestion happens inside the target's head, and there is no trajectory to block.",
           "narration": "The blow is already coming and you do not move. You pull instead, and something else arrives in the space where you were standing — dragged in by the wire, arriving just in time to take what was meant for you.",
-          "sheetSummary": "Free, {{Wisdom modifier (min 1)|set from your stats on your character sheet}} times per long rest. When hit while a String is on another creature within 10 ft, redirect the attack's full damage onto that creature; you take none. Resolves the attack, so you can't also Parry it. No save for an unwilling creature; a willing ally may refuse. Works only on an attack roll dealing physical or fire damage — never a saving-throw effect, never psychic.",
+          "sheetSummary": "Free, {{uses per combat|1 at levels 1-4, 2 at 5-10, 3 at 11-16, 4 at 17+ — the same breakpoints the Scaling Die uses}} times per combat. When hit while a String is on another creature within 10 ft, redirect the attack's full damage onto that creature; you take none. Resolves the attack, so you can't also Parry it. No save for an unwilling creature; a willing ally may refuse. Works only on an attack roll dealing physical or fire damage — never a saving-throw effect, never psychic.",
           "meta": {
             "action": "Free",
-            "uses": "Wis mod / long rest",
+            "uses": "Scaling: 1/2/3/4 per combat",
             "range": "10 ft (stringed creature)"
           }
         },
@@ -2105,13 +2105,13 @@
           "level": 3,
           "name": "Contortion",
           "role": "combat",
-          "description": "You gain a pool of 4 Contortion Dice (d6), which you regain when you finish a long rest. When a creature you can see hits you with an attack, before you decide whether to Parry, you can spend one Contortion Die — this costs no reaction and no action — and roll it. On a 4 or higher you fold your body around the strike: you take no damage from the attack, the attacker takes half of the damage it would have dealt you (rounded down, of the same type), and your reaction stays free. On a 3 or lower the fold fails and the die is spent — the hit is not turned aside, but you may still spend your reaction to Parry it as normal if you have a reaction available; if your reaction is already gone, the attack lands in full. Because Contortion is not itself a Parry, a successful fold does not trigger Counterflow, Flowing Reflexes, or Riposte, and it sits in front of your Parry as an extra, die-gated chance to avoid a hit.",
+          "description": "You gain a pool of Contortion Dice (d6) each combat: {{uses per combat|1 at levels 1-4, 2 at 5-10, 3 at 11-16, 4 at 17+ — the same breakpoints the Scaling Die uses}} of them, refilling at the start of every fight. When a creature you can see hits you with an attack, before you decide whether to Parry, you can spend one Contortion Die — this costs no reaction and no action — and roll it. On a 4 or higher you fold your body around the strike: you take no damage from the attack, the attacker takes half of the damage it would have dealt you (rounded down, of the same type), and your reaction stays free. On a 3 or lower the fold fails and the die is spent — the hit is not turned aside, but you may still spend your reaction to Parry it as normal if you have a reaction available; if your reaction is already gone, the attack lands in full. Because Contortion is not itself a Parry, a successful fold does not trigger Counterflow, Flowing Reflexes, or Riposte, and it sits in front of your Parry as an extra, die-gated chance to avoid a hit.",
           "narration": "The strike arrives and your body simply is not shaped that way any more. You fold around the blade — spine, ribs, shoulder all going somewhere they should not go — and the blow slides through the space where a person used to be, its own force wrenching back against the arm that threw it.",
-          "sheetSummary": "When hit, before deciding whether to Parry. 4 Contortion Dice (d6) per long rest, costing no action or reaction. Roll one: on a 4+ you take no damage, the attacker takes half the damage it would have dealt (same type), and your reaction stays free. On a 3 or lower the die is spent and you may still Parry. Not a Parry, so it never triggers Counterflow, Flowing Reflexes, or Riposte.",
+          "sheetSummary": "When hit, before deciding whether to Parry. {{uses per combat|1 at levels 1-4, 2 at 5-10, 3 at 11-16, 4 at 17+ — the same breakpoints the Scaling Die uses}} Contortion Dice (d6) per combat, costing no action or reaction. Roll one: on a 4+ you take no damage, the attacker takes half the damage it would have dealt (same type), and your reaction stays free. On a 3 or lower the die is spent and you may still Parry. Not a Parry, so it never triggers Counterflow, Flowing Reflexes, or Riposte.",
           "meta": {
             "action": "When hit",
             "cost": "1 Contortion Die (roll 4+)",
-            "uses": "4 / long rest",
+            "uses": "Scaling: 1/2/3/4 per combat",
             "range": "Self"
           }
         },
@@ -2179,11 +2179,12 @@
           "level": 3,
           "name": "Never Pays to Bet Against Him",
           "role": "roleplay",
-          "description": "You have an unnatural nose for a wager. You know instinctively whether a game of chance, a contract, or an offer put to you is rigged, though not how. Once per long rest, when you make a bet, a bargain, or a wager of any kind and lose, you may declare that you meant to — you recover whatever you staked, and everyone present remembers it as a joke you were making.",
-          "sheetSummary": "You instinctively know whether a game, contract, or offer is rigged, but not how. Once per long rest, when you lose a bet or bargain, declare you meant to: you recover your stake and everyone remembers it as a joke.",
+          "description": "You have an unnatural nose for a wager. You know instinctively whether a game of chance, a contract, or an offer put to you is rigged, though not how. When you make a bet, a bargain, or a wager of any kind and lose, you may declare that you meant to — you recover whatever you staked, and everyone present remembers it as a joke you were making.",
+          "sheetSummary": "You instinctively know whether a game, contract, or offer is rigged, but not how. When you lose a bet or bargain, declare you meant to: you recover your stake and everyone remembers it as a joke. The same crowd never falls for it twice.",
           "narration": "You lose spectacularly, take a bow for it, and by the time the laugh dies down the money is back in your hand and nobody can reconstruct how the bet was ever serious.",
           "meta": {
-            "action": "Passive / 1 per long rest"
+            "action": "Passive",
+            "uses": "No limit; the same crowd only once"
           }
         }
       ],
@@ -2247,12 +2248,12 @@
           "level": 3,
           "name": "Stacked Deck",
           "role": "combat",
-          "description": "You've learned to load the deck in your favor. A number of times equal to your {{Charisma modifier (min 1)|set from your stats on your character sheet}}, which you regain when you finish a long rest, you can do one of the following, no action required: choose the result of a Wild Card draw instead of rolling the d8; reroll a d20 you just rolled for your own attack roll, ability check, or saving throw and use the new result; or target one creature within 30 feet of you that just made an attack roll or saving throw, forcing it to succeed on a Charisma saving throw against your gambit DC or reroll that d20 and use the new result. These uses cost no Mayhem and draw on nothing else you have.",
+          "description": "You've learned to load the deck in your favor. {{uses per combat|1 at levels 1-4, 2 at 5-10, 3 at 11-16, 4 at 17+ — the same breakpoints the Scaling Die uses}} times per combat, you can do one of the following, no action required: choose the result of a Wild Card draw instead of rolling the d8; reroll a d20 you just rolled for your own attack roll, ability check, or saving throw and use the new result; or target one creature within 30 feet of you that just made an attack roll or saving throw, forcing it to succeed on a Charisma saving throw against your gambit DC or reroll that d20 and use the new result. These uses cost no Mayhem and draw on nothing else you have.",
           "narration": "The deck was never honest and neither were you. When the moment matters you simply arrange for the result you needed — or reach across the table and make somebody else take theirs again, which is worse.",
-          "sheetSummary": "Free, {{Charisma modifier (min 1)|set from your stats on your character sheet}} times per long rest, 30 ft. Choose one: pick a Wild Card result instead of rolling; reroll your own d20 attack, check, or save and use the new result; or force a creature that just rolled a d20 to make a Charisma save vs {{gambit DC|8 + proficiency bonus + Charisma modifier}} or reroll and use the new result. Costs no Mayhem.",
+          "sheetSummary": "Free, {{uses per combat|1 at levels 1-4, 2 at 5-10, 3 at 11-16, 4 at 17+ — the same breakpoints the Scaling Die uses}} times per combat, 30 ft. Choose one: pick a Wild Card result instead of rolling; reroll your own d20 attack, check, or save and use the new result; or force a creature that just rolled a d20 to make a Charisma save vs {{gambit DC|8 + proficiency bonus + Charisma modifier}} or reroll and use the new result. Costs no Mayhem.",
           "meta": {
             "action": "Free",
-            "uses": "Cha mod / long rest",
+            "uses": "Scaling: 1/2/3/4 per combat",
             "range": "30 ft",
             "save": "Cha save vs {{gambit DC|8 + proficiency bonus + Charisma modifier}} (forced reroll)"
           }
@@ -2483,27 +2484,27 @@
         {
           "level": 3,
           "name": "Perfect Mimicry",
-          "description": "You have practiced copying more than a silhouette. As an action, you can assume the exact physical appearance — clothing, minor scars, voice, and posture included — of any Medium or Small humanoid you have observed for at least 1 minute, for up to 1 hour or until you end it early (no action required) or use this feature again. This changes only your outward appearance, not your game statistics, and any equipment you're wearing or carrying isn't transformed along with you. While disguised this way, you have advantage on Charisma (Deception) checks made to pass yourself off as that specific individual, and a creature without a particular reason to be suspicious can't tell you're a fake without succeeding on a Wisdom (Insight) check contested by your Deception check (or other means, such as true seeing). You can use this feature a number of times equal to your {{proficiency bonus|set from your stats on your character sheet}}, regaining all expended uses when you finish a long rest.",
+          "description": "You have practiced copying more than a silhouette. As an action, you can assume the exact physical appearance — clothing, minor scars, voice, and posture included — of any Medium or Small humanoid you have observed for at least 1 minute, for up to 1 hour or until you end it early (no action required) or use this feature again. This changes only your outward appearance, not your game statistics, and any equipment you're wearing or carrying isn't transformed along with you. While disguised this way, you have advantage on Charisma (Deception) checks made to pass yourself off as that specific individual, and a creature without a particular reason to be suspicious can't tell you're a fake without succeeding on a Wisdom (Insight) check contested by your Deception check (or other means, such as true seeing). There is no limit on how often you do this — you hold **one** face at a time, and taking a new one ends the old.",
           "narration": "You put on a face like a coat. Not a disguise — the scar, the voice, the way they stand when they are bored, all of it, down to the habits they do not know they have. People who have known them for years walk straight past you.",
           "meta": {
             "action": "Action",
-            "uses": "Prof bonus / long rest",
+            "uses": "At will, one at a time",
             "range": "Self"
           },
           "role": "roleplay",
-          "sheetSummary": "Action, {{proficiency bonus|set from your level on your character sheet}} uses per long rest, 1 hour. Assume the exact appearance and voice of a Medium or Small humanoid you observed for 1+ minute. Appearance only — statistics and gear are unchanged. Advantage on Deception to pass as them; seeing through it takes an Insight check vs your Deception."
+          "sheetSummary": "Action, at will, 1 hour, one face at a time. Assume the exact appearance and voice of a Medium or Small humanoid you observed for 1+ minute. Appearance only — statistics and gear are unchanged. Advantage on Deception to pass as them; seeing through it takes an Insight check vs your Deception."
         },
         {
           "level": 3,
           "name": "Borrowed Trick",
-          "description": "You study how others fight and echo the shape of their strikes through your reflections. When a creature you can see attacks you or an ally within 30 feet of you — whether the attack hits or misses — you can memorize the damage type of that attack. You hold one memorized type at a time; memorizing a new one replaces it, and it fades when the fight ends. As a bonus action, you can destroy one of your Clones within 5 feet of a target: make your normal attack roll, and on a hit the Clone deals [[1d6+Con]] damage of the memorized type. The Clone copies only the damage type — never the original attack's damage dice, riders, or special effects. (If a paladin smites you, you don't gain the smite; your Clone simply deals this [[1d6]] as radiant.) You can do this a number of times equal to your {{proficiency bonus|set from your stats on your character sheet}}, regaining all uses on a long rest.",
+          "description": "You study how others fight and echo the shape of their strikes through your reflections. When a creature you can see attacks you or an ally within 30 feet of you — whether the attack hits or misses — you can memorize the damage type of that attack. You hold one memorized type at a time; memorizing a new one replaces it, and it fades when the fight ends. As a bonus action, you can destroy one of your Clones within 5 feet of a target: make your normal attack roll, and on a hit the Clone deals [[1d6+Con]] damage of the memorized type. The Clone copies only the damage type — never the original attack's damage dice, riders, or special effects. (If a paladin smites you, you don't gain the smite; your Clone simply deals this [[1d6]] as radiant.) You can do this {{uses per combat|1 at levels 1-4, 2 at 5-10, 3 at 11-16, 4 at 17+ — the same breakpoints the Scaling Die uses}} times per combat.",
           "narration": "You watch how a thing fights and your reflections learn it. The next one you break open comes apart along the same lines — fire, frost, whatever it was — echoing the shape of a blow that was aimed at you a moment ago.",
           "role": "combat",
-          "sheetSummary": "When a creature attacks you or an ally within 30 ft (hit or miss), memorize its damage type — you hold one at a time and it fades when the fight ends. Bonus action, {{proficiency bonus|set from your level on your character sheet}} uses per long rest: destroy a Clone within 5 ft of a target and make a normal attack roll; on a hit it deals [[1d6+Con]] of the memorized type. Copies the type only, never the attack's dice, riders, or effects.",
+          "sheetSummary": "When a creature attacks you or an ally within 30 ft (hit or miss), memorize its damage type — you hold one at a time and it fades when the fight ends. Bonus action, {{uses per combat|1 at levels 1-4, 2 at 5-10, 3 at 11-16, 4 at 17+ — the same breakpoints the Scaling Die uses}} uses per combat: destroy a Clone within 5 ft of a target and make a normal attack roll; on a hit it deals [[1d6+Con]] of the memorized type. Copies the type only, never the attack's dice, riders, or effects.",
           "meta": {
             "action": "Bonus Action",
             "cost": "1 Clone",
-            "uses": "Prof bonus / long rest",
+            "uses": "Scaling: 1/2/3/4 per combat",
             "range": "5 ft"
           }
         },
@@ -2615,12 +2616,12 @@
           "level": 3,
           "name": "Flawless Forgery",
           "role": "roleplay",
-          "description": "A reflection doesn't have to stay in the glass. As an action, you can create a mirror-copy of a Small or smaller nonmagical object you have held within the last minute. The copy is identical to close inspection but is all surface: it shatters into harmless light if it takes any damage, and dissolves on its own after 1 hour. A forged key opens nothing and a forged coin won't survive a bite test — but for a swap, a con, or a decoy on a cushion, it is perfect. You can use this feature a number of times equal to your {{proficiency bonus|set from your stats on your character sheet}}, regaining all expended uses when you finish a long rest.",
+          "description": "A reflection doesn't have to stay in the glass. As an action, you can create a mirror-copy of a Small or smaller nonmagical object you have held within the last minute. The copy is identical to close inspection but is all surface: it shatters into harmless light if it takes any damage, and dissolves on its own after 1 hour. A forged key opens nothing and a forged coin won't survive a bite test — but for a swap, a con, or a decoy on a cushion, it is perfect. There is no limit on how often you do this — you can maintain **one** forgery at a time, and making a new one crumbles the old.",
           "narration": "A reflection does not have to stay in the glass. You lift a copy of something you were holding a moment ago — perfect down to the wear on the handle, flawless right up until anybody treats it like a real object.",
-          "sheetSummary": "Action, {{proficiency bonus|set from your level on your character sheet}} uses per long rest, 1 hour. Create a mirror-copy of a Small or smaller nonmagical object you held in the last minute: perfect to inspection, shatters on any damage.",
+          "sheetSummary": "Action, at will, 1 hour, one forgery at a time. Create a mirror-copy of a Small or smaller nonmagical object you held in the last minute: perfect to inspection, shatters on any damage.",
           "meta": {
             "action": "Action",
-            "uses": "Prof bonus / long rest",
+            "uses": "At will, one at a time",
             "range": "Self"
           }
         }
@@ -2796,12 +2797,12 @@
           "level": 3,
           "name": "Grand Finale",
           "role": "combat",
-          "description": "Once per short or long rest, you can turn a Barrage into a showstopping set piece. Take the Attack action and throw implements as normal, then put on the show: each ally who can see you gains temporary hit points equal to your Juggler level, and each enemy within 15 feet of you must succeed on a Wisdom saving throw against your {{Trick Shot DC|6 + proficiency bonus + Intelligence modifier}} or be frightened of you until the end of its next turn. The crowd is yours.",
+          "description": "Once per combat, you can turn a Barrage into a showstopping set piece. Take the Attack action and throw implements as normal, then put on the show: each ally who can see you gains temporary hit points equal to your Juggler level, and each enemy within 15 feet of you must succeed on a Wisdom saving throw against your {{Trick Shot DC|6 + proficiency bonus + Intelligence modifier}} or be frightened of you until the end of its next turn. The crowd is yours.",
           "narration": "You stop fighting and start performing. The whole cascade goes up at once, the room's eyes come with it, and by the time it comes down your friends are standing straighter and the people trying to kill you have remembered they are afraid.",
-          "sheetSummary": "Part of the Attack action, 1/short or long rest, 15 ft. Throw your Barrage as normal, then each ally who can see you gains temporary hit points equal to your Juggler level, and each enemy within 15 ft makes a Wisdom save vs your {{Trick Shot DC|6 + proficiency bonus + Intelligence modifier}} or is frightened of you until the end of its next turn.",
+          "sheetSummary": "Part of the Attack action, 1/combat, 15 ft. Throw your Barrage as normal, then each ally who can see you gains temporary hit points equal to your Juggler level, and each enemy within 15 ft makes a Wisdom save vs your {{Trick Shot DC|6 + proficiency bonus + Intelligence modifier}} or is frightened of you until the end of its next turn.",
           "meta": {
             "action": "Part of Attack action",
-            "uses": "1 / rest",
+            "uses": "1 / combat",
             "range": "15 ft",
             "save": "Wis vs Trick Shot DC"
           }
@@ -2880,12 +2881,12 @@
           "level": 3,
           "name": "Snare Weave",
           "role": "combat",
-          "description": "As an action, you weave loose wire across the ground in a 15-foot square within 60 feet of you, filling it with a low, near-invisible lattice that lasts for 1 minute or until you dismiss it (no action required). The area is difficult terrain to any creature without a String attached to you. Any creature other than you that enters the area for the first time on a turn or starts its turn there must succeed on a Strength saving throw against your control DC or become restrained by the wire. A creature restrained this way can repeat the save at the end of each of its turns, ending the restrained condition on itself on a success, or use its action to make a Strength or Dexterity check (its choice) against your control DC to tear free instead. You can use Snare Weave a number of times equal to your {{Wisdom modifier (min 1)|set from your stats on your character sheet}}, regaining all expended uses when you finish a long rest.",
+          "description": "As an action, you weave loose wire across the ground in a 15-foot square within 60 feet of you, filling it with a low, near-invisible lattice that lasts for 1 minute or until you dismiss it (no action required). The area is difficult terrain to any creature without a String attached to you. Any creature other than you that enters the area for the first time on a turn or starts its turn there must succeed on a Strength saving throw against your control DC or become restrained by the wire. A creature restrained this way can repeat the save at the end of each of its turns, ending the restrained condition on itself on a success, or use its action to make a Strength or Dexterity check (its choice) against your control DC to tear free instead. You can use Snare Weave {{uses per combat|1 at levels 1-4, 2 at 5-10, 3 at 11-16, 4 at 17+ — the same breakpoints the Scaling Die uses}} times per combat.",
           "narration": "You lay wire across the floor in a low, glittering lattice nobody notices until their ankle finds it. Crossing it is a decision; standing in it is a mistake that tightens.",
-          "sheetSummary": "Action, {{Wisdom modifier (min 1)|set from your stats on your character sheet}} times per long rest, 15-ft square within 60 ft, 1 minute. Difficult terrain for anyone without your String. Entering it for the first time on a turn or starting a turn there forces a Strength save vs {{control DC|8 + proficiency bonus + Wisdom modifier}} or restrained; repeat at the end of each turn, or use an action for a Strength or Dexterity check to tear free.",
+          "sheetSummary": "Action, {{uses per combat|1 at levels 1-4, 2 at 5-10, 3 at 11-16, 4 at 17+ — the same breakpoints the Scaling Die uses}} times per combat, 15-ft square within 60 ft, 1 minute. Difficult terrain for anyone without your String. Entering it for the first time on a turn or starting a turn there forces a Strength save vs {{control DC|8 + proficiency bonus + Wisdom modifier}} or restrained; repeat at the end of each turn, or use an action for a Strength or Dexterity check to tear free.",
           "meta": {
             "action": "Action",
-            "uses": "Wis mod / long rest",
+            "uses": "Scaling: 1/2/3/4 per combat",
             "range": "60 ft (15-ft square)",
             "save": "Str save vs {{control DC|8 + proficiency bonus + Wisdom modifier}}"
           }
@@ -2894,12 +2895,12 @@
           "level": 3,
           "name": "Binding Knots",
           "role": "combat",
-          "description": "Your bindings compound on themselves. When you use Tangle, you can target one additional creature you have a String attached to within range, provided the two targets are within 15 feet of each other and you don't mix a willing target with an unwilling one in the same use. You can use this double-target option a number of times equal to your {{Wisdom modifier (min 1)|set from your stats on your character sheet}}, regaining all expended uses when you finish a long rest.",
+          "description": "Your bindings compound on themselves. When you use Tangle, you can target one additional creature you have a String attached to within range, provided the two targets are within 15 feet of each other and you don't mix a willing target with an unwilling one in the same use. You can use this double-target option {{uses per combat|1 at levels 1-4, 2 at 5-10, 3 at 11-16, 4 at 17+ — the same breakpoints the Scaling Die uses}} times per combat.",
           "narration": "One knot pulls the next. The wire you put on one of them runs through the one beside it, and when you cinch it down they both go rigid at once, tangled into each other's mistakes.",
-          "sheetSummary": "Passive with Tangle, {{Wisdom modifier (min 1)|set from your stats on your character sheet}} times per long rest. Tangle may target one additional Stringed creature within 15 ft of the first. Both targets must be willing or both unwilling.",
+          "sheetSummary": "Passive with Tangle, {{uses per combat|1 at levels 1-4, 2 at 5-10, 3 at 11-16, 4 at 17+ — the same breakpoints the Scaling Die uses}} times per combat. Tangle may target one additional Stringed creature within 15 ft of the first. Both targets must be willing or both unwilling.",
           "meta": {
             "action": "Passive (with Tangle)",
-            "uses": "Wis mod / long rest",
+            "uses": "Scaling: 1/2/3/4 per combat",
             "range": "15 ft between targets"
           }
         },
@@ -4347,9 +4348,9 @@
       ],
       "duration": "Instantaneous",
       "save": "Wisdom",
-      "description": "You unleash a string of insults laced with subtle magic at a creature you can see within range that can hear you (the trick has no effect on a target that is deaf). The target must succeed on a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or take [[1d4]] psychic damage and have disadvantage on the next attack roll it makes before the end of its next turn, too busy stewing over what you said to focus.",
+      "description": "You unleash a string of insults laced with subtle magic at a creature you can see within range that can hear you (the trick has no effect on a target that is deaf). The target must succeed on a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or take [[1d6]] psychic damage and have disadvantage on the next attack roll it makes before the end of its next turn, too busy stewing over what you said to focus.",
       "narration": "You find the one thing they already hate about themselves and say it louder than they can think it. It lands somewhere behind the sternum, and for a moment they are not fighting you, they are arguing with you.",
-      "sheetSummary": "Action, 60 ft. Wis save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[1d4]] psychic damage, disadvantage on target's next attack roll before end of its next turn. No effect on a deaf target.",
+      "sheetSummary": "Action, 60 ft. Wis save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[1d6]] psychic damage, disadvantage on target's next attack roll before end of its next turn. No effect on a deaf target.",
       "classes": [
         "jester"
       ],
@@ -4623,17 +4624,7 @@
       "_file": "skills/skills.json"
     }
   ],
-  "passives": [
-    {
-      "id": "great-weapon-master",
-      "name": "Great Weapon Master",
-      "type": "Feat",
-      "source": "5e SRD",
-      "prerequisite": null,
-      "description": "You've learned to put the weight of a weapon to your advantage. On your turn, when you score a critical hit with a melee weapon or reduce a creature to 0 hit points with one, you can make one melee weapon attack as a bonus action. Before you make a melee attack with a heavy weapon that you are proficient with, you can choose to take a -5 penalty to the attack roll. If the attack hits, you add +10 to the attack's damage.",
-      "_file": "passives/great-weapon-master.json"
-    }
-  ],
+  "passives": [],
   "weapons": [
     {
       "id": "aerial-ribbons",
@@ -4778,33 +4769,6 @@
       ],
       "mastery": "Nick",
       "_file": "weapons/dagger.json"
-    },
-    {
-      "id": "hand-crossbow",
-      "name": "Hand Crossbow",
-      "source": "Circus System",
-      "flavor": "A compact one-handed crossbow, easily hidden up a sleeve until the trick needs a bolt.",
-      "category": "martial",
-      "damage": {
-        "die": "1d6",
-        "type": "piercing"
-      },
-      "properties": [
-        "ammunition",
-        "light",
-        "loading"
-      ],
-      "range": {
-        "normal": 30,
-        "long": 120
-      },
-      "parryProfile": {
-        "canParry": false,
-        "note": "A drawn, loaded crossbow is committed to the shot — there is nothing in that hand to intercept a melee blow with. Trying falls back to the empty-hands (unarmed) case."
-      },
-      "proficientClasses": [],
-      "mastery": "Vex",
-      "_file": "weapons/hand-crossbow.json"
     },
     {
       "id": "harlequins-cane",
@@ -5119,7 +5083,7 @@
       "proficientClasses": [
         "juggler"
       ],
-      "mastery": "Nick",
+      "mastery": "Sap",
       "_file": "weapons/throwing-knives.json"
     },
     {

@@ -8,27 +8,27 @@
     {
       "level": 3,
       "name": "Perfect Mimicry",
-      "description": "You have practiced copying more than a silhouette. As an action, you can assume the exact physical appearance — clothing, minor scars, voice, and posture included — of any Medium or Small humanoid you have observed for at least 1 minute, for up to 1 hour or until you end it early (no action required) or use this feature again. This changes only your outward appearance, not your game statistics, and any equipment you're wearing or carrying isn't transformed along with you. While disguised this way, you have advantage on Charisma (Deception) checks made to pass yourself off as that specific individual, and a creature without a particular reason to be suspicious can't tell you're a fake without succeeding on a Wisdom (Insight) check contested by your Deception check (or other means, such as true seeing). You can use this feature a number of times equal to your {{proficiency bonus|set from your stats on your character sheet}}, regaining all expended uses when you finish a long rest.",
+      "description": "You have practiced copying more than a silhouette. As an action, you can assume the exact physical appearance — clothing, minor scars, voice, and posture included — of any Medium or Small humanoid you have observed for at least 1 minute, for up to 1 hour or until you end it early (no action required) or use this feature again. This changes only your outward appearance, not your game statistics, and any equipment you're wearing or carrying isn't transformed along with you. While disguised this way, you have advantage on Charisma (Deception) checks made to pass yourself off as that specific individual, and a creature without a particular reason to be suspicious can't tell you're a fake without succeeding on a Wisdom (Insight) check contested by your Deception check (or other means, such as true seeing). There is no limit on how often you do this — you hold **one** face at a time, and taking a new one ends the old.",
       "narration": "You put on a face like a coat. Not a disguise — the scar, the voice, the way they stand when they are bored, all of it, down to the habits they do not know they have. People who have known them for years walk straight past you.",
       "meta": {
         "action": "Action",
-        "uses": "Prof bonus / long rest",
+        "uses": "At will, one at a time",
         "range": "Self"
       },
       "role": "roleplay",
-      "sheetSummary": "Action, {{proficiency bonus|set from your level on your character sheet}} uses per long rest, 1 hour. Assume the exact appearance and voice of a Medium or Small humanoid you observed for 1+ minute. Appearance only — statistics and gear are unchanged. Advantage on Deception to pass as them; seeing through it takes an Insight check vs your Deception."
+      "sheetSummary": "Action, at will, 1 hour, one face at a time. Assume the exact appearance and voice of a Medium or Small humanoid you observed for 1+ minute. Appearance only — statistics and gear are unchanged. Advantage on Deception to pass as them; seeing through it takes an Insight check vs your Deception."
     },
     {
       "level": 3,
       "name": "Borrowed Trick",
-      "description": "You study how others fight and echo the shape of their strikes through your reflections. When a creature you can see attacks you or an ally within 30 feet of you — whether the attack hits or misses — you can memorize the damage type of that attack. You hold one memorized type at a time; memorizing a new one replaces it, and it fades when the fight ends. As a bonus action, you can destroy one of your Clones within 5 feet of a target: make your normal attack roll, and on a hit the Clone deals [[1d6+Con]] damage of the memorized type. The Clone copies only the damage type — never the original attack's damage dice, riders, or special effects. (If a paladin smites you, you don't gain the smite; your Clone simply deals this [[1d6]] as radiant.) You can do this a number of times equal to your {{proficiency bonus|set from your stats on your character sheet}}, regaining all uses on a long rest.",
+      "description": "You study how others fight and echo the shape of their strikes through your reflections. When a creature you can see attacks you or an ally within 30 feet of you — whether the attack hits or misses — you can memorize the damage type of that attack. You hold one memorized type at a time; memorizing a new one replaces it, and it fades when the fight ends. As a bonus action, you can destroy one of your Clones within 5 feet of a target: make your normal attack roll, and on a hit the Clone deals [[1d6+Con]] damage of the memorized type. The Clone copies only the damage type — never the original attack's damage dice, riders, or special effects. (If a paladin smites you, you don't gain the smite; your Clone simply deals this [[1d6]] as radiant.) You can do this {{uses per combat|1 at levels 1-4, 2 at 5-10, 3 at 11-16, 4 at 17+ — the same breakpoints the Scaling Die uses}} times per combat.",
       "narration": "You watch how a thing fights and your reflections learn it. The next one you break open comes apart along the same lines — fire, frost, whatever it was — echoing the shape of a blow that was aimed at you a moment ago.",
       "role": "combat",
-      "sheetSummary": "When a creature attacks you or an ally within 30 ft (hit or miss), memorize its damage type — you hold one at a time and it fades when the fight ends. Bonus action, {{proficiency bonus|set from your level on your character sheet}} uses per long rest: destroy a Clone within 5 ft of a target and make a normal attack roll; on a hit it deals [[1d6+Con]] of the memorized type. Copies the type only, never the attack's dice, riders, or effects.",
+      "sheetSummary": "When a creature attacks you or an ally within 30 ft (hit or miss), memorize its damage type — you hold one at a time and it fades when the fight ends. Bonus action, {{uses per combat|1 at levels 1-4, 2 at 5-10, 3 at 11-16, 4 at 17+ — the same breakpoints the Scaling Die uses}} uses per combat: destroy a Clone within 5 ft of a target and make a normal attack roll; on a hit it deals [[1d6+Con]] of the memorized type. Copies the type only, never the attack's dice, riders, or effects.",
       "meta": {
         "action": "Bonus Action",
         "cost": "1 Clone",
-        "uses": "Prof bonus / long rest",
+        "uses": "Scaling: 1/2/3/4 per combat",
         "range": "5 ft"
       }
     },

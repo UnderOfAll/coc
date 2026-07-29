@@ -100,16 +100,13 @@
   "skills": [
     "skills/skills.json"
   ],
-  "passives": [
-    "passives/great-weapon-master.json"
-  ],
+  "passives": [],
   "weapons": [
     "weapons/aerial-ribbons.json",
     "weapons/cannonball.json",
     "weapons/conjurers-staff.json",
     "weapons/control-wires.json",
     "weapons/dagger.json",
-    "weapons/hand-crossbow.json",
     "weapons/harlequins-cane.json",
     "weapons/iron-chain.json",
     "weapons/juggling-clubs.json",

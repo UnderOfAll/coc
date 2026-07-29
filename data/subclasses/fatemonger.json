@@ -35,11 +35,12 @@
       "level": 3,
       "name": "Never Pays to Bet Against Him",
       "role": "roleplay",
-      "description": "You have an unnatural nose for a wager. You know instinctively whether a game of chance, a contract, or an offer put to you is rigged, though not how. Once per long rest, when you make a bet, a bargain, or a wager of any kind and lose, you may declare that you meant to — you recover whatever you staked, and everyone present remembers it as a joke you were making.",
-      "sheetSummary": "You instinctively know whether a game, contract, or offer is rigged, but not how. Once per long rest, when you lose a bet or bargain, declare you meant to: you recover your stake and everyone remembers it as a joke.",
+      "description": "You have an unnatural nose for a wager. You know instinctively whether a game of chance, a contract, or an offer put to you is rigged, though not how. When you make a bet, a bargain, or a wager of any kind and lose, you may declare that you meant to — you recover whatever you staked, and everyone present remembers it as a joke you were making.",
+      "sheetSummary": "You instinctively know whether a game, contract, or offer is rigged, but not how. When you lose a bet or bargain, declare you meant to: you recover your stake and everyone remembers it as a joke. The same crowd never falls for it twice.",
       "narration": "You lose spectacularly, take a bow for it, and by the time the laugh dies down the money is back in your hand and nobody can reconstruct how the bet was ever serious.",
       "meta": {
-        "action": "Passive / 1 per long rest"
+        "action": "Passive",
+        "uses": "No limit; the same crowd only once"
       }
     }
   ]

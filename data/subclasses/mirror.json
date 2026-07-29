@@ -45,12 +45,12 @@
       "level": 3,
       "name": "Flawless Forgery",
       "role": "roleplay",
-      "description": "A reflection doesn't have to stay in the glass. As an action, you can create a mirror-copy of a Small or smaller nonmagical object you have held within the last minute. The copy is identical to close inspection but is all surface: it shatters into harmless light if it takes any damage, and dissolves on its own after 1 hour. A forged key opens nothing and a forged coin won't survive a bite test — but for a swap, a con, or a decoy on a cushion, it is perfect. You can use this feature a number of times equal to your {{proficiency bonus|set from your stats on your character sheet}}, regaining all expended uses when you finish a long rest.",
+      "description": "A reflection doesn't have to stay in the glass. As an action, you can create a mirror-copy of a Small or smaller nonmagical object you have held within the last minute. The copy is identical to close inspection but is all surface: it shatters into harmless light if it takes any damage, and dissolves on its own after 1 hour. A forged key opens nothing and a forged coin won't survive a bite test — but for a swap, a con, or a decoy on a cushion, it is perfect. There is no limit on how often you do this — you can maintain **one** forgery at a time, and making a new one crumbles the old.",
       "narration": "A reflection does not have to stay in the glass. You lift a copy of something you were holding a moment ago — perfect down to the wear on the handle, flawless right up until anybody treats it like a real object.",
-      "sheetSummary": "Action, {{proficiency bonus|set from your level on your character sheet}} uses per long rest, 1 hour. Create a mirror-copy of a Small or smaller nonmagical object you held in the last minute: perfect to inspection, shatters on any damage.",
+      "sheetSummary": "Action, at will, 1 hour, one forgery at a time. Create a mirror-copy of a Small or smaller nonmagical object you held in the last minute: perfect to inspection, shatters on any damage.",
       "meta": {
         "action": "Action",
-        "uses": "Prof bonus / long rest",
+        "uses": "At will, one at a time",
         "range": "Self"
       }
     }

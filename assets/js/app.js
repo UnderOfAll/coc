@@ -95,6 +95,9 @@ function buildSidebar() {
   const nav = $("#sidebar");
   nav.innerHTML = "";
   for (const cat of CATEGORIES) {
+    // An empty category is a tab that goes nowhere — hide it until it has content. The app stays
+    // fully data-driven: drop a file in and the tab reappears on the next build.
+    if (!store[cat.key] || !store[cat.key].length) continue;
     const btn = el("button", "nav-btn");
     btn.dataset.key = cat.key;
     btn.innerHTML = `<span>${cat.label}</span><span class="count">${store[cat.key].length}</span>`;
