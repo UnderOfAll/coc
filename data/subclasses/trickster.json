@@ -9,11 +9,12 @@
       "level": 3,
       "name": "Two Places at Once",
       "role": "combat",
-      "description": "When you use Misdirection to move after casting a trick, you may instead leave a silent, motionless illusory double of yourself in the space you left. The double lasts until the start of your next turn or until any creature touches it or hits it with an attack, at which point it vanishes. While it stands, a creature that has not seen through it must choose between you and the double at random when it targets you with an attack.",
-      "sheetSummary": "When Misdirection moves you, leave a motionless illusory double in the space you left. Lasts until the start of your next turn or until touched or hit. While it stands, a creature that hasn't seen through it picks at random between you and the double when it targets you with an attack.",
-      "narration": "You step away and something stays. It does not breathe and it does not blink, and in a busy fight nobody has time to notice either.",
+      "description": "When you use Misdirection to move after casting a trick, you can spend 1 Phantasm to leave a silent, motionless illusory double of yourself standing in the space you left. Until the start of your next turn, the first attack roll made against you is made with **disadvantage** — the attacker commits to the wrong one of you before it can tell which is breathing. The double then vanishes, whether or not anyone swung at it. It is only ever an image: it has no space of its own that matters, it cannot be attacked, and nobody ever has to work out which of the two of you they are targeting.",
+      "sheetSummary": "Costs 1 Phantasm, when Misdirection moves you. Leave a motionless illusory double in the space you left: the FIRST attack roll against you before the start of your next turn is made with disadvantage, then the double vanishes. No targeting choice for anyone to make.",
+      "narration": "You step away and something stays — the same coat, the same posture, holding perfectly still where you were a moment ago. Whoever swings next has to decide, in the time it takes to swing, and they get it wrong.",
       "meta": {
         "action": "Free (with Misdirection)",
+        "cost": "1 Phantasm",
         "uses": "1 / turn",
         "range": "Space you left"
       }
