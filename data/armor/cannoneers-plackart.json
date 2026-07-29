@@ -1,0 +1,12 @@
+{
+  "id": "cannoneers-plackart",
+  "name": "Cannoneer's Plackart",
+  "source": "Circus of Chaos",
+  "category": "medium",
+  "trait": "Ironclad",
+  "availability": "bought",
+  "baseAC": 14,
+  "maxDexBonus": 2,
+  "stealthDisadvantage": false,
+  "flavor": "Off-cuts from the cannon's own barrel, curved and strapped over the gut. It has been fired at. Twice."
+}

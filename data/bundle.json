@@ -5310,13 +5310,26 @@
       "name": "Aerialist's Second Skin",
       "source": "Circus of Chaos",
       "category": "light",
-      "trait": "Unbound",
       "availability": "bought",
       "baseAC": 13,
       "maxDexBonus": null,
       "stealthDisadvantage": false,
       "flavor": "Shaved kidskin over a lattice of whalebone, fitted to one body and useless on any other. It moves before you do.",
       "_file": "armor/aerialists-second-skin.json"
+    },
+    {
+      "id": "anvil-harness",
+      "name": "Anvil Harness",
+      "source": "Circus of Chaos",
+      "category": "heavy",
+      "trait": "Anchored",
+      "availability": "bought",
+      "baseAC": 17,
+      "maxDexBonus": 0,
+      "strengthRequirement": 15,
+      "stealthDisadvantage": true,
+      "flavor": "Built around a smith's anvil worn as a breastplate, counterweighted at the back so it stands you up rather than tipping you over. Absurd. Immovable.",
+      "_file": "armor/anvil-harness.json"
     },
     {
       "id": "beasthide-wrap",
@@ -5346,6 +5359,19 @@
       "_file": "armor/boilerplate-splint.json"
     },
     {
+      "id": "cannoneers-plackart",
+      "name": "Cannoneer's Plackart",
+      "source": "Circus of Chaos",
+      "category": "medium",
+      "trait": "Ironclad",
+      "availability": "bought",
+      "baseAC": 14,
+      "maxDexBonus": 2,
+      "stealthDisadvantage": false,
+      "flavor": "Off-cuts from the cannon's own barrel, curved and strapped over the gut. It has been fired at. Twice.",
+      "_file": "armor/cannoneers-plackart.json"
+    },
+    {
       "id": "colossus-plate",
       "name": "Colossus Plate",
       "source": "Circus System",
@@ -5370,6 +5396,19 @@
       "stealthDisadvantage": false,
       "flavor": "Heavy velvet to the ankle, cut wide enough to hide a dove, a deck and both your hands. It stops nothing and conceals everything.",
       "_file": "armor/conjurers-longcoat.json"
+    },
+    {
+      "id": "contortionists-sheath",
+      "name": "Contortionist's Sheath",
+      "source": "Circus of Chaos",
+      "category": "light",
+      "trait": "Supple",
+      "availability": "bought",
+      "baseAC": 12,
+      "maxDexBonus": null,
+      "stealthDisadvantage": false,
+      "flavor": "Oiled kidskin cut on the bias so it lengthens wherever you fold. Getting into it is the hardest part of the act; getting out of anything else stops being difficult.",
+      "_file": "armor/contortionists-sheath.json"
     },
     {
       "id": "fortune-tellers-robes",
@@ -5424,6 +5463,19 @@
       "_file": "armor/ironmonger-chain-mail.json"
     },
     {
+      "id": "mentalists-mantle",
+      "name": "Mentalist's Mantle",
+      "source": "Circus of Chaos",
+      "category": "clothing",
+      "trait": "Warded",
+      "availability": "bought",
+      "baseAC": 11,
+      "maxDexBonus": null,
+      "stealthDisadvantage": false,
+      "flavor": "Weighted at the hem and lined in something that hums faintly against the back of the neck. Whatever you are holding in your head, this keeps hold of it for you.",
+      "_file": "armor/mentalists-mantle.json"
+    },
+    {
       "id": "mirrorsilk-vestments",
       "name": "Mirrorsilk Vestments",
       "source": "Circus of Chaos",
@@ -5462,16 +5514,41 @@
       "_file": "armor/parade-shield.json"
     },
     {
+      "id": "pickpockets-frock-coat",
+      "name": "Pickpocket's Frock Coat",
+      "source": "Circus of Chaos",
+      "category": "clothing",
+      "trait": "Deep Pockets",
+      "availability": "bought",
+      "baseAC": 11,
+      "maxDexBonus": null,
+      "stealthDisadvantage": false,
+      "flavor": "Tailored by somebody who has been searched professionally and resented it. Fourteen pockets, none of them where a hand would look.",
+      "_file": "armor/pickpockets-frock-coat.json"
+    },
+    {
       "id": "ringmasters-bulwark",
       "name": "Ringmaster's Bulwark",
       "source": "Circus of Chaos",
       "category": "shield",
-      "trait": "Anchored",
       "availability": "bought",
       "acBonus": 3,
       "stealthDisadvantage": false,
       "flavor": "A cage-door off the big cats' wagon, banded and re-hung on a fist grip. It has stopped a tiger. It will stop most things.",
       "_file": "armor/ringmasters-bulwark.json"
+    },
+    {
+      "id": "ropewalkers-harness",
+      "name": "Ropewalker's Harness",
+      "source": "Circus of Chaos",
+      "category": "light",
+      "trait": "Unbound",
+      "availability": "bought",
+      "baseAC": 12,
+      "maxDexBonus": null,
+      "stealthDisadvantage": false,
+      "flavor": "Strapping across the ribs and nothing at all across the shoulders, because a rigger who cannot reach over their own head is a rigger who falls.",
+      "_file": "armor/ropewalkers-harness.json"
     },
     {
       "id": "serpent-scale-mail",
@@ -5534,6 +5611,18 @@
       "stealthDisadvantage": false,
       "availability": "starter",
       "_file": "armor/studded-showleather.json"
+    },
+    {
+      "id": "tamers-bracer",
+      "name": "Tamer's Bracer",
+      "source": "Circus of Chaos",
+      "category": "shield",
+      "trait": "Anchored",
+      "availability": "bought",
+      "acBonus": 2,
+      "stealthDisadvantage": false,
+      "flavor": "A forearm cage of banded steel, built for a woman who put her arm in a lion's mouth nightly and kept it. Smaller than a shield and planted twice as well.",
+      "_file": "armor/tamers-bracer.json"
     },
     {
       "id": "troupers-chain-shirt",

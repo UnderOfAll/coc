@@ -1,0 +1,13 @@
+{
+  "id": "anvil-harness",
+  "name": "Anvil Harness",
+  "source": "Circus of Chaos",
+  "category": "heavy",
+  "trait": "Anchored",
+  "availability": "bought",
+  "baseAC": 17,
+  "maxDexBonus": 0,
+  "strengthRequirement": 15,
+  "stealthDisadvantage": true,
+  "flavor": "Built around a smith's anvil worn as a breastplate, counterweighted at the back so it stands you up rather than tipping you over. Absurd. Immovable."
+}

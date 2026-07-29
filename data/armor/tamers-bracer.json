@@ -1,0 +1,11 @@
+{
+  "id": "tamers-bracer",
+  "name": "Tamer's Bracer",
+  "source": "Circus of Chaos",
+  "category": "shield",
+  "trait": "Anchored",
+  "availability": "bought",
+  "acBonus": 2,
+  "stealthDisadvantage": false,
+  "flavor": "A forearm cage of banded steel, built for a woman who put her arm in a lion's mouth nightly and kept it. Smaller than a shield and planted twice as well."
+}

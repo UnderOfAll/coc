@@ -1,0 +1,12 @@
+{
+  "id": "mentalists-mantle",
+  "name": "Mentalist's Mantle",
+  "source": "Circus of Chaos",
+  "category": "clothing",
+  "trait": "Warded",
+  "availability": "bought",
+  "baseAC": 11,
+  "maxDexBonus": null,
+  "stealthDisadvantage": false,
+  "flavor": "Weighted at the hem and lined in something that hums faintly against the back of the neck. Whatever you are holding in your head, this keeps hold of it for you."
+}

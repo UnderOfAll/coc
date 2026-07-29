@@ -1,0 +1,12 @@
+{
+  "id": "contortionists-sheath",
+  "name": "Contortionist's Sheath",
+  "source": "Circus of Chaos",
+  "category": "light",
+  "trait": "Supple",
+  "availability": "bought",
+  "baseAC": 12,
+  "maxDexBonus": null,
+  "stealthDisadvantage": false,
+  "flavor": "Oiled kidskin cut on the bias so it lengthens wherever you fold. Getting into it is the hardest part of the act; getting out of anything else stops being difficult."
+}

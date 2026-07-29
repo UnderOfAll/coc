@@ -1,0 +1,12 @@
+{
+  "id": "pickpockets-frock-coat",
+  "name": "Pickpocket's Frock Coat",
+  "source": "Circus of Chaos",
+  "category": "clothing",
+  "trait": "Deep Pockets",
+  "availability": "bought",
+  "baseAC": 11,
+  "maxDexBonus": null,
+  "stealthDisadvantage": false,
+  "flavor": "Tailored by somebody who has been searched professionally and resented it. Fourteen pockets, none of them where a hand would look."
+}

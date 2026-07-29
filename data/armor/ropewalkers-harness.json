@@ -1,0 +1,12 @@
+{
+  "id": "ropewalkers-harness",
+  "name": "Ropewalker's Harness",
+  "source": "Circus of Chaos",
+  "category": "light",
+  "trait": "Unbound",
+  "availability": "bought",
+  "baseAC": 12,
+  "maxDexBonus": null,
+  "stealthDisadvantage": false,
+  "flavor": "Strapping across the ribs and nothing at all across the shoulders, because a rigger who cannot reach over their own head is a rigger who falls."
+}
