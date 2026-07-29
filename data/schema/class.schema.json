@@ -2,43 +2,123 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Class",
   "type": "object",
-  "required": ["name", "hitDie", "primaryAbility", "savingThrows"],
+  "required": [
+    "name",
+    "hitDie",
+    "primaryAbility",
+    "savingThrows"
+  ],
   "properties": {
-    "id": { "type": "string", "description": "kebab-case unique id; defaults to slug of name" },
-    "name": { "type": "string" },
-    "source": { "type": "string", "default": "5e SRD" },
-    "flavor": { "type": "string", "description": "one-line evocative summary" },
-    "hitDie": { "type": "integer", "enum": [6, 8, 10, 12] },
-    "primaryAbility": { "type": "string" },
-    "savingThrows": { "type": "array", "items": { "type": "string" }, "minItems": 2, "maxItems": 2 },
-    "subclassLevel": { "type": "integer", "minimum": 1 },
+    "id": {
+      "type": "string",
+      "description": "kebab-case unique id; defaults to slug of name"
+    },
+    "name": {
+      "type": "string"
+    },
+    "source": {
+      "type": "string",
+      "default": "5e SRD"
+    },
+    "flavor": {
+      "type": "string",
+      "description": "one-line evocative summary"
+    },
+    "hitDie": {
+      "type": "integer",
+      "enum": [
+        6,
+        8,
+        10,
+        12
+      ]
+    },
+    "sizes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "Small",
+          "Medium",
+          "Large"
+        ]
+      },
+      "minItems": 1,
+      "description": "Character sizes a member of this class may be (MECHANICS 2.3). There are no races in this system: a player's appearance is entirely free and has no combat effect, but SIZE is a class constraint because two mechanics read off it — the Sandow's Mighty Build and the Impersonator's Mimic. Default is [\"Small\",\"Medium\"]; only the Sandow may be Large."
+    },
+    "primaryAbility": {
+      "type": "string"
+    },
+    "savingThrows": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "subclassLevel": {
+      "type": "integer",
+      "minimum": 1
+    },
     "proficiencies": {
       "type": "object",
       "properties": {
-        "armor": { "type": "array", "items": { "type": "string" } },
-        "weapons": { "type": "array", "items": { "type": "string" } },
-        "tools": { "type": "array", "items": { "type": "string" } },
-        "skills": { "type": "string" }
+        "armor": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "weapons": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "tools": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "skills": {
+          "type": "string"
+        }
       }
     },
-    "spellcasting": { "type": ["object", "null"] },
     "features": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["level", "name", "description"],
+        "required": [
+          "level",
+          "name",
+          "description"
+        ],
         "properties": {
-          "level": { "type": "integer", "minimum": 1, "maximum": 20 },
-          "name": { "type": "string" },
-          "description": { "type": "string" },
+          "level": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
           "role": {
             "type": "string",
-            "enum": ["combat", "roleplay"],
+            "enum": [
+              "combat",
+              "roleplay"
+            ],
             "description": "What the feature is for. Omitted = combat. Roleplay features are for dialogue, exploration, and improvised attempts outside combat."
           },
           "narration": {
             "type": "string",
-            "description": "The IN-PLAY tab: how this looks, sounds, and is performed at the table when it happens mid-fight \u2014 the swing, the dodge, the wire going taut, what the crowd sees. Pure fiction, ZERO numbers: never restate a die, a DC, a range, a cost, or a condition name here (those live in the mechanics tab). 2-4 sentences. Written second person, present tense."
+            "description": "The IN-PLAY tab: how this looks, sounds, and is performed at the table when it happens mid-fight — the swing, the dodge, the wire going taut, what the crowd sees. Pure fiction, ZERO numbers: never restate a die, a DC, a range, a cost, or a condition name here (those live in the mechanics tab). 2-4 sentences. Written second person, present tense."
           },
           "sheetSummary": {
             "type": "string",
@@ -48,11 +128,26 @@
             "type": "object",
             "description": "At-a-glance combat fields shown as labelled chips below the feature (D&D Beyond style). All optional; author what applies. Every actionable feature should at least set `action`.",
             "properties": {
-              "action": { "type": "string", "description": "Action economy: Action / Bonus Action / Reaction / Free / Passive / Movement / Part of Attack / Special." },
-              "cost": { "type": "string", "description": "Resource spent, e.g. '1 Mayhem', '1-3 Grit', '1 Clone'." },
-              "uses": { "type": "string", "description": "Usage limit, e.g. '1 / turn', 'Cha mod / long rest', '1 / round'." },
-              "range": { "type": "string", "description": "Range or area, e.g. '30 ft', 'Self', '5 ft', '10-ft radius'." },
-              "save": { "type": "string", "description": "Save it forces, e.g. 'Dex save vs your DC'." }
+              "action": {
+                "type": "string",
+                "description": "Action economy: Action / Bonus Action / Reaction / Free / Passive / Movement / Part of Attack / Special."
+              },
+              "cost": {
+                "type": "string",
+                "description": "Resource spent, e.g. '1 Mayhem', '1-3 Grit', '1 Clone'."
+              },
+              "uses": {
+                "type": "string",
+                "description": "Usage limit, e.g. '1 / turn', 'Cha mod / long rest', '1 / round'."
+              },
+              "range": {
+                "type": "string",
+                "description": "Range or area, e.g. '30 ft', 'Self', '5 ft', '10-ft radius'."
+              },
+              "save": {
+                "type": "string",
+                "description": "Save it forces, e.g. 'Dex save vs your DC'."
+              }
             }
           },
           "options": {
@@ -60,12 +155,30 @@
             "description": "For a feature that offers a menu of choices or a random table (e.g. the Joker's Gambit or Wild Card). The renderer shows these as a table so the choices are scannable; `description` holds the intro text. Author any multi-option feature this way rather than cramming the options into prose.",
             "items": {
               "type": "object",
-              "required": ["name", "effect"],
+              "required": [
+                "name",
+                "effect"
+              ],
               "properties": {
-                "roll": { "type": ["integer", "string"], "description": "Optional die result for a random table (e.g. 1-8 for a d8). Omit for a pick-one menu." },
-                "group": { "type": "string", "description": "Optional grouping label. Rows sharing a label render as their own table under that heading, so effects that always apply are never mixed in with a menu you pick from. Omit it and all rows render as one table, as before." },
-                "name": { "type": "string", "description": "Short name of the option/result." },
-                "effect": { "type": "string", "description": "What it does. May contain [[XdY]] scaling-die tokens." }
+                "roll": {
+                  "type": [
+                    "integer",
+                    "string"
+                  ],
+                  "description": "Optional die result for a random table (e.g. 1-8 for a d8). Omit for a pick-one menu."
+                },
+                "group": {
+                  "type": "string",
+                  "description": "Optional grouping label. Rows sharing a label render as their own table under that heading, so effects that always apply are never mixed in with a menu you pick from. Omit it and all rows render as one table, as before."
+                },
+                "name": {
+                  "type": "string",
+                  "description": "Short name of the option/result."
+                },
+                "effect": {
+                  "type": "string",
+                  "description": "What it does. May contain [[XdY]] scaling-die tokens."
+                }
               }
             }
           }
@@ -80,7 +193,14 @@
     },
     "defenseAbility": {
       "type": "string",
-      "enum": ["Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma"],
+      "enum": [
+        "Strength",
+        "Dexterity",
+        "Constitution",
+        "Intelligence",
+        "Wisdom",
+        "Charisma"
+      ],
       "default": "Dexterity",
       "description": "Ability score whose modifier feeds any Riposte/feature that makes an ATTACK ROLL, at full value (data/schema/MECHANICS.md §1.9-1.10). NOTE (v4): this NO LONGER affects the Parry DC — the DC is fixed and does not scale with ability (§1.5). Currently vestigial: none of the shipped Ripostes roll to hit, so the field has no active effect yet — it is reserved for future roll-to-hit content. CONVENTION: still set it to the class's own primaryAbility. Defaults to Dexterity if omitted."
     },
@@ -89,7 +209,10 @@
       "description": "Flavor text for how this class's Parry outcome narrates (e.g. 'a clone phases in to eat the hit'). See data/schema/MECHANICS.md §1.4."
     },
     "riposte": {
-      "type": ["string", "null"],
+      "type": [
+        "string",
+        "null"
+      ],
       "description": "Free text describing a Full-Dodge-only (d20 roll strictly above the effective Parry DC) counterattack effect, if this class has one. Null/omit if the class has no riposte. See data/schema/MECHANICS.md §1.9."
     },
     "keyStats": {
@@ -98,29 +221,66 @@
       "items": {
         "type": "object",
         "properties": {
-          "label": { "type": "string", "description": "Short name of the stat, e.g. 'Gambit DC', 'Momentum Cap', 'Parry Base DC'." },
-          "value": { "type": "string", "description": "The at-a-glance display: a short typical progression a player can read instantly, e.g. '≈4 (L1) · 6 (L9+)'. Keep the raw formula out of here — put it in `formula` so it shows on hover instead. If there is no formula (a flat number like a Parry DC), this can just be that number." },
-          "formula": { "type": "string", "description": "Optional exact calculation shown in a hover tooltip on the value (mirrors the [[XdY]] scaling-die tooltip), e.g. 'Constitution modifier + proficiency bonus (minimum 3)'. Use this for any value derived from ability modifiers or proficiency so the confusing math is available on demand but not cluttering the at-a-glance number." },
-          "note": { "type": "string", "description": "Optional one-line explanation of what the stat governs." }
+          "label": {
+            "type": "string",
+            "description": "Short name of the stat, e.g. 'Gambit DC', 'Momentum Cap', 'Parry Base DC'."
+          },
+          "value": {
+            "type": "string",
+            "description": "The at-a-glance display: a short typical progression a player can read instantly, e.g. '≈4 (L1) · 6 (L9+)'. Keep the raw formula out of here — put it in `formula` so it shows on hover instead. If there is no formula (a flat number like a Parry DC), this can just be that number."
+          },
+          "formula": {
+            "type": "string",
+            "description": "Optional exact calculation shown in a hover tooltip on the value (mirrors the [[XdY]] scaling-die tooltip), e.g. 'Constitution modifier + proficiency bonus (minimum 3)'. Use this for any value derived from ability modifiers or proficiency so the confusing math is available on demand but not cluttering the at-a-glance number."
+          },
+          "note": {
+            "type": "string",
+            "description": "Optional one-line explanation of what the stat governs."
+          }
         },
-        "required": ["label", "value"]
+        "required": [
+          "label",
+          "value"
+        ]
       }
     },
     "engine": {
       "type": "object",
       "description": "This class's own resource/engine (Momentum, Grit, Chaos deck, clone tokens, etc.) — its sole resource. See data/schema/MECHANICS.md.",
       "properties": {
-        "name": { "type": "string", "description": "In-fiction name of the resource, e.g. 'Momentum', 'Grit', 'Chaos Deck'." },
+        "name": {
+          "type": "string",
+          "description": "In-fiction name of the resource, e.g. 'Momentum', 'Grit', 'Chaos Deck'."
+        },
         "resourceType": {
           "type": "string",
-          "enum": ["pool", "stack", "tokens", "deck", "charges", "other"],
+          "enum": [
+            "pool",
+            "stack",
+            "tokens",
+            "deck",
+            "charges",
+            "other"
+          ],
           "description": "Shape of the resource for renderer/UI purposes."
         },
-        "description": { "type": "string", "description": "What the resource represents and how it behaves in general." },
-        "generation": { "type": "string", "description": "How the resource is earned/refreshed." },
-        "spend": { "type": "string", "description": "How the resource is spent and what it buys." },
+        "description": {
+          "type": "string",
+          "description": "What the resource represents and how it behaves in general."
+        },
+        "generation": {
+          "type": "string",
+          "description": "How the resource is earned/refreshed."
+        },
+        "spend": {
+          "type": "string",
+          "description": "How the resource is spent and what it buys."
+        },
         "cap": {
-          "type": ["integer", "string"],
+          "type": [
+            "integer",
+            "string"
+          ],
           "description": "Max resource value, as an at-a-glance typical progression (e.g. '≈4 (L1–4) · 5–6 (L5+)'). Keep the raw formula out of here — put it in `capFormula` so it shows on hover instead. A flat integer is fine for a non-scaling cap."
         },
         "capFormula": {

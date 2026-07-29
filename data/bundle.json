@@ -117,6 +117,39 @@
       "_file": "rules/attacks-and-damage.json"
     },
     {
+      "id": "character-appearance-and-size",
+      "name": "Appearance & Size",
+      "source": "Circus of Chaos",
+      "summary": "There are no races. Look however you like — it costs nothing and grants nothing. Size is the one exception, and only because two features read it.",
+      "sections": [
+        {
+          "heading": "There are no races",
+          "paragraphs": [
+            "This game has no racial statlines and is not going to get them. Eight classes were tuned against each other without one, and dropping a second set of bonuses underneath them would quietly undo that work — the first casualty being the only mechanic in the game that cares how big you are.",
+            "What you get instead is simpler and more generous: your appearance is entirely yours. Play a dragonborn Joker, a tiefling Jester, a goblin Acrobat, a talking bear who juggles. It costs nothing, grants nothing, and changes no roll. Nobody at the table has to look anything up, and the answer to \"can I be...\" is always yes."
+          ]
+        },
+        {
+          "heading": "Size is the exception",
+          "paragraphs": [
+            "Two features in the whole game read a character's size, so size is the one thing your class decides for you rather than you deciding it.",
+            "Every class lists the sizes it can be, shown on its own page. For all but one that is Small or Medium. The Sandow — and only the Sandow — may be Medium or Large, because being physically enormous is the entire point of him.",
+            "The Sandow's Mighty Build lets him grapple, shove, throw and Crush creatures one size above what the normal rules allow, and it has a hard ceiling of Huge whatever his own size. A Large Sandow gets the reach and the carrying capacity, but nothing in the game lets anybody put their hands on a Gargantuan creature.",
+            "The Impersonator's Borrowed Trick is the other one: his Mimic can only copy a creature of his size or smaller, which is why a Doppelganger is never Large."
+          ]
+        },
+        {
+          "heading": "So what do you actually pick?",
+          "list": [
+            "Your class — that sets your size options, and everything mechanical about you.",
+            "Your size, from the one or two your class allows.",
+            "Everything else about how you look, sound, and where you came from — freely, with no mechanical weight at all."
+          ]
+        }
+      ],
+      "_file": "rules/character-appearance-and-size.json"
+    },
+    {
       "id": "parry",
       "name": "Parry & Dodging",
       "source": "Circus System",
@@ -364,6 +397,10 @@
       "source": "Circus System",
       "flavor": "An aerial rogue who turns falling, swinging, and sprinting into a weapon, never quite where the last swing landed.",
       "hitDie": 8,
+      "sizes": [
+        "Small",
+        "Medium"
+      ],
       "primaryAbility": "Dexterity",
       "savingThrows": [
         "Dexterity",
@@ -385,7 +422,6 @@
         ],
         "skills": "Choose two from Acrobatics, Athletics, Performance, Persuasion, Sleight of Hand, and Stealth"
       },
-      "spellcasting": null,
       "parryBaseDC": 7,
       "defenseAbility": "Dexterity",
       "parryReskin": "You never block the hit at all — a twist of the spine, a mid-air redirect, a heel that was never fully planted turns solid contact into a near-miss.",
@@ -543,6 +579,10 @@
       "source": "Circus System",
       "flavor": "A duplicator and trickster who is never quite where the last blow landed, fighting alongside a handful of semi-real reflections of himself.",
       "hitDie": 8,
+      "sizes": [
+        "Small",
+        "Medium"
+      ],
       "primaryAbility": "Constitution",
       "savingThrows": [
         "Constitution",
@@ -564,7 +604,6 @@
         ],
         "skills": "Choose two from Acrobatics, Deception, Insight, Perception, Sleight of Hand, and Stealth"
       },
-      "spellcasting": null,
       "parryBaseDC": 10,
       "defenseAbility": "Constitution",
       "parryReskin": "A Clone lurches into the blow's path at the last possible instant and takes the hit for you — you were never quite where the blade landed, only where you left an afterimage standing. This is pure narration: it does not change the Parry math already resolved (a Grazing Parry or Overcommitted result still deals whatever damage it deals). For committing Clones to absorb a hit entirely — and losing them if the gamble fails — see Mirror Image.",
@@ -734,6 +773,10 @@
       "source": "Circus of Chaos",
       "flavor": "A stage magician who stopped pretending. What he shows you is not there, and knowing that has never once been enough to save anybody.",
       "hitDie": 6,
+      "sizes": [
+        "Small",
+        "Medium"
+      ],
       "primaryAbility": "Intelligence",
       "savingThrows": [
         "Intelligence",
@@ -755,7 +798,6 @@
         ],
         "skills": "Choose two from Arcana, Deception, Insight, Investigation, Performance, and Sleight of Hand"
       },
-      "spellcasting": null,
       "parryBaseDC": 14,
       "defenseAbility": "Intelligence",
       "parryReskin": "You do not move — the picture of you does. The blade goes through a smear of afterimage while the real body leans a hand's width out of the line, and for one beat nobody in the room including the attacker is sure which was which.",
@@ -910,6 +952,10 @@
       "source": "Circus of Chaos",
       "flavor": "The one member of the company nobody takes seriously, which is exactly why he is still standing. He does not win fights. He decides who does.",
       "hitDie": 6,
+      "sizes": [
+        "Small",
+        "Medium"
+      ],
       "primaryAbility": "Charisma",
       "savingThrows": [
         "Charisma",
@@ -931,7 +977,6 @@
         ],
         "skills": "Choose two from Acrobatics, Deception, Insight, Performance, Persuasion, and Sleight of Hand"
       },
-      "spellcasting": null,
       "parryBaseDC": 13,
       "defenseAbility": "Charisma",
       "parryReskin": "You do not parry so much as make the whole thing look like a bit. A pratfall that happens to take you out of the line, an outraged squawk, the marotte thrown up at the last possible instant — it plays as comedy right up until you are standing and the swing is not.",
@@ -1086,6 +1131,10 @@
       "source": "Circus System",
       "flavor": "A chaos menace with a deck of razor cards and a grin that never quite fits the moment — he wins by making sure no one, least of all himself, knows what happens next.",
       "hitDie": 10,
+      "sizes": [
+        "Small",
+        "Medium"
+      ],
       "primaryAbility": "Charisma",
       "savingThrows": [
         "Charisma",
@@ -1107,7 +1156,6 @@
         ],
         "skills": "Choose two from Acrobatics, Deception, Intimidation, Performance, Persuasion, and Sleight of Hand"
       },
-      "spellcasting": null,
       "parryBaseDC": 11,
       "defenseAbility": "Charisma",
       "parryReskin": "A lunatic, last-second contortion — a mad twist of the spine or a limb bent the wrong way at the worst possible instant. He never dodges the sane way, and the crowd can never tell whether it was skill or dumb luck.",
@@ -1344,6 +1392,10 @@
       "source": "Circus System",
       "flavor": "The circus juggler as duelist — a constant cascade of knives, weighted orbs, and clubs, every one a weapon he can loose or keep. He fights in bursts: hurl a storm of thrown steel and stand exposed, or hold a few back to knock the answer aside.",
       "hitDie": 8,
+      "sizes": [
+        "Small",
+        "Medium"
+      ],
       "primaryAbility": "Dexterity",
       "savingThrows": [
         "Dexterity",
@@ -1364,7 +1416,6 @@
         ],
         "skills": "Choose two from Acrobatics, Performance, Sleight of Hand, Insight, and Deception"
       },
-      "spellcasting": null,
       "parryBaseDC": 12,
       "defenseAbility": "Dexterity",
       "parryReskin": "You don't dodge — you deflect, knocking an incoming blow aside with an implement still in your hand. The more of your set you have already hurled, the less you have left to guard with; empty-handed, all you can do is wait to catch them back at the start of your next turn.",
@@ -1548,6 +1599,10 @@
       "source": "Circus System",
       "flavor": "A marionettist who never means to enter the fight himself — a web of near-invisible wire turns foes into puppets and allies into partners, moved exactly where the show demands.",
       "hitDie": 6,
+      "sizes": [
+        "Small",
+        "Medium"
+      ],
       "primaryAbility": "Wisdom",
       "savingThrows": [
         "Charisma",
@@ -1569,7 +1624,6 @@
         ],
         "skills": "Choose two from Deception, Insight, Intimidation, Performance, Persuasion, and Sleight of Hand"
       },
-      "spellcasting": null,
       "parryBaseDC": 15,
       "defenseAbility": "Wisdom",
       "parryReskin": "You are no blocker at all — a curtain of near-invisible wire snaps up between you and the blow at the last instant, trying to deflect what your own body never could. It is a last resort, not a specialty: your effective Parry DC runs the worst in the roster, so a clean Full Dodge is rare, and more often the wire only barely turns aside what it can't fully stop.",
@@ -1732,6 +1786,10 @@
       "source": "Circus System",
       "flavor": "The circus strongman: feats of raw strength turned into a wall nothing gets past — plant your feet, brace the blow, and throw whatever's left standing.",
       "hitDie": 12,
+      "sizes": [
+        "Medium",
+        "Large"
+      ],
       "primaryAbility": "Strength",
       "savingThrows": [
         "Strength",
@@ -1756,7 +1814,6 @@
         ],
         "skills": "Choose two from Athletics, Intimidation, Perception, Performance, and Survival"
       },
-      "spellcasting": null,
       "parryBaseDC": 9,
       "defenseAbility": "Strength",
       "parryReskin": "You don't dodge a hit at all — you plant your feet, turn your shoulder or weapon into the line of the blow, and let your frame do what a lesser body couldn't. A Sandow's Parry is a brace, never a step back.",
@@ -1784,9 +1841,9 @@
         {
           "level": 1,
           "name": "Mighty Build",
-          "description": "You count as one size larger than your actual size for the purpose of carrying capacity, and for determining whether you can grapple, shove, or throw a creature — treat a Large creature as though it were Medium, a Huge creature as though it were Large, and so on. This extends to Heave below: you can grapple and throw creatures up to one size larger than the normal rules would otherwise allow.",
-          "narration": "You are built on the wrong scale for the room. Things that ought to be too big to shift come off the ground when you decide they will, and people who have never been picked up before find out what it is like.",
-          "sheetSummary": "Passive. Count as one size larger for carrying capacity and for grappling, shoving, or throwing a creature (Large counts as Medium, Huge as Large, and so on). Extends to Heave.",
+          "description": "You count as one size larger than your actual size for the purpose of carrying capacity, and for determining whether you can grapple, shove, or throw a creature — treat a Large creature as though it were Medium, and so on. **There is a hard ceiling: you can never grapple, shove, throw or Crush a creature larger than Huge, no matter your own size.** A Large Sandow gets the reach and the carrying capacity, but Gargantuan is off the table for everybody.",
+          "narration": "You are built on the wrong scale for the room. Things that ought to be too big to shift come off the ground when you decide they will — but there is a limit, and you have met it, and it was roughly the size of a barn.",
+          "sheetSummary": "Passive. Count as one size larger for carrying capacity and for grappling, shoving or throwing a creature. HARD CEILING: never a creature larger than Huge, whatever your own size.",
           "meta": {
             "action": "Passive"
           }

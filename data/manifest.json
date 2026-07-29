@@ -3,6 +3,7 @@
     "rules/ability-score-improvement.json",
     "rules/armor-and-ac.json",
     "rules/attacks-and-damage.json",
+    "rules/character-appearance-and-size.json",
     "rules/parry.json",
     "rules/reaction-economy.json",
     "rules/tricks-and-casting.json",

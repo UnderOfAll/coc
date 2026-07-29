@@ -4,6 +4,10 @@
   "source": "Circus System",
   "flavor": "The circus juggler as duelist — a constant cascade of knives, weighted orbs, and clubs, every one a weapon he can loose or keep. He fights in bursts: hurl a storm of thrown steel and stand exposed, or hold a few back to knock the answer aside.",
   "hitDie": 8,
+  "sizes": [
+    "Small",
+    "Medium"
+  ],
   "primaryAbility": "Dexterity",
   "savingThrows": [
     "Dexterity",
@@ -24,7 +28,6 @@
     ],
     "skills": "Choose two from Acrobatics, Performance, Sleight of Hand, Insight, and Deception"
   },
-  "spellcasting": null,
   "parryBaseDC": 12,
   "defenseAbility": "Dexterity",
   "parryReskin": "You don't dodge — you deflect, knocking an incoming blow aside with an implement still in your hand. The more of your set you have already hurled, the less you have left to guard with; empty-handed, all you can do is wait to catch them back at the start of your next turn.",

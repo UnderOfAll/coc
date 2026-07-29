@@ -4,6 +4,10 @@
   "source": "Circus of Chaos",
   "flavor": "A stage magician who stopped pretending. What he shows you is not there, and knowing that has never once been enough to save anybody.",
   "hitDie": 6,
+  "sizes": [
+    "Small",
+    "Medium"
+  ],
   "primaryAbility": "Intelligence",
   "savingThrows": [
     "Intelligence",
@@ -25,7 +29,6 @@
     ],
     "skills": "Choose two from Arcana, Deception, Insight, Investigation, Performance, and Sleight of Hand"
   },
-  "spellcasting": null,
   "parryBaseDC": 14,
   "defenseAbility": "Intelligence",
   "parryReskin": "You do not move — the picture of you does. The blade goes through a smear of afterimage while the real body leans a hand's width out of the line, and for one beat nobody in the room including the attacker is sure which was which.",

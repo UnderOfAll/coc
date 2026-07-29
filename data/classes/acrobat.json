@@ -4,6 +4,10 @@
   "source": "Circus System",
   "flavor": "An aerial rogue who turns falling, swinging, and sprinting into a weapon, never quite where the last swing landed.",
   "hitDie": 8,
+  "sizes": [
+    "Small",
+    "Medium"
+  ],
   "primaryAbility": "Dexterity",
   "savingThrows": [
     "Dexterity",
@@ -25,7 +29,6 @@
     ],
     "skills": "Choose two from Acrobatics, Athletics, Performance, Persuasion, Sleight of Hand, and Stealth"
   },
-  "spellcasting": null,
   "parryBaseDC": 7,
   "defenseAbility": "Dexterity",
   "parryReskin": "You never block the hit at all — a twist of the spine, a mid-air redirect, a heel that was never fully planted turns solid contact into a near-miss.",

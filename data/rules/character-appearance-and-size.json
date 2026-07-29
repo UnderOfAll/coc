@@ -1,0 +1,32 @@
+{
+  "id": "character-appearance-and-size",
+  "name": "Appearance & Size",
+  "source": "Circus of Chaos",
+  "summary": "There are no races. Look however you like — it costs nothing and grants nothing. Size is the one exception, and only because two features read it.",
+  "sections": [
+    {
+      "heading": "There are no races",
+      "paragraphs": [
+        "This game has no racial statlines and is not going to get them. Eight classes were tuned against each other without one, and dropping a second set of bonuses underneath them would quietly undo that work — the first casualty being the only mechanic in the game that cares how big you are.",
+        "What you get instead is simpler and more generous: your appearance is entirely yours. Play a dragonborn Joker, a tiefling Jester, a goblin Acrobat, a talking bear who juggles. It costs nothing, grants nothing, and changes no roll. Nobody at the table has to look anything up, and the answer to \"can I be...\" is always yes."
+      ]
+    },
+    {
+      "heading": "Size is the exception",
+      "paragraphs": [
+        "Two features in the whole game read a character's size, so size is the one thing your class decides for you rather than you deciding it.",
+        "Every class lists the sizes it can be, shown on its own page. For all but one that is Small or Medium. The Sandow — and only the Sandow — may be Medium or Large, because being physically enormous is the entire point of him.",
+        "The Sandow's Mighty Build lets him grapple, shove, throw and Crush creatures one size above what the normal rules allow, and it has a hard ceiling of Huge whatever his own size. A Large Sandow gets the reach and the carrying capacity, but nothing in the game lets anybody put their hands on a Gargantuan creature.",
+        "The Impersonator's Borrowed Trick is the other one: his Mimic can only copy a creature of his size or smaller, which is why a Doppelganger is never Large."
+      ]
+    },
+    {
+      "heading": "So what do you actually pick?",
+      "list": [
+        "Your class — that sets your size options, and everything mechanical about you.",
+        "Your size, from the one or two your class allows.",
+        "Everything else about how you look, sound, and where you came from — freely, with no mechanical weight at all."
+      ]
+    }
+  ]
+}

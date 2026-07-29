@@ -4,6 +4,10 @@
   "source": "Circus System",
   "flavor": "A marionettist who never means to enter the fight himself — a web of near-invisible wire turns foes into puppets and allies into partners, moved exactly where the show demands.",
   "hitDie": 6,
+  "sizes": [
+    "Small",
+    "Medium"
+  ],
   "primaryAbility": "Wisdom",
   "savingThrows": [
     "Charisma",
@@ -25,7 +29,6 @@
     ],
     "skills": "Choose two from Deception, Insight, Intimidation, Performance, Persuasion, and Sleight of Hand"
   },
-  "spellcasting": null,
   "parryBaseDC": 15,
   "defenseAbility": "Wisdom",
   "parryReskin": "You are no blocker at all — a curtain of near-invisible wire snaps up between you and the blow at the last instant, trying to deflect what your own body never could. It is a last resort, not a specialty: your effective Parry DC runs the worst in the roster, so a clean Full Dodge is rare, and more often the wire only barely turns aside what it can't fully stop.",

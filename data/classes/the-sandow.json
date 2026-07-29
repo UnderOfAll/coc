@@ -4,6 +4,10 @@
   "source": "Circus System",
   "flavor": "The circus strongman: feats of raw strength turned into a wall nothing gets past — plant your feet, brace the blow, and throw whatever's left standing.",
   "hitDie": 12,
+  "sizes": [
+    "Medium",
+    "Large"
+  ],
   "primaryAbility": "Strength",
   "savingThrows": [
     "Strength",
@@ -28,7 +32,6 @@
     ],
     "skills": "Choose two from Athletics, Intimidation, Perception, Performance, and Survival"
   },
-  "spellcasting": null,
   "parryBaseDC": 9,
   "defenseAbility": "Strength",
   "parryReskin": "You don't dodge a hit at all — you plant your feet, turn your shoulder or weapon into the line of the blow, and let your frame do what a lesser body couldn't. A Sandow's Parry is a brace, never a step back.",
@@ -56,9 +59,9 @@
     {
       "level": 1,
       "name": "Mighty Build",
-      "description": "You count as one size larger than your actual size for the purpose of carrying capacity, and for determining whether you can grapple, shove, or throw a creature — treat a Large creature as though it were Medium, a Huge creature as though it were Large, and so on. This extends to Heave below: you can grapple and throw creatures up to one size larger than the normal rules would otherwise allow.",
-      "narration": "You are built on the wrong scale for the room. Things that ought to be too big to shift come off the ground when you decide they will, and people who have never been picked up before find out what it is like.",
-      "sheetSummary": "Passive. Count as one size larger for carrying capacity and for grappling, shoving, or throwing a creature (Large counts as Medium, Huge as Large, and so on). Extends to Heave.",
+      "description": "You count as one size larger than your actual size for the purpose of carrying capacity, and for determining whether you can grapple, shove, or throw a creature — treat a Large creature as though it were Medium, and so on. **There is a hard ceiling: you can never grapple, shove, throw or Crush a creature larger than Huge, no matter your own size.** A Large Sandow gets the reach and the carrying capacity, but Gargantuan is off the table for everybody.",
+      "narration": "You are built on the wrong scale for the room. Things that ought to be too big to shift come off the ground when you decide they will — but there is a limit, and you have met it, and it was roughly the size of a barn.",
+      "sheetSummary": "Passive. Count as one size larger for carrying capacity and for grappling, shoving or throwing a creature. HARD CEILING: never a creature larger than Huge, whatever your own size.",
       "meta": {
         "action": "Passive"
       }

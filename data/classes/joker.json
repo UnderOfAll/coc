@@ -4,6 +4,10 @@
   "source": "Circus System",
   "flavor": "A chaos menace with a deck of razor cards and a grin that never quite fits the moment — he wins by making sure no one, least of all himself, knows what happens next.",
   "hitDie": 10,
+  "sizes": [
+    "Small",
+    "Medium"
+  ],
   "primaryAbility": "Charisma",
   "savingThrows": [
     "Charisma",
@@ -25,7 +29,6 @@
     ],
     "skills": "Choose two from Acrobatics, Deception, Intimidation, Performance, Persuasion, and Sleight of Hand"
   },
-  "spellcasting": null,
   "parryBaseDC": 11,
   "defenseAbility": "Charisma",
   "parryReskin": "A lunatic, last-second contortion — a mad twist of the spine or a limb bent the wrong way at the worst possible instant. He never dodges the sane way, and the crowd can never tell whether it was skill or dumb luck.",

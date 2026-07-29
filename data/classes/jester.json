@@ -4,6 +4,10 @@
   "source": "Circus of Chaos",
   "flavor": "The one member of the company nobody takes seriously, which is exactly why he is still standing. He does not win fights. He decides who does.",
   "hitDie": 6,
+  "sizes": [
+    "Small",
+    "Medium"
+  ],
   "primaryAbility": "Charisma",
   "savingThrows": [
     "Charisma",
@@ -25,7 +29,6 @@
     ],
     "skills": "Choose two from Acrobatics, Deception, Insight, Performance, Persuasion, and Sleight of Hand"
   },
-  "spellcasting": null,
   "parryBaseDC": 13,
   "defenseAbility": "Charisma",
   "parryReskin": "You do not parry so much as make the whole thing look like a bit. A pratfall that happens to take you out of the line, an outraged squawk, the marotte thrown up at the last possible instant — it plays as comedy right up until you are standing and the swing is not.",

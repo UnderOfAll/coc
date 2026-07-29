@@ -837,6 +837,7 @@ function renderClass(c) {
   return head(c.name, c.flavor) +
     `<div class="detail-grid">
       ${stat("HP", (c.hitDie || "?") + " at level 1")}
+      ${stat("Size", Array.isArray(c.sizes) ? c.sizes.join(" or ") : "Small or Medium")}
       ${stat("Primary Ability", c.primaryAbility || "—")}
       ${stat("Saving Throws", (c.savingThrows || []).join(", ") || "—")}
       ${stat("Subclass At", c.subclassLevel ? "Level " + c.subclassLevel : "—")}

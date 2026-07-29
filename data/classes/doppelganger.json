@@ -4,6 +4,10 @@
   "source": "Circus System",
   "flavor": "A duplicator and trickster who is never quite where the last blow landed, fighting alongside a handful of semi-real reflections of himself.",
   "hitDie": 8,
+  "sizes": [
+    "Small",
+    "Medium"
+  ],
   "primaryAbility": "Constitution",
   "savingThrows": [
     "Constitution",
@@ -25,7 +29,6 @@
     ],
     "skills": "Choose two from Acrobatics, Deception, Insight, Perception, Sleight of Hand, and Stealth"
   },
-  "spellcasting": null,
   "parryBaseDC": 10,
   "defenseAbility": "Constitution",
   "parryReskin": "A Clone lurches into the blow's path at the last possible instant and takes the hit for you — you were never quite where the blade landed, only where you left an afterimage standing. This is pure narration: it does not change the Parry math already resolved (a Grazing Parry or Overcommitted result still deals whatever damage it deals). For committing Clones to absorb a hit entirely — and losing them if the gamble fails — see Mirror Image.",
