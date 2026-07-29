@@ -2,7 +2,7 @@
   "id": "center-ring",
   "name": "Center Ring",
   "source": "Circus of Chaos",
-  "flavor": "You strut into view, arms wide, painted grin blazing: \"Me! Look at ME!\" — and, gods help them, they do.",
+  "flavor": "You do not want the spotlight. You have never wanted the spotlight. But you know exactly where to point it, and the whole room follows your hand.",
   "tier": "turn",
   "discipline": "Mesmerism",
   "minLevel": 3,
@@ -15,9 +15,9 @@
   ],
   "duration": "1 round",
   "save": "Wisdom",
-  "description": "You call one creature you can see within range into the spotlight, and it can't help but oblige. The target makes a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure, until the start of your next turn the target must target you with its next attack, spell, or other harmful single-target effect, if you are a legal target for it. If you are not a legal target when it acts, the effect simply lapses for that action. A creature that succeeds on the save is unaffected, and a creature immune to being charmed automatically succeeds.",
-  "narration": "You strut into view with your arms wide and your painted grin blazing — *me, look at ME* — and gods help them, they look.",
-  "sheetSummary": "Bonus action, 60 ft, cooldown 3. Wis save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: target must direct its next single-target attack or spell at you (if you're a legal target) before the start of your next turn. Charm-immune creatures auto-succeed.",
+  "description": "You throw the spotlight onto a pairing of your choosing. Choose one creature you can see within range and one other creature you can see — the one you want it dealing with. The target makes a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure, until the start of your next turn it must direct its next attack, trick, or other harmful single-target effect at the creature you named, if that creature is a legal target for it; if it is not, the effect simply lapses for that action. You cannot name yourself: the Jester books the act, he does not headline it.",
+  "narration": "You gesture the way a ringmaster gestures, and the thing turns to look at whoever is standing at the end of your arm. It was going to hurt somebody anyway. Now it is going to hurt the one wearing armour.",
+  "sheetSummary": "Action, 60 ft, cooldown 3. Name a target and another creature you can see. Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or, until the start of your next turn, it must aim its next attack or harmful single-target effect at the creature you named, if legal. You can never name yourself.",
   "classes": [
     "jester"
   ]

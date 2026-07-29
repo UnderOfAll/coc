@@ -7,7 +7,7 @@
   "discipline": "Mesmerism",
   "minLevel": 3,
   "cooldown": 3,
-  "engineCost": 2,
+  "engineCost": 3,
   "castingTime": "1 action",
   "range": "60 feet",
   "components": [
@@ -16,9 +16,9 @@
   ],
   "duration": "Instantaneous",
   "save": "Wisdom",
-  "description": "You spend banked Mirth on a bit that takes the whole room at once. Each creature of your choice within a 15-foot radius of a point you can see within range that can hear and understand you makes a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure it takes [[2d8]] psychic damage; on a success it takes half as much. Casting this costs 2 Mirth, spent whether or not anybody fails, and you may freely exclude your own company from the area — nobody has ever been hurt by a joke they were in on.",
+  "description": "You spend banked Mirth on a bit that takes the whole room at once. Each creature of your choice within a 15-foot radius of a point you can see within range that can hear and understand you makes a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure it takes [[2d8]] psychic damage; on a success it takes half as much. Casting this costs 3 Mirth, spent whether or not anybody fails, and you may freely exclude your own company from the area — nobody has ever been hurt by a joke they were in on.",
   "narration": "You have the whole room and you know it. Whatever you say next goes through every one of them at the same moment, and the ones who are not in on it come away genuinely hurt.",
-  "sheetSummary": "Action, 60 ft, 15-ft radius, cooldown 3, costs 2 Mirth. Creatures of your choice that can hear and understand you; allies can be excluded. Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[2d8]] psychic. Success: half damage.",
+  "sheetSummary": "Action, 60 ft, 15-ft radius, cooldown 3, costs 3 Mirth. Creatures of your choice that can hear and understand you; allies can be excluded. Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[2d8]] psychic. Success: half damage.",
   "classes": [
     "jester"
   ]

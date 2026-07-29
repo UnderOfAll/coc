@@ -3153,7 +3153,7 @@
       "id": "center-ring",
       "name": "Center Ring",
       "source": "Circus of Chaos",
-      "flavor": "You strut into view, arms wide, painted grin blazing: \"Me! Look at ME!\" — and, gods help them, they do.",
+      "flavor": "You do not want the spotlight. You have never wanted the spotlight. But you know exactly where to point it, and the whole room follows your hand.",
       "tier": "turn",
       "discipline": "Mesmerism",
       "minLevel": 3,
@@ -3166,9 +3166,9 @@
       ],
       "duration": "1 round",
       "save": "Wisdom",
-      "description": "You call one creature you can see within range into the spotlight, and it can't help but oblige. The target makes a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure, until the start of your next turn the target must target you with its next attack, spell, or other harmful single-target effect, if you are a legal target for it. If you are not a legal target when it acts, the effect simply lapses for that action. A creature that succeeds on the save is unaffected, and a creature immune to being charmed automatically succeeds.",
-      "narration": "You strut into view with your arms wide and your painted grin blazing — *me, look at ME* — and gods help them, they look.",
-      "sheetSummary": "Bonus action, 60 ft, cooldown 3. Wis save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: target must direct its next single-target attack or spell at you (if you're a legal target) before the start of your next turn. Charm-immune creatures auto-succeed.",
+      "description": "You throw the spotlight onto a pairing of your choosing. Choose one creature you can see within range and one other creature you can see — the one you want it dealing with. The target makes a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure, until the start of your next turn it must direct its next attack, trick, or other harmful single-target effect at the creature you named, if that creature is a legal target for it; if it is not, the effect simply lapses for that action. You cannot name yourself: the Jester books the act, he does not headline it.",
+      "narration": "You gesture the way a ringmaster gestures, and the thing turns to look at whoever is standing at the end of your arm. It was going to hurt somebody anyway. Now it is going to hurt the one wearing armour.",
+      "sheetSummary": "Action, 60 ft, cooldown 3. Name a target and another creature you can see. Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or, until the start of your next turn, it must aim its next attack or harmful single-target effect at the creature you named, if legal. You can never name yourself.",
       "classes": [
         "jester"
       ],
@@ -3341,7 +3341,7 @@
       "discipline": "Mesmerism",
       "minLevel": 3,
       "cooldown": 3,
-      "engineCost": 2,
+      "engineCost": 3,
       "castingTime": "1 action",
       "range": "60 feet",
       "components": [
@@ -3350,9 +3350,9 @@
       ],
       "duration": "Instantaneous",
       "save": "Wisdom",
-      "description": "You spend banked Mirth on a bit that takes the whole room at once. Each creature of your choice within a 15-foot radius of a point you can see within range that can hear and understand you makes a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure it takes [[2d8]] psychic damage; on a success it takes half as much. Casting this costs 2 Mirth, spent whether or not anybody fails, and you may freely exclude your own company from the area — nobody has ever been hurt by a joke they were in on.",
+      "description": "You spend banked Mirth on a bit that takes the whole room at once. Each creature of your choice within a 15-foot radius of a point you can see within range that can hear and understand you makes a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure it takes [[2d8]] psychic damage; on a success it takes half as much. Casting this costs 3 Mirth, spent whether or not anybody fails, and you may freely exclude your own company from the area — nobody has ever been hurt by a joke they were in on.",
       "narration": "You have the whole room and you know it. Whatever you say next goes through every one of them at the same moment, and the ones who are not in on it come away genuinely hurt.",
-      "sheetSummary": "Action, 60 ft, 15-ft radius, cooldown 3, costs 2 Mirth. Creatures of your choice that can hear and understand you; allies can be excluded. Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[2d8]] psychic. Success: half damage.",
+      "sheetSummary": "Action, 60 ft, 15-ft radius, cooldown 3, costs 3 Mirth. Creatures of your choice that can hear and understand you; allies can be excluded. Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[2d8]] psychic. Success: half damage.",
       "classes": [
         "jester"
       ],
@@ -4117,11 +4117,23 @@
       "duration": "Up to 1 minute (concentration)",
       "concentration": true,
       "save": "Wisdom",
-      "description": "You choose any number of creatures you can see within range — you may freely exclude your allies from the effect, so your own company never has to make this save. Each remaining target must make a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure, a target falls prone and is incapacitated with helpless laughter for the duration. At the end of each of its turns, and whenever it takes damage, an affected target can make another Wisdom saving throw, ending the effect on itself on a success. A creature immune to being charmed automatically succeeds on its save.",
-      "narration": "You deliver the biggest punchline of the show and it lands on everyone at once. Nobody in the room gets to decide whether it was funny.",
-      "sheetSummary": "Once per combat. Action, 60 ft, costs 5 Mirth, concentration up to 1 minute. Choose any number of visible creatures (allies may be excluded). Wis save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or fall prone + incapacitated (helpless laughter). Each affected target saves again at end of each of its turns or when damaged, ending the effect on a success. Charm-immune creatures auto-succeed.",
+      "description": "You deliver the biggest punchline of the show and it lands on the whole room at once. It does two things at the same time, listed below — and the half aimed at your own company always works, whatever is standing on the other side of the room.",
+      "narration": "You have been setting this up since the first round and everybody feels it arrive. Half the room goes down clutching its ribs; the other half — yours — straightens up, stops being afraid of anything, and gets back to work.",
+      "sheetSummary": "Once per combat. Action, 60 ft, costs 5 Mirth. Two simultaneous effects, listed below: a Wisdom save or helpless laughter on creatures of your choice, and temporary hit points plus condition removal for your allies. The ally half always works.",
       "classes": [
         "jester"
+      ],
+      "options": [
+        {
+          "group": "On everyone else",
+          "name": "Helpless laughter",
+          "effect": "Each creature of your choice that you can see within range makes a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure it falls prone and is incapacitated with helpless laughter for the duration. At the end of each of its turns, and whenever it takes damage, an affected creature repeats the save, ending the effect on itself on a success. A creature immune to being charmed automatically succeeds, and a creature that cannot hear or cannot understand you is unaffected."
+        },
+        {
+          "group": "On your own company",
+          "name": "The room is on your side",
+          "effect": "Each ally you can see within range gains temporary hit points equal to your Jester level, and immediately ends any frightened or charmed condition affecting it. This half never calls for a saving throw and is never blocked by anything on the far side of the fight — constructs and undead cannot laugh, but your friends still can."
+        }
       ],
       "_file": "tricks/the-whole-audience-laughs.json"
     },
