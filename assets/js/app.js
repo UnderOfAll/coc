@@ -384,7 +384,7 @@ const CASTER_GRADE = {
 const TRICK_CLASS_ORDER = ["illusionist", "jester", "puppeteer", "doppelganger", "joker"];
 
 const TIER_ORDER = { pledge: 0, turn: 1, prestige: 2 };
-let trickGrouping = "tier";
+let trickGrouping = "class";  // Class first: a player reads their own repertoire far more often than the tier shelves.
 
 /* Tricks tab: two ways to slice the same list — by tier, or by class (with each class's own
    level ladder nested inside it).
@@ -398,7 +398,7 @@ let trickGrouping = "tier";
 function renderTrickList(list, items) {
   list.className = "trick-list";
   const bar = el("div", "group-toggle");
-  for (const [mode, label] of [["tier", "Tier"], ["class", "Class"]]) {
+  for (const [mode, label] of [["class", "Class"], ["tier", "Tier"]]) {
     const b = el("button", "toggle-btn" + (trickGrouping === mode ? " active" : ""), esc(label));
     b.dataset.trickGroup = mode;
     bar.appendChild(b);
