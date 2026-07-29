@@ -905,10 +905,10 @@ function attacksSection(c) {
   }).join("");
   return `<h2>Attacks</h2>
     <p class="muted">Weapons this class is proficient with, and what each hits for. To attack, take the Attack action: roll d20 + ability modifier + proficiency bonus vs the target's AC. On a hit, damage = the die below <strong>+ your ability modifier</strong>. Any feature that says “weapon attack” or deals “weapon damage” (an extra attack, an area strike, a rider) uses one of these weapons and this damage — class features then add their own bonuses on top. <strong>Mastery</strong> is the default maneuver any proficient wielder gets from that weapon (hover it); see the Rules tab (Weapon Mastery).</p>
-    <div class="table-scroll"><table class="data-table attack-table">
+    <table class="data-table attack-table">
       <thead><tr><th>Weapon</th><th>Damage</th><th>Type</th><th>Properties</th><th>Mastery</th></tr></thead>
       <tbody>${rows}</tbody>
-    </table></div>`;
+    </table>`;
 }
 
 /* Skill proficiencies as a table: one row per option, sorted by (and showing) the

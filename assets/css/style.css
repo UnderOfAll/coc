@@ -355,6 +355,10 @@ h1 { font-family: var(--serif); font-weight: 600; margin: 0 0 1.25rem; }
 code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; font-size: 0.85em; }
 
 @media (max-width: 640px) {
+  /* The 5-column Attacks table tightens rather than overflowing. */
+  .attack-table { font-size: 0.82rem; }
+  .attack-table td, .attack-table th { padding: 0.35rem 0.4rem; }
+  .attack-table td:nth-child(4) { min-width: 0; }
   /* Top bar wraps: brand + Parry button on row 1, search full-width on row 2. */
   .topbar { flex-wrap: wrap; gap: 0.5rem 0.75rem; padding: 0.6rem 0.9rem; }
   .brand { order: 1; }
@@ -450,9 +454,10 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 }
 .tip-term:focus-visible, .scaling-die:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 
-/* Wide tables scroll inside their own box rather than stretching the page. The Attacks table is
-   five columns (Weapon/Damage/Type/Properties/Mastery) and is the first thing to overflow on a
-   narrow window. */
-.table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 1rem; }
-.table-scroll > .data-table { margin-bottom: 0; }
-.attack-table { min-width: 34rem; }
+/* The Attacks table is the widest in the app (Weapon/Damage/Type/Properties/Mastery).
+   DO NOT wrap it — or any table containing .tip-term / .scaling-die — in an overflow:auto box.
+   Those tooltips are position:absolute with width:max-content, so they (a) count toward the
+   container's scroll width, producing a scrollbar even when the table fits, and (b) get clipped
+   by the scroll box when opened. Let the cells wrap instead. */
+.attack-table td, .attack-table th { word-break: normal; overflow-wrap: anywhere; }
+.attack-table td:nth-child(4) { min-width: 8rem; }
