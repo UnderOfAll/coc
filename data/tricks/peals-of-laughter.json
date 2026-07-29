@@ -16,10 +16,27 @@
   "duration": "Up to 1 minute (concentration)",
   "concentration": true,
   "save": "Wisdom",
-  "description": "You land a joke so devastatingly funny that one creature you can see within range doubles over. The target must succeed on a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or fall prone, incapacitated with helpless laughter for the duration. At the end of each of its turns, and whenever it takes damage, the target can make another Wisdom saving throw, ending the effect on itself on a success. A creature immune to being charmed automatically succeeds on its save.",
+  "description": "You land a joke so devastatingly funny that one creature you can see within range doubles over. It must succeed on a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or collapse in helpless laughter, resolved exactly as below. A creature immune to being charmed automatically succeeds, and a creature that cannot hear or cannot understand you is unaffected.",
   "narration": "You tell the joke you have been saving all night, and it lands like a hammer. They fold in half laughing, hating it, entirely unable to stop.",
-  "sheetSummary": "Action, 30 ft, cooldown 3, concentration up to 1 minute. Wis save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: prone + incapacitated (helpless laughter). Target saves again at end of each of its turns or when it takes damage, ending the effect on a success. Charm-immune creatures auto-succeed.",
+  "sheetSummary": "Action, 30 ft, cooldown 3, concentration up to 1 minute. One creature: Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or helpless laughter. Resolution below.",
   "classes": [
     "jester"
+  ],
+  "options": [
+    {
+      "group": "While it lasts",
+      "name": "Prone and helpless",
+      "effect": "The creature falls prone and is incapacitated: it takes no actions, no bonus actions and no reactions, its speed is 0, and it cannot stand up. Being prone applies as normal on top of that — melee attacks against it have advantage, ranged attacks against it have disadvantage — and being incapacitated means it automatically fails Strength and Dexterity saving throws."
+    },
+    {
+      "group": "Getting out of it",
+      "name": "Anyone hits it, it stops laughing",
+      "effect": "The first time the creature takes any damage, the effect ends on it immediately — no saving throw needed. A blow snaps it out of the fit. It is still prone and must stand up as normal."
+    },
+    {
+      "group": "Getting out of it",
+      "name": "Otherwise it laughs it off in its own time",
+      "effect": "If nobody hits it, it repeats the Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}} at the end of each of its turns, ending the effect on itself on a success. It also ends when the duration runs out or your concentration breaks."
+    }
   ]
 }

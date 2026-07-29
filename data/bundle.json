@@ -3631,11 +3631,28 @@
       "duration": "Up to 1 minute (concentration)",
       "concentration": true,
       "save": "Wisdom",
-      "description": "You land a joke so devastatingly funny that one creature you can see within range doubles over. The target must succeed on a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or fall prone, incapacitated with helpless laughter for the duration. At the end of each of its turns, and whenever it takes damage, the target can make another Wisdom saving throw, ending the effect on itself on a success. A creature immune to being charmed automatically succeeds on its save.",
+      "description": "You land a joke so devastatingly funny that one creature you can see within range doubles over. It must succeed on a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or collapse in helpless laughter, resolved exactly as below. A creature immune to being charmed automatically succeeds, and a creature that cannot hear or cannot understand you is unaffected.",
       "narration": "You tell the joke you have been saving all night, and it lands like a hammer. They fold in half laughing, hating it, entirely unable to stop.",
-      "sheetSummary": "Action, 30 ft, cooldown 3, concentration up to 1 minute. Wis save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: prone + incapacitated (helpless laughter). Target saves again at end of each of its turns or when it takes damage, ending the effect on a success. Charm-immune creatures auto-succeed.",
+      "sheetSummary": "Action, 30 ft, cooldown 3, concentration up to 1 minute. One creature: Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or helpless laughter. Resolution below.",
       "classes": [
         "jester"
+      ],
+      "options": [
+        {
+          "group": "While it lasts",
+          "name": "Prone and helpless",
+          "effect": "The creature falls prone and is incapacitated: it takes no actions, no bonus actions and no reactions, its speed is 0, and it cannot stand up. Being prone applies as normal on top of that — melee attacks against it have advantage, ranged attacks against it have disadvantage — and being incapacitated means it automatically fails Strength and Dexterity saving throws."
+        },
+        {
+          "group": "Getting out of it",
+          "name": "Anyone hits it, it stops laughing",
+          "effect": "The first time the creature takes any damage, the effect ends on it immediately — no saving throw needed. A blow snaps it out of the fit. It is still prone and must stand up as normal."
+        },
+        {
+          "group": "Getting out of it",
+          "name": "Otherwise it laughs it off in its own time",
+          "effect": "If nobody hits it, it repeats the Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}} at the end of each of its turns, ending the effect on itself on a success. It also ends when the duration runs out or your concentration breaks."
+        }
       ],
       "_file": "tricks/peals-of-laughter.json"
     },
@@ -4282,18 +4299,33 @@
       "save": "Wisdom",
       "description": "You deliver the biggest punchline of the show and it lands on the whole room at once. It does two things at the same time, listed below — and the half aimed at your own company always works, whatever is standing on the other side of the room.",
       "narration": "You have been setting this up since the first round and everybody feels it arrive. Half the room goes down clutching its ribs; the other half — yours — straightens up, stops being afraid of anything, and gets back to work.",
-      "sheetSummary": "Once per combat. Action, 60 ft, costs 5 Mirth. Two simultaneous effects, listed below: a Wisdom save or helpless laughter on creatures of your choice, and [[2d6+Cha]] temporary hit points plus condition removal for your allies. The ally half always works.",
+      "sheetSummary": "Once per combat. Action, 60 ft, costs 5 Mirth, concentration up to 1 minute. Two simultaneous effects: a Wisdom save or helpless laughter on creatures of your choice, and temporary hit points plus condition removal for your allies. The ally half always works. Full resolution below.",
       "classes": [
         "jester"
       ],
       "options": [
         {
-          "group": "On everyone else",
+          "group": "Everyone else: the save",
           "name": "Helpless laughter",
-          "effect": "Each creature of your choice that you can see within range makes a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure it falls prone and is incapacitated with helpless laughter for the duration. At the end of each of its turns, and whenever it takes damage, an affected creature repeats the save, ending the effect on itself on a success. A creature immune to being charmed automatically succeeds, and a creature that cannot hear or cannot understand you is unaffected."
+          "effect": "Each creature of your choice that you can see within range makes a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure it collapses in helpless laughter, as described below. A creature immune to being charmed automatically succeeds, and a creature that cannot hear or cannot understand you is unaffected."
         },
         {
-          "group": "On your own company",
+          "group": "While it lasts",
+          "name": "Prone and helpless",
+          "effect": "The creature falls prone and is incapacitated: it takes no actions, no bonus actions and no reactions, its speed is 0, and it cannot stand up. Being prone applies as normal on top of that — melee attacks against it have advantage, ranged attacks against it have disadvantage — and being incapacitated means it automatically fails Strength and Dexterity saving throws."
+        },
+        {
+          "group": "Getting out of it",
+          "name": "Anyone hits it, it stops laughing",
+          "effect": "The first time the creature takes any damage, the effect ends on it immediately — no saving throw needed. A blow snaps it out of the fit. It is still prone and must stand up as normal."
+        },
+        {
+          "group": "Getting out of it",
+          "name": "Otherwise it laughs it off in its own time",
+          "effect": "If nobody hits it, it repeats the Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}} at the end of each of its turns, ending the effect on itself on a success. It also ends when the duration runs out or your concentration breaks."
+        },
+        {
+          "group": "Your own company",
           "name": "The room is on your side",
           "effect": "Each ally you can see within range gains [[2d6+Cha]] temporary hit points, and immediately ends any frightened or charmed condition affecting it. This half never calls for a saving throw and is never blocked by anything on the far side of the fight — constructs and undead cannot laugh, but your friends still can."
         }
