@@ -124,6 +124,20 @@
       }
     },
     {
+      "level": 2,
+      "name": "Did You See That?",
+      "role": "combat",
+      "description": "You have something to do on other people's turns. When a creature you can see within 60 feet makes an attack roll, you can use your reaction and spend 1 Phantasm to put something in the corner of its eye at exactly the wrong moment: it has disadvantage on that attack roll. You must decide before the roll is made. This uses the same single reaction as your Parry, so on any given round you are choosing between defending yourself and spoiling someone else's swing.",
+      "sheetSummary": "Reaction, 60 ft, costs 1 Phantasm, declared before the roll. A creature you can see has disadvantage on that attack roll. Uses the same single reaction as Parry.",
+      "narration": "Something moves at the edge of its vision — a shape, a face, a flicker of motion that resolves into nothing at all. It is a tenth of a second of doubt, and it arrives while the blade is already moving.",
+      "meta": {
+        "action": "Reaction",
+        "cost": "1 Phantasm",
+        "uses": "1 / round (your reaction)",
+        "range": "60 ft"
+      }
+    },
+    {
       "level": 3,
       "name": "Illusionist's Discipline",
       "role": "combat",

@@ -14,10 +14,11 @@
     "Prop (a length of black silk)"
   ],
   "duration": "1 round",
-  "description": "You vanish behind a snap of silk and misdirection, becoming invisible until the start of your next turn or until you make an attack roll, force a saving throw, or force an ability check, whichever comes first. As part of casting this, you may also move up to 10 feet without provoking opportunity attacks - the last thing anyone saw of you was already the wrong direction.",
-  "narration": "The curtain drops for exactly one second. When it lifts you are not where anyone is looking, and the fight has to start its search over.",
-  "sheetSummary": "Bonus action, self, cooldown 3. Invisible until start of your next turn or until you attack/force a save or check; may move 10 ft without provoking opportunity attacks as part of the trick.",
+  "description": "You vanish behind a snap of silk and misdirection, becoming invisible until the start of your next turn or until you make an attack roll, force a saving throw, or force an ability check, whichever comes first. As part of casting this, you may also move up to 10 feet without provoking opportunity attacks — the last thing anyone saw of you was already the wrong direction. This is misdirection, not true invisibility, and it can be beaten by simply watching you properly: each creature that can see you at the moment you cast it makes a Wisdom (Perception) check against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a success that creature tracks where you actually went and you are not invisible to it — though you remain invisible to every creature that failed, and to anything that could not see you cast it.",
+  "narration": "The curtain drops for exactly one second. When it lifts you are not where anyone is looking — and the only ones who find you are the ones who were watching your feet instead of your hands.",
+  "sheetSummary": "Bonus action, self, cooldown 3. Invisible until the start of your next turn or until you attack or force a save or check; may move 10 ft without provoking as part of the trick. Each creature that can SEE you cast it makes a Wisdom (Perception) check vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}; on a success it tracks you and you are not invisible to that creature.",
   "classes": [
     "illusionist"
-  ]
+  ],
+  "save": "Wisdom"
 }

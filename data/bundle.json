@@ -852,6 +852,20 @@
           }
         },
         {
+          "level": 2,
+          "name": "Did You See That?",
+          "role": "combat",
+          "description": "You have something to do on other people's turns. When a creature you can see within 60 feet makes an attack roll, you can use your reaction and spend 1 Phantasm to put something in the corner of its eye at exactly the wrong moment: it has disadvantage on that attack roll. You must decide before the roll is made. This uses the same single reaction as your Parry, so on any given round you are choosing between defending yourself and spoiling someone else's swing.",
+          "sheetSummary": "Reaction, 60 ft, costs 1 Phantasm, declared before the roll. A creature you can see has disadvantage on that attack roll. Uses the same single reaction as Parry.",
+          "narration": "Something moves at the edge of its vision — a shape, a face, a flicker of motion that resolves into nothing at all. It is a tenth of a second of doubt, and it arrives while the blade is already moving.",
+          "meta": {
+            "action": "Reaction",
+            "cost": "1 Phantasm",
+            "uses": "1 / round (your reaction)",
+            "range": "60 ft"
+          }
+        },
+        {
           "level": 3,
           "name": "Illusionist's Discipline",
           "role": "combat",
@@ -3379,12 +3393,13 @@
         "Prop (a length of black silk)"
       ],
       "duration": "1 round",
-      "description": "You vanish behind a snap of silk and misdirection, becoming invisible until the start of your next turn or until you make an attack roll, force a saving throw, or force an ability check, whichever comes first. As part of casting this, you may also move up to 10 feet without provoking opportunity attacks - the last thing anyone saw of you was already the wrong direction.",
-      "narration": "The curtain drops for exactly one second. When it lifts you are not where anyone is looking, and the fight has to start its search over.",
-      "sheetSummary": "Bonus action, self, cooldown 3. Invisible until start of your next turn or until you attack/force a save or check; may move 10 ft without provoking opportunity attacks as part of the trick.",
+      "description": "You vanish behind a snap of silk and misdirection, becoming invisible until the start of your next turn or until you make an attack roll, force a saving throw, or force an ability check, whichever comes first. As part of casting this, you may also move up to 10 feet without provoking opportunity attacks — the last thing anyone saw of you was already the wrong direction. This is misdirection, not true invisibility, and it can be beaten by simply watching you properly: each creature that can see you at the moment you cast it makes a Wisdom (Perception) check against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a success that creature tracks where you actually went and you are not invisible to it — though you remain invisible to every creature that failed, and to anything that could not see you cast it.",
+      "narration": "The curtain drops for exactly one second. When it lifts you are not where anyone is looking — and the only ones who find you are the ones who were watching your feet instead of your hands.",
+      "sheetSummary": "Bonus action, self, cooldown 3. Invisible until the start of your next turn or until you attack or force a save or check; may move 10 ft without provoking as part of the trick. Each creature that can SEE you cast it makes a Wisdom (Perception) check vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}; on a success it tracks you and you are not invisible to that creature.",
       "classes": [
         "illusionist"
       ],
+      "save": "Wisdom",
       "_file": "tricks/now-you-dont.json"
     },
     {
