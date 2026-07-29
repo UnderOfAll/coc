@@ -1,0 +1,11 @@
+{
+  "id": "harlequins-brigandine",
+  "name": "Harlequin's Brigandine",
+  "source": "Circus of Chaos",
+  "category": "medium",
+  "availability": "starter",
+  "baseAC": 13,
+  "maxDexBonus": 2,
+  "stealthDisadvantage": false,
+  "flavor": "Diamond-patched canvas with steel plates quilted between the colours. It reads as a costume until somebody hits it."
+}

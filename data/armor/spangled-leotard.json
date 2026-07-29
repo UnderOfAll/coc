@@ -1,0 +1,11 @@
+{
+  "id": "spangled-leotard",
+  "name": "Spangled Leotard",
+  "source": "Circus of Chaos",
+  "category": "clothing",
+  "availability": "starter",
+  "baseAC": 10,
+  "maxDexBonus": null,
+  "stealthDisadvantage": false,
+  "flavor": "Sequins, tights, and absolutely nothing between you and the world. What it lacks in protection it returns in the freedom to bend in ways armour forbids."
+}

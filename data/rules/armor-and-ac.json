@@ -11,6 +11,20 @@
       ]
     },
     {
+      "heading": "Who wears what",
+      "paragraphs": [
+        "Armour is split by class, and it is split thematically rather than by tradition. Nobody in this company is wearing a suit of anonymous field plate.",
+        "Clothing needs no proficiency at all — anyone may wear it — but it is the full casters' entire lane. The Illusionist and the Jester have no armour proficiency whatsoever: they work in robes, coats and costume, and the good stuff is tailored rather than forged.",
+        "Light armour covers the performers who live on movement: the Acrobat (armour would defeat the entire point of him), the Juggler, and the Puppeteer. The Doppelganger and the Joker add medium on top — the Joker because he is the one chaos act who genuinely expects to be hit, and the Doppelganger because every Clone he makes shares his Armour Class, so his armour decides how long his whole engine survives. The Sandow alone gets heavy armour and shields."
+      ],
+      "list": [
+        "Clothing — Illusionist, Jester (and anyone who wants the look)",
+        "Light — Acrobat, Juggler, Puppeteer, Doppelganger, Joker, Sandow",
+        "Medium — Doppelganger, Joker, Sandow",
+        "Heavy and Shields — Sandow"
+      ]
+    },
+    {
       "heading": "Armor categories",
       "list": [
         "Clothing (e.g. robes): AC 10 + your full Dexterity modifier. Needs no proficiency — the option for casters with no armor training. Same as being unarmored.",

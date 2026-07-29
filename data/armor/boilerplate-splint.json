@@ -1,8 +1,8 @@
 {
   "id": "boilerplate-splint",
-  "name": "Boilerplate Splint",
+  "name": "Boilerplate Rig",
   "source": "Circus System",
-  "flavor": "Riveted iron strips over a leather backing, salvaged from the shows machinery. Heavier and pricier than chain mail, a step short of full plate — and it takes real strength to march in.",
+  "flavor": "Riveted iron bands over a canvas jack, built in the same shop that plates the cannon. Circus engineering: heavy, ugly, and it has never once come apart.",
   "category": "heavy",
   "baseAC": 17,
   "maxDexBonus": 0,

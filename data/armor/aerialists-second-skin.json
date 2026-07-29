@@ -1,0 +1,11 @@
+{
+  "id": "aerialists-second-skin",
+  "name": "Aerialist's Second Skin",
+  "source": "Circus of Chaos",
+  "category": "light",
+  "availability": "bought",
+  "baseAC": 13,
+  "maxDexBonus": null,
+  "stealthDisadvantage": false,
+  "flavor": "Shaved kidskin over a lattice of whalebone, fitted to one body and useless on any other. It moves before you do."
+}

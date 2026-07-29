@@ -2,20 +2,43 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Armor",
   "type": "object",
-  "required": ["name", "category"],
+  "required": [
+    "name",
+    "category"
+  ],
   "properties": {
-    "id": { "type": "string", "description": "kebab-case unique id; defaults to slug of name" },
-    "name": { "type": "string" },
-    "source": { "type": "string", "default": "Circus System" },
-    "flavor": { "type": "string", "description": "one-line evocative summary of the armor's look/feel/circus theme" },
+    "id": {
+      "type": "string",
+      "description": "kebab-case unique id; defaults to slug of name"
+    },
+    "name": {
+      "type": "string"
+    },
+    "source": {
+      "type": "string",
+      "default": "Circus System"
+    },
+    "flavor": {
+      "type": "string",
+      "description": "one-line evocative summary of the armor's look/feel/circus theme"
+    },
     "category": {
       "type": "string",
-      "enum": ["clothing", "light", "medium", "heavy", "shield"],
-      "description": "5e armor category. clothing = baseAC 10 + full Dex, needs NO proficiency (for casters/mages who lack armor proficiency; the unarmored baseline as an item); light = baseAC + full Dex; medium = baseAC + Dex (capped by maxDexBonus, usually 2); heavy = baseAC only, no Dex; shield = a flat acBonus added on top of worn armor."
+      "enum": [
+        "clothing",
+        "light",
+        "medium",
+        "heavy",
+        "shield"
+      ],
+      "description": "5e armor category. clothing = baseAC 10-12 + full Dex and needs NO proficiency — it is the FULL CASTERS' lane (Illusionist, Jester), who have no armour proficiency at all. light = the half-casters, the Juggler and the Acrobat. medium = the Joker and the Sandow. heavy and shield = the Sandow alone."
     },
     "availability": {
       "type": "string",
-      "enum": ["starter", "bought"],
+      "enum": [
+        "starter",
+        "bought"
+      ],
       "default": "starter",
       "description": "How a character gets it. starter = basic, cheap, available at character creation (padded/leather/studded, hide/scale, chain mail, shield). bought = a premium upgrade acquired later by purchase or loot, NOT owned at creation (breastplate, half-plate, splint, plate). Roughly tracks 5e cost (starter < ~75gp; bought >= ~200gp). Actual price is left to the DM/campaign."
     },
@@ -24,7 +47,10 @@
       "description": "Base Armor Class before Dexterity, for body armor (light/medium/heavy). Omit for shields (use acBonus instead)."
     },
     "maxDexBonus": {
-      "type": ["integer", "null"],
+      "type": [
+        "integer",
+        "null"
+      ],
       "description": "Dexterity cap added to baseAC. null = no cap (light armor adds full Dex mod); 2 = medium armor; 0 = heavy armor (no Dex). Omit for shields."
     },
     "acBonus": {

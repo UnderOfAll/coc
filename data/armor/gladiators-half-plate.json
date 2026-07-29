@@ -1,8 +1,8 @@
 {
   "id": "gladiators-half-plate",
-  "name": "Gladiators Half-Plate",
+  "name": "Gladiator's Half-Plate",
   "source": "Circus System",
-  "flavor": "Show-arena plate that covers most of the body but leaves the legs free. The best medium AC there is — you just clank, so forget sneaking.",
+  "flavor": "Arena kit, polished for the crowd and shaped for the kill — breastplate, pauldrons, and nothing below the hip to slow the footwork.",
   "category": "medium",
   "baseAC": 15,
   "maxDexBonus": 2,

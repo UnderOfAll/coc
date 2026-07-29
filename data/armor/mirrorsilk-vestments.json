@@ -1,0 +1,11 @@
+{
+  "id": "mirrorsilk-vestments",
+  "name": "Mirrorsilk Vestments",
+  "source": "Circus of Chaos",
+  "category": "clothing",
+  "availability": "bought",
+  "baseAC": 11,
+  "maxDexBonus": null,
+  "stealthDisadvantage": false,
+  "flavor": "Silk woven with a thread that catches light wrong, so the eye slides off the wearer and lands somewhere just behind them. Tailored, expensive, and worth it."
+}

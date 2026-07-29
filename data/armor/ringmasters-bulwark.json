@@ -1,0 +1,10 @@
+{
+  "id": "ringmasters-bulwark",
+  "name": "Ringmaster's Bulwark",
+  "source": "Circus of Chaos",
+  "category": "shield",
+  "availability": "bought",
+  "acBonus": 3,
+  "stealthDisadvantage": false,
+  "flavor": "A cage-door off the big cats' wagon, banded and re-hung on a fist grip. It has stopped a tiger. It will stop most things."
+}

@@ -16,7 +16,8 @@
   "subclassLevel": 3,
   "proficiencies": {
     "armor": [
-      "Light armor"
+      "Light armor",
+      "Medium armor"
     ],
     "weapons": [
       "Razor Cards",

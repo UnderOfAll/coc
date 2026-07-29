@@ -1,0 +1,11 @@
+{
+  "id": "conjurers-longcoat",
+  "name": "Conjurer's Longcoat",
+  "source": "Circus of Chaos",
+  "category": "clothing",
+  "availability": "starter",
+  "baseAC": 10,
+  "maxDexBonus": null,
+  "stealthDisadvantage": false,
+  "flavor": "Heavy velvet to the ankle, cut wide enough to hide a dove, a deck and both your hands. It stops nothing and conceals everything."
+}

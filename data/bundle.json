@@ -44,6 +44,20 @@
           ]
         },
         {
+          "heading": "Who wears what",
+          "paragraphs": [
+            "Armour is split by class, and it is split thematically rather than by tradition. Nobody in this company is wearing a suit of anonymous field plate.",
+            "Clothing needs no proficiency at all — anyone may wear it — but it is the full casters' entire lane. The Illusionist and the Jester have no armour proficiency whatsoever: they work in robes, coats and costume, and the good stuff is tailored rather than forged.",
+            "Light armour covers the performers who live on movement: the Acrobat (armour would defeat the entire point of him), the Juggler, and the Puppeteer. The Doppelganger and the Joker add medium on top — the Joker because he is the one chaos act who genuinely expects to be hit, and the Doppelganger because every Clone he makes shares his Armour Class, so his armour decides how long his whole engine survives. The Sandow alone gets heavy armour and shields."
+          ],
+          "list": [
+            "Clothing — Illusionist, Jester (and anyone who wants the look)",
+            "Light — Acrobat, Juggler, Puppeteer, Doppelganger, Joker, Sandow",
+            "Medium — Doppelganger, Joker, Sandow",
+            "Heavy and Shields — Sandow"
+          ]
+        },
+        {
           "heading": "Armor categories",
           "list": [
             "Clothing (e.g. robes): AC 10 + your full Dexterity modifier. Needs no proficiency — the option for casters with no armor training. Same as being unarmored.",
@@ -591,7 +605,8 @@
       "subclassLevel": 3,
       "proficiencies": {
         "armor": [
-          "Light armor"
+          "Light armor",
+          "Medium armor"
         ],
         "weapons": [
           "Mirror Blades",
@@ -785,7 +800,7 @@
       "subclassLevel": 3,
       "proficiencies": {
         "armor": [
-          "Light armor"
+          "Clothing"
         ],
         "weapons": [
           "Phantom Blade",
@@ -964,7 +979,7 @@
       "subclassLevel": 3,
       "proficiencies": {
         "armor": [
-          "Light armor"
+          "Clothing"
         ],
         "weapons": [
           "Marotte",
@@ -1143,7 +1158,8 @@
       "subclassLevel": 3,
       "proficiencies": {
         "armor": [
-          "Light armor"
+          "Light armor",
+          "Medium armor"
         ],
         "weapons": [
           "Razor Cards",
@@ -5252,6 +5268,18 @@
   ],
   "armor": [
     {
+      "id": "aerialists-second-skin",
+      "name": "Aerialist's Second Skin",
+      "source": "Circus of Chaos",
+      "category": "light",
+      "availability": "bought",
+      "baseAC": 13,
+      "maxDexBonus": null,
+      "stealthDisadvantage": false,
+      "flavor": "Shaved kidskin over a lattice of whalebone, fitted to one body and useless on any other. It moves before you do.",
+      "_file": "armor/aerialists-second-skin.json"
+    },
+    {
       "id": "beasthide-wrap",
       "name": "Beasthide Wrap",
       "source": "Circus System",
@@ -5265,9 +5293,9 @@
     },
     {
       "id": "boilerplate-splint",
-      "name": "Boilerplate Splint",
+      "name": "Boilerplate Rig",
       "source": "Circus System",
-      "flavor": "Riveted iron strips over a leather backing, salvaged from the shows machinery. Heavier and pricier than chain mail, a step short of full plate — and it takes real strength to march in.",
+      "flavor": "Riveted iron bands over a canvas jack, built in the same shop that plates the cannon. Circus engineering: heavy, ugly, and it has never once come apart.",
       "category": "heavy",
       "baseAC": 17,
       "maxDexBonus": 0,
@@ -5290,8 +5318,20 @@
       "_file": "armor/colossus-plate.json"
     },
     {
+      "id": "conjurers-longcoat",
+      "name": "Conjurer's Longcoat",
+      "source": "Circus of Chaos",
+      "category": "clothing",
+      "availability": "starter",
+      "baseAC": 10,
+      "maxDexBonus": null,
+      "stealthDisadvantage": false,
+      "flavor": "Heavy velvet to the ankle, cut wide enough to hide a dove, a deck and both your hands. It stops nothing and conceals everything.",
+      "_file": "armor/conjurers-longcoat.json"
+    },
+    {
       "id": "fortune-tellers-robes",
-      "name": "Fortune-Tellers Robes",
+      "name": "Fortune-Teller's Robes",
       "source": "Circus System",
       "flavor": "Layered silks and star-charts — the working clothes of the tent mystics. No protection to speak of, but they need no training to wear, which is the whole point for someone whose defense is their mind, not their hide.",
       "category": "clothing",
@@ -5303,15 +5343,27 @@
     },
     {
       "id": "gladiators-half-plate",
-      "name": "Gladiators Half-Plate",
+      "name": "Gladiator's Half-Plate",
       "source": "Circus System",
-      "flavor": "Show-arena plate that covers most of the body but leaves the legs free. The best medium AC there is — you just clank, so forget sneaking.",
+      "flavor": "Arena kit, polished for the crowd and shaped for the kill — breastplate, pauldrons, and nothing below the hip to slow the footwork.",
       "category": "medium",
       "baseAC": 15,
       "maxDexBonus": 2,
       "availability": "bought",
       "stealthDisadvantage": true,
       "_file": "armor/gladiators-half-plate.json"
+    },
+    {
+      "id": "harlequins-brigandine",
+      "name": "Harlequin's Brigandine",
+      "source": "Circus of Chaos",
+      "category": "medium",
+      "availability": "starter",
+      "baseAC": 13,
+      "maxDexBonus": 2,
+      "stealthDisadvantage": false,
+      "flavor": "Diamond-patched canvas with steel plates quilted between the colours. It reads as a costume until somebody hits it.",
+      "_file": "armor/harlequins-brigandine.json"
     },
     {
       "id": "ironmonger-chain-mail",
@@ -5325,6 +5377,18 @@
       "stealthDisadvantage": true,
       "availability": "starter",
       "_file": "armor/ironmonger-chain-mail.json"
+    },
+    {
+      "id": "mirrorsilk-vestments",
+      "name": "Mirrorsilk Vestments",
+      "source": "Circus of Chaos",
+      "category": "clothing",
+      "availability": "bought",
+      "baseAC": 11,
+      "maxDexBonus": null,
+      "stealthDisadvantage": false,
+      "flavor": "Silk woven with a thread that catches light wrong, so the eye slides off the wearer and lands somewhere just behind them. Tailored, expensive, and worth it.",
+      "_file": "armor/mirrorsilk-vestments.json"
     },
     {
       "id": "padded-motley",
@@ -5350,6 +5414,17 @@
       "_file": "armor/parade-shield.json"
     },
     {
+      "id": "ringmasters-bulwark",
+      "name": "Ringmaster's Bulwark",
+      "source": "Circus of Chaos",
+      "category": "shield",
+      "availability": "bought",
+      "acBonus": 3,
+      "stealthDisadvantage": false,
+      "flavor": "A cage-door off the big cats' wagon, banded and re-hung on a fist grip. It has stopped a tiger. It will stop most things.",
+      "_file": "armor/ringmasters-bulwark.json"
+    },
+    {
       "id": "serpent-scale-mail",
       "name": "Serpent-Scale Mail",
       "source": "Circus System",
@@ -5360,6 +5435,30 @@
       "stealthDisadvantage": true,
       "availability": "starter",
       "_file": "armor/serpent-scale-mail.json"
+    },
+    {
+      "id": "spangled-leotard",
+      "name": "Spangled Leotard",
+      "source": "Circus of Chaos",
+      "category": "clothing",
+      "availability": "starter",
+      "baseAC": 10,
+      "maxDexBonus": null,
+      "stealthDisadvantage": false,
+      "flavor": "Sequins, tights, and absolutely nothing between you and the world. What it lacks in protection it returns in the freedom to bend in ways armour forbids.",
+      "_file": "armor/spangled-leotard.json"
+    },
+    {
+      "id": "stagelights-raiment",
+      "name": "Stagelight's Raiment",
+      "source": "Circus of Chaos",
+      "category": "clothing",
+      "availability": "bought",
+      "baseAC": 12,
+      "maxDexBonus": null,
+      "stealthDisadvantage": true,
+      "flavor": "Layer on layer of stiffened brocade and mirrored plate-sequin — the closest thing to armour a performer can wear and still call it a costume. You are magnificent and you are audible from the back row.",
+      "_file": "armor/stagelights-raiment.json"
     },
     {
       "id": "strongmans-breastplate",
@@ -5387,7 +5486,7 @@
     },
     {
       "id": "troupers-chain-shirt",
-      "name": "Troupers Chain Shirt",
+      "name": "Trouper's Chain Shirt",
       "source": "Circus System",
       "flavor": "A light mesh worn under the costume — quiet enough to tumble in, sturdier than leather. The middle-ground medium for a performer who still wants to move.",
       "category": "medium",
