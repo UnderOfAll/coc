@@ -752,7 +752,11 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 .skill-chip .muted { font-size: 0.80rem; }
 @media (max-width: 760px) {
   .creator { grid-template-columns: 1fr; }
-  .creator-side { position: static; order: -1; }
+  /* On a phone the summary sits AFTER the form, not before it. Pinned above, it pushed the first
+     question off the screen and forced a scroll to the top after every change just to read the
+     result; below, the numbers are simply the last thing you reach on the way to Save. It follows
+     .creator-main in the markup, so dropping the order override is all it takes. */
+  .creator-side { position: static; }
   .sheet-head { flex-direction: column; align-items: flex-start; }
   .trick-row { flex-direction: column; }
   .trick-act { width: 100%; justify-content: flex-end; }

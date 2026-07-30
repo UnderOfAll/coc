@@ -105,6 +105,13 @@ for (const width of [430, 412, 393, 360, 320]) {
   await tap('[data-pick="method"][data-val="manual"]'); await audit(page, "creator, manual");
   await tap('[data-pick="level"][data-val="1"]');
   await tap('[data-pick="level"][data-val="1"]');      await audit(page, "creator, disciplines shown");
+  // The live summary must come AFTER the form on a phone, or every change costs a scroll to the top.
+  const sideBelow = await page.evaluate(() => {
+    const main = document.querySelector(".creator-main"), side = document.querySelector(".creator-side");
+    return !!(main && side && side.getBoundingClientRect().top > main.getBoundingClientRect().top);
+  });
+  if (!sideBelow) { fails++; console.log("  FAIL the live summary sits above the form"); }
+  else console.log("  ok   the live summary sits below the form");
   await go("#/manage");                await audit(page, "my characters");
   await go("#/roster", 700);           await audit(page, "recovery roster");
   await go("#/sheet/123456", 800);     await audit(page, "character sheet");
