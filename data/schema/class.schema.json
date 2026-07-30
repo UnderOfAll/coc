@@ -318,6 +318,75 @@
           "additionalProperties": false
         }
       }
+    },
+    "play": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Hooks the live character sheet reads. Machine-readable ON PURPOSE — the engine's `generation` prose is for humans and must never be parsed for a number (same lesson as capMath).",
+      "properties": {
+        "autoRefill": {
+          "type": "string",
+          "enum": [
+            "turn"
+          ],
+          "description": "Engine refills to its cap at the start of each of the character's turns (the Juggler's Set). Omit for every pool that is built rather than refilled."
+        },
+        "triggers": {
+          "type": "array",
+          "description": "One button each on the sheet: the things that GAIN engine, in the player's own words.",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "label",
+              "gain"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              },
+              "gain": {
+                "type": "integer"
+              },
+              "oncePerTurn": {
+                "type": "boolean",
+                "description": "Greys out until the player ends their turn."
+              }
+            }
+          }
+        },
+        "states": {
+          "type": "array",
+          "description": "Class-specific toggles beyond the universal conditions. Never inferred — the app does not see the dice.",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "label"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              },
+              "why": {
+                "type": "string"
+              },
+              "subclass": {
+                "type": "string",
+                "description": "Only offered if the character has this subclass."
+              }
+            }
+          }
+        }
+      }
     }
   }
 }

@@ -617,3 +617,54 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
    naive grep — the Classes tab and the Tricks tab both set their list container this way. */
 .class-list { display: flex; flex-direction: column; gap: 0.85rem; }
 .trick-list { display: block; }
+
+/* Engine trigger buttons and the post-cast question. */
+.triggers { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.6rem; }
+.trigger { text-align: left; }
+.trigger em { color: var(--muted); font-style: normal; font-size: 0.72rem; }
+.trigger.spent { opacity: 0.45; text-decoration: line-through; }
+.prompt-bar { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; justify-content: space-between;
+  background: rgba(201,165,78,0.12); border: 1px solid var(--gold); border-radius: var(--radius);
+  padding: 0.7rem 1rem; margin-bottom: 1rem; }
+.prompt-acts { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+
+/* ============================================================
+   Responsive pass — one layout that adapts, not a phone-only build.
+   Desktop keeps the two-column creator and the wide sheet; below 760px
+   everything becomes a single column with touch-sized controls.
+   ============================================================ */
+@media (max-width: 760px) {
+  .menu-view { padding: 1.5rem 1rem 3rem; }
+  .tool-view { padding: 0 0.9rem 3rem; }
+  .step, .panel { padding: 0.9rem 0.85rem; }
+  .pick-grid { grid-template-columns: 1fr; }
+  .abils { grid-template-columns: 1fr 1fr; }
+  .kn-grid { grid-template-columns: repeat(auto-fit, minmax(5.5rem, 1fr)); }
+  .kn-v { font-size: 1.1rem; }
+  /* Touch targets: 44px is the smallest comfortable tap area. */
+  .chip, .btn, .btn-quiet, .toggle-btn { min-height: 2.75rem; padding-inline: 0.9rem; }
+  .pip { width: 34px; height: 34px; }
+  .num { width: 4.5rem; }
+  .hp-controls { gap: 0.35rem; }
+  .hp-controls .btn-quiet { flex: 1 1 auto; }
+  .combat-bar, .prompt-bar { flex-direction: column; align-items: stretch; }
+  .prompt-acts .btn, .prompt-acts .btn-quiet { flex: 1; }
+  .triggers .trigger { width: 100%; }
+  .sheet-id { width: 100%; }
+  .sheet-head .btn { width: 100%; }
+  .save-row { flex-direction: column; align-items: stretch; }
+  .code-input { width: 100%; }
+  .feat summary { gap: 0.3rem; }
+  .uses { width: 100%; margin-left: 0; justify-content: flex-end; }
+  .data-table { font-size: 0.82rem; }
+  .data-table th, .data-table td { padding: 0.35rem 0.4rem; }
+}
+/* Very narrow phones: stop the ability grid squeezing to unreadable. */
+@media (max-width: 380px) {
+  .abils { grid-template-columns: 1fr; }
+  .brand-sub { display: none; }
+}
+/* A pointer-less device gets no hover tooltips, so make the tap target obvious. */
+@media (hover: none) {
+  .tip-term { text-decoration: underline dotted; text-underline-offset: 3px; }
+}

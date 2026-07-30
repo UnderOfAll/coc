@@ -47,6 +47,29 @@
       "min": 3
     }
   },
+  "play": {
+    "triggers": [
+      {
+        "id": "free-turn",
+        "label": "I cast a FREE Turn",
+        "gain": 1
+      },
+      {
+        "id": "failed-save",
+        "label": "A creature failed a save against one of my tricks",
+        "gain": 1,
+        "oncePerTurn": true
+      }
+    ],
+    "states": [
+      {
+        "id": "subject",
+        "label": "Subject named (Nightmare)",
+        "why": "Your Subject takes every save against your tricks at disadvantage until the fight ends.",
+        "subclass": "nightmare"
+      }
+    ]
+  },
   "keyStats": [
     {
       "label": "Trick DC",

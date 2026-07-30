@@ -46,6 +46,29 @@
       "bonusAtLevel5": 1
     }
   },
+  "play": {
+    "triggers": [
+      {
+        "id": "move",
+        "label": "I moved 10+ ft around a hostile, Dashed or Disengaged",
+        "gain": 1,
+        "oncePerTurn": true
+      },
+      {
+        "id": "wallrun",
+        "label": "I used Wall-Run",
+        "gain": 1,
+        "oncePerTurn": true
+      }
+    ],
+    "states": [
+      {
+        "id": "hidden",
+        "label": "Hidden (Strike-and-Vanish)",
+        "why": "You are hidden only if you ended with total cover or out of line of sight."
+      }
+    ]
+  },
   "features": [
     {
       "level": 1,

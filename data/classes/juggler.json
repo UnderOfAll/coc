@@ -46,6 +46,17 @@
       "bonusAtLevel5": 2
     }
   },
+  "play": {
+    "autoRefill": "turn",
+    "triggers": [],
+    "states": [
+      {
+        "id": "marked",
+        "label": "Mark on a creature (Impalement)",
+        "why": "One at a time; lasts until the end of your next turn."
+      }
+    ]
+  },
   "features": [
     {
       "level": 1,

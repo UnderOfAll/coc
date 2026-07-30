@@ -48,6 +48,29 @@
       "min": 3
     }
   },
+  "play": {
+    "triggers": [
+      {
+        "id": "dealt",
+        "label": "I dealt damage",
+        "gain": 1,
+        "oncePerTurn": true
+      },
+      {
+        "id": "took",
+        "label": "I took damage",
+        "gain": 1,
+        "oncePerTurn": true
+      },
+      {
+        "id": "nat",
+        "label": "I rolled a natural 1 or 20",
+        "gain": 1,
+        "oncePerTurn": true
+      }
+    ],
+    "states": []
+  },
   "features": [
     {
       "level": 1,

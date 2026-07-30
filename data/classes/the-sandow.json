@@ -50,6 +50,29 @@
       "min": 3
     }
   },
+  "play": {
+    "triggers": [
+      {
+        "id": "hit",
+        "label": "I hit a creature",
+        "gain": 1,
+        "oncePerTurn": true
+      },
+      {
+        "id": "was-hit",
+        "label": "I was hit",
+        "gain": 1,
+        "oncePerTurn": true
+      }
+    ],
+    "states": [
+      {
+        "id": "grappling",
+        "label": "Iron Grip: holding a creature",
+        "why": "One creature at a time. Crushing or Heaving it ends the hold, and an escapee cannot be re-caught until the end of its next turn."
+      }
+    ]
+  },
   "features": [
     {
       "level": 1,

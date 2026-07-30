@@ -540,6 +540,29 @@
           "bonusAtLevel5": 1
         }
       },
+      "play": {
+        "triggers": [
+          {
+            "id": "move",
+            "label": "I moved 10+ ft around a hostile, Dashed or Disengaged",
+            "gain": 1,
+            "oncePerTurn": true
+          },
+          {
+            "id": "wallrun",
+            "label": "I used Wall-Run",
+            "gain": 1,
+            "oncePerTurn": true
+          }
+        ],
+        "states": [
+          {
+            "id": "hidden",
+            "label": "Hidden (Strike-and-Vanish)",
+            "why": "You are hidden only if you ended with total cover or out of line of sight."
+          }
+        ]
+      },
       "features": [
         {
           "level": 1,
@@ -727,6 +750,27 @@
           "prof": 1,
           "bonusAtLevel5": 1
         }
+      },
+      "play": {
+        "triggers": [
+          {
+            "id": "clone",
+            "label": "Create a Clone (bonus action)",
+            "gain": 1
+          },
+          {
+            "id": "riposte",
+            "label": "Full Dodge — free Clone from Riposte",
+            "gain": 1
+          }
+        ],
+        "states": [
+          {
+            "id": "mimic",
+            "label": "A Mimic is out (Impersonator)",
+            "why": "Once per combat. It copies the creature's AC and one attack, and dies to a single hit."
+          }
+        ]
       },
       "features": [
         {
@@ -927,6 +971,29 @@
           "min": 3
         }
       },
+      "play": {
+        "triggers": [
+          {
+            "id": "free-turn",
+            "label": "I cast a FREE Turn",
+            "gain": 1
+          },
+          {
+            "id": "failed-save",
+            "label": "A creature failed a save against one of my tricks",
+            "gain": 1,
+            "oncePerTurn": true
+          }
+        ],
+        "states": [
+          {
+            "id": "subject",
+            "label": "Subject named (Nightmare)",
+            "why": "Your Subject takes every save against your tricks at disadvantage until the fight ends.",
+            "subclass": "nightmare"
+          }
+        ]
+      },
       "keyStats": [
         {
           "label": "Trick DC",
@@ -1110,6 +1177,22 @@
           "ability": "Charisma",
           "min": 3
         }
+      },
+      "play": {
+        "triggers": [
+          {
+            "id": "free-turn",
+            "label": "I cast a FREE Turn",
+            "gain": 1
+          },
+          {
+            "id": "helped",
+            "label": "A trick of mine helped an ally",
+            "gain": 1,
+            "oncePerTurn": true
+          }
+        ],
+        "states": []
       },
       "keyStats": [
         {
@@ -1295,6 +1378,29 @@
           "ability": "Charisma",
           "min": 3
         }
+      },
+      "play": {
+        "triggers": [
+          {
+            "id": "dealt",
+            "label": "I dealt damage",
+            "gain": 1,
+            "oncePerTurn": true
+          },
+          {
+            "id": "took",
+            "label": "I took damage",
+            "gain": 1,
+            "oncePerTurn": true
+          },
+          {
+            "id": "nat",
+            "label": "I rolled a natural 1 or 20",
+            "gain": 1,
+            "oncePerTurn": true
+          }
+        ],
+        "states": []
       },
       "features": [
         {
@@ -1561,6 +1667,17 @@
           "bonusAtLevel5": 2
         }
       },
+      "play": {
+        "autoRefill": "turn",
+        "triggers": [],
+        "states": [
+          {
+            "id": "marked",
+            "label": "Mark on a creature (Impalement)",
+            "why": "One at a time; lasts until the end of your next turn."
+          }
+        ]
+      },
       "features": [
         {
           "level": 1,
@@ -1773,6 +1890,21 @@
           "bonusAtLevel5": 1
         }
       },
+      "play": {
+        "triggers": [
+          {
+            "id": "string",
+            "label": "Attach a String (bonus action)",
+            "gain": 1
+          },
+          {
+            "id": "wire-hit",
+            "label": "I hit with Control Wires — free String",
+            "gain": 1
+          }
+        ],
+        "states": []
+      },
       "features": [
         {
           "level": 1,
@@ -1967,6 +2099,29 @@
           "ability": "Constitution",
           "min": 3
         }
+      },
+      "play": {
+        "triggers": [
+          {
+            "id": "hit",
+            "label": "I hit a creature",
+            "gain": 1,
+            "oncePerTurn": true
+          },
+          {
+            "id": "was-hit",
+            "label": "I was hit",
+            "gain": 1,
+            "oncePerTurn": true
+          }
+        ],
+        "states": [
+          {
+            "id": "grappling",
+            "label": "Iron Grip: holding a creature",
+            "why": "One creature at a time. Crushing or Heaving it ends the hold, and an escapee cannot be re-caught until the end of its next turn."
+          }
+        ]
       },
       "features": [
         {

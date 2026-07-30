@@ -47,6 +47,27 @@
       "bonusAtLevel5": 1
     }
   },
+  "play": {
+    "triggers": [
+      {
+        "id": "clone",
+        "label": "Create a Clone (bonus action)",
+        "gain": 1
+      },
+      {
+        "id": "riposte",
+        "label": "Full Dodge — free Clone from Riposte",
+        "gain": 1
+      }
+    ],
+    "states": [
+      {
+        "id": "mimic",
+        "label": "A Mimic is out (Impersonator)",
+        "why": "Once per combat. It copies the creature's AC and one attack, and dies to a single hit."
+      }
+    ]
+  },
   "features": [
     {
       "level": 1,

@@ -553,6 +553,7 @@ function freshPlay(ch) {
     tempHp: 0,
     engine: 0,
     round: 1,
+    turnTriggers: {},  // triggerId -> already used this turn
     cooldowns: {},     // trickId -> rounds remaining
     usedOncePerCombat: {},   // trickId / featureName -> true
     uses: {},          // featureName -> uses spent this combat
@@ -565,7 +566,7 @@ function freshPlay(ch) {
 function normalisePlay(ch) {
   const base = freshPlay(ch);
   const p = Object.assign(base, ch.play || {});
-  for (const k of ["cooldowns", "usedOncePerCombat", "uses", "flags"]) {
+  for (const k of ["cooldowns", "usedOncePerCombat", "uses", "flags", "turnTriggers"]) {
     if (!p[k] || typeof p[k] !== "object") p[k] = {};
   }
   for (const k of ["hp", "tempHp", "engine", "round"]) p[k] = Number(p[k]) || (k === "round" ? 1 : 0);
@@ -622,7 +623,8 @@ function renderSheet() {
       </div>
       <button class="btn ${p.inCombat ? "btn-hot" : ""}" data-act="combat">${p.inCombat ? "End combat" : "Start combat"}</button>
     </div>
-    ${p.inCombat ? combatBar(d, p) : `<p class="muted out-of-combat">Out of combat. ${esc(d.engine ? d.engine.name + " sits at 0 until a fight starts — it is built during one and lost when it ends." : "Cooldowns and once-per-combat uses are clear.")}</p>`}
+    ${p.prompt ? promptBar(p.prompt) : ""}
+    ${p.inCombat ? combatBar(d, p) :  `<p class="muted out-of-combat">Out of combat. ${esc(d.engine ? d.engine.name + " sits at 0 until a fight starts — it is built during one and lost when it ends." : "Cooldowns and once-per-combat uses are clear.")}</p>`}
     ${vitals(d, p)}
     ${keyNumbers(d)}
     ${d.engine ? enginePanel(d, p) : ""}
@@ -631,6 +633,17 @@ function renderSheet() {
     ${statePanel(d, p)}
     ${gearPanel(d, ch)}
   `);
+}
+
+/* After a cast that forces a save, ask the one question the app cannot answer for itself. */
+function promptBar(q) {
+  return `<div class="prompt-bar">
+    <span><strong>${esc(q.name)}</strong> — did the ${esc(q.save)} save fail?</span>
+    <span class="prompt-acts">
+      <button class="btn" data-act="prompt" data-val="${esc(q.trick)}|failed">It failed</button>
+      <button class="btn-quiet" data-act="prompt" data-val="${esc(q.trick)}|saved">It saved</button>
+      <button class="btn-quiet" data-act="dismiss-prompt" data-val="1">Skip</button>
+    </span></div>`;
 }
 
 function combatBar(d, p) {
@@ -676,15 +689,24 @@ function enginePanel(d, p) {
   const e = d.engine, cap = d.engineCap ?? 0;
   const pips = Array.from({ length: cap }, (_, i) =>
     `<button class="pip ${i < p.engine ? "on" : ""}" data-act="engine-set" data-val="${i + 1}" title="Set to ${i + 1}"></button>`).join("");
+  const play = d.cls.play || {};
+  // One button per way this class GAINS engine, worded as the player would say it. Once-per-turn
+  // triggers grey out until End my turn, which is the only thing that resets them.
+  const trig = (play.triggers || []).map((t) => {
+    const spent = t.oncePerTurn && p.turnTriggers?.[t.id];
+    return `<button class="btn-quiet trigger ${spent ? "spent" : ""}" data-act="trigger" data-val="${esc(t.id)}"
+      ${spent || !p.inCombat ? "disabled" : ""}>+${esc(t.gain)} · ${esc(t.label)}${t.oncePerTurn ? ' <em>1/turn</em>' : ""}</button>`;
+  }).join("");
   return `<section class="panel engine-panel">
     <h2>${esc(e.name)} <span class="muted">${esc(p.engine)} / ${esc(cap)}</span></h2>
     <div class="pips">${pips || `<span class="muted">cap 0</span>`}</div>
+    ${trig ? `<div class="triggers">${trig}</div>` : ""}
+    ${play.autoRefill === "turn" ? `<p class="muted">Refills to ${esc(cap)} at the start of each of your turns — press <strong>End my turn</strong>.</p>` : ""}
     <div class="hp-controls">
       <button class="btn-quiet" data-act="engine" data-val="-1">−1</button>
       <button class="btn-quiet" data-act="engine" data-val="1">+1</button>
       <button class="btn-quiet" data-act="engine-set" data-val="0">Clear</button>
     </div>
-    <p class="muted">${esc(e.generation ? e.generation.split(".")[0] + "." : "")}</p>
     ${!p.inCombat ? `<p class="muted">Out of combat this stays at 0 — it cannot be banked before a fight.</p>` : ""}
   </section>`;
 }
@@ -754,25 +776,26 @@ function featuresPanel(d, p) {
   return `<section class="panel"><h2>Features</h2>${rows}</section>`;
 }
 
-/* Named states a player toggles by hand — the grapple, a Subject, concentration. The sheet does not
-   try to infer these from dice it never sees; it just remembers what you tell it. */
-const STATE_HINTS = {
-  "the-sandow": [["grappling", "Holding a creature in Iron Grip", "You can hold only one at a time. Crushing or Heaving it ends the hold."]],
-  "illusionist": [["concentrating", "Concentrating on a trick", "Take damage → roll a flat d20 vs DC 10, or half the damage taken if higher."]],
-  "jester": [["concentrating", "Concentrating on a trick", "Take damage → roll a flat d20 vs DC 10, or half the damage taken if higher."]],
-  "doppelganger": [["clones", "Clones on the board", "They share your AC and die to a single hit. All drop when combat ends."]],
-  "puppeteer": [["strings", "Strings attached", "Every String snaps when the fight ends."]],
-};
+/* Conditions any character can be under, plus whatever the class data declares. Nothing here is
+   inferred: the app never sees a die roll, so it only ever remembers what the player tells it. */
+const UNIVERSAL_STATES = [
+  ["prone", "Prone", "Melee attacks against you have advantage, ranged have disadvantage; standing costs half your speed."],
+  ["grappled", "Grappled", "Your speed is 0."],
+  ["restrained", "Restrained", "Speed 0, attacks against you have advantage, and you have disadvantage on Dex saves."],
+  ["frightened", "Frightened", "Disadvantage while the source is in sight, and you cannot willingly move closer to it."],
+  ["blinded", "Blinded", "You automatically fail sight checks; attacks against you have advantage and yours have disadvantage."],
+  ["concentrating", "Concentrating", "Take damage → roll a flat d20 against DC 10, or half the damage taken if that is higher."],
+  ["incapacitated", "Incapacitated", "No actions and no reactions — and you cannot Parry at all."],
+];
 function statePanel(d, p) {
-  const hints = STATE_HINTS[d.cls.id] || [];
-  const subj = d.subclass && d.subclass.id === "nightmare" ? [["subject", "Subject named", "Your Subject takes every save against your tricks at disadvantage until combat ends."]] : [];
-  const all = hints.concat(subj);
-  if (!all.length) return "";
+  const own = (d.cls.play?.states || []).filter((st) => !st.subclass || (d.subclass && d.subclass.id === st.subclass));
+  const all = own.map((st) => [st.id, st.label, st.why || ""]).concat(UNIVERSAL_STATES);
   return `<section class="panel"><h2>States</h2>
     <div class="chips">${all.map(([k, label, why]) =>
       `<button class="chip ${p.flags[k] ? "on" : ""}" data-act="flag" data-val="${esc(k)}">
-        ${esc(label)}<span class="term-tip" role="tooltip">${esc(why)}</span></button>`).join("")}</div>
-    <p class="muted">Toggle these yourself — the app never sees your dice, so it never guesses.</p>
+        ${esc(label)}${why ? `<span class="term-tip" role="tooltip">${esc(why)}</span>` : ""}</button>`).join("")}</div>
+    <p class="muted">Toggle these yourself — the app never sees your dice, so it never guesses. All of
+      them clear when the fight ends.</p>
   </section>`;
 }
 
@@ -802,10 +825,11 @@ function sheetAction(e) {
 
   if (act === "combat") {
     p.inCombat = !p.inCombat;
+    if (p.inCombat && d.cls.play?.autoRefill === "turn") p.engine = d.engineCap ?? 0;
     if (!p.inCombat) {
       // Everything per-combat resets: the engine empties, cooldowns clear, uses refresh.
       p.engine = 0; p.cooldowns = {}; p.usedOncePerCombat = {}; p.uses = {}; p.round = 1;
-      p.flags = {};
+      p.flags = {}; p.turnTriggers = {}; p.prompt = null;
     }
   } else if (act === "endturn") {
     p.round += 1;
@@ -813,6 +837,29 @@ function sheetAction(e) {
       p.cooldowns[k] -= 1;
       if (p.cooldowns[k] <= 0) delete p.cooldowns[k];
     }
+    p.turnTriggers = {};                                  // once-per-turn gains come back
+    if (d.cls.play?.autoRefill === "turn") p.engine = d.engineCap ?? 0;   // the Juggler's Set
+    p.prompt = null;
+  } else if (act === "trigger") {
+    const t = (d.cls.play?.triggers || []).find((x) => x.id === val);
+    if (t) {
+      p.engine = Math.max(0, Math.min(d.engineCap ?? 0, p.engine + t.gain));
+      if (t.oncePerTurn) p.turnTriggers[t.id] = true;
+    }
+  } else if (act === "prompt") {
+    // Answering the "did it land?" question the sheet asked after a cast.
+    const [tid, answer] = String(val).split("|");
+    const t = idx.tricksById.get(tid);
+    if (answer === "failed" && t) {
+      const gain = (d.cls.play?.triggers || []).find((x) => x.id === "failed-save");
+      if (gain && !p.turnTriggers[gain.id]) {
+        p.engine = Math.max(0, Math.min(d.engineCap ?? 0, p.engine + gain.gain));
+        p.turnTriggers[gain.id] = true;
+      }
+    }
+    p.prompt = null;
+  } else if (act === "dismiss-prompt") {
+    p.prompt = null;
   } else if (act === "dmg") {
     let n = amt();
     const soak = Math.min(p.tempHp, n);
@@ -830,6 +877,10 @@ function sheetAction(e) {
       if (t.cooldown) p.cooldowns[val] = t.cooldown;
       if (t.tier === "prestige") p.usedOncePerCombat[val] = true;
       if (!p.inCombat) p.inCombat = true;
+      // The app never sees the roll, so it asks. Only worth asking when the answer changes
+      // something: a failed save feeds a full caster's engine.
+      const asks = t.save && (d.cls.play?.triggers || []).some((x) => x.id === "failed-save");
+      p.prompt = asks ? { trick: val, name: t.name, save: t.save } : null;
     }
   } else if (act === "clear-cd") delete p.cooldowns[val];
   else if (act === "use") p.uses[val] = (p.uses[val] || 0) + 1;

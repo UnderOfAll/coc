@@ -46,6 +46,21 @@
       "bonusAtLevel5": 1
     }
   },
+  "play": {
+    "triggers": [
+      {
+        "id": "string",
+        "label": "Attach a String (bonus action)",
+        "gain": 1
+      },
+      {
+        "id": "wire-hit",
+        "label": "I hit with Control Wires — free String",
+        "gain": 1
+      }
+    ],
+    "states": []
+  },
   "features": [
     {
       "level": 1,
