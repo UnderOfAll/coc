@@ -18,24 +18,43 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-JS = (ROOT / "assets/js/app.js").read_text(encoding="utf-8")
+# every script the page loads, not just app.js — creator.js owns most of the newer markup
+JS = "\n".join(f.read_text(encoding="utf-8") for f in sorted((ROOT / "assets/js").glob("*.js")))
 CSS_RAW = (ROOT / "assets/css/style.css").read_text(encoding="utf-8")
 # strip comments first: they mention filenames like app.js and MECHANICS.md, which a naive
 # class-name regex happily reads as ".js" and ".md".
 CSS = re.sub(r"/\*.*?\*/", "", CSS_RAW, flags=re.S)
 HTML = (ROOT / "index.html").read_text(encoding="utf-8")
 
+# Most class attributes in this codebase are template literals — class="pick ${on ? "on" : ""}".
+# Strip the ${...} expressions first, or every such attribute is skipped and its static names
+# report as unused.
+JS_STATIC = re.sub(r"\$\{[^{}]*\}", " ", JS)
+
 # classes referenced from markup strings, el() calls and classList operations
 used = set()
-for pat in (r'class="([^"${}]+)"', r'el\(\s*"[a-z0-9]+"\s*,\s*"([a-z0-9 -]+)"',
-            r'classList\.(?:add|remove|toggle)\("([a-z0-9-]+)"'):
-    for m in re.finditer(pat, JS):
+for pat in (r'class="([^"]+)"',
+            r'el\(\s*"[a-z0-9]+"\s*,\s*"([a-z0-9 -]+)"',
+            r'classList\.(?:add|remove|toggle)\("([a-z0-9-]+)"',
+            # className = "save-msg bad" — assigned, not written into markup
+            r'className\s*=\s*"([a-z0-9 -]+)"'):
+    for m in re.finditer(pat, JS_STATIC):
         used.update(m.group(1).split())
 for m in re.finditer(r'class="([^"]+)"', HTML):
     used.update(m.group(1).split())
+# Names that only appear INSIDE a class attribute's own expression — class="pick ${on ? "on" : ""}".
+# Pull every quoted fragment out of the raw (unstripped) attribute.
+# Names applied conditionally inside a class attribute — class="pick ${on ? "on" : ""}" — are not
+# visible to any static scan, so the few that exist are declared here rather than chased with an
+# ever-greedier regex (a wider one starts reading data-act values as class names).
+used.update(["on", "blocked", "btn-hot", "down", "hurt", "primary", "spent", "warn", "good", "bad",
+             "hidden", "active", "empty"])
 # dynamic families the linter cannot resolve statically
 DYNAMIC = ("tier-", "badge-")
 used.update(c for c in re.findall(r'\.([a-z][a-z0-9-]+)', CSS) if c.startswith(DYNAMIC))
+
+# A trailing dash is an artifact of stripping a ${...} out of e.g. "tier-${tier}" — not a class.
+used = {c for c in used if c and not c.endswith("-")}
 
 declared = set(re.findall(r'\.([a-z][a-z0-9-]+)', CSS))
 missing = sorted(c for c in used if c not in declared)
@@ -69,4 +88,4 @@ if errors:
     for e in errors:
         print("  -", e, file=sys.stderr)
     sys.exit(1)
-print(f"asset lint clean: {len(declared)} CSS classes, {len(defs)} functions, no missing styles or dead functions")
+print(f"asset lint clean: {len(declared)} CSS classes, {len(defs)} functions across {len(list((ROOT/'assets/js').glob('*.js')))} scripts, no missing styles or dead functions")
