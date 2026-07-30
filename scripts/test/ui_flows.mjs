@@ -138,11 +138,37 @@ console.log("\n— SHEET —");
 const mk=(cls,lv,sub)=>peek(`(function(){
   const ch={v:1,name:"Rig",classId:${JSON.stringify(cls)},subclassId:${JSON.stringify(sub||"")},level:${lv},size:"Medium",
     method:"array",scores:{Strength:12,Dexterity:15,Constitution:14,Intelligence:10,Wisdom:8,Charisma:13},
-    skills:[],armorId:"",shieldId:"",weapons:[],photo:"",notes:""};
+    skills:["Acrobatics","Deception"],armorId:"",shieldId:"",weapons:[],photo:"",notes:""};
   ch.play=freshPlay(ch); sheet={code:"123456",ch}; renderSheet(); return 1;})()`);
 mk("joker",5);
-ok($$(".kn").length===6,"key numbers: six headline boxes");
+// Each class names its own DC — the sheet reads keyStats rather than assuming one generic
+// "trick save DC" off the primary ability (which for a Juggler would be an invented number).
+const knLabel=k=>{const t=k.querySelector(".kn-l .tip-term");return (t?t.firstChild.textContent:k.querySelector(".kn-l").textContent).trim();};
+const knLabels=$$(".kn").map(knLabel);
+ok(knLabels.includes("Gambit DC"),"a Joker sees his Gambit DC by name ("+knLabels.join(", ")+")");
+ok(!knLabels.includes("Trick save DC"),"and not a generic 'Trick save DC'");
+const gambit=$$(".kn").find(k=>/Gambit DC/.test(k.textContent));
+ok(gambit.querySelector(".kn-v").textContent===String(peek("derive(sheet.ch).saveDC")),"with the right number");
+ok(/Wild Cards/.test(gambit.querySelector(".term-tip").textContent),"and the class's own note in the tooltip");
+// The class's DC takes the slot proficiency used to hold; proficiency is baked into every number
+// that needs it, and explains itself where it is mentioned.
+ok(!knLabels.includes("Proficiency"),"proficiency is no longer a headline box");
+const profTip=$(".panel-sub .term-tip");
+ok(profTip&&/level/i.test(profTip.textContent)&&/\+2 at levels 1-4/.test(profTip.textContent),
+  "but still explains itself: "+profTip.textContent.slice(0,55));
+// and the skills carry the number you actually roll, so nothing is lost by dropping the box
+const skillChips=$$(".skill-chip");
+ok(skillChips.length===2,"trained skills are listed with their numbers ("+skillChips.length+")");
+const acro=skillChips.find(c=>/Acrobatics/.test(c.textContent));
+ok(acro&&acro.querySelector("em").textContent===peek(`(function(){const d=derive(sheet.ch);
+  return ((d.mods.Dexterity>=0?"+":"")+(d.mods.Dexterity+d.prof));})()`),"Acrobatics shows Dex + proficiency");
 ok($$(".ab-box").length===6,"six ability boxes");
+// A non-caster must not be shown a trick number at all.
+mk("juggler",5,"impalement");
+const jl=$$(".kn").map(knLabel);
+ok(jl.includes("Trick Shot DC"),"a Juggler sees his Trick Shot DC ("+jl.join(", ")+")");
+ok(!jl.some(l=>/Trick attack/i.test(l)),"and no trick-attack line, because he casts nothing");
+mk("joker",5);
 ok($$(".ab-box.prof").length===2,"the two proficient saves are marked");
 ok($(".ab-save").textContent.includes("+"),"each ability shows its saving throw");
 ok($$(".attack-table td").every(n=>n.getAttribute("data-label")),"every attack cell carries its stacked-view label");

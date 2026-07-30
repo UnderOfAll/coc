@@ -732,6 +732,13 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 .uses { display: flex; gap: 0.35rem; align-items: center; font-size: 0.85rem; }
 .uses .spent { color: var(--accent-soft); }
 .notes { color: var(--muted); white-space: pre-wrap; }
+/* A trained skill carries the number you actually roll, so the proficiency bonus never has to be
+   looked up and added by hand. */
+.skill-row { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.skill-chip { display: inline-flex; align-items: baseline; gap: 0.35rem; padding: 0.3rem 0.6rem;
+  background: var(--panel-2); border: 1px solid var(--border); border-radius: var(--radius); }
+.skill-chip em { font-style: normal; font-family: var(--serif); color: var(--gold); font-size: 1.05rem; }
+.skill-chip .muted { font-size: 0.80rem; }
 @media (max-width: 760px) {
   .creator { grid-template-columns: 1fr; }
   .creator-side { position: static; order: -1; }

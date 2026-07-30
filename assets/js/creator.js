@@ -147,8 +147,16 @@ function derive(ch) {
     return { w, ability, why, hit: prof + mod, mod };
   });
 
+  // The class's own named DCs, worked out for this character. Caps live in the Engine panel and
+  // Parry has its own box, so both are left out rather than duplicated.
+  const resolve = tokenResolver({ prof, mods, level, primary, scalingUses: scalingUses(level) });
+  const classStats = (cls.keyStats || [])
+    .filter((k) => k.formula && !/parry|cap$|set size/i.test(k.label || ""))
+    .map((k) => ({ label: k.label, note: k.note, hit: resolve(k.label, k.formula) }))
+    .filter((k) => k.hit);
+
   return {
-    cls, subclass, level, prof, mods, hpMax, ac, acNote, features, tricks, engine, engineCap,
+    cls, subclass, level, prof, mods, hpMax, ac, acNote, features, tricks, engine, engineCap, classStats,
     weapons: proficient, carried, armor, shield,
     saveDC: 8 + prof + (mods[primary] ?? 0),
     attackBonus: prof + (mods[primary] ?? 0),
@@ -234,8 +242,7 @@ function tokenResolver(d) {
    to the table — that is the whole reason the two halves are authored separately (MECHANICS §5). */
 function inPlayTip(narration) {
   if (!narration) return "";
-  return `<span class="tip-term inplay-tip" tabindex="0">In play<sup class="tip-mark">&#9432;</sup>` +
-    `<span class="term-tip" role="tooltip">${esc(narration)}</span></span>`;
+  return plainTermHTML("In play", narration, "inplay-tip");
 }
 
 /* Render `fn`'s HTML with every formula token resolved against this character, then put the
@@ -561,8 +568,8 @@ function sidePreview() {
     ${row("Hit points", d.hpMax)}
     ${row("Armour Class", d.ac, d.acNote)}
     ${row("Proficiency", sign(d.prof))}
-    ${row("Trick save DC", d.saveDC, "8 + prof + " + ABIL_SHORT[d.primary])}
-    ${row("Trick attack", sign(d.attackBonus), "prof + " + ABIL_SHORT[d.primary])}
+    ${d.classStats.map((k) => row(k.label, k.hit.value)).join("")}
+    ${d.tricks.length ? row("Trick attack", sign(d.attackBonus), "prof + " + ABIL_SHORT[d.primary]) : ""}
     ${row("Parry DC", d.parryDC, "lower is better")}
     ${d.engine ? row(d.engine.name + " cap", d.engineCap) : ""}
     ${d.tricks.length ? row("Tricks known", d.tricks.length) : ""}
@@ -997,9 +1004,11 @@ function vitals(d, p) {
    labelled as trick numbers: they come off the class's primary ability, which for half the roster
    is NOT the stat they swing a weapon with — those live in Attacks, per weapon. */
 function keyNumbers(d) {
+  // plainTermHTML, not tipTermHTML: these tooltips are written here, not authored in a content file,
+  // so they must never be run through the formula resolver.
   const n = (label, value, note, tip) =>
     `<div class="kn"><span class="kn-v">${esc(value)}</span>
-      <span class="kn-l">${tip ? tipTermHTML(label, tip) : esc(label)}</span>
+      <span class="kn-l">${tip ? plainTermHTML(label, tip) : esc(label)}</span>
       ${note ? `<span class="kn-n">${esc(note)}</span>` : ""}</div>`;
   const abils = ABILITIES.map((a) => {
     const isProf = d.saves.includes(a);
@@ -1014,11 +1023,11 @@ function keyNumbers(d) {
     ${n("Armour Class", d.ac, d.acNote, "An attack roll must equal or beat this to hit you. Only a hit can then be Parried.")}
     ${n("Parry DC", d.parryDC, "roll a flat d20", "When a hit lands, spend your reaction and roll a flat d20 — no modifiers. Above this DC: no damage. Equal: half. Below: half again on top. Lower is better, and it never scales with level.")}
     ${n("Initiative", sign(d.mods.Dexterity), "d20 + this", "Roll d20 and add this at the start of a fight to see who goes when.")}
-    ${n("Proficiency", sign(d.prof), "level " + d.level, "Added to anything you are proficient with: attacks with your weapons, the skills you chose, and the saving throws your class grants.")}
-    ${n("Trick save DC", d.saveDC, "vs your tricks", "8 + your proficiency bonus + your " + ABIL_SHORT[d.primary] + " modifier. A creature your trick targets rolls its own save against this number.")}
-    ${n("Trick attack", sign(d.attackBonus), "for tricks that roll", "Your proficiency bonus + your " + ABIL_SHORT[d.primary] + " modifier, for the tricks that make an attack roll instead of forcing a save. Weapon attacks are worked out per weapon under Attacks.")}
+
+    ${d.classStats.map((k) => n(k.label, k.hit.value, "", k.hit.explain + (k.note ? " — " + k.note : ""))).join("")}
+    ${d.tricks.length ? n("Trick attack", sign(d.attackBonus), "for tricks that roll", "Your proficiency bonus + your " + ABIL_SHORT[d.primary] + " modifier, for the tricks that make an attack roll instead of forcing a save. Weapon attacks are worked out per weapon under Attacks.") : ""}
   </div>
-  <p class="panel-sub">Abilities — the modifier is what you add; a gold box is a saving throw your class is proficient in</p>
+  <p class="panel-sub">Abilities — the modifier is what you add; a gold box is a saving throw your class is proficient in${d.prof ? `, which already includes your ${plainTermHTML("proficiency bonus " + sign(d.prof), `Not an ability score: it comes from LEVEL alone and is the same for every class — +2 at levels 1-4, +3 at 5-8, +4 at 9-12, +5 at 13-16, +6 at 17+. You are level ${d.level}, so ${sign(d.prof)}. It is already added into every number on this sheet that needs it: your saving throws, your to-hit, your DC, and your skills below.`)}` : ""}</p>
   <div class="ab-grid">${abils}</div></section>`;
 }
 
@@ -1035,7 +1044,7 @@ function attacksPanel(d) {
     // horizontal scroller would clip the mastery tooltips.
     return `<tr>
       <td data-label="Weapon"><strong>${esc(w.name)}</strong> ${rng}</td>
-      <td data-label="To hit" class="atk-hit">${tipTermHTML(sign(hit), `${why} Proficiency ${sign(d.prof)} + ${ability} ${sign(mod)}.`)}</td>
+      <td data-label="To hit" class="atk-hit">${plainTermHTML(sign(hit), `${why} Proficiency ${sign(d.prof)} + ${ability} ${sign(mod)}.`)}</td>
       <td data-label="Damage" class="atk-dmg">${esc(w.damage.die)} ${esc(sign(mod))}${vers} <span class="muted">${esc(w.damage.type)}</span></td>
       <td data-label="Properties">${propsHTML(w.properties)}</td>
       <td data-label="Mastery">${masteryHTML(w.mastery)}</td></tr>`;
@@ -1224,7 +1233,14 @@ function gearPanel(d, ch) {
     <p class="panel-sub">Carrying <span class="muted">— your class is proficient with all of these</span></p>
     <div class="chips">${weps}</div>
     ${carried.length ? "" : `<p class="muted">Nothing chosen, so every weapon you are proficient with is listed under Attacks.</p>`}
-    ${ch.skills?.length ? `<p class="muted">Skill proficiencies: ${esc(ch.skills.join(", "))}</p>` : ""}
+    ${ch.skills?.length ? `<p class="panel-sub">Skills you are trained in</p>
+      <div class="skill-row">${ch.skills.map((name) => {
+        const sk = idx.skillsByName.get(String(name).toLowerCase());
+        const ab = sk && sk.ability;
+        const bonus = (ab ? (d.mods[ab] || 0) : 0) + d.prof;
+        return `<span class="skill-chip"><strong>${esc(name)}</strong>
+          <em>${esc(sign(bonus))}</em>${ab ? `<span class="muted">${esc(ABIL_SHORT[ab])}</span>` : ""}</span>`;
+      }).join("")}</div>` : ""}
     ${ch.notes ? `<p class="notes">${esc(ch.notes)}</p>` : ""}
   </section>`;
 }

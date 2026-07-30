@@ -862,8 +862,16 @@ const ABILITY_NAMES = {
 let TOKEN_RESOLVER = null;
 function tipTermHTML(label, formula) {
   const hit = TOKEN_RESOLVER ? TOKEN_RESOLVER(label, formula) : null;
-  const tip = hit ? hit.explain : formula;
-  return `<span class="tip-term${hit ? " resolved" : ""}" tabindex="0" title="${esc(tip)}">${esc(label)}<sup class="tip-mark">&#9432;</sup>` +
+  return plainTermHTML(label, hit ? hit.explain : formula, hit ? "resolved" : "");
+}
+
+/* The same term markup with NO resolution — for a tooltip the interface wrote itself rather than one
+   that came out of a content file. The resolver matches on formula TEXT, so a hand-written
+   explanation that happens to mention "at levels 1-4" was being swapped for the scaling-uses ladder:
+   the Proficiency box explained itself as a uses counter. Only authored {{Label|formula}} tokens
+   should ever be resolved. */
+function plainTermHTML(label, tip, cls) {
+  return `<span class="tip-term${cls ? " " + cls : ""}" tabindex="0" title="${esc(tip)}">${esc(label)}<sup class="tip-mark">&#9432;</sup>` +
     `<span class="term-tip" role="tooltip">${esc(tip)}</span></span>`;
 }
 
