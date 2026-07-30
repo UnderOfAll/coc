@@ -253,7 +253,7 @@ let sheet = null;      // { code, ch } while a sheet is open
 /* Pure interface state: what is expanded, what number is sitting in the damage box, whether a
    level-up is being previewed. Never saved — none of it is part of the character. */
 const ui = {
-  openSubs: new Set(),
+  openSubs: new Set(), openOpts: new Set(),
   hpAmt: 1, levelUp: null, deleteArmed: false, deleteText: "", sheetScroll: 0, scrollTop: false,
 };
 
@@ -841,7 +841,7 @@ function routeSheet(code) {
     pageScroller().scrollTop = ui.sheetScroll || 0;
     return;
   }
-  ui.openSubs.clear();
+  ui.openSubs.clear(); ui.openOpts.clear();
   ui.levelUp = null; ui.hpAmt = 1; ui.deleteArmed = false; ui.deleteText = ""; ui.sheetScroll = 0;
   paint(`<div class="tool-head"><a class="back" href="#/manage">&larr; My characters</a><h1>Loading…</h1></div>`);
   CocStore.load(code).then((ch) => {
@@ -1111,11 +1111,26 @@ function featuresPanel(d, p) {
       <p class="feat-from">${esc(f._from)}</p>
       ${metaRow(f.meta)}
       <div class="feat-text">${fmtDesc(f.sheetSummary || f.description || "")} ${inPlayTip(f.narration)}</div>
-      ${Array.isArray(f.options) && f.options.length ? optionTable(f.options) : ""}
+      ${optionsBlock(f, key)}
       ${ctl}
     </div>`;
   }).join("");
   return `<section class="panel"><h2>Features</h2><div class="feat-grid">${cards}</div></section>`;
+}
+
+/* A feature whose menu is eight rows long buries the sentence that says what the feature IS. The
+   table is what you read once, when you pick; the sentence is what you read every round. So the
+   table folds away, and says how many rows it is hiding — a toggle with no count is a gamble.
+   Wording comes from the data: a `roll` on any row makes it a random table, not a menu. */
+function optionsBlock(f, key) {
+  const opts = Array.isArray(f.options) ? f.options : [];
+  if (!opts.length) return "";
+  const open = ui.openOpts.has(key);
+  const noun = opts.some((o) => o.roll != null) ? "result" : "option";
+  return `<button class="btn-quiet opts-toggle" data-act="open-opts" data-val="${esc(key)}"
+      aria-expanded="${open}">${open ? "Hide" : "Show"} the ${esc(opts.length)} ${esc(noun)}${opts.length === 1 ? "" : "s"}
+      <span class="opts-mark">${open ? "&minus;" : "+"}</span></button>
+    ${open ? optionTable(opts) : ""}`;
 }
 
 /* Conditions any character can be under, plus whatever the class data declares. Nothing here is
@@ -1345,7 +1360,7 @@ async function deleteCharacter() {
 
 /* Actions that only move the interface around — expanding a feature, opening the level-up preview
    — must not write to storage. Listed here so the difference is declared rather than remembered. */
-const UI_ONLY_ACTS = new Set(["levelup", "lu-cancel", "lu-sub",
+const UI_ONLY_ACTS = new Set(["levelup", "lu-cancel", "lu-sub", "open-opts",
                               "sub-open", "lu-asi", "delete-arm", "delete-cancel"]);
 
 function sheetAction(e) {
@@ -1430,6 +1445,7 @@ function sheetAction(e) {
   }
   else if (act === "lu-cancel") ui.levelUp = null;
   else if (act === "lu-sub") ui.levelUp.subclassId = ui.levelUp.subclassId === val ? "" : val;
+  else if (act === "open-opts") { ui.openOpts.has(val) ? ui.openOpts.delete(val) : ui.openOpts.add(val); }
   else if (act === "sub-open") { ui.openSubs.has(val) ? ui.openSubs.delete(val) : ui.openSubs.add(val); }
   else if (act === "delete-arm") { ui.deleteArmed = true; ui.deleteText = ""; }
   else if (act === "delete-cancel") { ui.deleteArmed = false; ui.deleteText = ""; }

@@ -694,6 +694,8 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 .feat-card .feature-meta { margin: 0.1rem 0; }
 .feat-card .data-table { margin: 0.3rem 0 0; }
 .feat-card .uses { margin-top: auto; padding-top: 0.4rem; }
+.opts-toggle { align-self: flex-start; display: inline-flex; align-items: center; gap: 0.4rem; }
+.opts-mark { color: var(--gold); font-family: var(--serif); font-size: 1.10rem; line-height: 1; }
 .uses { display: flex; gap: 0.35rem; align-items: center; font-size: 0.85rem; }
 .uses .spent { color: var(--accent-soft); }
 .notes { color: var(--muted); white-space: pre-wrap; }

@@ -231,6 +231,18 @@ ok($$(".feat-card .feat-text").length===nFeat,"every card carries its rules text
 ok($$(".feat-card .feat-text").every(n=>n.textContent.trim().length>15),"and it is real text, not a stub");
 ok($$(".feat-card .feat-text").every(n=>!/\{\{|\[\[/.test(n.textContent)),"tokens expanded");
 ok(/auto-fit/.test(rule(".feat-grid")),"the grid adapts to the width instead of forcing three");
+// A feature with a long menu folds it away — the table is read once when you pick, the sentence
+// above it every round.
+const optBtn=$$('[data-act="open-opts"]')[0];
+ok(optBtn,"a feature with a menu offers a toggle");
+ok(/Show the \d+ (option|result)/.test(optBtn.textContent),"which says how many rows it is hiding");
+const tablesBefore=$$(".feat-card .option-table").length;
+ok(tablesBefore===0,"folded away by default");
+click(optBtn);
+ok($$(".feat-card .option-table").length===1,"opens just that one");
+ok(/Hide the/.test($$('[data-act="open-opts"]')[0].textContent),"and offers to fold it back");
+click($$('[data-act="open-opts"]')[0]);
+ok($$(".feat-card .option-table").length===0,"which it does");
 click($('[data-act="combat"]'));
 const useBtn=$$('[data-act="use"]')[0];
 if(useBtn){ click(useBtn); ok($$(".feat-card").length===nFeat,"cards survive an action unchanged"); }
