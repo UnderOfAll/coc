@@ -81,6 +81,11 @@ ok(peek(`validateDraft(derive(draft)).some(m=>/starting bonus/i.test(m))`)===fal
 // it must NOT be paid for out of point buy, and it must reach the modifier
 const before=peek(`(function(){const d=derive(draft);return d.mods.Charisma;})()`);
 ok(before===Math.floor((peek("draft.scores.Charisma")+2-10)/2),"the bonus reaches the modifier ("+before+")");
+// The number on screen is the score you HAVE, not the one you bought.
+const chaRow=$$(".abil").find(r=>/CHA/.test(r.textContent));
+ok(chaRow.querySelector(".step-val").textContent===String(peek("draft.scores.Charisma")+2),
+  "point buy shows the total, not the base ("+chaRow.querySelector(".step-val").textContent+")");
+ok(/\d+ \+ 2/.test(chaRow.querySelector(".gift").textContent),"with the arithmetic beside it");
 ok(peek(`ABILITIES.reduce((n,a)=>n+(POINT_COST[draft.scores[a]]??0),0)`)<=27,"and is not charged to point buy");
 // +1/+1/+1 is reachable through the same control
 click(odec("Charisma"));
@@ -110,6 +115,16 @@ ok(peek('validateDraft(derive(draft)).some(m=>/weapon/i.test(m))')===false,"weap
 click($$('[data-pick="armor"]')[0]);
 type($("#cname"),"Test Joker");
 ok(peek("draft.name")==="Test Joker","name kept");
+// the other two methods carry the total in its own cell, since their control is a fixed list
+click($$('[data-pick="method"]').find(b=>b.dataset.val==="manual"));
+// re-query each time: typing re-renders, which detaches every node captured before it
+for (const ab of ["Strength","Dexterity","Constitution","Intelligence","Wisdom","Charisma"])
+  type($(`[data-abil="${ab}"]`), "14");
+const raised=$$(".abil").filter(r=>r.querySelector(".gift"));
+ok(raised.length===2,"two abilities carry a starting bonus in manual mode ("+raised.length+")");
+ok(raised.every(r=>Number(r.querySelector(".abil-total").textContent)>14),
+  "manual shows the raised total too ("+raised.map(r=>r.querySelector(".abil-total").textContent).join(", ")+")");
+click($$('[data-pick="method"]').find(b=>b.dataset.val==="buy"));
 // The input caps must match the storage rules, or the only way a player finds the limit is a save
 // that fails after they have written past it.
 ok($("#cname").getAttribute("maxlength")==="40","the name input matches the 40-char storage rule");

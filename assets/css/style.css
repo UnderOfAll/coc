@@ -604,7 +604,9 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 .abil-name { flex: 1; font-size: 0.85rem; letter-spacing: 1px; }
 .abil-mod { min-width: 2rem; text-align: right; font-weight: 600; color: var(--gold); }
 /* The starting bonus, shown on the row it lands on so the final modifier is never a mystery. */
-.gift { font-size: 0.80rem; color: var(--ok); font-weight: 600; }
+/* The arithmetic behind a raised score, so a + that has stopped working still explains itself. */
+.gift { font-size: 0.80rem; color: var(--muted); }
+.abil-total { font-family: var(--serif); font-size: 1.15rem; color: var(--ok); min-width: 1.6rem; text-align: right; }
 .budget.spent { color: var(--ok); }
 .tag { font-size: 0.78rem; color: var(--gold); text-transform: none; letter-spacing: 0; }
 .side-card { background: var(--panel); border: 1px solid var(--gold); border-radius: var(--radius); padding: 1rem; }

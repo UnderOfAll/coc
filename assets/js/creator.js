@@ -428,7 +428,8 @@ function stepAbilities(cls) {
     const v = draft.scores[a] ?? "";
     const isPrimary = a === cls.primaryAbility;
     const gift = draft.origin[a] || 0;
-    const mod = v === "" ? "" : sign(abilMod(Number(v) + gift));
+    const total = v === "" ? "" : Number(v) + gift;
+    const mod = v === "" ? "" : sign(abilMod(total));
     let control;
     if (m === "array") {
       const used = ABILITIES.filter((x) => x !== a).map((x) => draft.scores[x]);
@@ -445,7 +446,7 @@ function stepAbilities(cls) {
       const canRaise = step != null && step <= left;
       control = `<span class="stepper">
         <button class="step-btn" data-pick="abil" data-val="${a}|-1" ${cur <= 8 ? "disabled" : ""} aria-label="Lower ${a}">&minus;</button>
-        <span class="step-val">${esc(cur)}</span>
+        <span class="step-val">${esc(cur + gift)}</span>
         <button class="step-btn" data-pick="abil" data-val="${a}|1" ${canRaise ? "" : "disabled"} aria-label="Raise ${a}">+</button>
         <span class="step-cost">${step == null ? "max" : `next ${step}p`}</span>
       </span>`;
@@ -454,7 +455,10 @@ function stepAbilities(cls) {
     }
     return `<div class="abil ${isPrimary ? "primary" : ""}">
       <span class="abil-name">${esc(ABIL_SHORT[a])}${isPrimary ? ' <span class="tag">primary</span>' : ""}</span>
-      ${control}${gift ? `<span class="gift">+${esc(gift)}</span>` : ""}<span class="abil-mod">${esc(mod)}</span></div>`;
+      ${control}
+      ${gift ? `<span class="gift">${esc((Number(v) || (m === "buy" ? 8 : 0)))} + ${esc(gift)}</span>` : ""}
+      ${m !== "buy" && v !== "" ? `<span class="abil-total">${esc(total)}</span>` : ""}
+      <span class="abil-mod">${esc(mod)}</span></div>`;
   }).join("");
   return `<section class="step"><h2>3 · Ability scores</h2>
     <div class="group-toggle">${tabs}</div>
@@ -1065,7 +1069,7 @@ function keyNumbers(d) {
     return `<div class="ab-box ${isProf ? "prof" : ""}">
       <span class="ab-name">${esc(ABIL_SHORT[a])}</span>
       <span class="ab-mod">${esc(sign(d.mods[a]))}</span>
-      <span class="ab-score">score ${esc(sheet.ch.scores[a] ?? "—")}</span>
+      <span class="ab-score">score ${esc(sheet.ch.scores[a] == null ? "—" : sheet.ch.scores[a] + ((sheet.ch.origin || {})[a] || 0))}</span>
       <span class="ab-save">save ${esc(sign(save))}</span></div>`;
   }).join("");
   return `<section class="panel"><h2>Key numbers</h2><div class="kn-grid">
