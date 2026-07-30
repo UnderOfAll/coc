@@ -65,6 +65,34 @@ click($$('[data-pick="subclass"]')[0]);
 ok(peek("draft.subclassId")!=="","choosing one sticks");
 type($("#lvl"),"5"); blur($("#lvl"));
 
+console.log("\n— STARTING BONUS —");
+// 3 points, max 2 on any one ability, IS the +2/+1-or-+1/+1/+1 rule — it cannot produce anything else.
+const oinc=a=>$$('[data-pick="origin"]').find(b=>b.dataset.val===a+"|1");
+const odec=a=>$$('[data-pick="origin"]').find(b=>b.dataset.val===a+"|-1");
+ok(oinc("Charisma"),"a starting-bonus stepper per ability");
+ok(peek(`validateDraft(derive(draft)).some(m=>/starting bonus/i.test(m))`),"and it is required before saving");
+click(oinc("Charisma")); click(oinc("Charisma"));
+ok(peek("draft.origin.Charisma")===2,"+2 onto one ability");
+ok(oinc("Charisma").disabled,"which cannot go to +3");
+click(oinc("Dexterity"));
+ok(peek("draft.origin.Dexterity")===1,"+1 onto a second");
+ok($$('[data-pick="origin"]').filter(b=>b.dataset.val.endsWith("|1")&&!b.disabled).length===0,"budget spent, every + off");
+ok(peek(`validateDraft(derive(draft)).some(m=>/starting bonus/i.test(m))`)===false,"requirement satisfied");
+// it must NOT be paid for out of point buy, and it must reach the modifier
+const before=peek(`(function(){const d=derive(draft);return d.mods.Charisma;})()`);
+ok(before===Math.floor((peek("draft.scores.Charisma")+2-10)/2),"the bonus reaches the modifier ("+before+")");
+ok(peek(`ABILITIES.reduce((n,a)=>n+(POINT_COST[draft.scores[a]]??0),0)`)<=27,"and is not charged to point buy");
+// +1/+1/+1 is reachable through the same control
+click(odec("Charisma"));
+click(oinc("Wisdom"));
+ok(peek("JSON.stringify(draft.origin)").includes('"Charisma":1'),"stepping down gives +1/+1/+1 instead");
+// The point of all this: a level-1 DC that matches what every class page advertises.
+click(odec("Wisdom")); click(oinc("Charisma"));
+peek(`draft.level=1; draft.levelText="1";`);
+const dc1=peek("derive(draft).saveDC");
+ok(dc1===13,"a level-1 primary DC is 13, which is what the class pages promise (got "+dc1+")");
+peek(`draft.level=5; draft.levelText="5";`);
+
 // gear: weapons are a choice, and tooltips exist for what you are choosing
 const weps=$$('[data-pick="weapon"]');
 ok(weps.length===3,"three proficient weapons offered ("+weps.length+")");

@@ -62,9 +62,13 @@ function derive(ch) {
   const cls = idx.classes.get(ch.classId);
   if (!cls) return null;
   const level = Math.max(1, Math.min(20, Number(ch.level) || 1));
+  // The creation bonus is stored apart from the scores you bought, never folded into them: point
+  // buy must not see it (it is not paid for out of the 27), and the level-up ASI log rewinds
+  // `scores` on an undo — a bonus mixed in there would be rewound with it.
   const scores = ch.scores || {};
+  const origin = ch.origin || {};
   const mods = {};
-  for (const a of ABILITIES) mods[a] = abilMod(scores[a] ?? 10);
+  for (const a of ABILITIES) mods[a] = abilMod((scores[a] ?? 10) + (origin[a] || 0));
 
   const prof = profBonus(level);
   const conMod = mods.Constitution;
@@ -343,7 +347,7 @@ function rememberCode(code, name) {
 function blankDraft() {
   return {
     v: 1, name: "", classId: "", subclassId: "", level: 1, levelText: "1", size: "",
-    method: "array", scores: {},
+    method: "array", scores: {}, origin: {},
     skills: [], armorId: "", shieldId: "", weapons: [], photo: "", notes: "",
   };
 }
@@ -423,7 +427,8 @@ function stepAbilities(cls) {
   const rows = ABILITIES.map((a) => {
     const v = draft.scores[a] ?? "";
     const isPrimary = a === cls.primaryAbility;
-    const mod = v === "" ? "" : sign(abilMod(v));
+    const gift = draft.origin[a] || 0;
+    const mod = v === "" ? "" : sign(abilMod(Number(v) + gift));
     let control;
     if (m === "array") {
       const used = ABILITIES.filter((x) => x !== a).map((x) => draft.scores[x]);
@@ -449,7 +454,7 @@ function stepAbilities(cls) {
     }
     return `<div class="abil ${isPrimary ? "primary" : ""}">
       <span class="abil-name">${esc(ABIL_SHORT[a])}${isPrimary ? ' <span class="tag">primary</span>' : ""}</span>
-      ${control}<span class="abil-mod">${esc(mod)}</span></div>`;
+      ${control}${gift ? `<span class="gift">+${esc(gift)}</span>` : ""}<span class="abil-mod">${esc(mod)}</span></div>`;
   }).join("");
   return `<section class="step"><h2>3 · Ability scores</h2>
     <div class="group-toggle">${tabs}</div>
@@ -458,7 +463,34 @@ function stepAbilities(cls) {
       races to raise it.</p>` : ""}
     ${m === "array" ? `<p class="muted">Assign 15, 14, 13, 12, 10 and 8 in any order.</p>` : ""}
     ${m === "manual" ? `<p class="muted">Type what your table rolled. Nothing is validated beyond 3–20.</p>` : ""}
-    <div class="abils ${m === "buy" ? "wide" : ""}">${rows}</div></section>`;
+    <div class="abils ${m === "buy" ? "wide" : ""}">${rows}</div>
+    ${stepOrigin()}</section>`;
+}
+
+/* The +2/+1 every 5e character gets at creation. In 2014 it came from a race and in 2024 from a
+   background; this system has neither (MECHANICS §2.3), and cutting races quietly cut this with them
+   — leaving every class advertising a level-1 DC of ~13 that a 15-point ceiling cannot produce.
+   It is tied to nothing here: no race, no background, no traits, so it adds no balance surface at
+   all. Three points with a cap of 2 on any one ability IS the rule, exactly: it can only ever come
+   out as +2/+1 or +1/+1/+1. */
+const ORIGIN_POINTS = 3;
+function originSpent() { return ABILITIES.reduce((n, a) => n + (draft.origin[a] || 0), 0); }
+function stepOrigin() {
+  const left = ORIGIN_POINTS - originSpent();
+  const cells = ABILITIES.map((a) => {
+    const at = draft.origin[a] || 0;
+    return `<span class="stepper">
+      <span class="ab-name">${esc(ABIL_SHORT[a])}</span>
+      <button class="step-btn" data-pick="origin" data-val="${a}|-1" ${at ? "" : "disabled"} aria-label="Lower ${a}">&minus;</button>
+      <span class="step-val">+${esc(at)}</span>
+      <button class="step-btn" data-pick="origin" data-val="${a}|1" ${left > 0 && at < 2 ? "" : "disabled"} aria-label="Raise ${a}">+</button>
+    </span>`;
+  }).join("");
+  return `<div class="sub-block"><h3 class="sub-title">Starting bonus
+      <span class="sub-note">— <span class="budget ${left ? "" : "spent"}">${esc(left)}</span> of ${ORIGIN_POINTS} points left</span></h3>
+    <p class="muted">Everyone gets these, and they are not paid for out of point buy. Spread them as
+      <strong>+2 and +1</strong>, or <strong>+1 to three</strong> — no single ability may take more than +2.</p>
+    <div class="lu-asi">${cells}</div></div>`;
 }
 
 function stepSkills(cls) {
@@ -588,6 +620,8 @@ function validateDraft(d) {
   if (cls && draft.level >= (cls.subclassLevel || 3) && !draft.subclassId) out.push("Choose a subclass.");
   const unset = ABILITIES.filter((a) => !draft.scores[a]);
   if (unset.length) out.push(`Set ${unset.length} more ability score${unset.length === 1 ? "" : "s"}.`);
+  const originLeft = ORIGIN_POINTS - originSpent();
+  if (originLeft > 0) out.push(`Assign ${originLeft} more starting bonus point${originLeft === 1 ? "" : "s"}.`);
   if (draft.method === "buy") {
     const spent = ABILITIES.reduce((n, a) => n + (POINT_COST[draft.scores[a]] ?? 0), 0);
     if (spent > POINT_BUDGET) out.push(`Point buy is over budget by ${spent - POINT_BUDGET}.`);
@@ -642,6 +676,12 @@ function creatorClick(e) {
     const [a, delta] = val.split("|");
     const next = (Number(draft.scores[a]) || 8) + Number(delta);
     if (next >= 8 && next <= 15) draft.scores[a] = next;
+  } else if (pick === "origin") {
+    const [a, delta] = val.split("|");
+    const next = (draft.origin[a] || 0) + Number(delta);
+    if (next >= 0 && next <= 2 && originSpent() - (draft.origin[a] || 0) + next <= ORIGIN_POINTS) {
+      if (next === 0) delete draft.origin[a]; else draft.origin[a] = next;
+    }
   } else if (pick === "method") {
     draft.method = val;
     draft.scores = val === "buy" ? Object.fromEntries(ABILITIES.map((a) => [a, 8])) : {};
