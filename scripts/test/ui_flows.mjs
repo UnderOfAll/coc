@@ -136,7 +136,35 @@ ok(/\+5/.test($(".atk-hit").textContent),"Acrobat hits at +5 — finesse takes t
 ok(/Finesse/.test($(".atk-hit .term-tip").textContent),"and says so");
 mk("joker",5);
 
+console.log("\n— TRICKS ROW —");
+mk("illusionist",5,"nightmare");
+ok($$('[data-act="open-trick"]').length===0,"no expander on a trick — the name is the link");
+const tn=$(".trick-name");
+ok(tn && tn.getAttribute("href").startsWith("#/tricks/"),"the name links to the full entry");
+const chips=[...$$(".trick-head .fmeta")].map(n=>n.querySelector(".fk").textContent);
+ok(chips.includes("Cost"),"a Cost chip beside the tier");
+ok(chips.includes("Range"),"a Range chip");
+ok($$(".trick-row").some(r=>[...r.querySelectorAll(".fk")].some(k=>k.textContent==="Cooldown")),"a Cooldown chip on the Turns");
+ok($$(".trick-row").some(r=>[...r.querySelectorAll(".fk")].some(k=>k.textContent==="Uses")),"a Uses chip on the Prestiges");
+ok($$(".trick-head .fmeta .fv").every(n=>!/\{\{|\[\[/.test(n.textContent)),"chips carry no unexpanded tokens");
+
+console.log("\n— COMING BACK TO A SHEET —");
+click($('[data-act="combat"]'));                       // put it in a state worth keeping
+click($$('[data-act="open-feat"]')[0]);
+type($("#hp-amt"),"9");
+const beforeRound=peek("sheet.ch.play.round"), beforeOpen=peek("ui.openFeats.size");
+peek(`ui.sheetScroll = 640;`);                         // as if the page had been scrolled
+await go("#/tricks/" + tn.getAttribute("href").split("/").pop());
+ok($("#tool-view").classList.contains("hidden"),"following a trick link leaves the sheet");
+await go("#/sheet/123456");
+ok(peek("sheet.ch.play.inCombat")===true && peek("sheet.ch.play.round")===beforeRound,"combat state intact on return");
+ok(peek("ui.openFeats.size")===beforeOpen,"the feature is still open");
+ok($("#hp-amt").value==="9","the damage box still holds 9");
+ok(peek("ui.sheetScroll")===640,"and the scroll position was remembered");
+click($('[data-act="combat"]'));
+
 console.log("\n— EXPANDERS SURVIVE ACTIONS —");
+mk("joker",5);
 const feat=$$('[data-act="open-feat"]')[0];
 const fname=feat.dataset.val; click(feat);
 ok($$(".feat-body").length===1,"feature expands in place");

@@ -737,7 +737,8 @@ function metaRow(m) {
   if (!m || typeof m !== "object") return "";
   // "Cost" = the action economy plus any resource spent, in one chip.
   const cost = [m.action, m.cost].filter(Boolean).join(" · ");
-  const fields = [["Cost", cost], ["Uses", m.uses], ["Range", m.range], ["Save", m.save]];
+  const fields = [["Cost", cost], ["Uses", m.uses], ["Range", m.range],
+                  ["Cooldown", m.cooldown], ["Save", m.save]];
   // Values run through fmtDesc so a chip can carry a {{Label|formula}} tooltip (the save DC is
   // never spelled out inline) or a [[XdY]] scaling die.
   const chips = fields.filter(([, v]) => v).map(([k, v]) =>

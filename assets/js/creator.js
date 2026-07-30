@@ -168,8 +168,8 @@ let sheet = null;      // { code, ch } while a sheet is open
 /* Pure interface state: what is expanded, what number is sitting in the damage box, whether a
    level-up is being previewed. Never saved — none of it is part of the character. */
 const ui = {
-  openFeats: new Set(), openTricks: new Set(), openSubs: new Set(),
-  hpAmt: 1, levelUp: null, deleteArmed: false, deleteText: "",
+  openFeats: new Set(), openSubs: new Set(),
+  hpAmt: 1, levelUp: null, deleteArmed: false, deleteText: "", sheetScroll: 0,
 };
 
 function toolEl() { return $("#tool"); }
@@ -747,8 +747,18 @@ function normalisePlay(ch) {
 
 function routeSheet(code) {
   if (!CocStore.validCode(code)) { location.hash = "#/manage"; return; }
-  ui.openFeats.clear(); ui.openTricks.clear(); ui.openSubs.clear();
-  ui.levelUp = null; ui.hpAmt = 1; ui.deleteArmed = false; ui.deleteText = "";
+  // Already holding this character? Show it straight back, exactly as it was — same open features,
+  // same scroll position, same everything. Re-fetching would also be WRONG, not just slow: a save
+  // may still be sitting in the 400ms debounce, so the copy in memory is the freshest one there is.
+  // This is the path taken every time you follow a trick link and come back.
+  if (sheet && sheet.code === code) {
+    renderSheet();
+    const view = $("#tool-view");
+    if (view) view.scrollTop = ui.sheetScroll || 0;
+    return;
+  }
+  ui.openFeats.clear(); ui.openSubs.clear();
+  ui.levelUp = null; ui.hpAmt = 1; ui.deleteArmed = false; ui.deleteText = ""; ui.sheetScroll = 0;
   paint(`<div class="tool-head"><a class="back" href="#/manage">&larr; My characters</a><h1>Loading…</h1></div>`);
   CocStore.load(code).then((ch) => {
     if (!ch) { paint(`<div class="tool-head"><a class="back" href="#/manage">&larr; My characters</a>
@@ -940,25 +950,14 @@ function tricksPanel(d, p) {
     const tooPoor = cost > p.engine;
     const blocked = cd > 0 || spent || tooPoor;
     const why = spent ? "used this combat" : cd > 0 ? `Seen — ${cd} round${cd === 1 ? "" : "s"}` : tooPoor ? `needs ${cost}` : "";
-    const open = ui.openTricks.has(id);
-    const ladder = trickLadder(t);
     return `<div class="trick-row ${blocked ? "blocked" : ""}">
       <div class="trick-main">
-        <button class="feat-toggle" data-act="open-trick" data-val="${esc(id)}">
-          <span class="feat-name">${esc(t.name)}</span>
+        <div class="trick-head">
+          <a class="trick-name" href="#/tricks/${encodeURIComponent(id)}">${esc(t.name)}</a>
           <span class="tier-badge tier-${esc(t.tier)}">${esc(cap(t.tier))}</span>
-          ${cost ? `<span class="cost-badge">${esc(cost)} ${esc(d.engine.name)}</span>` : ""}
-          ${t.cooldown ? `<span class="muted">cd ${esc(t.cooldown)}</span>` : ""}
-          ${t.concentration ? `<span class="muted">concentration</span>` : ""}
-          <span class="chev">${open ? "&minus;" : "+"}</span>
-        </button>
-        <div class="trick-sum">${fmtDesc(t.sheetSummary || "", ladder)}</div>
-        ${open ? `<div class="feat-body">${tabbed(
-          (t.save ? `<p class="muted">${esc(t.save)} saving throw · ${esc(t.castingTime)} · ${esc(t.range)} · ${esc(t.duration)}</p>`
-                  : `<p class="muted">${esc(t.castingTime)} · ${esc(t.range)} · ${esc(t.duration)}</p>`)
-          + (Array.isArray(t.options) && t.options.length ? optionTable(t.options, ladder) : "")
-          + `<p><a href="#/tricks/${encodeURIComponent(id)}">Open the full entry &rarr;</a></p>`,
-          narrationHTML(t.narration))}</div>` : ""}
+          ${trickMetaRow(t, d)}
+        </div>
+        <div class="trick-sum">${fmtDesc(t.sheetSummary || "", trickLadder(t))}</div>
       </div>
       <div class="trick-act">
         ${why ? `<span class="why">${esc(why)}</span>` : ""}
@@ -968,6 +967,22 @@ function tricksPanel(d, p) {
     </div>`;
   }).join("");
   return `<section class="panel"><h2>Tricks</h2><div class="trick-list-sheet">${rows}</div></section>`;
+}
+
+/* The same at-a-glance chips a feature gets, built from a trick's own fields. Cost folds the action
+   economy together with the engine price exactly as metaRow does for features, so the two read the
+   same way down the page. Once-per-combat is a property of the Prestige TIER, not a field on the
+   trick (MECHANICS §4.5), which is why it is derived here rather than looked up. */
+function trickMetaRow(t, d) {
+  const price = t.engineCost ? `${t.engineCost} ${d.engine ? d.engine.name : "engine"}` : "";
+  return metaRow({
+    action: t.castingTime,
+    cost: price,
+    uses: t.tier === "prestige" ? "1 per combat" : (t.concentration ? "concentration" : ""),
+    range: t.range,
+    save: t.save ? t.save + " save" : "",
+    cooldown: t.cooldown ? `${t.cooldown} round${t.cooldown > 1 ? "s" : ""}` : "",
+  });
 }
 
 /* Features that cost something to use get a counter; the rest are reference text. A feature is
@@ -1242,7 +1257,7 @@ async function deleteCharacter() {
 
 /* Actions that only move the interface around — expanding a feature, opening the level-up preview
    — must not write to storage. Listed here so the difference is declared rather than remembered. */
-const UI_ONLY_ACTS = new Set(["open-feat", "open-trick", "levelup", "lu-cancel", "lu-sub",
+const UI_ONLY_ACTS = new Set(["open-feat", "levelup", "lu-cancel", "lu-sub",
                               "sub-open", "lu-asi", "delete-arm", "delete-cancel"]);
 
 function sheetAction(e) {
@@ -1322,7 +1337,6 @@ function sheetAction(e) {
     ch.weapons = have.includes(val) ? have.filter((w) => w !== val) : have.concat(val);
   }
   else if (act === "open-feat") { ui.openFeats.has(val) ? ui.openFeats.delete(val) : ui.openFeats.add(val); }
-  else if (act === "open-trick") { ui.openTricks.has(val) ? ui.openTricks.delete(val) : ui.openTricks.add(val); }
   else if (act === "levelup") ui.levelUp = { to: Math.min(20, d.level + 1), subclassId: "", asi: {} };
   else if (act === "lu-cancel") ui.levelUp = null;
   else if (act === "lu-sub") ui.levelUp.subclassId = ui.levelUp.subclassId === val ? "" : val;
@@ -1399,6 +1413,11 @@ document.addEventListener("focusout", (e) => {
   if (!toolEl() || $("#tool-view").classList.contains("hidden")) return;
   creatorBlur(e);
 });
+// #tool-view is display:none while the compendium is showing, which resets its scrollTop, so the
+// position has to be remembered rather than read back on return.
+const toolView = $("#tool-view");
+if (toolView) toolView.addEventListener("scroll", () => { if (sheet) ui.sheetScroll = toolView.scrollTop; });
+
 document.addEventListener("keydown", (e) => {
   if (e.key !== "Enter") return;
   if (e.target.id === "open-code") { e.preventDefault(); openByCode(); }

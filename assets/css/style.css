@@ -631,11 +631,14 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
   padding: 0.6rem 0; border-top: 1px solid var(--border); }
 .trick-row.blocked { opacity: 0.55; }
 .trick-main { flex: 1; min-width: 0; }
+/* Name, tier and the at-a-glance chips on one wrapping line — the chips are the same .fmeta a
+   feature uses, so a trick and a feature read the same way down the page. */
+.trick-head { display: flex; flex-wrap: wrap; gap: 0.45rem; align-items: center; }
+.trick-head .feature-meta { margin: 0; }
+.trick-name { font-weight: 600; }
 .trick-sum { font-size: 0.87rem; color: var(--muted); margin-top: 0.2rem; line-height: 1.5; }
 .trick-act { display: flex; gap: 0.4rem; align-items: center; flex-shrink: 0; }
 .why { font-size: 0.80rem; color: var(--accent-soft); }
-.cost-badge { font-size: 0.78rem; color: var(--gold); border: 1px solid var(--gold);
-  border-radius: 999px; padding: 0.05rem 0.45rem; }
 /* Features and tricks expand IN PLACE, and the open set lives in the sheet's UI state rather than in
    the DOM. They used to be <details>: any action anywhere re-rendered the panel and slammed every
    one of them shut, and a "Use" button living inside a <summary> both fired the action and toggled
