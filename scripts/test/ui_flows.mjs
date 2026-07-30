@@ -87,6 +87,13 @@ ok(/\.tip-term\.tip-open \.term-tip \{[^}]*display:\s*block/.test(css),"and on t
 // A link styled as a button sits under `.content a`, which is more specific than `.btn` — so
 // "Create a new character" rendered gold text on a gold pill and could not be read.
 ok(/\.content a\.btn,[^{]*\{[^}]*color:\s*var\(--bg\)/.test(css),"a button-shaped link keeps the button's text colour");
+// Grid items stretch to the tallest in their row, so without this, opening one discipline card
+// grew the two beside it.
+ok(/align-items:\s*start/.test(rule(".sub-choice")),"discipline cards keep their own height");
+// Readability floor: at a 17px root, 0.78rem is about 13px. Anything smaller was a squint.
+const tooSmall=[...css.matchAll(/font-size:\s*(0\.\d+)rem/g)].map(m=>+m[1]).filter(v=>v<0.78);
+ok(tooSmall.length===0,"no text below the 0.78rem floor (found "+tooSmall.join(", ")+")");
+ok(/html \{[^}]*font-size:\s*106/.test(css),"the root font size is lifted above the browser default");
 // Tooltip terms usually sit inside a small-caps label (a key-number heading, an ability
 // abbreviation), and text-transform inherits — so the explanation came out shouting.
 for (const n of [".term-tip", ".scale-tip"]) {

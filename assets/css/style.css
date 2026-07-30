@@ -16,6 +16,10 @@
 
 * { box-sizing: border-box; }
 
+/* 17px root rather than the browser's 16. Every size in this sheet is in rem, so this lifts the
+   whole thing together instead of nudging forty rules apart. */
+html { font-size: 106.25%; }
+
 body {
   margin: 0;
   background: var(--bg);
@@ -40,7 +44,7 @@ body {
 .brand { display: flex; align-items: baseline; gap: 0.5rem; }
 .brand-mark { color: var(--accent-soft); font-size: 1.4rem; }
 .brand-name { font-family: var(--serif); font-size: 1.5rem; letter-spacing: 0.5px; }
-.brand-sub { color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; }
+.brand-sub { color: var(--muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 2px; }
 .search {
   margin-left: auto;
   width: min(360px, 45vw);
@@ -54,7 +58,7 @@ body {
 .search:focus { outline: none; border-color: var(--accent-soft); }
 .legend-btn {
   background: none; border: 1px solid var(--border); color: var(--muted);
-  padding: 0.5rem 0.9rem; border-radius: 999px; cursor: pointer; font-size: 0.85rem;
+  padding: 0.5rem 0.9rem; border-radius: 999px; cursor: pointer; font-size: 0.89rem;
   white-space: nowrap; transition: color 0.15s, border-color 0.15s;
 }
 .legend-btn:hover { color: var(--gold); border-color: var(--gold); }
@@ -106,7 +110,7 @@ body {
 .nav-btn:hover { background: var(--panel-2); color: var(--text); }
 .nav-btn.active { background: var(--accent); color: #fff; }
 .nav-btn .count {
-  font-size: 0.75rem;
+  font-size: 0.80rem;
   background: rgba(0,0,0,0.25);
   padding: 0.1rem 0.5rem;
   border-radius: 999px;
@@ -117,7 +121,7 @@ body {
 h1 { font-family: var(--serif); font-weight: 600; margin: 0 0 1.25rem; }
 .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1rem; }
 .card-summary {
-  margin: 0.45rem 0 0; font-size: 0.8rem; color: var(--muted); line-height: 1.45;
+  margin: 0.45rem 0 0; font-size: 0.85rem; color: var(--muted); line-height: 1.45;
   display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
 }
 .card-summary mark { background: rgba(201,165,78,0.32); color: var(--text); padding: 0 2px; border-radius: 3px; }
@@ -132,9 +136,9 @@ h1 { font-family: var(--serif); font-weight: 600; margin: 0 0 1.25rem; }
 }
 .card:hover { transform: translateY(-2px); border-left-color: var(--gold); }
 .card h3 { margin: 0 0 0.35rem; font-family: var(--serif); font-size: 1.15rem; }
-.card .meta { color: var(--muted); font-size: 0.82rem; }
+.card .meta { color: var(--muted); font-size: 0.87rem; }
 .card .tag {
-  display: inline-block; margin-top: 0.6rem; font-size: 0.7rem;
+  display: inline-block; margin-top: 0.6rem; font-size: 0.78rem;
   text-transform: uppercase; letter-spacing: 1px; color: var(--gold);
 }
 .card-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
@@ -142,10 +146,10 @@ h1 { font-family: var(--serif); font-weight: 600; margin: 0 0 1.25rem; }
 /* Circus-system badges (parry base DC / engine resource type) */
 .badge {
   display: inline-block; padding: 0.2rem 0.65rem; border-radius: 999px;
-  font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.5px;
+  font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.5px;
   border: 1px solid var(--border); margin: 0 0.4rem 0.6rem 0;
 }
-.badge-sm { padding: 0.1rem 0.5rem; font-size: 0.65rem; margin: 0.6rem 0 0; }
+.badge-sm { padding: 0.1rem 0.5rem; font-size: 0.78rem; margin: 0.6rem 0 0; }
 .badge-dc { background: rgba(201, 165, 78, 0.15); color: var(--gold); border-color: var(--gold); }
 .badge-engine { background: var(--panel-2); color: var(--muted); border-color: var(--border); }
 
@@ -166,7 +170,7 @@ h1 { font-family: var(--serif); font-weight: 600; margin: 0 0 1.25rem; }
   background: var(--panel); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 0.65rem 0.85rem;
 }
-.stat .label { color: var(--muted); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px; }
+.stat .label { color: var(--muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1px; }
 .stat .value { font-family: var(--serif); font-size: 1.05rem; margin-top: 0.2rem; }
 .detail-body { line-height: 1.7; }
 .detail-body h2 { font-family: var(--serif); color: var(--gold); font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.3rem; }
@@ -177,7 +181,7 @@ h1 { font-family: var(--serif); font-weight: 600; margin: 0 0 1.25rem; }
 .feature-meta { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.45rem 0 0.1rem; }
 .fmeta {
   display: inline-flex; align-items: stretch; border: 1px solid var(--border);
-  border-radius: 6px; overflow: hidden; font-size: 0.72rem; line-height: 1.5;
+  border-radius: 6px; overflow: hidden; font-size: 0.78rem; line-height: 1.5;
 }
 .fmeta .fk {
   background: var(--panel-2); color: var(--muted); padding: 0.12rem 0.45rem;
@@ -190,7 +194,7 @@ h1 { font-family: var(--serif); font-weight: 600; margin: 0 0 1.25rem; }
 .role-badge {
   display: inline-block; margin-left: 0.5rem; padding: 0.08rem 0.5rem;
   border: 1px solid var(--gold); border-radius: 999px; color: var(--gold);
-  font-size: 0.68rem; font-weight: 600; text-transform: uppercase;
+  font-size: 0.78rem; font-weight: 600; text-transform: uppercase;
   letter-spacing: 0.5px; vertical-align: middle;
 }
 
@@ -199,7 +203,7 @@ h1 { font-family: var(--serif); font-weight: 600; margin: 0 0 1.25rem; }
 .toggle-btn {
   background: none; border: 1px solid var(--border); color: var(--muted);
   padding: 0.3rem 0.9rem; border-radius: 999px; cursor: pointer;
-  font-family: var(--sans); font-size: 0.78rem; letter-spacing: 0.5px;
+  font-family: var(--sans); font-size: 0.83rem; letter-spacing: 0.5px;
 }
 .toggle-btn:hover { color: var(--gold); border-color: var(--gold); }
 .toggle-btn.active { color: var(--bg); background: var(--gold); border-color: var(--gold); font-weight: 600; }
@@ -207,7 +211,7 @@ h1 { font-family: var(--serif); font-weight: 600; margin: 0 0 1.25rem; }
 /* Class view: each class's repertoire as a level ladder */
 .level-block { margin: 0 0 1.25rem; }
 .level-title {
-  margin: 0 0 0.6rem; font-family: var(--sans); font-size: 0.72rem; font-weight: 600;
+  margin: 0 0 0.6rem; font-family: var(--sans); font-size: 0.78rem; font-weight: 600;
   text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted);
   border-left: 2px solid var(--gold); padding-left: 0.6rem;
 }
@@ -217,7 +221,7 @@ h1 { font-family: var(--serif); font-weight: 600; margin: 0 0 1.25rem; }
 .tier-badge {
   display: inline-block; padding: 0.15rem 0.7rem;
   border: 1px solid var(--border); border-radius: 999px;
-  font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;
+  font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;
 }
 /* Escalating emphasis: at-will is quiet, the engine-gated showstopper is loud. */
 .tier-pledge   { color: var(--muted); }
@@ -253,7 +257,7 @@ h1 { font-family: var(--serif); font-weight: 600; margin: 0 0 1.25rem; }
 .class-field-main { flex: 1; min-width: 0; }
 .class-field h3 { margin: 0 0 0.35rem; font-family: var(--serif); font-size: 1.3rem; }
 .class-field-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
-.class-field-meta .meta { color: var(--muted); font-size: 0.82rem; }
+.class-field-meta .meta { color: var(--muted); font-size: 0.87rem; }
 .class-field-desc {
   margin: 0.55rem 0 0; color: var(--muted); line-height: 1.5;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
@@ -287,11 +291,11 @@ h1 { font-family: var(--serif); font-weight: 600; margin: 0 0 1.25rem; }
   border: 1px solid var(--gold); border-radius: var(--radius);
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.55);
   opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 0.12s ease, transform 0.12s ease;
-  max-width: min(320px, 70vw); font-size: 0.9rem; line-height: 1.35;
+  max-width: min(320px, 70vw); font-size: 0.94rem; line-height: 1.35;
   text-transform: none; letter-spacing: normal; font-weight: 400; font-style: normal;
 }
-.scale-tip-title { color: var(--gold); font-family: var(--serif); font-size: 0.8rem; letter-spacing: 0.5px; }
-.scale-tip-lv { color: var(--muted); font-size: 0.78rem; }
+.scale-tip-title { color: var(--gold); font-family: var(--serif); font-size: 0.85rem; letter-spacing: 0.5px; }
+.scale-tip-lv { color: var(--muted); font-size: 0.83rem; }
 .scale-tip::after {
   content: ""; position: absolute; top: 100%;
   left: calc(50% - var(--nudge, 0px)); transform: translateX(-50%);
@@ -310,7 +314,7 @@ h1 { font-family: var(--serif); font-weight: 600; margin: 0 0 1.25rem; }
   border: 1px solid var(--gold); border-radius: var(--radius);
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.55);
   opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 0.12s ease, transform 0.12s ease;
-  font-size: 0.85rem; line-height: 1.4; white-space: normal;
+  font-size: 0.89rem; line-height: 1.4; white-space: normal;
   /* A tooltip is a sentence, wherever it happens to be anchored. Its term usually sits in a small
      caps label — a key-number heading, an ability abbreviation, a field label — and text-transform,
      letter-spacing and weight all inherit, so the explanation came out SHOUTING AND SPACED OUT.
@@ -337,13 +341,13 @@ h1 { font-family: var(--serif); font-weight: 600; margin: 0 0 1.25rem; }
   background: var(--panel); border: 1px solid var(--border); border-left: 3px solid var(--gold);
   border-radius: var(--radius); padding: 0.7rem 0.9rem;
 }
-.key-stat .label { color: var(--gold); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px; }
+.key-stat .label { color: var(--gold); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1px; }
 .key-stat .value { font-family: var(--serif); font-size: 1.05rem; margin-top: 0.2rem; }
-.key-stat .note { color: var(--muted); font-size: 0.78rem; margin-top: 0.35rem; line-height: 1.4; }
+.key-stat .note { color: var(--muted); font-size: 0.83rem; margin-top: 0.35rem; line-height: 1.4; }
 
 /* Excel-style data table (skill proficiencies, etc.) */
 .data-table {
-  width: 100%; border-collapse: collapse; margin: 0.5rem 0 1.5rem; font-size: 0.9rem;
+  width: 100%; border-collapse: collapse; margin: 0.5rem 0 1.5rem; font-size: 0.94rem;
 }
 .data-table th, .data-table td {
   border: 1px solid var(--border); padding: 0.45rem 0.7rem; text-align: left;
@@ -359,7 +363,7 @@ h1 { font-family: var(--serif); font-weight: 600; margin: 0 0 1.25rem; }
 /* Footer */
 .statusbar {
   padding: 0.5rem 1.25rem; background: var(--panel); border-top: 1px solid var(--border);
-  color: var(--muted); font-size: 0.8rem;
+  color: var(--muted); font-size: 0.85rem;
 }
 .muted { color: var(--muted); }
 .hidden { display: none !important; }
@@ -367,7 +371,7 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 
 @media (max-width: 640px) {
   /* The 5-column Attacks table tightens rather than overflowing. */
-  .attack-table { font-size: 0.82rem; }
+  .attack-table { font-size: 0.87rem; }
   .attack-table td, .attack-table th { padding: 0.35rem 0.4rem; }
   .attack-table td:nth-child(4) { min-width: 0; }
   /* Top bar wraps: brand + Parry button on row 1, search full-width on row 2. */
@@ -396,7 +400,7 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
   .detail-view { max-width: 100%; }
 
   /* Keep wide tables readable and prevent unbreakable text from overflowing. */
-  .data-table { font-size: 0.82rem; }
+  .data-table { font-size: 0.87rem; }
   .data-table th, .data-table td { word-break: break-word; }
 
   /* Bigger, clearer ⓘ so it reads as a tappable hint (tap toggles the tooltip). */
@@ -412,7 +416,7 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
    Sits above the meta chips, so each feature is switched on its own. */
 .tabbed { margin-top: 0.5rem; }
 .view-toggle { margin: 0.35rem 0 0.6rem; gap: 0.3rem; }
-.view-toggle .toggle-btn { padding: 0.18rem 0.6rem; font-size: 0.78rem; }
+.view-toggle .toggle-btn { padding: 0.18rem 0.6rem; font-size: 0.83rem; }
 .narration {
   margin: 0.5rem 0 0; padding: 0.75rem 0.9rem;
   border-left: 3px solid var(--gold); background: var(--panel-2);
@@ -430,17 +434,17 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
   font-family: var(--serif); color: var(--gold);
   font-size: 0.95rem; margin: 0 0 0.4rem;
 }
-.sub-note { color: var(--muted); font-family: var(--sans); font-size: 0.8rem; font-weight: 400; }
+.sub-note { color: var(--muted); font-family: var(--sans); font-size: 0.85rem; font-weight: 400; }
 
 /* Scaling-die tooltip: every die is labelled with the level it applies from, so the number of
    values can never look like it disagrees with the number of breakpoints. */
 .scale-tip-row { display: flex; gap: 0.7rem; flex-wrap: wrap; justify-content: center; }
 .scale-step { display: inline-flex; align-items: baseline; gap: 0.25rem; }
-.scale-lv { color: var(--muted); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.4px; }
+.scale-lv { color: var(--muted); font-size: 0.78rem; font-weight: 600; letter-spacing: 0.4px; }
 
 /* An options table split into labelled groups (always-on effects vs a menu you choose from). */
 .option-group {
-  font-family: var(--serif); color: var(--gold); font-size: 0.9rem;
+  font-family: var(--serif); color: var(--gold); font-size: 0.94rem;
   margin: 1rem 0 0.35rem;
 }
 
@@ -482,7 +486,7 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 
 /* The choosable property (armour trait, weapon mastery) shown on a list card, so a player can
    compare without opening every entry. */
-.card-terms { margin-top: 0.4rem; font-size: 0.82rem; color: var(--muted); }
+.card-terms { margin-top: 0.4rem; font-size: 0.87rem; color: var(--muted); }
 .card-terms .tip-term { color: var(--gold); }
 
 /* ============================================================
@@ -502,7 +506,7 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 .menu-card:hover, .menu-card:focus-visible { border-color: var(--gold); transform: translateY(-2px); }
 .menu-icon { font-size: 1.6rem; color: var(--gold); line-height: 1; }
 .menu-card-title { font-family: var(--serif); font-size: 1.15rem; }
-.menu-card-sub { color: var(--muted); font-size: 0.86rem; line-height: 1.5; }
+.menu-card-sub { color: var(--muted); font-size: 0.90rem; line-height: 1.5; }
 .tool-view { max-width: 64rem; margin: 0 auto; }
 .brand { text-decoration: none; color: inherit; }
 
@@ -523,10 +527,10 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 .pick:hover { border-color: var(--gold); }
 .pick.on { border-left-color: var(--gold); background: rgba(201,165,78,0.1); }
 .pick-title { font-family: var(--serif); font-size: 1rem; }
-.pick-sub { font-size: 0.76rem; color: var(--gold); }
-.pick-flavor { font-size: 0.78rem; color: var(--muted); line-height: 1.4; }
+.pick-sub { font-size: 0.81rem; color: var(--gold); }
+.pick-flavor { font-size: 0.83rem; color: var(--muted); line-height: 1.4; }
 .chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
-.chip { position: relative; cursor: pointer; padding: 0.35rem 0.7rem; font-size: 0.85rem;
+.chip { position: relative; cursor: pointer; padding: 0.35rem 0.7rem; font-size: 0.89rem;
   background: var(--panel-2); color: inherit; border: 1px solid var(--border); border-radius: 999px; }
 .chip:hover:not(:disabled) { border-color: var(--gold); }
 .chip.on { background: var(--gold); color: var(--bg); border-color: var(--gold); font-weight: 600; }
@@ -537,7 +541,7 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
    its own tap target. */
 .chip-tip { display: inline-flex; align-items: center; gap: 0.25rem; }
 .info-dot { border-bottom: none; font-size: 0.95rem; line-height: 1; padding: 0.25rem; }
-.field-label { display: block; font-size: 0.78rem; color: var(--muted); text-transform: uppercase;
+.field-label { display: block; font-size: 0.83rem; color: var(--muted); text-transform: uppercase;
   letter-spacing: 1px; margin: 0.9rem 0 0.35rem; }
 .num, .text, .code-input { background: var(--panel-2); color: var(--text); border: 1px solid var(--border);
   border-radius: 6px; padding: 0.45rem 0.6rem; font: inherit; }
@@ -546,15 +550,15 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 .abil { display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.6rem;
   background: var(--panel-2); border: 1px solid var(--border); border-radius: var(--radius); }
 .abil.primary { border-color: var(--gold); }
-.abil-name { flex: 1; font-size: 0.8rem; letter-spacing: 1px; }
+.abil-name { flex: 1; font-size: 0.85rem; letter-spacing: 1px; }
 .abil-mod { min-width: 2rem; text-align: right; font-weight: 600; color: var(--gold); }
-.tag { font-size: 0.65rem; color: var(--gold); text-transform: none; letter-spacing: 0; }
+.tag { font-size: 0.78rem; color: var(--gold); text-transform: none; letter-spacing: 0; }
 .side-card { background: var(--panel); border: 1px solid var(--gold); border-radius: var(--radius); padding: 1rem; }
 .side-card h3 { font-family: var(--serif); margin: 0 0 0.2rem; }
 .side-row { display: flex; align-items: baseline; gap: 0.5rem; padding: 0.3rem 0; border-top: 1px solid var(--border); }
-.side-row span { flex: 1; color: var(--muted); font-size: 0.85rem; }
-.side-row em { width: 100%; color: var(--muted); font-size: 0.72rem; font-style: normal; }
-.side-todo { margin-top: 0.8rem; font-size: 0.82rem; color: var(--accent-soft); }
+.side-row span { flex: 1; color: var(--muted); font-size: 0.89rem; }
+.side-row em { width: 100%; color: var(--muted); font-size: 0.78rem; font-style: normal; }
+.side-todo { margin-top: 0.8rem; font-size: 0.87rem; color: var(--accent-soft); }
 .side-todo ul { margin: 0.3rem 0 0; padding-left: 1.1rem; }
 .side-ok { margin-top: 0.8rem; color: var(--ok); font-weight: 600; }
 .save-row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
@@ -564,10 +568,10 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 .btn:disabled { opacity: 0.45; cursor: not-allowed; }
 .btn-hot { background: var(--accent); color: #fff; }
 .btn-quiet { background: var(--panel-2); color: var(--text); border: 1px solid var(--border);
-  border-radius: 999px; padding: 0.35rem 0.75rem; font: inherit; font-size: 0.85rem; cursor: pointer; }
+  border-radius: 999px; padding: 0.35rem 0.75rem; font: inherit; font-size: 0.89rem; cursor: pointer; }
 .btn-quiet:hover:not(:disabled) { border-color: var(--gold); }
 .btn-quiet:disabled { opacity: 0.4; cursor: not-allowed; }
-.save-msg { min-height: 1.2rem; font-size: 0.9rem; }
+.save-msg { min-height: 1.2rem; font-size: 0.94rem; }
 .save-msg.good { color: var(--ok); } .save-msg.bad { color: var(--accent-soft); }
 .portrait-row { display: flex; gap: 0.8rem; align-items: center; }
 .portrait { width: 72px; height: 72px; border-radius: var(--radius); object-fit: cover; border: 1px solid var(--border); }
@@ -589,12 +593,12 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 .hp-head { display: flex; align-items: baseline; justify-content: space-between; }
 .hp-num { font-size: 1.1rem; } .hp-num strong { font-size: 1.7rem; color: var(--ok); }
 .hp-num.hurt strong { color: var(--accent-soft); } .hp-num.down strong { color: var(--accent); }
-.hp-num em { color: var(--gold); font-style: normal; margin-left: 0.4rem; font-size: 0.85rem; }
+.hp-num em { color: var(--gold); font-style: normal; margin-left: 0.4rem; font-size: 0.89rem; }
 .hp-bar { height: 8px; background: var(--panel-2); border-radius: 999px; overflow: hidden; margin: 0.5rem 0 0.7rem; }
 .hp-fill { height: 100%; background: var(--ok); transition: width 0.2s ease; }
 .hp-fill.hurt { background: var(--accent-soft); } .hp-fill.down { background: var(--accent); }
 .hp-controls { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
-.warn { color: var(--accent-soft); font-size: 0.88rem; }
+.warn { color: var(--accent-soft); font-size: 0.92rem; }
 /* Key numbers: the value is what you read, so it leads — big, centred, gold — with the label under
    it and the working-out under that. The old layout put a small grey label on top of a smaller
    number and read like a spreadsheet. */
@@ -602,8 +606,8 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 .kn { background: var(--panel-2); border: 1px solid var(--border); border-left: 3px solid var(--gold);
   border-radius: var(--radius); padding: 0.6rem 0.7rem; text-align: center; }
 .kn-v { display: block; font-family: var(--serif); font-size: 1.6rem; font-weight: 600; color: var(--gold); line-height: 1.1; }
-.kn-l { display: block; margin-top: 0.25rem; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; }
-.kn-n { display: block; margin-top: 0.15rem; font-size: 0.7rem; color: var(--muted); }
+.kn-l { display: block; margin-top: 0.25rem; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1px; }
+.kn-n { display: block; margin-top: 0.15rem; font-size: 0.78rem; color: var(--muted); }
 /* The six abilities, each with its modifier (what you actually add) over its score, and its saving
    throw underneath — proficient saves are ringed in gold. */
 /* minmax(0,…) not 1fr: a bare 1fr track refuses to shrink below its content, which is one of
@@ -612,12 +616,12 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 .ab-box { background: var(--panel-2); border: 1px solid var(--border); border-radius: var(--radius);
   padding: 0.5rem 0.35rem; text-align: center; }
 .ab-box.prof { border-color: var(--gold); }
-.ab-name { display: block; font-size: 0.68rem; letter-spacing: 1px; color: var(--muted); }
+.ab-name { display: block; font-size: 0.78rem; letter-spacing: 1px; color: var(--muted); }
 .ab-mod { display: block; font-family: var(--serif); font-size: 1.45rem; color: var(--gold); line-height: 1.15; }
-.ab-score { display: block; font-size: 0.72rem; color: var(--muted); }
+.ab-score { display: block; font-size: 0.78rem; color: var(--muted); }
 .ab-save { display: block; margin-top: 0.3rem; padding-top: 0.3rem; border-top: 1px solid var(--border);
-  font-size: 0.7rem; }
-.panel-sub { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px;
+  font-size: 0.78rem; }
+.panel-sub { font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px;
   margin: 1rem 0 0; }
 .pips { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.6rem; }
 .pip { width: 26px; height: 26px; border-radius: 50%; cursor: pointer;
@@ -627,10 +631,10 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
   padding: 0.6rem 0; border-top: 1px solid var(--border); }
 .trick-row.blocked { opacity: 0.55; }
 .trick-main { flex: 1; min-width: 0; }
-.trick-sum { font-size: 0.82rem; color: var(--muted); margin-top: 0.2rem; line-height: 1.5; }
+.trick-sum { font-size: 0.87rem; color: var(--muted); margin-top: 0.2rem; line-height: 1.5; }
 .trick-act { display: flex; gap: 0.4rem; align-items: center; flex-shrink: 0; }
-.why { font-size: 0.75rem; color: var(--accent-soft); }
-.cost-badge { font-size: 0.7rem; color: var(--gold); border: 1px solid var(--gold);
+.why { font-size: 0.80rem; color: var(--accent-soft); }
+.cost-badge { font-size: 0.78rem; color: var(--gold); border: 1px solid var(--gold);
   border-radius: 999px; padding: 0.05rem 0.45rem; }
 /* Features and tricks expand IN PLACE, and the open set lives in the sheet's UI state rather than in
    the DOM. They used to be <details>: any action anywhere re-rendered the panel and slammed every
@@ -645,7 +649,7 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 .feat-name { font-weight: 600; }
 .chev { margin-left: auto; color: var(--muted); font-family: var(--serif); font-size: 1.1rem; }
 .feat-body { padding: 0 0 0.9rem; }
-.uses { display: flex; gap: 0.35rem; align-items: center; font-size: 0.8rem; }
+.uses { display: flex; gap: 0.35rem; align-items: center; font-size: 0.85rem; }
 .uses .spent { color: var(--accent-soft); }
 .notes { color: var(--muted); white-space: pre-wrap; }
 @media (max-width: 760px) {
@@ -660,7 +664,7 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 .creator-main { min-width: 0; }
 .step-save { border-color: var(--gold); }
 .vitals .hp-controls { margin-top: 0.2rem; }
-.engine-panel .muted { font-size: 0.82rem; line-height: 1.5; }
+.engine-panel .muted { font-size: 0.87rem; line-height: 1.5; }
 .trick-list-sheet > .trick-row:first-child { border-top: none; }
 .recent { display: flex; flex-direction: column; }
 
@@ -672,7 +676,7 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 /* Engine trigger buttons and the post-cast question. */
 .triggers { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.6rem; }
 .trigger { text-align: left; }
-.trigger em { color: var(--muted); font-style: normal; font-size: 0.72rem; }
+.trigger em { color: var(--muted); font-style: normal; font-size: 0.78rem; }
 .trigger.spent { opacity: 0.45; text-decoration: line-through; }
 .prompt-bar { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; justify-content: space-between;
   background: rgba(201,165,78,0.12); border: 1px solid var(--gold); border-radius: var(--radius);
@@ -709,7 +713,7 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
   .uses { width: 100%; justify-content: flex-end; }
   .ab-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .lu-grid { grid-template-columns: 1fr; }
-  .data-table { font-size: 0.82rem; }
+  .data-table { font-size: 0.87rem; }
   .data-table th, .data-table td { padding: 0.35rem 0.4rem; }
 }
 /* Very narrow phones: stop the ability grid squeezing to unreadable. */
@@ -737,7 +741,7 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 .step-btn:hover:not(:disabled) { border-color: var(--gold); color: var(--gold); }
 .step-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 .step-val { min-width: 2.2rem; text-align: center; font-family: var(--serif); font-size: 1.15rem; }
-.step-cost { font-size: 0.7rem; color: var(--muted); min-width: 3.4rem; }
+.step-cost { font-size: 0.78rem; color: var(--muted); min-width: 3.4rem; }
 .budget { font-family: var(--serif); color: var(--gold); }
 .budget.over { color: var(--accent-soft); }
 
@@ -746,11 +750,11 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
    numbers are not — an accidental tap would otherwise be a silent, permanent change. */
 .levelup { border-color: var(--gold); background: rgba(201, 165, 78, 0.07); }
 .lu-grid { display: grid; gap: 0.9rem; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); }
-.lu-block h3 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted);
+.lu-block h3 { font-size: 0.80rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted);
   margin: 0 0 0.4rem; }
-.lu-list { margin: 0; padding-left: 1.1rem; font-size: 0.88rem; line-height: 1.6; }
+.lu-list { margin: 0; padding-left: 1.1rem; font-size: 0.92rem; line-height: 1.6; }
 .lu-list .lvl { color: var(--gold); }
-.lu-none { color: var(--muted); font-size: 0.88rem; margin: 0; }
+.lu-none { color: var(--muted); font-size: 0.92rem; margin: 0; }
 .lu-hp { font-family: var(--serif); font-size: 1.5rem; color: var(--ok); }
 .lu-acts { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
 .lu-asi { display: grid; gap: 0.4rem; grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr)); }
@@ -765,14 +769,17 @@ input.step-val { width: 3.4rem; }
 /* Choosing a discipline: a card each, openable to its full rules text, because the choice is
    permanent and a name plus a flavour line is not something anyone can decide on. */
 .lu-full { grid-column: 1 / -1; }
-.sub-choice { display: grid; gap: 0.7rem; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); }
+/* align-items: start — grid items stretch to the tallest in their row by default, so opening
+   one discipline visibly grew the two beside it. Each card keeps its own height. */
+.sub-choice { display: grid; gap: 0.7rem; align-items: start;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); }
 .sub-card { display: flex; flex-direction: column; gap: 0.4rem; padding: 0.7rem 0.85rem;
   background: var(--panel-2); border: 1px solid var(--border); border-left: 3px solid transparent;
   border-radius: var(--radius); min-width: 0; }
 .sub-card.on { border-left-color: var(--gold); background: rgba(201, 165, 78, 0.1); }
-.sub-card .btn, .sub-card .btn-quiet { align-self: flex-start; margin-top: auto; }
+.sub-card .btn, .sub-card .btn-quiet { align-self: flex-start; }
 .lu-list li { margin-bottom: 0.6rem; }
-.lu-sum { display: block; color: var(--muted); font-size: 0.85rem; line-height: 1.55; margin-top: 0.15rem; }
+.lu-sum { display: block; color: var(--muted); font-size: 0.89rem; line-height: 1.55; margin-top: 0.15rem; }
 .lu-sum .data-table { margin: 0.4rem 0; }
 
 /* Deleting is irreversible — the six-digit code is the only copy — so it is gated behind typing
