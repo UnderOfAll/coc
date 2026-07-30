@@ -639,7 +639,10 @@ function clampTip(term) {
   const tip = term.querySelector(".term-tip, .scale-tip");
   if (!tip) return;
   tip.style.setProperty("--nudge", "0px");
-  const area = ($(".content") || document.body).getBoundingClientRect();
+  // The term's OWN scroll container, not the first `.content` on the page. There are two of those
+  // now — the compendium's and the character tools' — and the hidden one measures 0×0, which
+  // clamped every tooltip on a character sheet against the left edge of the window.
+  const area = (term.closest(".content") || document.body).getBoundingClientRect();
   const box = tip.getBoundingClientRect();
   const pad = 10;
   let dx = 0;

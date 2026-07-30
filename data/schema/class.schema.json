@@ -49,6 +49,35 @@
     "primaryAbility": {
       "type": "string"
     },
+    "attackAbility": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Overrides which ability a WEAPON attack uses, when a class feature says so (the Joker's Charisma on finesse weapons). Machine-readable on purpose: the sheet computes a to-hit and a damage bonus per weapon, and must never parse the feature's prose to find out which stat to use. Omit for every class that uses the default rule (finesse = the better of Strength and Dexterity, otherwise Strength).",
+      "required": [
+        "ability"
+      ],
+      "properties": {
+        "ability": {
+          "type": "string",
+          "enum": [
+            "Strength",
+            "Dexterity",
+            "Constitution",
+            "Intelligence",
+            "Wisdom",
+            "Charisma"
+          ]
+        },
+        "property": {
+          "type": "string",
+          "description": "Only applies to weapons carrying this property (e.g. 'finesse'). Omit to apply to every weapon."
+        },
+        "note": {
+          "type": "string",
+          "description": "One line shown on the sheet's Attacks table saying which feature grants this."
+        }
+      }
+    },
     "savingThrows": {
       "type": "array",
       "items": {

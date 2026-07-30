@@ -274,10 +274,15 @@ h1 { font-family: var(--serif); font-weight: 600; margin: 0 0 1.25rem; }
   cursor: pointer;
 }
 .scaling-die .scale-mark { font-size: 0.6em; margin-left: 0.05em; vertical-align: super; }
+/* NOTE the `display: none`. A closed tooltip is position:absolute with width:max-content, and an
+   absolutely-positioned box STILL counts toward its scroll container's scrollWidth even when it is
+   only visibility:hidden. With dozens of them on a character sheet that produced a permanent
+   sideways scrollbar, and opening a feature made the page visibly widen. Taking them out of flow
+   entirely costs the fade-in and fixes both. */
 .scale-tip {
   position: absolute; left: 50%; bottom: 145%;
   transform: translateX(calc(-50% + var(--nudge, 0px))) translateY(4px);
-  z-index: 30; display: flex; flex-direction: column; gap: 0.15rem; text-align: center;
+  z-index: 30; display: none; flex-direction: column; gap: 0.15rem; text-align: center;
   padding: 0.55rem 0.8rem; background: var(--panel-2); color: var(--text);
   border: 1px solid var(--gold); border-radius: var(--radius);
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.55);
@@ -291,7 +296,7 @@ h1 { font-family: var(--serif); font-weight: 600; margin: 0 0 1.25rem; }
   left: calc(50% - var(--nudge, 0px)); transform: translateX(-50%);
   border: 6px solid transparent; border-top-color: var(--gold);
 }
-.scaling-die:hover .scale-tip { opacity: 1; visibility: visible; transform: translateX(calc(-50% + var(--nudge, 0px))) translateY(0); }
+.scaling-die:hover .scale-tip { display: flex; opacity: 1; visibility: visible; transform: translateX(calc(-50% + var(--nudge, 0px))) translateY(0); }
 
 /* Reusable hover-term tooltip (weapon mastery, and any glossary term) */
 .tip-term { position: relative; color: var(--gold); border-bottom: 1px dotted var(--gold); cursor: pointer; }
@@ -299,7 +304,7 @@ h1 { font-family: var(--serif); font-weight: 600; margin: 0 0 1.25rem; }
 .term-tip {
   position: absolute; left: 50%; bottom: 145%;
   transform: translateX(calc(-50% + var(--nudge, 0px))) translateY(4px);
-  z-index: 30; width: max-content; max-width: min(260px, 70vw); text-align: center;
+  z-index: 30; display: none; width: max-content; max-width: min(260px, 70vw); text-align: center;
   padding: 0.55rem 0.8rem; background: var(--panel-2); color: var(--text);
   border: 1px solid var(--gold); border-radius: var(--radius);
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.55);
@@ -311,10 +316,10 @@ h1 { font-family: var(--serif); font-weight: 600; margin: 0 0 1.25rem; }
   left: calc(50% - var(--nudge, 0px)); transform: translateX(-50%);
   border: 6px solid transparent; border-top-color: var(--gold);
 }
-.tip-term:hover .term-tip { opacity: 1; visibility: visible; transform: translateX(calc(-50% + var(--nudge, 0px))) translateY(0); }
+.tip-term:hover .term-tip { display: block; opacity: 1; visibility: visible; transform: translateX(calc(-50% + var(--nudge, 0px))) translateY(0); }
 /* Tap-to-toggle open state (touch devices have no hover) — see app.js wireEvents. */
-.scaling-die.tip-open .scale-tip,
-.tip-term.tip-open .term-tip { opacity: 1; visibility: visible; transform: translateX(calc(-50% + var(--nudge, 0px))) translateY(0); }
+.tip-term.tip-open .term-tip { display: block; opacity: 1; visibility: visible; transform: translateX(calc(-50% + var(--nudge, 0px))) translateY(0); }
+.scaling-die.tip-open .scale-tip { display: flex; opacity: 1; visibility: visible; transform: translateX(calc(-50% + var(--nudge, 0px))) translateY(0); }
 
 /* Key Numbers: headline mechanic stats up top of a class sheet */
 .key-stats-title { font-family: var(--serif); color: var(--gold); font-size: 1.05rem; margin: 0 0 0.6rem; }
@@ -445,6 +450,13 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 }
 .content a:hover,
 .content a:focus-visible { color: var(--accent-soft); border-bottom-color: var(--accent-soft); }
+/* …except a link styled AS A BUTTON. The rule above is more specific than .btn, so "Create a new
+   character" rendered gold-on-gold and was invisible. A button-shaped link keeps the button's
+   colours in every state. */
+.content a.btn, .content a.btn:link, .content a.btn:visited, .content a.btn:active {
+  color: var(--bg); border-bottom: none;
+}
+.content a.btn:hover, .content a.btn:focus-visible { color: var(--bg); filter: brightness(1.08); }
 
 /* A tooltip whose term sits near the top of the reading area flips below it instead of
    rendering off-screen (clampTip in app.js sets this). */
@@ -513,8 +525,12 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 .chip:hover:not(:disabled) { border-color: var(--gold); }
 .chip.on { background: var(--gold); color: var(--bg); border-color: var(--gold); font-weight: 600; }
 .chip:disabled { opacity: 0.4; cursor: not-allowed; }
-.chip .term-tip { opacity: 0; visibility: hidden; }
-.chip:hover .term-tip { opacity: 1; visibility: visible; }
+/* A chip that needs explaining carries a separate ⓘ beside it rather than a tooltip on itself:
+   the chip is a control (tapping it picks the armour, toggles the condition) and on a phone there
+   is no hover, so the only way to READ about a thing you are choosing is to give the explanation
+   its own tap target. */
+.chip-tip { display: inline-flex; align-items: center; gap: 0.25rem; }
+.info-dot { border-bottom: none; font-size: 0.95rem; line-height: 1; padding: 0.25rem; }
 .field-label { display: block; font-size: 0.78rem; color: var(--muted); text-transform: uppercase;
   letter-spacing: 1px; margin: 0.9rem 0 0.35rem; }
 .num, .text, .code-input { background: var(--panel-2); color: var(--text); border: 1px solid var(--border);
@@ -550,7 +566,6 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 .portrait-row { display: flex; gap: 0.8rem; align-items: center; }
 .portrait { width: 72px; height: 72px; border-radius: var(--radius); object-fit: cover; border: 1px solid var(--border); }
 .portrait.empty { display: grid; place-items: center; color: var(--muted); font-family: var(--serif); font-size: 1.6rem; background: var(--panel-2); }
-.plain { margin: 0; padding-left: 1.1rem; }
 .recent-row { display: flex; align-items: center; gap: 0.6rem; padding: 0.45rem 0; border-top: 1px solid var(--border); }
 .recent-open { flex: 1; display: flex; gap: 0.6rem; align-items: baseline; }
 /* --- sheet --- */
@@ -574,11 +589,30 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 .hp-fill.hurt { background: var(--accent-soft); } .hp-fill.down { background: var(--accent); }
 .hp-controls { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
 .warn { color: var(--accent-soft); font-size: 0.88rem; }
-.kn-grid { display: grid; gap: 0.5rem; grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr)); }
-.kn { background: var(--panel-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.5rem 0.6rem; }
-.kn-l { display: block; font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
-.kn-v { display: block; font-size: 1.3rem; font-weight: 600; color: var(--gold); font-family: var(--serif); }
-.kn-n { display: block; font-size: 0.7rem; color: var(--muted); }
+/* Key numbers: the value is what you read, so it leads — big, centred, gold — with the label under
+   it and the working-out under that. The old layout put a small grey label on top of a smaller
+   number and read like a spreadsheet. */
+.kn-grid { display: grid; gap: 0.55rem; grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)); }
+.kn { background: var(--panel-2); border: 1px solid var(--border); border-left: 3px solid var(--gold);
+  border-radius: var(--radius); padding: 0.6rem 0.7rem; text-align: center; }
+.kn-v { display: block; font-family: var(--serif); font-size: 1.6rem; font-weight: 600; color: var(--gold); line-height: 1.1; }
+.kn-l { display: block; margin-top: 0.25rem; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; }
+.kn-n { display: block; margin-top: 0.15rem; font-size: 0.7rem; color: var(--muted); }
+/* The six abilities, each with its modifier (what you actually add) over its score, and its saving
+   throw underneath — proficient saves are ringed in gold. */
+/* minmax(0,…) not 1fr: a bare 1fr track refuses to shrink below its content, which is one of
+   the ways a grid quietly pushes the page wider than the screen. */
+.ab-grid { display: grid; gap: 0.5rem; grid-template-columns: repeat(6, minmax(0, 1fr)); margin-top: 0.6rem; }
+.ab-box { background: var(--panel-2); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 0.5rem 0.35rem; text-align: center; }
+.ab-box.prof { border-color: var(--gold); }
+.ab-name { display: block; font-size: 0.68rem; letter-spacing: 1px; color: var(--muted); }
+.ab-mod { display: block; font-family: var(--serif); font-size: 1.45rem; color: var(--gold); line-height: 1.15; }
+.ab-score { display: block; font-size: 0.72rem; color: var(--muted); }
+.ab-save { display: block; margin-top: 0.3rem; padding-top: 0.3rem; border-top: 1px solid var(--border);
+  font-size: 0.7rem; }
+.panel-sub { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px;
+  margin: 1rem 0 0; }
 .pips { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.6rem; }
 .pip { width: 26px; height: 26px; border-radius: 50%; cursor: pointer;
   background: var(--panel-2); border: 1px solid var(--border); }
@@ -592,9 +626,20 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 .why { font-size: 0.75rem; color: var(--accent-soft); }
 .cost-badge { font-size: 0.7rem; color: var(--gold); border: 1px solid var(--gold);
   border-radius: 999px; padding: 0.05rem 0.45rem; }
-.feat { border-top: 1px solid var(--border); padding: 0.45rem 0; }
-.feat summary { cursor: pointer; display: flex; flex-wrap: wrap; gap: 0.45rem; align-items: center; }
-.uses { display: flex; gap: 0.35rem; align-items: center; margin-left: auto; font-size: 0.8rem; }
+/* Features and tricks expand IN PLACE, and the open set lives in the sheet's UI state rather than in
+   the DOM. They used to be <details>: any action anywhere re-rendered the panel and slammed every
+   one of them shut, and a "Use" button living inside a <summary> both fired the action and toggled
+   the disclosure. Now the control sits beside the toggle, never inside it. */
+.feat { border-top: 1px solid var(--border); }
+.feat-head { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.feat-toggle { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; gap: 0.45rem; align-items: center;
+  text-align: left; background: none; border: none; color: inherit; font: inherit; cursor: pointer;
+  padding: 0.55rem 0; }
+.feat-toggle:hover .feat-name { color: var(--gold); }
+.feat-name { font-weight: 600; }
+.chev { margin-left: auto; color: var(--muted); font-family: var(--serif); font-size: 1.1rem; }
+.feat-body { padding: 0 0 0.9rem; }
+.uses { display: flex; gap: 0.35rem; align-items: center; font-size: 0.8rem; }
 .uses .spent { color: var(--accent-soft); }
 .notes { color: var(--muted); white-space: pre-wrap; }
 @media (max-width: 760px) {
@@ -654,8 +699,10 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
   .sheet-head .btn { width: 100%; }
   .save-row { flex-direction: column; align-items: stretch; }
   .code-input { width: 100%; }
-  .feat summary { gap: 0.3rem; }
-  .uses { width: 100%; margin-left: 0; justify-content: flex-end; }
+  .feat-toggle { gap: 0.3rem; }
+  .uses { width: 100%; justify-content: flex-end; }
+  .ab-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .lu-grid { grid-template-columns: 1fr; }
   .data-table { font-size: 0.82rem; }
   .data-table th, .data-table td { padding: 0.35rem 0.4rem; }
 }
@@ -668,3 +715,43 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 @media (hover: none) {
   .tip-term { text-decoration: underline dotted; text-underline-offset: 3px; }
 }
+
+/* ============================================================
+   Steppers, level-up, and the attacks table
+   ============================================================ */
+
+/* A −/+ pair beside a number. Typing into a <input type="number"> that re-renders on every
+   keystroke is miserable — you cannot clear it to retype, because the empty string reads as a
+   value. Point buy and level are both stepped instead, and the + disables itself the moment the
+   next point costs more than you have left, so the control itself teaches the budget. */
+.stepper { display: inline-flex; align-items: center; gap: 0.35rem; }
+.step-btn { width: 2.1rem; height: 2.1rem; border-radius: 50%; background: var(--panel);
+  color: var(--text); border: 1px solid var(--border); font: inherit; font-size: 1.05rem;
+  line-height: 1; cursor: pointer; }
+.step-btn:hover:not(:disabled) { border-color: var(--gold); color: var(--gold); }
+.step-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.step-val { min-width: 2.2rem; text-align: center; font-family: var(--serif); font-size: 1.15rem; }
+.step-cost { font-size: 0.7rem; color: var(--muted); min-width: 3.4rem; }
+.budget { font-family: var(--serif); color: var(--gold); }
+.budget.over { color: var(--accent-soft); }
+
+/* Level up: a preview panel, not an instant mutation. It shows the hit points, features and tricks
+   the level would add BEFORE anything is written, because the level is stored and the derived
+   numbers are not — an accidental tap would otherwise be a silent, permanent change. */
+.levelup { border-color: var(--gold); background: rgba(201, 165, 78, 0.07); }
+.lu-grid { display: grid; gap: 0.9rem; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); }
+.lu-block h3 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted);
+  margin: 0 0 0.4rem; }
+.lu-list { margin: 0; padding-left: 1.1rem; font-size: 0.88rem; line-height: 1.6; }
+.lu-list .lvl { color: var(--gold); }
+.lu-none { color: var(--muted); font-size: 0.88rem; margin: 0; }
+.lu-hp { font-family: var(--serif); font-size: 1.5rem; color: var(--ok); }
+.lu-acts { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
+.lu-asi { display: grid; gap: 0.4rem; grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr)); }
+.lu-asi .stepper { justify-content: space-between; width: 100%; }
+
+/* Attacks: one row per weapon actually carried, with the to-hit and damage already worked out. */
+.atk-hit, .atk-dmg { font-family: var(--serif); color: var(--gold); white-space: nowrap; }
+.gear-line { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: baseline; margin: 0 0 0.6rem; }
+/* The level box is a stepper's middle, not a full-width field. */
+input.step-val { width: 3.4rem; }

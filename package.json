@@ -4,7 +4,8 @@
   "description": "Dev tooling for the Grimoire circus-system compendium (not shipped to GitHub Pages).",
   "scripts": {
     "build": "python3 scripts/build_manifest.py",
-    "test:dom": "node scripts/test/dom_smoke.mjs"
+    "test:dom": "node scripts/test/dom_smoke.mjs",
+    "test:ui": "node scripts/test/ui_flows.mjs"
   },
   "devDependencies": {
     "jsdom": "^29.1.1"

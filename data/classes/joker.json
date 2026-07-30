@@ -9,6 +9,11 @@
     "Medium"
   ],
   "primaryAbility": "Charisma",
+  "attackAbility": {
+    "ability": "Charisma",
+    "property": "finesse",
+    "note": "Sleight of Hand — Charisma on finesse weapons"
+  },
   "savingThrows": [
     "Charisma",
     "Dexterity"

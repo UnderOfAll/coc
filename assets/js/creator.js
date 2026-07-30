@@ -1,17 +1,21 @@
 /*
  * Circus of Chaos — character creation, management, and the live play sheet.
  *
- * Loaded after app.js, so every helper there (esc, fmtDesc, el, $, store, idx, className, …) is
- * available. This file owns three routes, registered into COC_ROUTES at the bottom:
+ * Loaded after app.js, so every helper there (esc, fmtDesc, tabbed, narrationHTML, optionTable,
+ * metaRow, masteryHTML, propsHTML, armorTraitHTML, tipTermHTML, el, $, store, idx, …) is available.
+ * This file owns three routes, registered into COC_ROUTES at the bottom:
  *   #/create        the builder
  *   #/manage        open or delete a character by its six-digit code
- *   #/sheet/<code>  the live sheet, including combat tracking
+ *   #/sheet/<code>  the live sheet, including combat tracking and levelling up
  *
  * A CHARACTER is plain JSON — no classes, no methods — so it can be stringified into localStorage or
  * a cloud row unchanged, and so an old save never breaks when this file grows. Everything derived
- * (HP, AC, save DC, engine cap, the trick list, the feature ladder) is COMPUTED from the class data
- * at render time by derive(), never stored. That way a balance change to a class immediately reaches
- * every existing character instead of leaving stale numbers on old sheets.
+ * (HP, AC, save DC, engine cap, the trick list, the feature ladder, every attack) is COMPUTED from
+ * the class data at render time by derive(), never stored. That way a balance change to a class
+ * immediately reaches every existing character instead of leaving stale numbers on old sheets.
+ *
+ * The ONLY things written into a character are the choices a player made: level, subclass, ability
+ * scores, skills, armour, weapons carried, and the per-combat play state.
  */
 
 /* ---------------------------------------------------------------- rules maths */
@@ -29,9 +33,29 @@ function profBonus(level) { return 2 + Math.floor((Math.max(1, Math.min(20, leve
 /* Average of a die, rounded up: d6→4, d8→5, d10→6, d12→7 (MECHANICS §2.4). */
 function dieAverage(die) { return Math.floor(Number(die) / 2) + 1; }
 const ASI_LEVELS = [4, 8, 12, 16, 19];
+/* A signed number reads as a bonus; an unsigned one reads as a total. Every modifier on the sheet
+   is something you ADD to a roll, so they all carry their sign. */
+function sign(n) { return (n >= 0 ? "+" : "") + n; }
 
 /* Uses per combat on the scaling ladder (MECHANICS §2.2). */
 function scalingUses(level) { return level >= 17 ? 4 : level >= 11 ? 3 : level >= 5 ? 2 : 1; }
+
+/* Which ability a WEAPON attack uses. Not the same thing as the class's primary ability — that one
+   is the TRICK ability (a Doppelganger casts off Constitution and would be swinging a dagger with
+   it). The default is the 5e rule; a class may override it in data (`attackAbility`) when a feature
+   says so, which is how the Joker's Charisma reaches the sheet without anything parsing his prose. */
+function attackAbilityFor(cls, w, mods) {
+  const props = (w.properties || []).map((p) => String(p).toLowerCase());
+  const ov = cls.attackAbility;
+  if (ov && (!ov.property || props.includes(String(ov.property).toLowerCase()))) {
+    return { ability: ov.ability, why: ov.note || `${cls.name} uses ${ov.ability} for this` };
+  }
+  if (props.includes("finesse")) {
+    const a = (mods.Dexterity ?? 0) >= (mods.Strength ?? 0) ? "Dexterity" : "Strength";
+    return { ability: a, why: `Finesse: the better of your Strength and Dexterity — right now that is ${a}.` };
+  }
+  return { ability: "Strength", why: "No finesse and not a ranged weapon, so this attack uses Strength." };
+}
 
 /* Everything the sheet shows, computed fresh from the class data every time. */
 function derive(ch) {
@@ -111,15 +135,26 @@ function derive(ch) {
     engineCap = Math.max(0, engineCap);
   }
 
-  const weapons = (cls.proficiencies?.weapons || []).map((n) => idx.weaponsByName.get(n)).filter(Boolean);
+  // Every weapon the class is proficient with, and — separately — the ones this character actually
+  // carries. A character saved before weapons were choosable has none recorded, so it falls back to
+  // the full proficiency list rather than showing an empty Attacks table.
+  const proficient = (cls.proficiencies?.weapons || []).map((n) => idx.weaponsByName.get(n)).filter(Boolean);
+  const picked = Array.isArray(ch.weapons) && ch.weapons.length
+    ? proficient.filter((w) => ch.weapons.includes(w.name)) : proficient;
+  const carried = picked.map((w) => {
+    const { ability, why } = attackAbilityFor(cls, w, mods);
+    const mod = mods[ability] || 0;
+    return { w, ability, why, hit: prof + mod, mod };
+  });
 
   return {
-    cls, subclass, level, prof, mods, hpMax, ac, acNote, features, tricks, engine, engineCap, weapons,
-    armor, shield,
+    cls, subclass, level, prof, mods, hpMax, ac, acNote, features, tricks, engine, engineCap,
+    weapons: proficient, carried, armor, shield,
     saveDC: 8 + prof + (mods[primary] ?? 0),
     attackBonus: prof + (mods[primary] ?? 0),
     parryDC: cls.parryBaseDC,
     primary,
+    saves: cls.savingThrows || [],
     asiCount: ASI_LEVELS.filter((l) => l <= level).length,
     scalingUses: scalingUses(level),
   };
@@ -130,9 +165,46 @@ function derive(ch) {
 /* The draft being built, and the character being played. Both are plain JSON. */
 let draft = null;
 let sheet = null;      // { code, ch } while a sheet is open
+/* Pure interface state: what is expanded, what number is sitting in the damage box, whether a
+   level-up is being previewed. Never saved — none of it is part of the character. */
+const ui = { openFeats: new Set(), openTricks: new Set(), hpAmt: 1, levelUp: null };
 
 function toolEl() { return $("#tool"); }
-function paint(html) { toolEl().innerHTML = html; }
+
+/* Repaint the tool view, keeping the things a full innerHTML swap would throw away: where the page
+   was scrolled, which field had focus, and where the caret was inside it. Without this, typing a
+   digit into any field that re-derives the sheet bounced you to the top of the page and dropped
+   focus after every keystroke — which is exactly why the level box could not be cleared. */
+function paint(html) {
+  const host = toolEl();
+  const view = $("#tool-view");
+  const top = view ? view.scrollTop : 0;
+  const active = document.activeElement;
+  let key = null, caret = null;
+  if (active && host.contains(active)) {
+    if (active.id) key = "#" + active.id;
+    else if (active.dataset && active.dataset.abil) key = `[data-abil="${active.dataset.abil}"]`;
+    if (key) { try { caret = active.selectionStart; } catch { caret = null; } }
+  }
+  host.innerHTML = html;
+  if (view) view.scrollTop = top;
+  if (key) {
+    const next = host.querySelector(key);
+    if (next) {
+      next.focus();
+      if (caret != null && next.setSelectionRange) { try { next.setSelectionRange(caret, caret); } catch { /* number inputs refuse */ } }
+    }
+  }
+}
+
+/* A chip that needs explaining gets its explanation as a SEPARATE ⓘ beside it, not as a tooltip on
+   itself. The chip is a control: tapping it picks the armour or toggles the condition. On a phone
+   there is no hover at all, so without its own tap target the description would be unreachable. */
+function chipTip(chipHTML, tipHTML) {
+  if (!tipHTML) return chipHTML;
+  return `<span class="chip-tip">${chipHTML}<span class="tip-term info-dot" tabindex="0" role="button"
+    aria-label="What this does">&#9432;<span class="term-tip" role="tooltip">${tipHTML}</span></span></span>`;
+}
 
 function armorFor(cls) {
   const prof = (cls.proficiencies?.armor || []).map((a) => a.toLowerCase());
@@ -175,14 +247,18 @@ function rememberCode(code, name) {
 
 function blankDraft() {
   return {
-    v: 1, name: "", classId: "", subclassId: "", level: 1, size: "",
-    method: "array", scores: {}, pool: STANDARD_ARRAY.slice(),
-    skills: [], armorId: "", shieldId: "", photo: "", notes: "",
+    v: 1, name: "", classId: "", subclassId: "", level: 1, levelText: "1", size: "",
+    method: "array", scores: {},
+    skills: [], armorId: "", shieldId: "", weapons: [], photo: "", notes: "",
   };
 }
 
+/* Every arrival at #/create starts a NEW character. routeCreate only runs on an actual navigation
+   (boot or hashchange), never on the creator's own re-renders, so nothing in-progress is lost by
+   this — while keeping the old draft meant coming back later handed you the previous character's
+   name, scores and portrait to edit by accident. */
 function routeCreate() {
-  if (!draft) draft = blankDraft();
+  draft = blankDraft();
   renderCreator();
 }
 
@@ -230,11 +306,16 @@ function stepBasics(cls) {
   const subPick = draft.level >= subLv
     ? `<label class="field-label">${esc(cls.features.find((f) => /Discipline|Repertoire|Act|Archetype/i.test(f.name))?.name || "Subclass")}</label>
        <div class="chips">${subs.map((s) =>
-         `<button class="chip ${draft.subclassId === s.id ? "on" : ""}" data-pick="subclass" data-val="${esc(s.id)}">${esc(s.name)}</button>`).join("")}</div>`
+         chipTip(`<button class="chip ${draft.subclassId === s.id ? "on" : ""}" data-pick="subclass" data-val="${esc(s.id)}">${esc(s.name)}</button>`,
+           esc(s.flavor || ""))).join("")}</div>`
     : `<p class="muted">You choose a subclass at level ${esc(subLv)}.</p>`;
   return `<section class="step"><h2>2 · Level &amp; size</h2>
-    <label class="field-label">Level <span class="muted">(features stop at 5 for now)</span></label>
-    <input id="lvl" class="num" type="number" min="1" max="20" value="${esc(draft.level)}" />
+    <label class="field-label">Level <span class="muted">(features are written up to 5 for now)</span></label>
+    <div class="stepper">
+      <button class="step-btn" data-pick="level" data-val="-1" ${draft.level <= 1 ? "disabled" : ""} aria-label="Lower">&minus;</button>
+      <input id="lvl" class="num step-val" type="text" inputmode="numeric" maxlength="2" value="${esc(draft.levelText ?? draft.level)}" />
+      <button class="step-btn" data-pick="level" data-val="1" ${draft.level >= 20 ? "disabled" : ""} aria-label="Raise">+</button>
+    </div>
     <label class="field-label">Size</label><div class="chips">${sizes}</div>
     ${subPick}</section>`;
 }
@@ -244,10 +325,11 @@ function stepAbilities(cls) {
   const tabs = [["array", "Standard array"], ["buy", "Point buy"], ["manual", "Manual"]].map(([k, l]) =>
     `<button class="toggle-btn ${m === k ? "active" : ""}" data-pick="method" data-val="${k}">${l}</button>`).join("");
   const spent = ABILITIES.reduce((n, a) => n + (POINT_COST[draft.scores[a]] ?? 0), 0);
+  const left = POINT_BUDGET - spent;
   const rows = ABILITIES.map((a) => {
     const v = draft.scores[a] ?? "";
     const isPrimary = a === cls.primaryAbility;
-    const mod = v === "" ? "" : (abilMod(v) >= 0 ? "+" : "") + abilMod(v);
+    const mod = v === "" ? "" : sign(abilMod(v));
     let control;
     if (m === "array") {
       const used = ABILITIES.filter((x) => x !== a).map((x) => draft.scores[x]);
@@ -257,10 +339,19 @@ function stepAbilities(cls) {
       }).join("");
       control = `<select class="num" data-abil="${a}">${opts}</select>`;
     } else if (m === "buy") {
-      control = `<select class="num" data-abil="${a}">${Object.keys(POINT_COST).map((n) =>
-        `<option value="${n}" ${String(draft.scores[a]) === n ? "selected" : ""}>${n}</option>`).join("")}</select>`;
+      // The + disables the instant the NEXT point costs more than is left, so the budget is
+      // enforced by the control rather than explained after the fact.
+      const cur = Number(v) || 8;
+      const step = cur < 15 ? POINT_COST[cur + 1] - POINT_COST[cur] : null;
+      const canRaise = step != null && step <= left;
+      control = `<span class="stepper">
+        <button class="step-btn" data-pick="abil" data-val="${a}|-1" ${cur <= 8 ? "disabled" : ""} aria-label="Lower ${a}">&minus;</button>
+        <span class="step-val">${esc(cur)}</span>
+        <button class="step-btn" data-pick="abil" data-val="${a}|1" ${canRaise ? "" : "disabled"} aria-label="Raise ${a}">+</button>
+        <span class="step-cost">${step == null ? "max" : `next ${step}p`}</span>
+      </span>`;
     } else {
-      control = `<input class="num" type="number" min="3" max="20" data-abil="${a}" value="${esc(v)}" />`;
+      control = `<input class="num" type="text" inputmode="numeric" maxlength="2" data-abil="${a}" value="${esc(v)}" />`;
     }
     return `<div class="abil ${isPrimary ? "primary" : ""}">
       <span class="abil-name">${esc(ABIL_SHORT[a])}${isPrimary ? ' <span class="tag">primary</span>' : ""}</span>
@@ -268,7 +359,9 @@ function stepAbilities(cls) {
   }).join("");
   return `<section class="step"><h2>3 · Ability scores</h2>
     <div class="group-toggle">${tabs}</div>
-    ${m === "buy" ? `<p class="muted">Spent <strong>${spent}</strong> of ${POINT_BUDGET} points. Nothing starts above 15 — there are no races to raise it.</p>` : ""}
+    ${m === "buy" ? `<p class="muted"><span class="budget ${left < 0 ? "over" : ""}">${esc(left)}</span>
+      of ${POINT_BUDGET} points left. Costs rise past 13, and nothing starts above 15 — there are no
+      races to raise it.</p>` : ""}
     ${m === "array" ? `<p class="muted">Assign 15, 14, 13, 12, 10 and 8 in any order.</p>` : ""}
     ${m === "manual" ? `<p class="muted">Type what your table rolled. Nothing is validated beyond 3–20.</p>` : ""}
     <div class="abils">${rows}</div></section>`;
@@ -283,11 +376,35 @@ function stepSkills(cls) {
     const full = draft.skills.length >= need && !on;
     const sk = idx.skillsByName.get(s.toLowerCase());
     const abil = sk ? ` <span class="muted">(${esc(ABIL_SHORT[sk.ability] || sk.ability)})</span>` : "";
-    return `<button class="chip ${on ? "on" : ""}" ${full ? "disabled" : ""} data-pick="skill" data-val="${esc(s)}">${esc(s)}${abil}</button>`;
+    return chipTip(
+      `<button class="chip ${on ? "on" : ""}" ${full ? "disabled" : ""} data-pick="skill" data-val="${esc(s)}">${esc(s)}${abil}</button>`,
+      sk ? fmtDesc(sk.description || "") : "");
   }).join("");
   return `<section class="step"><h2>4 · Skills</h2>
     <p class="muted">Choose ${need}. <strong>${draft.skills.length}/${need}</strong> chosen.</p>
     <div class="chips">${chips}</div></section>`;
+}
+
+/* What an armour's ⓘ says: the AC it gives THIS character with THIS Dexterity, what caps that, and
+   what its always-on trait does. Comparing two pieces at the same AC is the whole point of the
+   trait, so the trait has to be readable at the moment of choosing. */
+function armorTipHTML(a, dex) {
+  const capNote = a.maxDexBonus == null ? "your full Dexterity"
+    : a.maxDexBonus === 0 ? "no Dexterity at all"
+    : `at most +${a.maxDexBonus} Dexterity`;
+  return `<strong>AC ${esc(acOf(a, dex))}</strong> — base ${esc(a.baseAC)} plus ${esc(capNote)}.`
+    + (a.strengthRequirement != null ? ` Needs Strength ${esc(a.strengthRequirement)}.` : "")
+    + (a.stealthDisadvantage ? " Disadvantage on Stealth." : "")
+    + `<br>${a.trait ? `<strong>${esc(a.trait)}:</strong> ${esc(ARMOR_TRAITS[a.trait] || "")}`
+        : "No trait — this is the highest AC in its category and tier, and that is what it pays with."}`;
+}
+
+function weaponTipHTML(w, d) {
+  const row = d.carried.find((c) => c.w.name === w.name)
+    || (() => { const { ability, why } = attackAbilityFor(d.cls, w, d.mods); return { ability, why, hit: d.prof + (d.mods[ability] || 0), mod: d.mods[ability] || 0 }; })();
+  return `<strong>${esc(sign(row.hit))} to hit</strong>, damage ${esc(w.damage.die)} ${esc(sign(row.mod))} ${esc(w.damage.type)}.`
+    + `<br>${esc(row.why)}`
+    + (w.mastery ? `<br><strong>${esc(w.mastery)}:</strong> ${esc(MASTERIES[w.mastery] || "")}` : "");
 }
 
 function stepGear(cls) {
@@ -296,24 +413,38 @@ function stepGear(cls) {
   const byCat = {};
   for (const a of wearable.filter((a) => a.availability !== "bought")) (byCat[a.category] ||= []).push(a);
   const blocks = ["clothing", "light", "medium", "heavy"].filter((c) => byCat[c]).map((c) => {
-    const items = byCat[c].sort((x, y) => x.baseAC - y.baseAC).map((a) =>
+    const items = byCat[c].sort((x, y) => x.baseAC - y.baseAC).map((a) => chipTip(
       `<button class="chip ${draft.armorId === a.id ? "on" : ""}" data-pick="armor" data-val="${esc(a.id)}">
-        ${esc(a.name)} <span class="muted">AC ${acOf(a, dex)}${a.trait ? " · " + esc(a.trait) : ""}</span></button>`).join("");
+        ${esc(a.name)} <span class="muted">AC ${acOf(a, dex)}</span></button>`,
+      armorTipHTML(a, dex))).join("");
     return `<div class="sub-block"><h3 class="sub-title">${esc(cap(c))}</h3><div class="chips">${items}</div></div>`;
   }).join("");
   const shieldBlock = shields.length ? `<div class="sub-block"><h3 class="sub-title">Shield</h3><div class="chips">
-      ${shields.filter((s) => s.availability !== "bought").map((s) =>
-        `<button class="chip ${draft.shieldId === s.id ? "on" : ""}" data-pick="shield" data-val="${esc(s.id)}">${esc(s.name)} <span class="muted">+${esc(s.acBonus)}</span></button>`).join("")}
+      ${shields.filter((s) => s.availability !== "bought").map((s) => chipTip(
+        `<button class="chip ${draft.shieldId === s.id ? "on" : ""}" data-pick="shield" data-val="${esc(s.id)}">${esc(s.name)} <span class="muted">+${esc(s.acBonus)}</span></button>`,
+        armorTipHTML(s, dex))).join("")}
       </div></div>` : "";
+
+  // Proficiency is what the CLASS grants; carrying is a choice. Previously every proficient weapon
+  // turned up on the sheet as though the character had all three in hand at once.
+  const d = derive(draft);
   const weps = (cls.proficiencies?.weapons || []).map((n) => {
     const w = idx.weaponsByName.get(n);
-    return w ? `<li>${esc(w.name)} <span class="muted">${esc(w.damage.die)} ${esc(w.damage.type)}${w.mastery ? " · " + esc(w.mastery) : ""}</span></li>` : `<li>${esc(n)}</li>`;
+    if (!w) return "";
+    const on = draft.weapons.includes(w.name);
+    return chipTip(
+      `<button class="chip ${on ? "on" : ""}" data-pick="weapon" data-val="${esc(w.name)}">
+        ${esc(w.name)} <span class="muted">${esc(w.damage.die)}</span></button>`,
+      d ? weaponTipHTML(w, d) : "");
   }).join("");
+
   return `<section class="step"><h2>5 · Gear</h2>
-    <p class="muted">Starter gear is free. The bought tier exists but your DM awards it in play — there is no money yet.</p>
+    <p class="muted">Starter gear is free. The bought tier exists but your DM awards it in play — there is no money yet.
+      Hover or tap the <span class="tip-term info-dot">&#9432;</span> beside anything to see what it does.</p>
     ${blocks}${shieldBlock}
-    <div class="sub-block"><h3 class="sub-title">Weapons <span class="sub-note">— granted by your class</span></h3>
-      <ul class="plain">${weps}</ul></div></section>`;
+    <div class="sub-block"><h3 class="sub-title">Weapons carried
+        <span class="sub-note">— your class is proficient with all of these; choose what you actually hold</span></h3>
+      <div class="chips">${weps}</div></div></section>`;
 }
 
 function stepIdentity() {
@@ -342,9 +473,9 @@ function sidePreview() {
     <p class="muted">${esc(d.cls.name)}${d.subclass ? " · " + esc(d.subclass.name) : ""} · level ${esc(d.level)}${draft.size ? " · " + esc(draft.size) : ""}</p>
     ${row("Hit points", d.hpMax)}
     ${row("Armour Class", d.ac, d.acNote)}
-    ${row("Proficiency", (d.prof >= 0 ? "+" : "") + d.prof)}
-    ${row("Save DC", d.saveDC, "8 + prof + " + ABIL_SHORT[d.primary])}
-    ${row("Attack bonus", (d.attackBonus >= 0 ? "+" : "") + d.attackBonus, "prof + " + ABIL_SHORT[d.primary])}
+    ${row("Proficiency", sign(d.prof))}
+    ${row("Trick save DC", d.saveDC, "8 + prof + " + ABIL_SHORT[d.primary])}
+    ${row("Trick attack", sign(d.attackBonus), "prof + " + ABIL_SHORT[d.primary])}
     ${row("Parry DC", d.parryDC, "lower is better")}
     ${d.engine ? row(d.engine.name + " cap", d.engineCap) : ""}
     ${d.tricks.length ? row("Tricks known", d.tricks.length) : ""}
@@ -371,6 +502,7 @@ function validateDraft(d) {
   const need = parsed?.count || 2;
   if (parsed && parsed.skills.length && draft.skills.length < need) out.push(`Choose ${need - draft.skills.length} more skill${need - draft.skills.length === 1 ? "" : "s"}.`);
   if (!draft.armorId) out.push("Choose an armour (or clothing).");
+  if (!draft.weapons.length) out.push("Choose at least one weapon to carry.");
   if (!String(draft.name).trim()) out.push("Give them a name.");
   return out;
 }
@@ -401,34 +533,68 @@ function creatorClick(e) {
   const { pick, val } = b.dataset;
   if (pick === "class") {
     draft.classId = draft.classId === val ? "" : val;
-    draft.subclassId = ""; draft.armorId = ""; draft.shieldId = ""; draft.skills = [];
+    draft.subclassId = ""; draft.armorId = ""; draft.shieldId = ""; draft.skills = []; draft.weapons = [];
     const cls = idx.classes.get(draft.classId);
     if (cls && (cls.sizes || []).length === 1) draft.size = cls.sizes[0];
     else if (cls && !(cls.sizes || []).includes(draft.size)) draft.size = "";
   } else if (pick === "size") draft.size = val;
   else if (pick === "subclass") draft.subclassId = draft.subclassId === val ? "" : val;
-  else if (pick === "method") {
+  else if (pick === "level") {
+    draft.level = Math.max(1, Math.min(20, draft.level + Number(val)));
+    draft.levelText = String(draft.level);
+    if (draft.level < (idx.classes.get(draft.classId)?.subclassLevel || 3)) draft.subclassId = "";
+  } else if (pick === "abil") {
+    const [a, delta] = val.split("|");
+    const next = (Number(draft.scores[a]) || 8) + Number(delta);
+    if (next >= 8 && next <= 15) draft.scores[a] = next;
+  } else if (pick === "method") {
     draft.method = val;
     draft.scores = val === "buy" ? Object.fromEntries(ABILITIES.map((a) => [a, 8])) : {};
   } else if (pick === "skill") {
     draft.skills = draft.skills.includes(val) ? draft.skills.filter((s) => s !== val) : draft.skills.concat(val);
   } else if (pick === "armor") draft.armorId = draft.armorId === val ? "" : val;
   else if (pick === "shield") draft.shieldId = draft.shieldId === val ? "" : val;
-  else if (pick === "clearphoto") draft.photo = "";
+  else if (pick === "weapon") {
+    draft.weapons = draft.weapons.includes(val) ? draft.weapons.filter((w) => w !== val) : draft.weapons.concat(val);
+  } else if (pick === "clearphoto") draft.photo = "";
   else if (pick === "reroll") draft._code = suggestCode();
   renderCreator();
 }
 
 function creatorInput(e) {
   const t = e.target;
-  if (t.id === "lvl") { draft.level = Math.max(1, Math.min(20, Number(t.value) || 1)); renderCreator(); }
-  else if (t.dataset.abil) {
-    const v = t.value === "" ? undefined : Number(t.value);
-    if (v === undefined) delete draft.scores[t.dataset.abil]; else draft.scores[t.dataset.abil] = v;
+  if (t.id === "lvl") {
+    // An empty box is a legal thing to be holding mid-edit: you have to be able to clear "12"
+    // before typing "3". The TEXT is what you typed; the LEVEL only follows once it is a number.
+    let raw = t.value.replace(/[^0-9]/g, "").slice(0, 2);
+    if (raw !== "" && Number(raw) > 20) raw = "20";
+    draft.levelText = raw;
+    if (raw !== "") {
+      draft.level = Math.max(1, Number(raw));
+      if (draft.level < (idx.classes.get(draft.classId)?.subclassLevel || 3)) draft.subclassId = "";
+    }
+    renderCreator();
+  } else if (t.dataset.abil) {
+    const raw = String(t.value).replace(/[^0-9]/g, "").slice(0, 2);
+    if (t.tagName === "INPUT") t.value = raw;
+    if (raw === "") delete draft.scores[t.dataset.abil]; else draft.scores[t.dataset.abil] = Number(raw);
     renderCreator();
   } else if (t.id === "cname") { draft.name = t.value; toolEl().querySelector(".creator-side").innerHTML = sidePreview(); }
   else if (t.id === "notes") draft.notes = t.value;
   else if (t.id === "code") { draft._code = t.value.replace(/\D/g, "").slice(0, 6); delete draft._overwrite; }
+  else if (t.id === "hp-amt") ui.hpAmt = Math.max(1, Number(t.value) || 1);
+}
+
+/* Leaving a half-typed box puts it back to something legal, so an abandoned edit can never leave
+   the form showing a value the character does not have. */
+function creatorBlur(e) {
+  if (!draft) return;
+  const t = e.target;
+  if (t.id === "lvl" && draft.levelText !== String(draft.level)) { draft.levelText = String(draft.level); renderCreator(); }
+  else if (t.dataset && t.dataset.abil && t.tagName === "INPUT" && draft.method === "manual") {
+    const v = Number(draft.scores[t.dataset.abil]);
+    if (v && (v < 3 || v > 20)) { draft.scores[t.dataset.abil] = Math.max(3, Math.min(20, v)); renderCreator(); }
+  }
 }
 
 /* Portraits are stored inline with the character, so they must be small. Downscale to 256px and
@@ -479,11 +645,12 @@ async function saveDraft() {
       return;
     }
     const ch = Object.assign({}, draft);
-    delete ch._code; delete ch._overwrite;
+    delete ch._code; delete ch._overwrite; delete ch.levelText;
     ch.savedAt = Date.now();
     ch.play = freshPlay(ch);
     await CocStore.save(code, ch);
     rememberCode(code, ch.name);
+    draft = null;                         // the next visit to #/create starts clean
     msg.innerHTML = `Saved. Your code is <strong>${esc(code)}</strong> — opening the sheet…`;
     msg.className = "save-msg good";
     setTimeout(() => { location.hash = "#/sheet/" + code; }, 700);
@@ -576,6 +743,7 @@ function normalisePlay(ch) {
 
 function routeSheet(code) {
   if (!CocStore.validCode(code)) { location.hash = "#/manage"; return; }
+  ui.openFeats.clear(); ui.openTricks.clear(); ui.levelUp = null; ui.hpAmt = 1;
   paint(`<div class="tool-head"><a class="back" href="#/manage">&larr; My characters</a><h1>Loading…</h1></div>`);
   CocStore.load(code).then((ch) => {
     if (!ch) { paint(`<div class="tool-head"><a class="back" href="#/manage">&larr; My characters</a>
@@ -623,15 +791,18 @@ function renderSheet() {
       </div>
       <button class="btn ${p.inCombat ? "btn-hot" : ""}" data-act="combat">${p.inCombat ? "End combat" : "Start combat"}</button>
     </div>
+    ${ui.levelUp ? levelUpPanel(d) : ""}
     ${p.prompt ? promptBar(p.prompt) : ""}
     ${p.inCombat ? combatBar(d, p) :  `<p class="muted out-of-combat">Out of combat. ${esc(d.engine ? d.engine.name + " sits at 0 until a fight starts — it is built during one and lost when it ends." : "Cooldowns and once-per-combat uses are clear.")}</p>`}
     ${vitals(d, p)}
     ${keyNumbers(d)}
+    ${attacksPanel(d)}
     ${d.engine ? enginePanel(d, p) : ""}
     ${d.tricks.length ? tricksPanel(d, p) : ""}
     ${featuresPanel(d, p)}
     ${statePanel(d, p)}
     ${gearPanel(d, ch)}
+    ${ui.levelUp ? "" : progressPanel(d)}
   `);
 }
 
@@ -663,7 +834,7 @@ function vitals(d, p) {
         ${p.tempHp ? `<em>+${esc(p.tempHp)} temp</em>` : ""}</div></div>
     <div class="hp-bar"><div class="hp-fill ${state}" style="width:${pct}%"></div></div>
     <div class="hp-controls">
-      <input id="hp-amt" class="num" type="number" min="1" value="1" />
+      <input id="hp-amt" class="num" type="number" min="1" value="${esc(ui.hpAmt)}" />
       <button class="btn-quiet" data-act="dmg">Damage</button>
       <button class="btn-quiet" data-act="heal">Heal</button>
       <button class="btn-quiet" data-act="temp">Temp HP</button>
@@ -673,16 +844,57 @@ function vitals(d, p) {
   </section>`;
 }
 
+/* The numbers you look up mid-turn, each with the working-out one tap away. The trick numbers are
+   labelled as trick numbers: they come off the class's primary ability, which for half the roster
+   is NOT the stat they swing a weapon with — those live in Attacks, per weapon. */
 function keyNumbers(d) {
-  const n = (l, v, note) => `<div class="kn"><span class="kn-l">${esc(l)}</span><span class="kn-v">${esc(v)}</span>${note ? `<span class="kn-n">${esc(note)}</span>` : ""}</div>`;
+  const n = (label, value, note, tip) =>
+    `<div class="kn"><span class="kn-v">${esc(value)}</span>
+      <span class="kn-l">${tip ? tipTermHTML(label, tip) : esc(label)}</span>
+      ${note ? `<span class="kn-n">${esc(note)}</span>` : ""}</div>`;
+  const abils = ABILITIES.map((a) => {
+    const isProf = d.saves.includes(a);
+    const save = d.mods[a] + (isProf ? d.prof : 0);
+    return `<div class="ab-box ${isProf ? "prof" : ""}">
+      <span class="ab-name">${esc(ABIL_SHORT[a])}</span>
+      <span class="ab-mod">${esc(sign(d.mods[a]))}</span>
+      <span class="ab-score">score ${esc(sheet.ch.scores[a] ?? "—")}</span>
+      <span class="ab-save">save ${esc(sign(save))}</span></div>`;
+  }).join("");
   return `<section class="panel"><h2>Key numbers</h2><div class="kn-grid">
-    ${n("AC", d.ac, d.acNote)}
-    ${n("Parry DC", d.parryDC, "roll d20 over it")}
-    ${n("Save DC", d.saveDC, "8 + prof + " + ABIL_SHORT[d.primary])}
-    ${n("Attack", (d.attackBonus >= 0 ? "+" : "") + d.attackBonus, "prof + " + ABIL_SHORT[d.primary])}
-    ${n("Proficiency", "+" + d.prof)}
-    ${ABILITIES.map((a) => n(ABIL_SHORT[a], ((d.mods[a] >= 0 ? "+" : "") + d.mods[a]), String(sheet.ch.scores[a] ?? "—"))).join("")}
-  </div></section>`;
+    ${n("Armour Class", d.ac, d.acNote, "An attack roll must equal or beat this to hit you. Only a hit can then be Parried.")}
+    ${n("Parry DC", d.parryDC, "roll a flat d20", "When a hit lands, spend your reaction and roll a flat d20 — no modifiers. Above this DC: no damage. Equal: half. Below: half again on top. Lower is better, and it never scales with level.")}
+    ${n("Initiative", sign(d.mods.Dexterity), "d20 + this", "Roll d20 and add this at the start of a fight to see who goes when.")}
+    ${n("Proficiency", sign(d.prof), "level " + d.level, "Added to anything you are proficient with: attacks with your weapons, the skills you chose, and the saving throws your class grants.")}
+    ${n("Trick save DC", d.saveDC, "vs your tricks", "8 + your proficiency bonus + your " + ABIL_SHORT[d.primary] + " modifier. A creature your trick targets rolls its own save against this number.")}
+    ${n("Trick attack", sign(d.attackBonus), "for tricks that roll", "Your proficiency bonus + your " + ABIL_SHORT[d.primary] + " modifier, for the tricks that make an attack roll instead of forcing a save. Weapon attacks are worked out per weapon under Attacks.")}
+  </div>
+  <p class="panel-sub">Abilities — the modifier is what you add; a gold box is a saving throw your class is proficient in</p>
+  <div class="ab-grid">${abils}</div></section>`;
+}
+
+/* One row per weapon actually carried, with the to-hit and the damage already worked out — the
+   sheet knows the proficiency bonus and the modifier, so the player should never be adding them up
+   at the table. */
+function attacksPanel(d) {
+  if (!d.carried.length) return "";
+  const rows = d.carried.map(({ w, ability, why, hit, mod }) => {
+    const vers = (w.properties || []).includes("versatile") && w.versatileDamage
+      ? ` <span class="muted">(${esc(w.versatileDamage)} ${esc(sign(mod))} two-handed)</span>` : "";
+    const rng = w.range ? `<span class="muted">${esc(w.range.normal)}/${esc(w.range.long)} ft</span>` : "";
+    return `<tr>
+      <td><strong>${esc(w.name)}</strong> ${rng}</td>
+      <td class="atk-hit">${tipTermHTML(sign(hit), `${why} Proficiency ${sign(d.prof)} + ${ability} ${sign(mod)}.`)}</td>
+      <td class="atk-dmg">${esc(w.damage.die)} ${esc(sign(mod))}${vers}<br><span class="muted">${esc(w.damage.type)}</span></td>
+      <td>${propsHTML(w.properties)}</td>
+      <td>${masteryHTML(w.mastery)}</td></tr>`;
+  }).join("");
+  return `<section class="panel"><h2>Attacks</h2>
+    <table class="data-table attack-table">
+      <thead><tr><th>Weapon</th><th>To hit</th><th>Damage</th><th>Properties</th><th>Mastery</th></tr></thead>
+      <tbody>${rows}</tbody></table>
+    <p class="muted">Roll d20 and add the to-hit against the target's AC. On a hit, roll the damage die and add the same modifier.</p>
+  </section>`;
 }
 
 function enginePanel(d, p) {
@@ -722,14 +934,25 @@ function tricksPanel(d, p) {
     const tooPoor = cost > p.engine;
     const blocked = cd > 0 || spent || tooPoor;
     const why = spent ? "used this combat" : cd > 0 ? `Seen — ${cd} round${cd === 1 ? "" : "s"}` : tooPoor ? `needs ${cost}` : "";
+    const open = ui.openTricks.has(id);
+    const ladder = trickLadder(t);
     return `<div class="trick-row ${blocked ? "blocked" : ""}">
       <div class="trick-main">
-        <a href="#/tricks/${encodeURIComponent(id)}"><strong>${esc(t.name)}</strong></a>
-        <span class="tier-badge tier-${esc(t.tier)}">${esc(cap(t.tier))}</span>
-        ${cost ? `<span class="cost-badge">${esc(cost)} ${esc(d.engine.name)}</span>` : ""}
-        ${t.cooldown ? `<span class="muted">cd ${esc(t.cooldown)}</span>` : ""}
-        ${t.concentration ? `<span class="muted">concentration</span>` : ""}
-        <div class="trick-sum">${fmtDesc(t.sheetSummary || "", trickLadder(t))}</div>
+        <button class="feat-toggle" data-act="open-trick" data-val="${esc(id)}">
+          <span class="feat-name">${esc(t.name)}</span>
+          <span class="tier-badge tier-${esc(t.tier)}">${esc(cap(t.tier))}</span>
+          ${cost ? `<span class="cost-badge">${esc(cost)} ${esc(d.engine.name)}</span>` : ""}
+          ${t.cooldown ? `<span class="muted">cd ${esc(t.cooldown)}</span>` : ""}
+          ${t.concentration ? `<span class="muted">concentration</span>` : ""}
+          <span class="chev">${open ? "&minus;" : "+"}</span>
+        </button>
+        <div class="trick-sum">${fmtDesc(t.sheetSummary || "", ladder)}</div>
+        ${open ? `<div class="feat-body">${tabbed(
+          (t.save ? `<p class="muted">${esc(t.save)} saving throw · ${esc(t.castingTime)} · ${esc(t.range)} · ${esc(t.duration)}</p>`
+                  : `<p class="muted">${esc(t.castingTime)} · ${esc(t.range)} · ${esc(t.duration)}</p>`)
+          + (Array.isArray(t.options) && t.options.length ? optionTable(t.options, ladder) : "")
+          + `<p><a href="#/tricks/${encodeURIComponent(id)}">Open the full entry &rarr;</a></p>`,
+          narrationHTML(t.narration))}</div>` : ""}
       </div>
       <div class="trick-act">
         ${why ? `<span class="why">${esc(why)}</span>` : ""}
@@ -754,24 +977,34 @@ function featuresPanel(d, p) {
   const rows = d.features.map((f) => {
     const lim = limitOf(f);
     const key = f.name;
+    const open = ui.openFeats.has(key);
     let ctl = "";
     if (lim) {
       const max = lim.kind === "combat" ? 1 : d.scalingUses;
       const used = p.uses[key] || 0;
-      const left = Math.max(0, max - used);
+      const leftN = Math.max(0, max - used);
       ctl = `<div class="uses">
-        <span class="${left ? "" : "spent"}">${esc(left)} / ${esc(max)} left</span>
-        <button class="btn-quiet" data-act="use" data-val="${esc(key)}" ${left ? "" : "disabled"}>Use</button>
+        <span class="${leftN ? "" : "spent"}">${esc(leftN)} / ${esc(max)} left</span>
+        <button class="btn-quiet" data-act="use" data-val="${esc(key)}" ${leftN ? "" : "disabled"}>Use</button>
         ${used ? `<button class="btn-quiet" data-act="unuse" data-val="${esc(key)}">Undo</button>` : ""}
       </div>`;
     }
-    return `<details class="feat"><summary>
-        <span class="lvl">L${esc(f.level)}</span> <strong>${esc(f.name)}</strong>
-        ${f.role === "roleplay" ? `<span class="role-badge">Roleplay</span>` : ""}
-        <span class="muted">${esc(f._from)}</span>${ctl}</summary>
-      ${metaRow(f.meta)}${fmtDesc(f.sheetSummary || f.description || "")}
-      ${Array.isArray(f.options) && f.options.length ? optionTable(f.options) : ""}
-    </details>`;
+    return `<div class="feat">
+      <div class="feat-head">
+        <button class="feat-toggle" data-act="open-feat" data-val="${esc(key)}">
+          <span class="lvl">L${esc(f.level)}</span>
+          <span class="feat-name">${esc(f.name)}</span>
+          ${f.role === "roleplay" ? `<span class="role-badge">Roleplay</span>` : ""}
+          <span class="muted">${esc(f._from)}</span>
+          <span class="chev">${open ? "&minus;" : "+"}</span>
+        </button>
+        ${ctl}
+      </div>
+      ${open ? `<div class="feat-body">${tabbed(
+        metaRow(f.meta) + fmtDesc(f.sheetSummary || f.description || "")
+          + (Array.isArray(f.options) && f.options.length ? optionTable(f.options) : ""),
+        narrationHTML(f.narration))}</div>` : ""}
+    </div>`;
   }).join("");
   return `<section class="panel"><h2>Features</h2>${rows}</section>`;
 }
@@ -791,30 +1024,131 @@ function statePanel(d, p) {
   const own = (d.cls.play?.states || []).filter((st) => !st.subclass || (d.subclass && d.subclass.id === st.subclass));
   const all = own.map((st) => [st.id, st.label, st.why || ""]).concat(UNIVERSAL_STATES);
   return `<section class="panel"><h2>States</h2>
-    <div class="chips">${all.map(([k, label, why]) =>
-      `<button class="chip ${p.flags[k] ? "on" : ""}" data-act="flag" data-val="${esc(k)}">
-        ${esc(label)}${why ? `<span class="term-tip" role="tooltip">${esc(why)}</span>` : ""}</button>`).join("")}</div>
+    <div class="chips">${all.map(([k, label, why]) => chipTip(
+      `<button class="chip ${p.flags[k] ? "on" : ""}" data-act="flag" data-val="${esc(k)}">${esc(label)}</button>`,
+      esc(why))).join("")}</div>
     <p class="muted">Toggle these yourself — the app never sees your dice, so it never guesses. All of
       them clear when the fight ends.</p>
   </section>`;
 }
 
 function gearPanel(d, ch) {
-  const wep = d.weapons.map((w) => `<tr><td><strong>${esc(w.name)}</strong></td>
-    <td>${esc(w.damage.die)} ${esc(w.damage.type)}</td><td>${propsHTML(w.properties)}</td>
-    <td>${masteryHTML(w.mastery)}</td></tr>`).join("");
+  // What you are HOLDING is a thing that changes at the table — you drop a weapon, you pick a
+  // different one up — so it is editable here rather than frozen at creation. It is also the only
+  // way a character saved before weapons were choosable can stop listing all three at once.
+  const carried = Array.isArray(ch.weapons) ? ch.weapons : [];
+  const weps = d.weapons.map((w) => chipTip(
+    `<button class="chip ${carried.includes(w.name) ? "on" : ""}" data-act="carry" data-val="${esc(w.name)}">${esc(w.name)}</button>`,
+    weaponTipHTML(w, d))).join("");
   return `<section class="panel"><h2>Gear</h2>
-    <p><strong>${esc(d.armor ? d.armor.name : "No armour")}</strong>
-      ${d.armor ? `<span class="muted">AC ${esc(d.armor.baseAC)}${d.armor.trait ? " · " : ""}</span>${d.armor.trait ? armorTraitHTML(d.armor.trait) : ""}` : ""}
-      ${d.shield ? ` · <strong>${esc(d.shield.name)}</strong> <span class="muted">+${esc(d.shield.acBonus)}</span>` : ""}</p>
-    <table class="data-table"><thead><tr><th>Weapon</th><th>Damage</th><th>Properties</th><th>Mastery</th></tr></thead>
-      <tbody>${wep}</tbody></table>
+    <p class="gear-line"><strong>${esc(d.armor ? d.armor.name : "No armour")}</strong>
+      ${d.armor ? `<span class="muted">AC ${esc(d.armor.baseAC)}</span> ${d.armor.trait ? armorTraitHTML(d.armor.trait) : ""}` : ""}
+      ${d.shield ? `<strong>${esc(d.shield.name)}</strong> <span class="muted">+${esc(d.shield.acBonus)}</span>` : ""}</p>
+    <p class="panel-sub">Carrying <span class="muted">— your class is proficient with all of these</span></p>
+    <div class="chips">${weps}</div>
+    ${carried.length ? "" : `<p class="muted">Nothing chosen, so every weapon you are proficient with is listed under Attacks.</p>`}
     ${ch.skills?.length ? `<p class="muted">Skill proficiencies: ${esc(ch.skills.join(", "))}</p>` : ""}
     ${ch.notes ? `<p class="notes">${esc(ch.notes)}</p>` : ""}
   </section>`;
 }
 
+/* ---------------------------------------------------------------- levelling up */
+
+/* The next level's ability-score bump, applied on top of the stored scores without touching them
+   until the level-up is confirmed. */
+function withAsi(scores, asi) {
+  const out = Object.assign({}, scores);
+  for (const a of Object.keys(asi || {})) out[a] = Math.min(20, (Number(out[a]) || 10) + asi[a]);
+  return out;
+}
+function asiSpent(asi) { return Object.values(asi || {}).reduce((n, v) => n + v, 0); }
+
+function progressPanel(d) {
+  const nextLv = d.level + 1;
+  const atMax = d.level >= 20;
+  return `<section class="panel"><h2>Progress</h2>
+    <p class="muted">Level ${esc(d.level)} · proficiency ${esc(sign(d.prof))} ·
+      ${esc(d.features.length)} feature${d.features.length === 1 ? "" : "s"}${d.tricks.length ? ` · ${esc(d.tricks.length)} tricks` : ""}.
+      ${atMax ? "This is the ceiling." : `Level ${esc(nextLv)} is next${ASI_LEVELS.includes(nextLv) ? " — and it carries an ability score increase" : ""}.`}</p>
+    <div class="hp-controls">
+      <button class="btn" data-act="levelup" ${atMax ? "disabled" : ""}>Level up to ${esc(Math.min(20, nextLv))}</button>
+      ${d.level > 1 ? `<button class="btn-quiet" data-act="leveldown">Undo a level</button>` : ""}
+    </div>
+  </section>`;
+}
+
+/* A preview, not a mutation. Level is one of the few things actually STORED on a character, and
+   every number on the sheet hangs off it, so the panel shows exactly what the level would add —
+   hit points, features, tricks — and writes nothing until Confirm. */
+function levelUpPanel(dNow) {
+  const lu = ui.levelUp, ch = sheet.ch;
+  const cls = dNow.cls;
+  const subLv = cls.subclassLevel || 3;
+  const needsSub = lu.to >= subLv && !ch.subclassId;
+  const isAsi = ASI_LEVELS.includes(lu.to);
+  const preview = Object.assign({}, ch, {
+    level: lu.to,
+    subclassId: ch.subclassId || lu.subclassId,
+    scores: withAsi(ch.scores, lu.asi),
+  });
+  const dNext = derive(preview);
+  const before = new Set(dNow.features.map((f) => f._from + "|" + f.name));
+  const gainedF = dNext.features.filter((f) => !before.has(f._from + "|" + f.name));
+  const beforeT = new Set(dNow.tricks.map((t) => t.id || slug(t)));
+  const gainedT = dNext.tricks.filter((t) => !beforeT.has(t.id || slug(t)));
+  const hpGain = dNext.hpMax - dNow.hpMax;
+
+  const subs = (store.subclasses || []).filter((s) => s.parentClass === cls.id);
+  const subBlock = needsSub ? `<div class="lu-block"><h3>Choose a discipline</h3>
+    <div class="chips">${subs.map((s) => chipTip(
+      `<button class="chip ${lu.subclassId === s.id ? "on" : ""}" data-act="lu-sub" data-val="${esc(s.id)}">${esc(s.name)}</button>`,
+      esc(s.flavor || ""))).join("")}</div></div>` : "";
+
+  const spent = asiSpent(lu.asi);
+  const asiBlock = isAsi ? `<div class="lu-block"><h3>Ability score increase
+      <span class="budget">${esc(2 - spent)}</span> left</h3>
+    <div class="lu-asi">${ABILITIES.map((a) => {
+      const at = (Number(ch.scores[a]) || 10) + (lu.asi[a] || 0);
+      const canUp = spent < 2 && at < 20 && (lu.asi[a] || 0) < 2;
+      return `<span class="stepper">
+        <span class="ab-name">${esc(ABIL_SHORT[a])}</span>
+        <button class="step-btn" data-act="lu-asi" data-val="${a}|-1" ${lu.asi[a] ? "" : "disabled"}>&minus;</button>
+        <span class="step-val">${esc(at)}</span>
+        <button class="step-btn" data-act="lu-asi" data-val="${a}|1" ${canUp ? "" : "disabled"}>+</button>
+      </span>`;
+    }).join("")}</div>
+    <p class="muted">Two points: +2 to one ability, or +1 to two. Nothing goes past 20.</p></div>` : "";
+
+  const blocked = (needsSub && !lu.subclassId) || (isAsi && spent < 2);
+  const list = (arr, empty) => arr.length
+    ? `<ul class="lu-list">${arr.map((x) => `<li><span class="lvl">L${esc(x.level || x._at)}</span> ${esc(x.name)}
+        ${x._from && x._from !== cls.name ? `<span class="muted">${esc(x._from)}</span>` : ""}</li>`).join("")}</ul>`
+    : `<p class="lu-none">${esc(empty)}</p>`;
+
+  return `<section class="panel levelup">
+    <h2>Level ${esc(dNow.level)} &rarr; ${esc(lu.to)}</h2>
+    <div class="lu-grid">
+      <div class="lu-block"><h3>Hit points</h3>
+        <p><span class="lu-hp">+${esc(hpGain)}</span> <span class="muted">→ ${esc(dNext.hpMax)} max</span></p>
+        <p class="muted">The average of your d${esc(cls.hitDie)}, rounded up, plus your Constitution modifier.</p></div>
+      <div class="lu-block"><h3>New features</h3>${list(gainedF, "Nothing new at this level.")}</div>
+      ${dNext.tricks.length || gainedT.length ? `<div class="lu-block"><h3>New tricks</h3>${list(gainedT, "No new tricks at this level.")}</div>` : ""}
+      ${subBlock}
+      ${asiBlock}
+    </div>
+    <div class="lu-acts">
+      <button class="btn" data-act="lu-confirm" ${blocked ? "disabled" : ""}>Confirm level ${esc(lu.to)}</button>
+      <button class="btn-quiet" data-act="lu-cancel">Cancel</button>
+      ${blocked ? `<span class="why">${esc(needsSub && !lu.subclassId ? "Choose a discipline first." : "Spend both ability points first.")}</span>` : ""}
+    </div>
+  </section>`;
+}
+
 /* ---------------------------------------------------------------- sheet actions */
+
+/* Actions that only move the interface around — expanding a feature, opening the level-up preview
+   — must not write to storage. Listed here so the difference is declared rather than remembered. */
+const UI_ONLY_ACTS = new Set(["open-feat", "open-trick", "levelup", "lu-cancel", "lu-sub", "lu-asi"]);
 
 function sheetAction(e) {
   const b = e.target.closest("[data-act]");
@@ -886,10 +1220,52 @@ function sheetAction(e) {
   else if (act === "use") p.uses[val] = (p.uses[val] || 0) + 1;
   else if (act === "unuse") p.uses[val] = Math.max(0, (p.uses[val] || 0) - 1);
   else if (act === "flag") p.flags[val] = !p.flags[val];
-  else return;
+  else if (act === "carry") {
+    const have = Array.isArray(ch.weapons) ? ch.weapons : [];
+    ch.weapons = have.includes(val) ? have.filter((w) => w !== val) : have.concat(val);
+  }
+  else if (act === "open-feat") { ui.openFeats.has(val) ? ui.openFeats.delete(val) : ui.openFeats.add(val); }
+  else if (act === "open-trick") { ui.openTricks.has(val) ? ui.openTricks.delete(val) : ui.openTricks.add(val); }
+  else if (act === "levelup") ui.levelUp = { to: Math.min(20, d.level + 1), subclassId: "", asi: {} };
+  else if (act === "lu-cancel") ui.levelUp = null;
+  else if (act === "lu-sub") ui.levelUp.subclassId = ui.levelUp.subclassId === val ? "" : val;
+  else if (act === "lu-asi") {
+    const [a, delta] = val.split("|");
+    const asi = ui.levelUp.asi;
+    const next = (asi[a] || 0) + Number(delta);
+    const at = (Number(ch.scores[a]) || 10) + next;
+    if (next >= 0 && next <= 2 && at <= 20 && asiSpent(asi) - (asi[a] || 0) + next <= 2) {
+      if (next === 0) delete asi[a]; else asi[a] = next;
+    }
+  } else if (act === "lu-confirm") {
+    const lu = ui.levelUp;
+    const before = d.hpMax;
+    ch.level = lu.to;
+    if (lu.subclassId) ch.subclassId = lu.subclassId;
+    if (asiSpent(lu.asi)) {
+      // Recorded per level so Undo a level can put the points back exactly.
+      ch.asiLog = Object.assign({}, ch.asiLog, { [lu.to]: Object.assign({}, lu.asi) });
+      ch.scores = withAsi(ch.scores, lu.asi);
+    }
+    const after = derive(ch).hpMax;
+    p.hp = Math.max(1, Math.min(after, p.hp + (after - before)));
+    ui.levelUp = null;
+  } else if (act === "leveldown") {
+    const from = ch.level;
+    const before = d.hpMax;
+    ch.level = Math.max(1, from - 1);
+    if (ch.asiLog && ch.asiLog[from]) {
+      for (const a of Object.keys(ch.asiLog[from])) ch.scores[a] = (Number(ch.scores[a]) || 10) - ch.asiLog[from][a];
+      delete ch.asiLog[from];
+    }
+    if (ch.level < (d.cls.subclassLevel || 3)) ch.subclassId = "";
+    const after = derive(ch).hpMax;
+    p.hp = Math.max(1, Math.min(after, p.hp - (before - after)));
+    ui.levelUp = null;
+  } else return;
 
   renderSheet();
-  persist();
+  if (!UI_ONLY_ACTS.has(act)) persist();
 }
 
 /* ---------------------------------------------------------------- wiring */
@@ -918,6 +1294,10 @@ document.addEventListener("input", (e) => {
     return;
   }
   creatorInput(e);
+});
+document.addEventListener("focusout", (e) => {
+  if (!toolEl() || $("#tool-view").classList.contains("hidden")) return;
+  creatorBlur(e);
 });
 document.addEventListener("keydown", (e) => {
   if (e.key !== "Enter") return;

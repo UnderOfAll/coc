@@ -19,7 +19,8 @@ ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data"
 CATEGORIES = ["rules", "classes", "subclasses", "tricks", "skills", "passives", "weapons", "armor"]
 # Assets that get a content-hash cache-buster stamped into index.html (see stamp_assets).
-VERSIONED_ASSETS = ["assets/css/style.css", "assets/js/app.js"]
+VERSIONED_ASSETS = ["assets/css/style.css", "assets/js/app.js",
+                    "assets/js/storage.js", "assets/js/creator.js"]
 
 
 def entries(path):
