@@ -377,11 +377,6 @@ h1 { font-family: var(--serif); font-weight: 600; margin: 0 0 1.25rem; }
 .data-table tbody tr:nth-child(even) { background: var(--panel-2); }
 .data-table .col-ability { color: var(--accent-soft); }
 
-/* Footer */
-.statusbar {
-  margin-top: auto; padding: 0.5rem 1.25rem; background: var(--panel); border-top: 1px solid var(--border);
-  color: var(--muted); font-size: 0.85rem;
-}
 .muted { color: var(--muted); }
 .hidden { display: none !important; }
 code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; font-size: 0.85em; }
@@ -421,10 +416,6 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
      mobile browser's bottom toolbar (Brave) or the home indicator. */
   .content { padding: 1rem 1rem calc(3.5rem + env(safe-area-inset-bottom, 0px)); }
   .detail-view { max-width: 100%; }
-
-  /* The status bar reports entry counts and which storage backend is live. That is developer
-     reassurance, not something a player at a table needs pinned under their character sheet. */
-  .statusbar { display: none; }
 
   /* Five columns cannot fit a phone. Stack each attack into label/value rows rather than putting
      the table in a horizontal scroller, which would clip the mastery and property tooltips. */

@@ -132,7 +132,8 @@ ok(!$("#compendium-view").classList.contains("hidden"),"and it opens");
 
 console.log("\n— MOBILE —");
 const mob=(css.match(/@media \(max-width: 640px\) \{[\s\S]*?\n\}/)||[""])[0];
-ok(/\.statusbar \{ display: none/.test(mob),"the entry-count status bar is off on a phone");
+ok(!/statusbar/.test(css)&&!/statusbar/.test(fs.readFileSync(path.join(REPO,"index.html"),"utf8")),
+  "the status bar is gone entirely, not merely hidden");
 ok(/\.attack-table[^{]*\{[^}]*display: block/.test(mob),"five attack columns stack instead of overflowing");
 ok(/content: attr\(data-label\)/.test(mob),"stacked rows are labelled");
 // A bare minmax(Xrem, 1fr) keeps its floor even when the container is narrower, which is a grid

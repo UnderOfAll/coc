@@ -67,7 +67,7 @@ async function boot() {
     try {
       manifest = await fetchJSON("data/manifest.json");
     } catch (e) {
-      setStatus("Could not load data — run scripts/build_manifest.py and serve over http.");
+      console.error("Could not load data — run scripts/build_manifest.py and serve over http.");
       manifest = {};
     }
     await Promise.all(CATEGORIES.map(async (cat) => {
@@ -79,8 +79,6 @@ async function boot() {
   buildSidebar();
   wireEvents();
   $("#legend-panel").innerHTML = legendHTML();
-  const total = Object.values(store).reduce((n, a) => n + a.length, 0);
-  setStatus(total ? `${total} entries loaded across ${CATEGORIES.length} categories.` : "No content yet.");
   routeFromHash();
 }
 
@@ -254,11 +252,7 @@ function routeFromHash() {
   const arg = rest.join("/");
 
   // Landing menu: the default, and what an empty hash means.
-  if (!head) {
-    showView("menu");
-    setStatus(typeof CocStore !== "undefined" ? CocStore.describe() : "");
-    return;
-  }
+  if (!head) { showView("menu"); return; }
 
   // Character tools, registered by creator.js.
   if (COC_ROUTES[head]) { showView("tool"); COC_ROUTES[head](decodeURIComponent(arg)); return; }
@@ -439,7 +433,6 @@ function renderSearch(q) {
     list.appendChild(section);
   }
   if (!total) list.appendChild(el("p", "muted", `No matches for “${esc(q)}”.`));
-  setStatus(total ? `${total} match${total === 1 ? "" : "es"} for “${q}”.` : `No matches for “${q}”.`);
 }
 
 /* A result card: name, category meta, and a snippet showing where the term matched. */
@@ -1355,6 +1348,5 @@ function esc(s) {
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
-function setStatus(msg) { $("#status").textContent = msg; }
 
 boot();
