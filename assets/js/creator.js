@@ -548,7 +548,7 @@ function stepIdentity() {
     <label class="field-label">Portrait <span class="muted">(optional — stored with the character)</span></label>
     <div class="portrait-row">
       ${draft.photo ? `<img class="portrait" src="${esc(draft.photo)}" alt="" />` : `<div class="portrait empty">no image</div>`}
-      <div><input id="photo" type="file" accept="image/*" />
+      <div class="portrait-actions"><input id="photo" type="file" accept="image/*" />
       ${draft.photo ? `<button class="btn-quiet" data-pick="clearphoto" data-val="1">Remove</button>` : ""}</div>
     </div>
     <label class="field-label">Notes <span class="muted">(appearance, background — anything you like)</span></label>
@@ -806,27 +806,40 @@ async function openByCode() {
 
 /* ---------------------------------------------------------------- recovery roster */
 
-/* Every saved character and its code, for when somebody loses theirs. Deliberately NOT linked from
-   the menu — it is a recovery tool, not a browsing one.
+/* Recovering a lost code.
  *
- * It exposes nothing that was not already exposed. The database URL sits in config.js, which every
- * visitor downloads, and the rules open the `characters` path to anyone; so a roster makes an
- * existing openness convenient rather than creating it. The six-digit code is the credential and the
- * database is public — that is the whole security model, and it is a reasonable one for a table of
- * friends and a bad one for anything private. */
+ * The database rules grant read on a single character path and NOT on the collection above it, so
+ * nothing here can list what exists — which is the point: a stranger with the URL cannot browse the
+ * table. That leaves two honest sources, and this page shows both:
+ *   1. the codes THIS browser has opened, which it remembers locally; and
+ *   2. the Firebase console, where the owner is signed in and the rules do not apply.
+ * If a database is configured permissively enough to list (the local backend always is), the full
+ * table is shown instead — so this page is useful either way rather than assuming one setup. */
 function routeRoster() {
-  paint(`<div class="tool-head"><a class="back" href="#/">&larr; Menu</a>
-    <h1>All characters</h1>
-    <p class="muted">Every character saved under this table's storage, with its code — so a lost code
-      is recoverable. ${esc(CocStore.describe())}</p></div>
-    <section class="step"><p class="muted">Reading…</p></section>`);
+  const head = `<div class="tool-head"><a class="back" href="#/">&larr; Menu</a>
+    <h1>Find a lost code</h1></div>`;
+  const local = () => {
+    const rows = recentCodes();
+    return `<section class="step"><h2>Opened on this device</h2>
+      ${rows.length ? `<div class="recent">${rows.map((r) => `
+        <div class="recent-row">
+          <a class="recent-open" href="#/sheet/${esc(r.code)}">
+            <strong>${esc(r.name || "Unnamed")}</strong><span class="muted">code ${esc(r.code)}</span>
+          </a>
+        </div>`).join("")}</div>`
+        : `<p class="muted">This browser has not opened a character yet.</p>`}
+      </section>
+      <section class="step"><h2>Every character</h2>
+      <p class="muted">Not listable from here, by design: the storage rules grant access to one
+        character at a time, so nobody with the site's address can browse your table. To see them all,
+        open your Firebase console &rarr; <strong>Realtime Database</strong> &rarr; <strong>Data</strong>
+        &rarr; <code>characters</code>. You are signed in there, so the restriction does not apply to
+        you — and that is the only place it does not.</p></section>`;
+  };
+  paint(head + `<section class="step"><p class="muted">Checking…</p></section>`);
   CocStore.all().then((rows) => {
     const codes = Object.keys(rows).filter((c) => rows[c]).sort();
-    if (!codes.length) {
-      paint(toolEl().innerHTML.replace(/<section class="step">[\s\S]*<\/section>/,
-        `<section class="step"><p class="muted">Nothing saved yet.</p></section>`));
-      return;
-    }
+    if (!codes.length) { paint(head + local()); return; }
     const body = codes.map((code) => {
       const ch = rows[code] || {};
       const cls = idx.classes.get(ch.classId);
@@ -838,18 +851,12 @@ function routeRoster() {
         <td class="col-num">${esc(ch.level ?? "—")}</td>
       </tr>`;
     }).join("");
-    paint(`<div class="tool-head"><a class="back" href="#/">&larr; Menu</a>
-      <h1>All characters</h1>
-      <p class="muted">${esc(codes.length)} saved. A code is the only credential a character has, so
-        treat this list as private — and remember the database itself is readable by anyone who opens
-        the site's config.</p></div>
+    paint(head + `<p class="muted">${esc(codes.length)} saved. This storage allows listing, so the
+        whole table is readable by anyone with the site's address — see docs/CLOUD_SETUP.md.</p>
       <section class="panel"><table class="data-table">
         <thead><tr><th>Code</th><th>Name</th><th>Class</th><th>Level</th></tr></thead>
         <tbody>${body}</tbody></table></section>`);
-  }).catch((err) => {
-    paint(`<div class="tool-head"><a class="back" href="#/">&larr; Menu</a>
-      <h1>All characters</h1><p class="muted">Could not read storage: ${esc(err.message)}</p></div>`);
-  });
+  }).catch(() => paint(head + local()));
 }
 
 /* ---------------------------------------------------------------- the live sheet */

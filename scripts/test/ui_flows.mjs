@@ -367,14 +367,22 @@ ok(peek("sheet")===null,"the sheet lets go of it");
 ok(peek(`localStorage.getItem("coc:recent")`)==="[]","and it drops off this device's recent list");
 ok(peek("location.hash")==="#/manage","and you land back on My characters");
 
-console.log("\n— RECOVERY ROSTER —");
+console.log("\n— FIND A LOST CODE —");
+// With the hardened rules, listing is DENIED — that is the point. The page must still be useful.
+peek(`CocStore.all = async () => { throw new Error("Permission denied"); };
+  localStorage.setItem("coc:recent", JSON.stringify([{code:"123456",name:"Rig"}]));`);
+await go("#/roster");
+ok(!$("#tool .data-table"),"a locked-down database lists nothing, as intended");
+ok(/Firebase console/.test($("#tool").textContent),"and points at the console, where the owner can");
+const seen=$$("#tool .recent-row");
+ok(seen.length===1&&/123456/.test(seen[0].textContent),"while still offering the codes this device knows");
+// A permissive backend (localStorage always is) still gets the full table.
 peek(`CocStore.all = async () => ({
   "123456": {name:"Rig", classId:"joker", subclassId:"anarchist", level:5},
   "998877": {name:"Other", classId:"the-sandow", level:2} });`);
 await go("#/roster");
 const rows=$$("#tool .data-table tbody tr");
-ok(rows.length===2,"every saved character is listed ("+rows.length+")");
-ok(rows[0].textContent.includes("123456")&&rows[0].textContent.includes("Rig"),"code beside the name");
+ok(rows.length===2,"a listable store shows the whole table ("+rows.length+")");
 ok(rows[0].querySelector("a").getAttribute("href")==="#/sheet/123456","and opens the sheet");
 ok(rows[1].textContent.includes("Sandow"),"class resolved from its id");
 

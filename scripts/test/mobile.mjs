@@ -80,9 +80,10 @@ for (const width of [360, 320]) {
     await page.evaluate((h) => { location.hash = h; }, hash);
     await new Promise((r) => setTimeout(r, ms));
   };
-  const tap = async (sel) => {
-    await page.evaluate((s) => { const n = document.querySelector(s); if (n) n.click(); }, sel);
-    await new Promise((r) => setTimeout(r, 250));
+  const tap = async (sel, optional) => {
+    const found = await page.evaluate((s) => { const n = document.querySelector(s); if (n) n.click(); return !!n; }, sel);
+    if (!found && !optional) { fails++; console.log(`  FAIL nothing to tap: ${sel}`); }
+    return found;
   };
 
   await go("#/");                      await audit(page, "landing menu");
@@ -91,7 +92,16 @@ for (const width of [360, 320]) {
   await go("#/tricks");                await audit(page, "trick list");
   await go("#/tricks/wild-card");      await audit(page, "trick page");
   await go("#/armor");                 await audit(page, "armour list");
-  await go("#/create");                await audit(page, "creator");
+  await go("#/create");                await audit(page, "creator, step 1");
+  // Picking a class is what UNFOLDS the rest of the form. Auditing #/create without doing it only
+  // ever looked at the class picker, which is how the ability-score rows shipped broken.
+  await tap('[data-pick="class"][data-val="puppeteer"]');
+  await audit(page, "creator, class chosen");
+  await tap('[data-pick="method"][data-val="buy"]');   await audit(page, "creator, point buy");
+  await tap('[data-pick="method"][data-val="array"]'); await audit(page, "creator, standard array");
+  await tap('[data-pick="method"][data-val="manual"]'); await audit(page, "creator, manual");
+  await tap('[data-pick="level"][data-val="1"]');
+  await tap('[data-pick="level"][data-val="1"]');      await audit(page, "creator, disciplines shown");
   await go("#/manage");                await audit(page, "my characters");
   await go("#/roster", 700);           await audit(page, "recovery roster");
   await go("#/sheet/123456", 800);     await audit(page, "character sheet");
@@ -99,7 +109,7 @@ for (const width of [360, 320]) {
   await tap('[data-act="open-opts"]'); await audit(page, "feature options open");
   await tap('[data-act="combat"]');
   await tap('[data-act="levelup"]');   await audit(page, "level-up panel");
-  await tap('[data-act="sub-open"]');  await audit(page, "discipline card open");
+  if (await tap('[data-act="sub-open"]', true)) await audit(page, "discipline card open");
   await page.close();
 }
 
