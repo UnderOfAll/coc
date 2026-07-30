@@ -552,7 +552,7 @@ function stepIdentity() {
       ${draft.photo ? `<button class="btn-quiet" data-pick="clearphoto" data-val="1">Remove</button>` : ""}</div>
     </div>
     <label class="field-label">Notes <span class="muted">(appearance, background — anything you like)</span></label>
-    <textarea id="notes" class="text" rows="3" placeholder="Free text. No mechanical weight.">${esc(draft.notes)}</textarea>
+    <textarea id="notes" class="text" rows="3" maxlength="2000" placeholder="Free text. No mechanical weight.">${esc(draft.notes)}</textarea>
   </section>`;
 }
 

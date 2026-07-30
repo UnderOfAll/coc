@@ -75,6 +75,10 @@ ok(peek('validateDraft(derive(draft)).some(m=>/weapon/i.test(m))')===false,"weap
 click($$('[data-pick="armor"]')[0]);
 type($("#cname"),"Test Joker");
 ok(peek("draft.name")==="Test Joker","name kept");
+// The input caps must match the storage rules, or the only way a player finds the limit is a save
+// that fails after they have written past it.
+ok($("#cname").getAttribute("maxlength")==="40","the name input matches the 40-char storage rule");
+ok($("#notes").getAttribute("maxlength")==="2000","the notes box matches the 2000-char storage rule");
 
 console.log("\n— NO PHANTOM WIDTH —");
 // jsdom does not apply the external stylesheet, so assert the RULE rather than the computed value:
