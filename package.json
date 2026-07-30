@@ -5,9 +5,11 @@
   "scripts": {
     "build": "python3 scripts/build_manifest.py",
     "test:dom": "node scripts/test/dom_smoke.mjs",
-    "test:ui": "node scripts/test/ui_flows.mjs"
+    "test:ui": "node scripts/test/ui_flows.mjs",
+    "test:mobile": "node scripts/test/mobile.mjs"
   },
   "devDependencies": {
-    "jsdom": "^29.1.1"
+    "jsdom": "^29.1.1",
+    "puppeteer": "^24.43.1"
   }
 }

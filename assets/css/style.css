@@ -395,7 +395,7 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
   .search { order: 3; flex-basis: 100%; width: auto; margin-left: 0; }
 
   /* Sidebar turns into a horizontal, scrollable category strip above the content. */
-  .layout { flex-direction: column; }
+  .layout { flex-direction: column; align-items: stretch; }
   .sidebar {
     width: auto; flex: 0 0 auto; flex-direction: row;
     overflow-x: auto; overflow-y: hidden;
@@ -421,11 +421,13 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
   .attack-table, .attack-table tbody, .attack-table tr, .attack-table td { display: block; width: 100%; }
   .attack-table thead { display: none; }
   .attack-table tr { padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--border); }
-  .attack-table td { display: flex; gap: 0.6rem; justify-content: space-between; align-items: baseline;
-    padding: 0.15rem 0; border: none; text-align: right; }
+  /* Normal inline flow, not flex. A flex row will not shrink its value below that value's own
+     min-content, so a long word ("bludgeoning") pushed straight off the screen; in inline flow it
+     simply wraps under its label. */
+  .attack-table td { display: block; padding: 0.15rem 0; border: none; }
   .attack-table td::before {
-    content: attr(data-label); color: var(--muted); font-size: 0.80rem;
-    text-transform: uppercase; letter-spacing: 1px; text-align: left; flex: 0 0 auto;
+    content: attr(data-label); display: inline-block; min-width: 5.5rem;
+    color: var(--muted); font-size: 0.80rem; text-transform: uppercase; letter-spacing: 1px;
   }
 
   /* Keep wide tables readable and prevent unbreakable text from overflowing. */
@@ -524,7 +526,12 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 /* ============================================================
    Landing menu + character tools
    ============================================================ */
-.menu-view { max-width: 60rem; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; }
+/* width: 100% is NOT redundant next to max-width + auto margins. These are flex items of <body>,
+   and `align-self: stretch` is switched OFF for any item whose cross-axis margins are auto. Without
+   an explicit width the box falls back to fit-content — which is min-content when the content
+   cannot fit — so it grew WIDER than the screen and took the whole page with it, while the top bar
+   (no auto margins, so still stretched) stayed at 360px. That is the black gap on the phone. */
+.menu-view { width: 100%; max-width: 60rem; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; }
 .menu-hero { text-align: center; margin-bottom: 2.5rem; }
 .menu-hero h1 { font-family: var(--serif); font-size: clamp(2rem, 6vw, 3.2rem); margin: 0 0 0.6rem; }
 .menu-tagline { color: var(--muted); max-width: 38rem; margin: 0 auto; line-height: 1.7; }
@@ -539,7 +546,7 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 .menu-icon { font-size: 1.6rem; color: var(--gold); line-height: 1; }
 .menu-card-title { font-family: var(--serif); font-size: 1.15rem; }
 .menu-card-sub { color: var(--muted); font-size: 0.90rem; line-height: 1.5; }
-.tool-view { max-width: 64rem; margin: 0 auto; }
+.tool-view { width: 100%; max-width: 64rem; margin: 0 auto; }
 .brand { text-decoration: none; color: inherit; }
 
 /* ============================================================
@@ -609,7 +616,7 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 .portrait { width: 72px; height: 72px; border-radius: var(--radius); object-fit: cover; border: 1px solid var(--border); }
 .portrait.empty { display: grid; place-items: center; color: var(--muted); font-family: var(--serif); font-size: 1.6rem; background: var(--panel-2); }
 .recent-row { display: flex; align-items: center; gap: 0.6rem; padding: 0.45rem 0; border-top: 1px solid var(--border); }
-.recent-open { flex: 1; display: flex; gap: 0.6rem; align-items: baseline; }
+.recent-open { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; gap: 0.2rem 0.6rem; align-items: baseline; }
 /* --- sheet --- */
 .sheet-head { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between; }
 /* The sheet header: portrait, name, what they ARE, and the level as a field of its own rather than
@@ -819,7 +826,8 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 .lu-asi .stepper { justify-content: space-between; width: 100%; }
 
 /* Attacks: one row per weapon actually carried, with the to-hit and damage already worked out. */
-.atk-hit, .atk-dmg { font-family: var(--serif); color: var(--gold); white-space: nowrap; }
+.atk-hit, .atk-dmg { font-family: var(--serif); color: var(--gold); }
+.atk-hit { white-space: nowrap; }
 .gear-line { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: baseline; margin: 0 0 0.6rem; }
 /* The level box is a stepper's middle, not a full-width field. */
 input.step-val { width: 3.4rem; }

@@ -8,6 +8,9 @@
 #                           expand a feature, damage yourself. Rendering a page proves nothing
 #                           about whether its controls work, and that gap is where every bug in
 #                           this tool has hidden so far.
+#   6. npm run test:mobile — REAL Chromium at 360px and 320px: assert nothing makes the document
+#                           wider than the screen. jsdom has no layout engine and cannot see this,
+#                           and it is the one class of bug that made the app unusable on a phone.
 # Exits non-zero if any step fails. Run before committing content changes.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -26,5 +29,8 @@ npm run test:dom
 
 echo "==> npm run test:ui"
 npm run test:ui
+
+echo "==> npm run test:mobile"
+npm run test:mobile
 
 echo "==> ALL CHECKS PASSED"
