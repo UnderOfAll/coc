@@ -79,7 +79,7 @@
       "name": "Strings of Will",
       "description": "Your art runs on focus and anticipation, not muscle or bluster: you use your Wisdom modifier for attack and damage rolls made with a finesse weapon you're proficient with (your Control Wires, Dagger, or Whip). Any saving throw a Puppeteer feature forces on a creature uses your {{control DC|8 + proficiency bonus + Wisdom modifier}}.",
       "narration": "You do not overpower anyone. You watch, you wait for the moment the weight shifts, and you pull exactly then — the whole art is knowing which half-second a body cannot correct itself in.",
-      "sheetSummary": "Passive. Use your Wisdom modifier for attack and damage rolls with a finesse weapon you're proficient with. Every save a Puppeteer feature forces uses your {{control DC|8 + proficiency bonus + Wisdom modifier}}.",
+      "sheetSummary": "Use your Wisdom modifier for attack and damage rolls with a finesse weapon you're proficient with. Every save a Puppeteer feature forces uses your {{control DC|8 + proficiency bonus + Wisdom modifier}}.",
       "meta": {
         "action": "Passive"
       }
@@ -89,7 +89,7 @@
       "name": "Bodyguard Strings",
       "description": "You never meant to take a hit yourself. {{uses per combat|1 at levels 1-4, 2 at 5-10, 3 at 11-16, 4 at 17+ — the same breakpoints the Scaling Die uses}} times per combat, when you are hit by an attack while you have a String attached to another creature within 10 feet of you, you can redirect the attack's damage onto that stringed creature instead of resolving it against you: it takes the full damage of the hit and you take none. Redirecting resolves the attack, so you cannot also Parry the same hit, and it costs you no action or reaction. The wire yanks it into the path — an unwilling creature gets no save; a willing ally may choose to refuse. It works only on a blow with something to step in front of: an attack roll dealing physical or fire damage. It can never take a saving-throw effect, and it can never take psychic damage even from an attack roll — a phantom needle or a suggestion happens inside the target's head, and there is no trajectory to block.",
       "narration": "The blow is already coming and you do not move. You pull instead, and something else arrives in the space where you were standing — dragged in by the wire, arriving just in time to take what was meant for you.",
-      "sheetSummary": "Free, {{uses per combat|1 at levels 1-4, 2 at 5-10, 3 at 11-16, 4 at 17+ — the same breakpoints the Scaling Die uses}} times per combat. When hit while a String is on another creature within 10 ft, redirect the attack's full damage onto that creature; you take none. Resolves the attack, so you can't also Parry it. No save for an unwilling creature; a willing ally may refuse. Works only on an attack roll dealing physical or fire damage — never a saving-throw effect, never psychic.",
+      "sheetSummary": "When hit while a String is on another creature within 10 ft, redirect the attack's full damage onto that creature; you take none. Resolves the attack, so you can't also Parry it. No save for an unwilling creature; a willing ally may refuse. Works only on an attack roll dealing physical or fire damage — never a saving-throw effect, never psychic.",
       "meta": {
         "action": "Free",
         "uses": "Scaling: 1/2/3/4 per combat",
@@ -177,7 +177,7 @@
       "name": "Web of Strings",
       "description": "Your control reaches farther and holds more of it at once: your leash range increases from 60 to 90 feet for every String-based feature you have, and your String cap increases by 1 in addition to whatever your proficiency bonus already grants it.",
       "narration": "Your reach has stopped being a room and started being a stage. The lines run further than anyone can see the end of, and there are more of them than there are people left standing in front of you.",
-      "sheetSummary": "Passive. Leash range increases from 60 ft to 90 ft for every String feature. String cap +1 on top of your proficiency bonus.",
+      "sheetSummary": "Leash range increases from 60 ft to 90 ft for every String feature. String cap +1 on top of your proficiency bonus.",
       "meta": {
         "action": "Passive"
       }

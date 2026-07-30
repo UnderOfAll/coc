@@ -11,7 +11,7 @@
       "role": "combat",
       "description": "Your reflections multiply more readily than most. Your Clone cap increases by 1 (this stacks with the increase Hall of Mirrors grants at 5th level). Additionally, once per combat, when you use your bonus action to create a Clone, you may create a second Clone at the same time, provided doing so would not exceed your (increased) Clone cap; both appear following the normal rules for Clone creation, in unoccupied spaces you can see within range.",
       "narration": "They come faster than they should. You leave one behind and there are somehow two of them standing there, both wearing the expression you had a second ago.",
-      "sheetSummary": "Passive. Clone cap +1, stacking with Hall of Mirrors. Once per combat, when you create a Clone with your bonus action, create a second at the same time if that stays within your cap.",
+      "sheetSummary": "Clone cap +1, stacking with Hall of Mirrors. Once per combat, when you create a Clone with your bonus action, create a second at the same time if that stays within your cap.",
       "meta": {
         "action": "Passive",
         "uses": "2nd Clone: 1 / combat"
@@ -23,7 +23,7 @@
       "role": "combat",
       "description": "You press your numbers from every angle at once — and then take the legs out. Once per turn, when you hit a creature with a weapon attack while one of your Clones is within 5 feet of it, two things happen: you deal an extra [[1d4]] damage of the weapon's damage type as the creature flinches from a second angle it can't track, and the Clone sweeps in at the same instant, forcing the target to succeed on a Constitution saving throw against your {{save DC|8 + proficiency bonus + Constitution modifier}} or be knocked prone. Both happen at most once per turn no matter how many Clones are adjacent, and this combines with the advantage granted by Flanking Reflection.",
       "narration": "They cannot cover every angle because there are more angles than there are of them. You come in from one side while a reflection takes the legs from the other, and the ground arrives before they have worked out which of you did it.",
-      "sheetSummary": "Passive. When you hit a creature with a weapon attack while one of your Clones is within 5 ft of it: extra [[1d4]] damage of the weapon's type, and a Constitution save vs your {{save DC|8 + proficiency bonus + Constitution modifier}} or knocked prone. Once per turn however many Clones are adjacent; stacks with Flanking Reflection's advantage.",
+      "sheetSummary": "When you hit a creature with a weapon attack while one of your Clones is within 5 ft of it: extra [[1d4]] damage of the weapon's type, and a Constitution save vs your {{save DC|8 + proficiency bonus + Constitution modifier}} or knocked prone. Once per turn however many Clones are adjacent; stacks with Flanking Reflection's advantage.",
       "meta": {
         "action": "Passive",
         "uses": "1 / turn",

@@ -24,7 +24,7 @@
       "role": "combat",
       "description": "Your calculations beat the battlefield. Your thrown implements ignore half and three-quarters cover, and they suffer no disadvantage anywhere within their full range: a normal throw reaches 20 feet, and you simply ignore the long-range penalty that would otherwise apply on throws from 20 out to 60 feet. Every angle is a clean angle.",
       "narration": "Cover is a suggestion. You throw through gaps that were not gaps a moment ago, off angles that should not connect, at ranges where anyone else would be guessing, and it all lands as though the room had been arranged for it.",
-      "sheetSummary": "Passive. Your thrown implements ignore half and three-quarters cover and take no long-range disadvantage anywhere within their full 60-ft range.",
+      "sheetSummary": "Your thrown implements ignore half and three-quarters cover and take no long-range disadvantage anywhere within their full 60-ft range.",
       "meta": {
         "action": "Passive"
       }

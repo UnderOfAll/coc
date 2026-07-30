@@ -232,6 +232,11 @@ ok($$('[data-act="open-feat"]').length===0,"no expander — every card shows the
 ok($$(".feat-card .feat-text").length===nFeat,"every card carries its rules text");
 ok($$(".feat-card .feat-text").every(n=>n.textContent.trim().length>15),"and it is real text, not a stub");
 ok($$(".feat-card .feat-text").every(n=>!/\{\{|\[\[/.test(n.textContent)),"tokens expanded");
+// Nothing on a card may open by restating the chips directly above it.
+const leads=/^\s*(passive|free|special|automatic|movement|action|bonus action|reaction|no action)\s*[:,.]/i;
+const offenders=$$(".feat-card").filter(c=>leads.test(c.querySelector(".feat-text").textContent))
+  .map(c=>c.querySelector(".feat-name").textContent);
+ok(offenders.length===0,"no card repeats its own cost/uses/range chips in its text ("+offenders.join(", ")+")");
 ok(/auto-fit/.test(rule(".feat-grid")),"the grid adapts to the width instead of forcing three");
 // A feature with a long menu folds it away — the table is read once when you pick, the sentence
 // above it every round.

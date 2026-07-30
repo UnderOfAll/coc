@@ -591,7 +591,7 @@
           "name": "Wall-Run",
           "description": "As part of your movement, once per turn, you can run up to half your speed along a vertical surface or across something that couldn't normally support your weight (a wall, a taut rope, a row of chairs), provided you end that move on solid ground or something you can grab. This is a signature move: it generates Momentum.",
           "narration": "You hit the wall at a dead sprint and simply do not stop — three, four strides straight up the brickwork, along the rope, across the backs of the chairs, whatever happens to be there. Gravity gets a vote eventually, but not until you have already landed where you meant to be. The crowd gasps a half-second late, every time.",
-          "sheetSummary": "Movement. Move up to half your speed along a vertical or unsupporting surface; must end on solid footing. Signature move: generates Momentum.",
+          "sheetSummary": "Move up to half your speed along a vertical or unsupporting surface; must end on solid footing. Signature move: generates Momentum.",
           "meta": {
             "action": "Movement",
             "uses": "1 / turn",
@@ -603,7 +603,7 @@
           "name": "Trapeze Swing",
           "description": "As a bonus action and a signature move, you conjure your own rigging from nowhere — a bar, rope, or ring that appears exactly where you need it — and swing up to 30 feet in any direction, ignoring difficult terrain, for 5 feet of movement and 1 Momentum. Your aerial style is flashy, not safe: leaving a creature's reach during the swing provokes opportunity attacks as normal. At the end of the swing you can make one melee weapon attack against a creature within 5 feet. As a flourish, you may spend 3 additional Momentum to make that attack against every hostile creature you pass within 5 feet during the swing instead of just one, each targeted once. You can use Trapeze Swing at most once per turn. (See Flow State at 5th level: on a turn where you use Trapeze Swing, you cannot also trigger Flow State's extra attack.)",
           "narration": "You reach up and a bar is there — you conjured it out of nothing, and it holds. The room tilts, the floor drops away, and you come down out of the air at a completely different angle from the one everyone was watching. It is not safe and it is not subtle: you go through the fight, not around it, and anything you leave behind gets a free swing at you as you go.",
-          "sheetSummary": "1 Momentum + 5 ft of movement. Swing up to 30 ft in any direction ignoring difficult terrain; provokes opportunity attacks. Then one melee weapon attack within 5 ft. Flourish (+3 Momentum): make that attack against every hostile you pass within 5 ft. Excludes Flow State this turn.",
+          "sheetSummary": "Also costs 5 ft of your movement. Swing up to 30 ft in any direction ignoring difficult terrain; provokes opportunity attacks. Then one melee weapon attack within 5 ft. Flourish (+3 Momentum): make that attack against every hostile you pass within 5 ft. Excludes Flow State this turn.",
           "meta": {
             "action": "Bonus Action",
             "cost": "1 Momentum (+3: hit all in path)",
@@ -629,7 +629,7 @@
           "name": "Strike-and-Vanish",
           "description": "After you hit a creature with a melee weapon attack, you can spend 2 Momentum to move up to half your speed without provoking opportunity attacks and attempt to Hide (per the normal Hide rules — you become hidden only if you end with total cover or out of the target's line of sight). As a flourish, you may spend 2 additional Momentum (4 total) to move your full speed instead of half — a clean disengage out of every enemy's reach (still no invisibility). You can use Strike-and-Vanish once per turn at 3rd level, twice per turn at 5th, three times at 9th, and four times at 12th. This is a signature move.",
           "narration": "You land the hit and you are already gone — a roll, a shoulder past somebody's hip, a shadow behind a pillar — before the sound of it finishes. Nobody swings at you on the way out, because nobody has worked out which way out you took. If there is anywhere at all to disappear into, that is where you are.",
-          "sheetSummary": "After a melee hit, 1/turn (2 at L5, 3 at L9, 4 at L12). Move half your speed without provoking and attempt to Hide. Flourish (+2 Momentum, 4 total): full speed instead. Signature move.",
+          "sheetSummary": "Melee hits only. Move half your speed without provoking and attempt to Hide. Flourish (+2 Momentum, 4 total): full speed instead. Signature move.",
           "meta": {
             "action": "After you hit",
             "cost": "2 Momentum (+2: full move)",
@@ -642,7 +642,7 @@
           "name": "Flowing Reflexes",
           "description": "A clean parry doesn't end your turn's rhythm — it feeds it. Once per turn, when you successfully Parry an attack (a Full Dodge or a Grazing Parry), you immediately regain your reaction. This regained reaction cannot be spent to Parry again — use it for an opportunity attack or another reaction feature. If your Parry d20 came up a natural 20, you regain two reactions this way instead of one (still none able to Parry again). Any reaction regained this way lasts only until the start of your next turn; if you have not spent it by then, it is lost. Because a Parry still stops only one attack per round, this never makes you a surer dodger — it turns a clean deflection into extra tempo.",
           "narration": "Turning a blade aside does not cost you your footing — it gives you your footing. The block flows straight back into the rhythm you were already keeping, and by the time the attacker recovers you are somehow ready again, still watching, still loose, as though you were never interrupted at all.",
-          "sheetSummary": "Passive. On a successful Parry you regain your reaction (two on a natural 20). The regained reaction can never Parry and is lost at the start of your next turn.",
+          "sheetSummary": "On a successful Parry you regain your reaction (two on a natural 20). The regained reaction can never Parry and is lost at the start of your next turn.",
           "meta": {
             "action": "Passive",
             "uses": "1 / turn"
@@ -653,7 +653,7 @@
           "name": "Momentum Reserve",
           "description": "Your reserve of flow runs deeper than another acrobat's. Your Momentum cap increases to 6, and moving through a space occupied by an ally no longer costs extra movement.",
           "narration": "You have learned to keep more in the tank than a body should. The flow does not run out where it used to, and a friend standing in your way is no longer in your way — you go over, under, or around them without slowing, and they barely feel you pass.",
-          "sheetSummary": "Passive. Momentum cap becomes 6. Moving through an ally's space costs no extra movement.",
+          "sheetSummary": "Momentum cap becomes 6. Moving through an ally's space costs no extra movement.",
           "meta": {
             "action": "Passive"
           }
@@ -663,7 +663,7 @@
           "name": "Aerial Evasion",
           "description": "You are the one class whose dodging reaches beyond attack rolls. When you are subjected to an effect that allows you to make a Dexterity saving throw for half damage (a fireball, a trap, a breath weapon, or similar area effect), you instead take no damage on a success and only half damage on a failure. This is the sole exception to the rule that saving-throw and area effects can't be Parried.",
           "narration": "The blast goes off and you are simply not in it. Everyone else is bracing; you are already airborne, twisting through the one seam in the fire where nothing is burning. Even when you misjudge it and clip the edge, you take it moving, rolling out the far side with your coat smoking and your feet under you.",
-          "sheetSummary": "Passive. On an effect allowing a Dexterity save for half damage: no damage on a success, half on a failure. The one exception to Parry answering attack rolls only.",
+          "sheetSummary": "On an effect allowing a Dexterity save for half damage: no damage on a success, half on a failure. The one exception to Parry answering attack rolls only.",
           "meta": {
             "action": "Passive"
           }
@@ -840,7 +840,7 @@
           "name": "Decoy Detonation",
           "description": "As an action, you cause one of your Clones to burst in a flash of shattering reflections, destroying it. Because you choose which Clone, you decide where the blast lands — spawn a Clone into a cluster of enemies, or Swap one there, then detonate it. Each creature within 5 feet of that Clone must make a Dexterity saving throw against your {{save DC|8 + proficiency bonus + Constitution modifier}}. On a failed save a creature takes [[1d6+Con]] psychic damage and is shoved 5 feet straight away from the Clone's space; on a success it takes half as much damage and is not moved. From 3rd level, Splintered Reflexes also lets you trigger Decoy Detonation as a reaction on another creature's turn. You can trigger Decoy Detonation at most once per turn.",
           "narration": "You let one of them go. The Clone comes apart all at once, not into smoke but into a bursting sphere of edged reflections, and everything close enough is briefly looking at a hundred small pictures of its own surprised face before the shards go through it.",
-          "sheetSummary": "Action (reaction from L3 via Splintered Reflexes). Each creature within 5 ft of the Clone makes a Dexterity save vs your {{save DC|8 + proficiency bonus + Constitution modifier}}. Fail: [[1d6+Con]] psychic and shoved 5 ft from the Clone's space. Success: half damage, not moved.",
+          "sheetSummary": "Each creature within 5 ft of the Clone makes a Dexterity save vs your {{save DC|8 + proficiency bonus + Constitution modifier}}. Fail: [[1d6+Con]] psychic and shoved 5 ft from the Clone's space. Success: half damage, not moved. Splintered Reflexes (L3) makes this a reaction instead.",
           "meta": {
             "action": "Action (or Reaction from L3)",
             "cost": "1 Clone",
@@ -854,7 +854,7 @@
           "name": "Flanking Reflection",
           "description": "When you make a melee weapon attack against a creature that has one of your Clones within 5 feet of it, you have advantage on the attack roll — the creature can't watch both you and your reflection at once. This costs nothing and doesn't destroy the Clone, but requires one to already be positioned correctly; it applies at most once per attack and doesn't stack with other sources of advantage on the same roll.",
           "narration": "It cannot watch you both. Every time its eyes flick to the copy at its shoulder, its guard drifts a finger's width in that direction — and a finger's width is all you were ever asking for.",
-          "sheetSummary": "Passive. Advantage on a melee weapon attack against a creature that has one of your Clones within 5 ft of it. Costs nothing, destroys no Clone, doesn't stack with other advantage.",
+          "sheetSummary": "Advantage on a melee weapon attack against a creature that has one of your Clones within 5 ft of it. Costs nothing, destroys no Clone, doesn't stack with other advantage.",
           "meta": {
             "action": "Passive",
             "uses": "1 / attack",
@@ -866,7 +866,7 @@
           "name": "Splintered Reflexes",
           "description": "Your reflections let you answer more than one threat at once. You gain one additional reaction each round, for two total, both refreshing at the start of your turn. This extra reaction can be used only to make an opportunity attack or to activate a Clone feature that costs a reaction — most usefully, it lets you trigger Decoy Detonation on another creature's turn. It can never be used to cast a trick — Parting Shot and any other reaction trick still spend your normal reaction. It can never be used to Parry a second time: you still redirect only one hit per round onto a Clone, so the Acrobat remains the surer dodger. Each reaction is spent once; you choose which threat each one answers.",
           "narration": "You have stopped answering threats one at a time. Part of your attention lives out in the reflections now, and while one of you is dealing with the blade in front, another is already turning toward the thing coming from the side.",
-          "sheetSummary": "Passive. One additional reaction each round (two total), both refreshing at the start of your turn. The extra one may only make an opportunity attack or activate a Clone feature costing a reaction — never a trick, never a second Parry.",
+          "sheetSummary": "One additional reaction each round (two total), both refreshing at the start of your turn. The extra one may only make an opportunity attack or activate a Clone feature costing a reaction — never a trick, never a second Parry.",
           "meta": {
             "action": "Passive",
             "uses": "+1 reaction / round"
@@ -890,7 +890,7 @@
           "name": "Hall of Mirrors",
           "description": "Your reflections run deeper and reach farther: your Clone cap increases by 1 (in addition to whatever your proficiency bonus already grants it), and the range on Clone creation, Swap, and a Clone's leash all increase from 30 to 45 feet.",
           "narration": "The trick has outgrown the room. Your reflections stand further out than they used to and hold together at distances that should have snapped them, until fighting you feels less like facing a man than being surrounded by a hallway of him.",
-          "sheetSummary": "Passive. Clone cap +1 on top of your proficiency bonus. Clone creation, Swap, and a Clone's leash all increase from 30 ft to 45 ft.",
+          "sheetSummary": "Clone cap +1 on top of your proficiency bonus. Clone creation, Swap, and a Clone's leash all increase from 30 ft to 45 ft.",
           "meta": {
             "action": "Passive"
           }
@@ -1259,7 +1259,7 @@
           "name": "Play to the Room",
           "role": "combat",
           "description": "You can carry a joke to more than one person. When you cast a Turn that targets a single ally, you may target a second willing ally within 30 feet of the first with the same effect. You can do this {{uses per combat|1 at levels 1-4, 2 at 5-10, 3 at 11-16, 4 at 17+ — the same breakpoints the Scaling Die uses}} times per combat. This never doubles a trick aimed at an enemy.",
-          "sheetSummary": "{{uses per combat|1 at levels 1-4, 2 at 5-10, 3 at 11-16, 4 at 17+ — the same breakpoints the Scaling Die uses}} uses per combat. A Turn that targets a single ALLY may also target a second willing ally within 30 ft of the first. Never applies to a trick aimed at an enemy.",
+          "sheetSummary": "A Turn that targets a single ALLY may also target a second willing ally within 30 ft of the first. Never applies to a trick aimed at an enemy.",
           "narration": "You deliver it to the pair of them at once, the way a good line is thrown to two people on opposite sides of the stage. Both of them get it. Both of them straighten up.",
           "meta": {
             "action": "Part of casting",
@@ -1423,7 +1423,7 @@
           "name": "Wild Talent",
           "description": "Your chaos answers your personality, not your hands: you use your Charisma modifier, instead of Strength or Dexterity, for attack and damage rolls you make with a finesse weapon you're proficient with (your Razor Cards, Harlequin's Cane, or Dagger). Any saving throw a Joker feature or Wild Card forces on a creature uses your {{gambit DC|8 + proficiency bonus + Charisma modifier}}.",
           "narration": "You do not fight like someone who trained. You fight like someone talking — the whole thing runs on nerve and timing and the absolute confidence that the card will go where you said it would, and somehow it does.",
-          "sheetSummary": "Passive. Use your Charisma modifier for attack and damage rolls with a finesse weapon you're proficient with. Every save a Joker feature or Wild Card forces uses your {{gambit DC|8 + proficiency bonus + Charisma modifier}}.",
+          "sheetSummary": "Use your Charisma modifier for attack and damage rolls with a finesse weapon you're proficient with. Every save a Joker feature or Wild Card forces uses your {{gambit DC|8 + proficiency bonus + Charisma modifier}}.",
           "meta": {
             "action": "Passive"
           }
@@ -1502,7 +1502,7 @@
           "name": "Trickster's Luck",
           "description": "The deck looks after its own. {{uses per combat|1 at levels 1-4, 2 at 5-10, 3 at 11-16, 4 at 17+ — the same breakpoints the Scaling Die uses}} times per combat, when you roll below your effective Parry DC (an Overcommitted result), you can treat that Parry as a Grazing Parry instead — taking half damage rather than +50%. You decide after seeing the roll. This doesn't change your Parry DC, only how badly a failed one lands.",
           "narration": "The blow that should have opened you up somehow only skims. A boot slips, a lamp swings, the floor is fractionally where it needed to be — the deck looks after its own, and you take the graze with an expression that suggests you arranged it.",
-          "sheetSummary": "Free, {{uses per combat|1 at levels 1-4, 2 at 5-10, 3 at 11-16, 4 at 17+ — the same breakpoints the Scaling Die uses}} times per combat. Treat an Overcommitted Parry as a Grazing Parry instead (half damage rather than +50%). Decided after seeing the roll; your Parry DC is unchanged.",
+          "sheetSummary": "Treat an Overcommitted Parry as a Grazing Parry instead (half damage rather than +50%). Decided after seeing the roll; your Parry DC is unchanged.",
           "meta": {
             "action": "Free",
             "uses": "Scaling: 1/2/3/4 per combat",
@@ -1582,7 +1582,7 @@
           "name": "Full House",
           "description": "When you spend Mayhem to draw a Wild Card, you may spend 1 additional Mayhem (2 total) to draw two cards instead of one. If you do, resolve only one of the two results — your choice — and discard the other; you never resolve both at once.",
           "narration": "You draw two and fan them out where only you can see. Whatever the second card was, nobody will ever know: you let it fall, play the one you like, and act as though that was the only card there ever was.",
-          "sheetSummary": "Special, +1 Mayhem (2 total) when drawing a Wild Card. Draw two cards and resolve only one of your choice; the other is discarded.",
+          "sheetSummary": "When drawing a Wild Card, draw two cards and resolve only one of your choice; the other is discarded.",
           "meta": {
             "action": "Special",
             "cost": "+1 Mayhem (2 total)",
@@ -1803,7 +1803,7 @@
           "name": "Grand Cascade",
           "description": "Your cascade widens. Your Set Size increases by 2 — it is now your proficiency bonus + 3 — so you juggle, hold, and can throw that many more implements each turn. Every extra one you keep still shores up your Deflect, and every extra one you throw still feeds your Barrage, Ricochet, and Trick Shot.",
           "narration": "The pattern widens. There is more in the air than a person should be able to track, and you are not tracking it — you stopped needing to a long time ago.",
-          "sheetSummary": "Passive. Set Size increases by 2, becoming your proficiency bonus + 3.",
+          "sheetSummary": "Set Size increases by 2, becoming your proficiency bonus + 3.",
           "meta": {
             "action": "Passive"
           }
@@ -1928,7 +1928,7 @@
           "name": "Strings of Will",
           "description": "Your art runs on focus and anticipation, not muscle or bluster: you use your Wisdom modifier for attack and damage rolls made with a finesse weapon you're proficient with (your Control Wires, Dagger, or Whip). Any saving throw a Puppeteer feature forces on a creature uses your {{control DC|8 + proficiency bonus + Wisdom modifier}}.",
           "narration": "You do not overpower anyone. You watch, you wait for the moment the weight shifts, and you pull exactly then — the whole art is knowing which half-second a body cannot correct itself in.",
-          "sheetSummary": "Passive. Use your Wisdom modifier for attack and damage rolls with a finesse weapon you're proficient with. Every save a Puppeteer feature forces uses your {{control DC|8 + proficiency bonus + Wisdom modifier}}.",
+          "sheetSummary": "Use your Wisdom modifier for attack and damage rolls with a finesse weapon you're proficient with. Every save a Puppeteer feature forces uses your {{control DC|8 + proficiency bonus + Wisdom modifier}}.",
           "meta": {
             "action": "Passive"
           }
@@ -1938,7 +1938,7 @@
           "name": "Bodyguard Strings",
           "description": "You never meant to take a hit yourself. {{uses per combat|1 at levels 1-4, 2 at 5-10, 3 at 11-16, 4 at 17+ — the same breakpoints the Scaling Die uses}} times per combat, when you are hit by an attack while you have a String attached to another creature within 10 feet of you, you can redirect the attack's damage onto that stringed creature instead of resolving it against you: it takes the full damage of the hit and you take none. Redirecting resolves the attack, so you cannot also Parry the same hit, and it costs you no action or reaction. The wire yanks it into the path — an unwilling creature gets no save; a willing ally may choose to refuse. It works only on a blow with something to step in front of: an attack roll dealing physical or fire damage. It can never take a saving-throw effect, and it can never take psychic damage even from an attack roll — a phantom needle or a suggestion happens inside the target's head, and there is no trajectory to block.",
           "narration": "The blow is already coming and you do not move. You pull instead, and something else arrives in the space where you were standing — dragged in by the wire, arriving just in time to take what was meant for you.",
-          "sheetSummary": "Free, {{uses per combat|1 at levels 1-4, 2 at 5-10, 3 at 11-16, 4 at 17+ — the same breakpoints the Scaling Die uses}} times per combat. When hit while a String is on another creature within 10 ft, redirect the attack's full damage onto that creature; you take none. Resolves the attack, so you can't also Parry it. No save for an unwilling creature; a willing ally may refuse. Works only on an attack roll dealing physical or fire damage — never a saving-throw effect, never psychic.",
+          "sheetSummary": "When hit while a String is on another creature within 10 ft, redirect the attack's full damage onto that creature; you take none. Resolves the attack, so you can't also Parry it. No save for an unwilling creature; a willing ally may refuse. Works only on an attack roll dealing physical or fire damage — never a saving-throw effect, never psychic.",
           "meta": {
             "action": "Free",
             "uses": "Scaling: 1/2/3/4 per combat",
@@ -2026,7 +2026,7 @@
           "name": "Web of Strings",
           "description": "Your control reaches farther and holds more of it at once: your leash range increases from 60 to 90 feet for every String-based feature you have, and your String cap increases by 1 in addition to whatever your proficiency bonus already grants it.",
           "narration": "Your reach has stopped being a room and started being a stage. The lines run further than anyone can see the end of, and there are more of them than there are people left standing in front of you.",
-          "sheetSummary": "Passive. Leash range increases from 60 ft to 90 ft for every String feature. String cap +1 on top of your proficiency bonus.",
+          "sheetSummary": "Leash range increases from 60 ft to 90 ft for every String feature. String cap +1 on top of your proficiency bonus.",
           "meta": {
             "action": "Passive"
           }
@@ -2144,7 +2144,7 @@
           "name": "Mighty Build",
           "description": "You are built on a scale the rules did not plan for. For carrying capacity, and for deciding whether you can grapple, shove, throw or Crush a creature, **you count as one size larger than you actually are** — and you may lay hands on any creature up to that effective size.",
           "narration": "You are built on the wrong scale for the room. Things that ought to be far too big to shift come off the ground when you decide they will, and the look on their faces is most of the reason you do it. There is a limit. You have met it. It was roughly the size of a barn and it stayed exactly where it was.",
-          "sheetSummary": "Passive. Count as one size larger for carrying capacity and for grappling, shoving, throwing or Crushing — and you can handle a creature up to that effective size. See below for what that means at each size; Gargantuan is never available.",
+          "sheetSummary": "Count as one size larger for carrying capacity and for grappling, shoving, throwing or Crushing — and you can handle a creature up to that effective size. See below for what that means at each size; Gargantuan is never available.",
           "meta": {
             "action": "Passive",
             "range": "Reach",
@@ -2173,7 +2173,7 @@
           "name": "Iron Grip",
           "description": "When you hit a creature no larger than Mighty Build allows with a melee attack, you can immediately try to grab it — no extra action or attack, it rides the same hit. The target must succeed on a Strength saving throw against your {{save DC|8 + proficiency bonus + Strength modifier}} or be caught: while held it is grappled by you (its speed becomes 0) and has disadvantage on attack rolls it makes against you — pinned against your own frame, its swings at you go wide (its attacks against other creatures are unaffected). The hold has no time limit — the creature does not slip free on its own. It stays grabbed until you cash the hold in by Crushing it (see Crushing Grip) or Heaving it, until you let go or are incapacitated, or until it escapes on its turn by using its action to make a Strength (Athletics) or Dexterity (Acrobatics) check against your save DC. When a creature escapes this way it shakes free entirely and can't be caught by your Iron Grip again until the end of its next turn — so you can't chain-grab the same target, though you're free to set your hands on a different one in the meantime. (Ending the hold yourself by Crushing or Heaving the creature does not grant it this reprieve.) You can hold only one creature in your Iron Grip at a time — catching a new target releases the last. A creature held this way counts as grappled by you, so it is a valid target for Heave. Forced movement you cause with your own features (such as a Juggernaut's Bulldozer Charge) never breaks this hold — the creature is dragged with you rather than shoved free.",
           "narration": "You catch it. Not a hold — a decision — and once your hand closes, the fight it was having with everyone else is over and the fight it is having with you has started. It can swing at you all it likes from there, pressed against your chest with nothing behind the punches.",
-          "sheetSummary": "Free on a melee hit, one creature at a time, reach. Strength save vs your {{save DC|8 + proficiency bonus + Strength modifier}} or grappled (speed 0) with disadvantage on attacks against you. No time limit; it ends when you Crush or Heave it, let go, are incapacitated, or it escapes with an action (Athletics or Acrobatics vs {{save DC|8 + proficiency bonus + Strength modifier}}). An escapee can't be re-caught until the end of its next turn. Your own forced movement never breaks the hold.",
+          "sheetSummary": "Strength save vs your {{save DC|8 + proficiency bonus + Strength modifier}} or grappled (speed 0) with disadvantage on attacks against you. No time limit; it ends when you Crush or Heave it, let go, are incapacitated, or it escapes with an action (Athletics or Acrobatics vs {{save DC|8 + proficiency bonus + Strength modifier}}). An escapee can't be re-caught until the end of its next turn. Your own forced movement never breaks the hold.",
           "meta": {
             "action": "Free (on a melee hit)",
             "uses": "One creature at a time",
@@ -2186,7 +2186,7 @@
           "name": "Heave",
           "description": "You grab something heavy — a creature you have grappled, or an object you're holding like a bench, a barrel, or a cage bar — and hurl it. This is used in place of one of your attacks when you take the Attack action (so at 1st level it replaces your single attack; with Extra Attack you can Heave and still swing). Spend 1 to 3 Grit: the thrown target flies 10 feet per point of Grit spent in a direction of your choice and lands in the nearest unoccupied space. What happens on landing depends on the target:",
           "narration": "You pick it up and you throw it. A man, a bench, a cage bar, a friend who agreed to this — it goes up, it goes out, and it lands somewhere the fight was not expecting a body to land.",
-          "sheetSummary": "In place of one attack, 1-3 Grit. Throw a grappled creature or a held object 10 ft per Grit spent; it lands in the nearest unoccupied space. Landing effects depend on the target.",
+          "sheetSummary": "Throw a grappled creature or a held object 10 ft per Grit spent; it lands in the nearest unoccupied space. Landing effects depend on the target.",
           "options": [
             {
               "name": "Unwilling creature or object",
@@ -2220,7 +2220,7 @@
           "name": "Brace",
           "description": "When you take damage from an attack — including one you failed to Parry, or one you had no reaction available to Parry — you can spend Grit, in 1-point increments and at no action cost, to reduce that damage by your {{Brace Soak|2 + your Sandow level}} per point of Grit spent, applied after any Parry multiplier and before the damage is otherwise resolved. The soak climbs with every Sandow level rather than sitting at a flat number that bigger hits quickly outpace, so a point of Grit spent on Brace stays worth it at high levels. Because Brace costs no action or reaction, it stacks with whatever reaction-costed response (or lack of one) you used for the same hit, including a round where your reaction already went to Hold the Line or a Parry. You can spend at most 2 Grit against a single instance of damage, and Brace cannot reduce damage below 0.",
           "narration": "You see it coming and you set your feet, drop your weight, and take it on the meat of your shoulder. It still hurts. It just does not do what it was supposed to do.",
-          "sheetSummary": "Free, 1-2 Grit per instance of damage. Reduce damage taken by an attack by your {{Brace Soak|2 + your Sandow level}} per Grit spent, applied after any Parry multiplier. Costs no action or reaction, so it stacks with whatever you did with your reaction. Never reduces damage below 0.",
+          "sheetSummary": "Spent per instance of damage. Reduce damage taken by an attack by your {{Brace Soak|2 + your Sandow level}} per Grit spent, applied after any Parry multiplier. Costs no action or reaction, so it stacks with whatever you did with your reaction. Never reduces damage below 0.",
           "meta": {
             "action": "Free",
             "cost": "1-2 Grit",
@@ -2245,7 +2245,7 @@
           "name": "Extra Attack",
           "description": "You can attack twice, instead of once, whenever you take the Attack action on your turn.",
           "narration": "One swing was never really your rhythm. You work in pairs now, the second already loading while the first lands.",
-          "sheetSummary": "Passive. Attack twice instead of once when you take the Attack action.",
+          "sheetSummary": "Attack twice instead of once when you take the Attack action.",
           "meta": {
             "action": "Passive"
           }
@@ -2322,7 +2322,7 @@
           "role": "combat",
           "description": "Your chaos never stays contained to one target. The first time each turn you resolve a Wild Card result or a Gambit option that targets a single creature, and a second valid target for that same effect (an additional hostile creature if the original target was hostile, or an additional willing ally if the original was an ally) is within 5 feet of the original target, you may extend the effect to that second creature as well. The second creature is affected exactly as the first, including making its own saving throw if the effect calls for one. This costs no additional Mayhem, happens as part of the Wild Card or Gambit you're already resolving (not a separate action or reaction), and can happen only once per turn.",
           "narration": "Whatever you did to one of them does not have the manners to stop there. It splashes — the same joke, the same trick, the same unpleasant surprise landing on whoever had the poor judgement to be standing next to them.",
-          "sheetSummary": "Passive. The first time each turn a Wild Card or Gambit targets a single creature, extend it to one more valid target of the same kind within 5 ft of the original. The second creature makes its own save. Costs no extra Mayhem and no action.",
+          "sheetSummary": "The first time each turn a Wild Card or Gambit targets a single creature, extend it to one more valid target of the same kind within 5 ft of the original. The second creature makes its own save. Costs no extra Mayhem and no action.",
           "meta": {
             "action": "Passive",
             "uses": "1 / turn",
@@ -2424,7 +2424,7 @@
           "role": "combat",
           "description": "Your body is trained to feed off danger, your own and the danger aimed at those you're shielding. In addition to your baseline Grit generation, you gain 1 additional Grit the first time each turn you are targeted by an attack from any source (whether it hits or misses), and you gain 1 Grit the first time each turn a hostile creature targets an ally within 5 feet of you with an attack (attacks against you are already covered by the first clause) — two separate sources, each capped at once per turn, exactly like your baseline Grit generation. Standing at the front and drawing fire, onto himself or off an ally, is how a Bulwark keeps his Grit topped up.",
           "narration": "Being shot at agrees with you. Every blade that turns your way, every arrow meant for the smaller person behind you, settles in your chest as something hot and useful — you are never so full of fight as when the whole room is trying to get through you.",
-          "sheetSummary": "Passive. On top of baseline Grit: +1 Grit the first time each turn you are targeted by an attack (hit or miss), and +1 Grit the first time each turn a hostile targets an ally within 5 ft of you. Two sources, each once per turn.",
+          "sheetSummary": "On top of baseline Grit: +1 Grit the first time each turn you are targeted by an attack (hit or miss), and +1 Grit the first time each turn a hostile targets an ally within 5 ft of you. Two sources, each once per turn.",
           "meta": {
             "action": "Passive"
           }
@@ -2531,7 +2531,7 @@
           "name": "Loaded Odds",
           "role": "combat",
           "description": "You do not let a bad roll stand. When an ally you can see within 30 feet rolls a 1 on a d20 for an attack roll, ability check, or saving throw, you can make them reroll it for free — no action, once on each of your turns. Separately, once on each of your turns you can spend 1 Mirth to make an ally within 30 feet reroll ANY d20 they just rolled, whatever the number was. Either way they must use the new result.",
-          "sheetSummary": "Free, 1/turn: an ally who rolls a 1 on a d20 rerolls it. Also 1/turn, for 1 Mirth: an ally rerolls ANY d20 they just rolled. They must use the new result.",
+          "sheetSummary": "Two applications, each once per turn. Free: an ally who rolls a 1 on a d20 rerolls it. For 1 Mirth: an ally rerolls ANY d20 they just rolled. They must use the new result.",
           "narration": "You tut, or click your tongue, or simply look at them — and the moment gets a second go at itself. Nobody has ever been able to explain how you do it, least of all you.",
           "meta": {
             "action": "No action",
@@ -2580,7 +2580,7 @@
           "role": "combat",
           "description": "Your implements trail fire. A creature hit by at least one of your implements on your turn is set alight and takes [[1d4]] fire damage at the start of its next turn — this is added on top of the implement's normal damage, not a replacement for it, and the die scales as your implements do. The flames flare at the start of the creature's turn and then gutter out, so there is no window for it to smother them first; hit it again and it simply burns again the following turn.",
           "narration": "Everything that leaves your hands is trailing flame. It catches on whatever it touches, and a moment later the thing you hit remembers it is burning, usually at the worst possible point in its own swing.",
-          "sheetSummary": "Passive. A creature hit by at least one implement on your turn takes [[1d4]] fire damage at the start of its next turn, on top of the implement's normal damage.",
+          "sheetSummary": "A creature hit by at least one implement on your turn takes [[1d4]] fire damage at the start of its next turn, on top of the implement's normal damage.",
           "meta": {
             "action": "Passive"
           }
@@ -2627,7 +2627,7 @@
           "role": "combat",
           "description": "You've learned to load the deck in your favor. {{uses per combat|1 at levels 1-4, 2 at 5-10, 3 at 11-16, 4 at 17+ — the same breakpoints the Scaling Die uses}} times per combat, you can do one of the following, no action required: choose the result of a Wild Card draw instead of rolling the d8; reroll a d20 you just rolled for your own attack roll, ability check, or saving throw and use the new result; or target one creature within 30 feet of you that just made an attack roll or saving throw, forcing it to succeed on a Charisma saving throw against your gambit DC or reroll that d20 and use the new result. These uses cost no Mayhem and draw on nothing else you have.",
           "narration": "The deck was never honest and neither were you. When the moment matters you simply arrange for the result you needed — or reach across the table and make somebody else take theirs again, which is worse.",
-          "sheetSummary": "Free, {{uses per combat|1 at levels 1-4, 2 at 5-10, 3 at 11-16, 4 at 17+ — the same breakpoints the Scaling Die uses}} times per combat. Choose one: pick a Wild Card result instead of rolling; reroll your own d20 attack, check, or save and use the new result; or force a creature that just rolled a d20 to make a Charisma save vs {{gambit DC|8 + proficiency bonus + Charisma modifier}} or reroll and use the new result. Costs no Mayhem.",
+          "sheetSummary": "Choose one: pick a Wild Card result instead of rolling; reroll your own d20 attack, check, or save and use the new result; or force a creature that just rolled a d20 to make a Charisma save vs {{gambit DC|8 + proficiency bonus + Charisma modifier}} or reroll and use the new result. Costs no Mayhem.",
           "meta": {
             "action": "Free",
             "uses": "Scaling: 1/2/3/4 per combat",
@@ -2641,7 +2641,7 @@
           "role": "combat",
           "description": "You can bet on your own luck before you know how a roll lands. Once per turn, before making an attack roll, ability check, or saving throw (not a Parry roll), you can spend 1 Mayhem to roll a d6 and add it to the total. If that d6 comes up a 1, the bet turns on you: you take [[1d4]] psychic damage as the trick backfires, in addition to whatever the roll itself produces. You must decide to Double Down before the roll's outcome is known.",
           "narration": "You commit before you know. The bet goes down while the outcome is still in the air, and most of the time it comes back better than it had any right to. Occasionally it turns on you, and the recoil of it hurts somewhere behind your eyes.",
-          "sheetSummary": "Free, declared before the roll. Add a d6 to an attack roll, ability check, or saving throw (never a Parry). If the d6 comes up 1, you take [[1d4]] psychic damage.",
+          "sheetSummary": "Declared before the roll. Add a d6 to an attack roll, ability check, or saving throw (never a Parry). If the d6 comes up 1, you take [[1d4]] psychic damage.",
           "meta": {
             "action": "Free",
             "cost": "1 Mayhem",
@@ -2689,7 +2689,7 @@
           "role": "combat",
           "description": "You thrive surrounded by danger. At the start of your turn, if you are within 5 feet of at least two hostile creatures, you gain temporary hit points equal to your {{Charisma modifier (min 1)|set from your stats on your character sheet}}, and for the rest of the turn moving through a space occupied by a hostile creature costs you no extra movement (you still can't end your movement there). As with temporary hit points from any other source, these don't stack — if you already have some, keep whichever total is higher.",
           "narration": "You are happiest with the ring closed around you. Surrounded, outnumbered, laughing — something in you sits up and starts working, and you slip between them like they are scenery rather than people.",
-          "sheetSummary": "Passive. At the start of your turn, if at least two hostiles are within 5 ft, gain temporary hit points equal to your {{Charisma modifier (min 1)|set from your stats on your character sheet}}, and for that turn moving through a hostile's space costs no extra movement. Temporary hit points don't stack.",
+          "sheetSummary": "At the start of your turn, if at least two hostiles are within 5 ft, gain temporary hit points equal to your {{Charisma modifier (min 1)|set from your stats on your character sheet}}, and for that turn moving through a hostile's space costs no extra movement. Temporary hit points don't stack.",
           "meta": {
             "action": "Passive",
             "range": "5 ft"
@@ -2722,7 +2722,7 @@
           "role": "combat",
           "description": "You build charge the way a cannon builds pressure, through speed and impact. In addition to your baseline Grit generation, you gain 1 additional Grit the first time each turn you move at least half your speed in a straight line and then hit a creature with a melee attack before the end of that turn, and you gain 1 Grit the first time each turn a creature takes damage from your Cannon Launch — the impact of a landing slam feeding your next charge. Two separate sources, each capped at once per turn, exactly like your baseline Grit generation.",
           "narration": "You run on pressure. A straight sprint into something solid does for you what a long rest does for other people, and every landing packs the next launch tighter.",
-          "sheetSummary": "Passive. On top of baseline Grit: +1 Grit the first time each turn you move at least half your speed in a straight line and then hit with a melee attack, and +1 Grit the first time each turn a creature takes damage from your Cannon Launch. Two sources, each once per turn.",
+          "sheetSummary": "On top of baseline Grit: +1 Grit the first time each turn you move at least half your speed in a straight line and then hit with a melee attack, and +1 Grit the first time each turn a creature takes damage from your Cannon Launch. Two sources, each once per turn.",
           "meta": {
             "action": "Passive"
           }
@@ -2832,7 +2832,7 @@
           "role": "combat",
           "description": "Your calculations beat the battlefield. Your thrown implements ignore half and three-quarters cover, and they suffer no disadvantage anywhere within their full range: a normal throw reaches 20 feet, and you simply ignore the long-range penalty that would otherwise apply on throws from 20 out to 60 feet. Every angle is a clean angle.",
           "narration": "Cover is a suggestion. You throw through gaps that were not gaps a moment ago, off angles that should not connect, at ranges where anyone else would be guessing, and it all lands as though the room had been arranged for it.",
-          "sheetSummary": "Passive. Your thrown implements ignore half and three-quarters cover and take no long-range disadvantage anywhere within their full 60-ft range.",
+          "sheetSummary": "Your thrown implements ignore half and three-quarters cover and take no long-range disadvantage anywhere within their full 60-ft range.",
           "meta": {
             "action": "Passive"
           }
@@ -2944,7 +2944,7 @@
           "role": "combat",
           "description": "You feed on the wreckage you cause. In addition to your baseline Grit generation, you gain 1 additional Grit the first time each turn you deal damage to a creature with a Heave throw, and you gain 1 Grit the first time each turn you knock a creature prone by some means OTHER than a Heave (a shove, Bulldozer Charge, Earthshaker, and the like) — two separate sources, each capped at once per turn, exactly like your baseline Grit generation. A Heave already pays out through the first source, so the prone it also causes never grants a second Grit off the same throw. The bigger the mess you make, the more you have left to make it worse.",
           "narration": "Wreckage agrees with you. Every body you throw, every thing you put on its back, feeds the next one — you do not tire across a fight, you accumulate.",
-          "sheetSummary": "Passive. On top of baseline Grit: +1 Grit the first time each turn you damage a creature with a Heave throw, and +1 Grit the first time each turn you knock a creature prone by any means other than a Heave. Two sources, each once per turn; a Heave never pays both.",
+          "sheetSummary": "On top of baseline Grit: +1 Grit the first time each turn you damage a creature with a Heave throw, and +1 Grit the first time each turn you knock a creature prone by any means other than a Heave. Two sources, each once per turn; a Heave never pays both.",
           "meta": {
             "action": "Passive"
           }
@@ -2990,7 +2990,7 @@
           "role": "combat",
           "description": "Your Clones don't break quietly. Whenever a creature destroys one of your Clones with an attack roll (including a Clone destroyed by an attack redirected onto it via Mirror Image, but never a Clone you destroy yourself through one of your own features), that creature must make a Dexterity saving throw against your {{save DC|8 + proficiency bonus + Constitution modifier}}. On a failed save, it takes [[1d6+Con]] psychic damage as shards of the shattered illusion rake across it, and it has disadvantage on the next attack roll it makes before the end of its next turn. On a successful save, it takes half as much damage and suffers no other effect. This triggers at most once per turn (no matter how many Clones are destroyed that turn) and requires no action or reaction from you to resolve.",
           "narration": "Your reflections do not break quietly. Whoever strikes one down is standing far too close when it goes — a hard bright spray of edges, all of them briefly showing that creature its own face, and then not.",
-          "sheetSummary": "Automatic. When a creature destroys one of your Clones with an attack roll (never a Clone you destroy yourself), it makes a Dexterity save vs your {{save DC|8 + proficiency bonus + Constitution modifier}}. Fail: [[1d6+Con]] psychic and disadvantage on its next attack roll before the end of its next turn. Success: half damage only.",
+          "sheetSummary": "When a creature destroys one of your Clones with an attack roll (never a Clone you destroy yourself), it makes a Dexterity save vs your {{save DC|8 + proficiency bonus + Constitution modifier}}. Fail: [[1d6+Con]] psychic and disadvantage on its next attack roll before the end of its next turn. Success: half damage only.",
           "meta": {
             "action": "Passive (auto)",
             "uses": "1 / turn",
@@ -3003,7 +3003,7 @@
           "role": "combat",
           "description": "Your Swap doubles as a parting insult, and in a pinch as an escape. It does two separate things:",
           "narration": "You are gone before the space you left has finished being empty, and the thing nearest it commits to a lunge at nothing. On the occasions you leave it later than that, you trade places with the blow already falling and let the reflection catch what was yours.",
-          "sheetSummary": "Two separate effects, listed below: a free rider on your Swap (1/turn) and a defensive Swap (reaction, 1/combat).",
+          "sheetSummary": "Two separate effects, listed below: a rider on your Swap, and a defensive Swap.",
           "meta": {
             "action": "Free with Swap / Reaction (defensive)",
             "uses": "Disadv 1 / turn; defensive Swap 1 / combat",
@@ -3110,7 +3110,7 @@
           "role": "combat",
           "description": "Your Control Wires cut deeper into a foe already caught in your web. When you hit a creature you have a String attached to with a Control Wires attack, it takes extra damage equal to your {{Wisdom modifier (min 1)|set from your stats on your character sheet}}. You can deal this extra damage only once per turn. This extra damage applies only to unwilling creatures — it never triggers against a willing creature, such as an ally you've strung for support rather than control.",
           "narration": "The wire is already inside their guard, so your strike does not have to find a way in — it just follows the line that is already there, into somewhere that was never protected.",
-          "sheetSummary": "Passive. When you hit an unwilling Stringed creature with a Control Wires attack, it takes extra damage equal to your {{Wisdom modifier (min 1)|set from your stats on your character sheet}}. Never triggers against a willing creature.",
+          "sheetSummary": "When you hit an unwilling Stringed creature with a Control Wires attack, it takes extra damage equal to your {{Wisdom modifier (min 1)|set from your stats on your character sheet}}. Never triggers against a willing creature.",
           "meta": {
             "action": "Passive",
             "uses": "1 / turn",
@@ -3123,7 +3123,7 @@
           "role": "roleplay",
           "description": "Your wires are fine enough to vanish in lamplight and precise enough to sign your name. As an action, you can manipulate an object within 30 feet of you as though with your own hands: open a latch, pull a lever, lift or carry up to 10 pounds, pour a drink, palm a key from a belt. Dexterity (Sleight of Hand) checks made this way can target creatures and objects at that range, and you have advantage on them when your hands are visibly elsewhere — nobody suspects the man across the room.",
           "narration": "Your wires are fine enough to disappear in lamplight and steady enough to sign your name with. Latches lift, levers pull, and a cup crosses a room to your hand with nobody able to say quite how.",
-          "sheetSummary": "Action: manipulate an object within 30 ft as if by hand (open, pull, lift up to 10 lb, pickpocket at range). Advantage on Sleight of Hand made this way while your hands are visibly elsewhere.",
+          "sheetSummary": "Manipulate an object within 30 ft as if by hand (open, pull, lift up to 10 lb, pickpocket at range). Advantage on Sleight of Hand made this way while your hands are visibly elsewhere.",
           "meta": {
             "action": "Action",
             "range": "30 ft"
@@ -3243,7 +3243,7 @@
           "role": "combat",
           "description": "Your reflections multiply more readily than most. Your Clone cap increases by 1 (this stacks with the increase Hall of Mirrors grants at 5th level). Additionally, once per combat, when you use your bonus action to create a Clone, you may create a second Clone at the same time, provided doing so would not exceed your (increased) Clone cap; both appear following the normal rules for Clone creation, in unoccupied spaces you can see within range.",
           "narration": "They come faster than they should. You leave one behind and there are somehow two of them standing there, both wearing the expression you had a second ago.",
-          "sheetSummary": "Passive. Clone cap +1, stacking with Hall of Mirrors. Once per combat, when you create a Clone with your bonus action, create a second at the same time if that stays within your cap.",
+          "sheetSummary": "Clone cap +1, stacking with Hall of Mirrors. Once per combat, when you create a Clone with your bonus action, create a second at the same time if that stays within your cap.",
           "meta": {
             "action": "Passive",
             "uses": "2nd Clone: 1 / combat"
@@ -3255,7 +3255,7 @@
           "role": "combat",
           "description": "You press your numbers from every angle at once — and then take the legs out. Once per turn, when you hit a creature with a weapon attack while one of your Clones is within 5 feet of it, two things happen: you deal an extra [[1d4]] damage of the weapon's damage type as the creature flinches from a second angle it can't track, and the Clone sweeps in at the same instant, forcing the target to succeed on a Constitution saving throw against your {{save DC|8 + proficiency bonus + Constitution modifier}} or be knocked prone. Both happen at most once per turn no matter how many Clones are adjacent, and this combines with the advantage granted by Flanking Reflection.",
           "narration": "They cannot cover every angle because there are more angles than there are of them. You come in from one side while a reflection takes the legs from the other, and the ground arrives before they have worked out which of you did it.",
-          "sheetSummary": "Passive. When you hit a creature with a weapon attack while one of your Clones is within 5 ft of it: extra [[1d4]] damage of the weapon's type, and a Constitution save vs your {{save DC|8 + proficiency bonus + Constitution modifier}} or knocked prone. Once per turn however many Clones are adjacent; stacks with Flanking Reflection's advantage.",
+          "sheetSummary": "When you hit a creature with a weapon attack while one of your Clones is within 5 ft of it: extra [[1d4]] damage of the weapon's type, and a Constitution save vs your {{save DC|8 + proficiency bonus + Constitution modifier}} or knocked prone. Once per turn however many Clones are adjacent; stacks with Flanking Reflection's advantage.",
           "meta": {
             "action": "Passive",
             "uses": "1 / turn",
@@ -3291,7 +3291,7 @@
           "role": "combat",
           "description": "As an action, you weave loose wire across the ground in a 15-foot square within 60 feet of you, filling it with a low, near-invisible lattice that lasts for 1 minute or until you dismiss it (no action required). The area is difficult terrain to any creature without a String attached to you. Any creature other than you that enters the area for the first time on a turn or starts its turn there must succeed on a Strength saving throw against your control DC or become restrained by the wire. A creature restrained this way can repeat the save at the end of each of its turns, ending the restrained condition on itself on a success, or use its action to make a Strength or Dexterity check (its choice) against your control DC to tear free instead. You can use Snare Weave {{uses per combat|1 at levels 1-4, 2 at 5-10, 3 at 11-16, 4 at 17+ — the same breakpoints the Scaling Die uses}} times per combat.",
           "narration": "You lay wire across the floor in a low, glittering lattice nobody notices until their ankle finds it. Crossing it is a decision; standing in it is a mistake that tightens.",
-          "sheetSummary": "{{uses per combat|1 at levels 1-4, 2 at 5-10, 3 at 11-16, 4 at 17+ — the same breakpoints the Scaling Die uses}} times per combat, 15-ft square within 60 ft, 1 minute. Difficult terrain for anyone without your String. Entering it for the first time on a turn or starting a turn there forces a Strength save vs {{control DC|8 + proficiency bonus + Wisdom modifier}} or restrained; repeat at the end of each turn, or use an action for a Strength or Dexterity check to tear free.",
+          "sheetSummary": "15-ft square within 60 ft, 1 minute. Difficult terrain for anyone without your String. Entering it for the first time on a turn or starting a turn there forces a Strength save vs {{control DC|8 + proficiency bonus + Wisdom modifier}} or restrained; repeat at the end of each turn, or use an action for a Strength or Dexterity check to tear free.",
           "meta": {
             "action": "Action",
             "uses": "Scaling: 1/2/3/4 per combat",
@@ -3305,7 +3305,7 @@
           "role": "combat",
           "description": "Your bindings compound on themselves. When you use Tangle, you can target one additional creature you have a String attached to within range, provided the two targets are within 15 feet of each other and you don't mix a willing target with an unwilling one in the same use. You can use this double-target option {{uses per combat|1 at levels 1-4, 2 at 5-10, 3 at 11-16, 4 at 17+ — the same breakpoints the Scaling Die uses}} times per combat.",
           "narration": "One knot pulls the next. The wire you put on one of them runs through the one beside it, and when you cinch it down they both go rigid at once, tangled into each other's mistakes.",
-          "sheetSummary": "Passive with Tangle, {{uses per combat|1 at levels 1-4, 2 at 5-10, 3 at 11-16, 4 at 17+ — the same breakpoints the Scaling Die uses}} times per combat. Tangle may target one additional Stringed creature within 15 ft of the first. Both targets must be willing or both unwilling.",
+          "sheetSummary": "Tangle may target one additional Stringed creature within 15 ft of the first. Both targets must be willing or both unwilling.",
           "meta": {
             "action": "Passive (with Tangle)",
             "uses": "Scaling: 1/2/3/4 per combat",
@@ -3341,7 +3341,7 @@
           "role": "combat",
           "description": "You ignore the effects of narrow, unstable, or slippery surfaces: you can move across a tightrope, ledge, ice, rubble, or similar footing at your full speed, without needing an ability check, and you don't fall from such a surface. Additionally, you have advantage on saving throws and ability checks made to avoid being knocked prone or moved against your will. From 5th level, that unshakeable footing becomes an answer. When a creature within 5 feet of you misses you with an attack roll, you can use your reaction to make one melee weapon attack against it. Like all your weapon attacks (see Improved Critical), this scores a critical hit on a 19 or 20, and on a hit you throw the target off its line: it has disadvantage on the next attack roll it makes before the start of your next turn. This is distinct from your base Riposte, which triggers on a clean Full Dodge and spends Momentum at no reaction cost; this one punishes any miss and costs your reaction. It uses the same single reaction as Parry, so landing both a Parry and this counter in one round relies on Flowing Reflexes (3rd level) returning your reaction after a successful Parry.",
           "narration": "Ledges, ice, rubble, a rope over a drop — none of it registers as difficult; you simply walk it at speed while everyone else picks their way. And when a strike comes in and misses, your footing was never the thing in question, so you answer from exactly where you were standing.",
-          "sheetSummary": "Passive. Ignore narrow, unstable, or slippery footing: full speed, no check, no falling from it. Advantage on saves and checks against being knocked prone or moved against your will. From 5th level, when a creature within 5 ft misses you, use your reaction to make one melee weapon attack against it (critting on 19-20 via Improved Critical); on a hit it has disadvantage on its next attack roll before the start of your next turn. Uses the same single reaction as Parry.",
+          "sheetSummary": "Ignore narrow, unstable, or slippery footing: full speed, no check, no falling from it. Advantage on saves and checks against being knocked prone or moved against your will. From 5th level, when a creature within 5 ft misses you, use your reaction to make one melee weapon attack against it (critting on 19-20 via Improved Critical); on a hit it has disadvantage on its next attack roll before the start of your next turn. Uses the same single reaction as Parry.",
           "meta": {
             "action": "Passive"
           }
@@ -3352,7 +3352,7 @@
           "role": "combat",
           "description": "Your weapon attacks score a critical hit on a roll of 19 or 20. Whenever you score a critical hit, you regain 1 Momentum (no more than once per turn, and never above your current cap).",
           "narration": "You have an eye for the seam — the gap in the plate, the place the guard is thin — and you find it far more often than the odds say you should. Every time you do, it feeds the rhythm.",
-          "sheetSummary": "Passive. Your weapon attacks crit on a 19 or 20. On a crit, regain 1 Momentum, no more than once per turn and never above your cap.",
+          "sheetSummary": "Your weapon attacks crit on a 19 or 20. On a crit, regain 1 Momentum, no more than once per turn and never above your cap.",
           "meta": {
             "action": "Passive"
           }
@@ -3384,7 +3384,7 @@
           "role": "combat",
           "description": "Your mastery of the trapeze frees you from needing real rigging. You can use Trapeze Swing at any time, even when no rope, chandelier, banner, or similar structure is within reach, treating open air as your line. Additionally, when you use Trapeze Swing, you may bring one willing or incapacitated Medium or smaller creature within 5 feet of you along the swing; that creature moves with you at no cost to your own movement and does not provoke opportunity attacks during the swing. Trapeze Swing remains a signature move when used this way, so it still generates Momentum. From 5th level, your lines reach anywhere you can see. When a creature you can see within 30 feet of you hits an ally with an attack, you can use your reaction to drop onto a line out of nowhere and swing to an unoccupied space within 5 feet of that attacker, then make one melee weapon attack against it — punishing the opening the instant it commits. As always, this aerial style is flashy, not safe: leaving a creature's reach as you swing provokes opportunity attacks as normal. It does not count as your Trapeze Swing for the turn and generates no Momentum. It uses the same single reaction as Parry, so on a turn when Flowing Reflexes (3rd level) returns your reaction after a clean Parry, you can both defend yourself and swing to a struck ally's aid in the same round.",
           "narration": "You do not need rigging any more; open air is a line if you decide it is. You take passengers now, and when something goes after a friend across the room you drop out of nowhere on a line that was not there, arriving between them.",
-          "sheetSummary": "Passive. Trapeze Swing needs no real rigging — open air works. When you Swing you may bring one willing or incapacitated Medium or smaller creature within 5 ft along, at no cost to your movement and without it provoking. From 5th level, when a creature within 30 ft hits an ally, use your reaction to swing to a space within 5 ft of it and make one melee weapon attack; leaving reach still provokes. Doesn't count as your Trapeze Swing and generates no Momentum.",
+          "sheetSummary": "Trapeze Swing needs no real rigging — open air works. When you Swing you may bring one willing or incapacitated Medium or smaller creature within 5 ft along, at no cost to your movement and without it provoking. From 5th level, when a creature within 30 ft hits an ally, use your reaction to swing to a space within 5 ft of it and make one melee weapon attack; leaving reach still provokes. Doesn't count as your Trapeze Swing and generates no Momentum.",
           "meta": {
             "action": "Passive (enhances Trapeze Swing)"
           }
@@ -3395,7 +3395,7 @@
           "role": "combat",
           "description": "Your body has learned to always find purchase. You take no damage from a fall of 30 feet or less, and for any longer fall you calculate damage as though you had fallen 30 feet less than you actually did. In addition, whenever you fall or would be knocked prone as a result of your own fall or your own signature move (such as a failed Wall-Run or Trapeze Swing), you can spend 1 Momentum (no action required) to land on your feet instead, ending the fall without becoming prone, provided you end it in a space you could normally occupy. This does not apply to being knocked prone or forcibly moved by a hostile creature's attack, spell, or ability.",
           "narration": "Your body has stopped believing in falling. Long drops end with a soft roll and a stand, and even the ones that go wrong — a slipped wall-run, a swing that came apart — end with your feet under you and your hands out as though it was choreography.",
-          "sheetSummary": "Passive. No damage from a fall of 30 ft or less; longer falls count as 30 ft shorter. When you fall or would be knocked prone by your own fall or your own signature move, spend 1 Momentum (no action) to land on your feet in a space you could occupy. Never applies to a hostile creature's attack, spell, or ability.",
+          "sheetSummary": "No damage from a fall of 30 ft or less; longer falls count as 30 ft shorter. When you fall or would be knocked prone by your own fall or your own signature move, spend 1 Momentum (no action) to land on your feet in a space you could occupy. Never applies to a hostile creature's attack, spell, or ability.",
           "meta": {
             "action": "Passive",
             "cost": "1 Momentum (land on feet)"
@@ -3407,7 +3407,7 @@
           "role": "roleplay",
           "description": "The lines you conjure don't have to be for you alone. As an action outside combat, you can conjure up to 60 feet of shimmering rigging anchored to any two points you can see — a climbable rope, a rope ladder, or a taut line. It holds up to 500 pounds, lasts 10 minutes or until you dismiss it (no action required), and you can maintain only one at a time. You also have advantage on ability checks involving ropes, knots, and rigging.",
           "narration": "The lines are not only for you. You conjure rope, ladder, and taut line out of nothing, anchored to two points nobody thought were connected, and the whole party goes up.",
-          "sheetSummary": "Action (out of combat): conjure up to 60 ft of climbable rigging between two visible anchor points (holds 500 lb, lasts 10 min, one at a time). Advantage on rope/knot/rigging checks.",
+          "sheetSummary": "Out of combat only: conjure up to 60 ft of climbable rigging between two visible anchor points (holds 500 lb, lasts 10 min, one at a time). Advantage on rope/knot/rigging checks.",
           "meta": {
             "action": "Action",
             "range": "60 ft"
@@ -3428,7 +3428,7 @@
           "name": "Two Places at Once",
           "role": "combat",
           "description": "When you use Misdirection to move after casting a trick, you can spend 1 Phantasm to leave a silent, motionless illusory double of yourself standing in the space you left. Until the start of your next turn, the first attack roll made against you is made with **disadvantage** — the attacker commits to the wrong one of you before it can tell which is breathing. The double then vanishes, whether or not anyone swung at it. It is only ever an image: it has no space of its own that matters, it cannot be attacked, and nobody ever has to work out which of the two of you they are targeting.",
-          "sheetSummary": "Costs 1 Phantasm, when Misdirection moves you. Leave a motionless illusory double in the space you left: the FIRST attack roll against you before the start of your next turn is made with disadvantage, then the double vanishes. No targeting choice for anyone to make.",
+          "sheetSummary": "Leave a motionless illusory double in the space Misdirection moved you out of: the FIRST attack roll against you before the start of your next turn is made with disadvantage, then the double vanishes. No targeting choice for anyone to make.",
           "narration": "You step away and something stays — the same coat, the same posture, holding perfectly still where you were a moment ago. Whoever swings next has to decide, in the time it takes to swing, and they get it wrong.",
           "meta": {
             "action": "Free (with Misdirection)",
@@ -3489,7 +3489,7 @@
           "role": "combat",
           "description": "A willing creature you have a String attached to has advantage on saving throws made to avoid being knocked prone or forcibly moved, as long as it remains within your leash range — your wire keeps it steady on its feet. Additionally, if such a creature is knocked prone anyway, it can spend only 5 feet of movement (instead of half its speed) to stand back up, guided upright by the string.",
           "narration": "There is a line on them and the line does not let go. Shoves land and they stay upright, and if they do go down the wire has them on their feet again almost before they have finished falling.",
-          "sheetSummary": "Passive, within leash. A willing Stringed creature has advantage on saves against being knocked prone or forcibly moved, and needs only 5 ft of movement to stand up from prone.",
+          "sheetSummary": "Within leash. A willing Stringed creature has advantage on saves against being knocked prone or forcibly moved, and needs only 5 ft of movement to stand up from prone.",
           "meta": {
             "action": "Passive",
             "range": "Leash"

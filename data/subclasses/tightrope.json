@@ -11,7 +11,7 @@
       "role": "combat",
       "description": "You ignore the effects of narrow, unstable, or slippery surfaces: you can move across a tightrope, ledge, ice, rubble, or similar footing at your full speed, without needing an ability check, and you don't fall from such a surface. Additionally, you have advantage on saving throws and ability checks made to avoid being knocked prone or moved against your will. From 5th level, that unshakeable footing becomes an answer. When a creature within 5 feet of you misses you with an attack roll, you can use your reaction to make one melee weapon attack against it. Like all your weapon attacks (see Improved Critical), this scores a critical hit on a 19 or 20, and on a hit you throw the target off its line: it has disadvantage on the next attack roll it makes before the start of your next turn. This is distinct from your base Riposte, which triggers on a clean Full Dodge and spends Momentum at no reaction cost; this one punishes any miss and costs your reaction. It uses the same single reaction as Parry, so landing both a Parry and this counter in one round relies on Flowing Reflexes (3rd level) returning your reaction after a successful Parry.",
       "narration": "Ledges, ice, rubble, a rope over a drop — none of it registers as difficult; you simply walk it at speed while everyone else picks their way. And when a strike comes in and misses, your footing was never the thing in question, so you answer from exactly where you were standing.",
-      "sheetSummary": "Passive. Ignore narrow, unstable, or slippery footing: full speed, no check, no falling from it. Advantage on saves and checks against being knocked prone or moved against your will. From 5th level, when a creature within 5 ft misses you, use your reaction to make one melee weapon attack against it (critting on 19-20 via Improved Critical); on a hit it has disadvantage on its next attack roll before the start of your next turn. Uses the same single reaction as Parry.",
+      "sheetSummary": "Ignore narrow, unstable, or slippery footing: full speed, no check, no falling from it. Advantage on saves and checks against being knocked prone or moved against your will. From 5th level, when a creature within 5 ft misses you, use your reaction to make one melee weapon attack against it (critting on 19-20 via Improved Critical); on a hit it has disadvantage on its next attack roll before the start of your next turn. Uses the same single reaction as Parry.",
       "meta": {
         "action": "Passive"
       }
@@ -22,7 +22,7 @@
       "role": "combat",
       "description": "Your weapon attacks score a critical hit on a roll of 19 or 20. Whenever you score a critical hit, you regain 1 Momentum (no more than once per turn, and never above your current cap).",
       "narration": "You have an eye for the seam — the gap in the plate, the place the guard is thin — and you find it far more often than the odds say you should. Every time you do, it feeds the rhythm.",
-      "sheetSummary": "Passive. Your weapon attacks crit on a 19 or 20. On a crit, regain 1 Momentum, no more than once per turn and never above your cap.",
+      "sheetSummary": "Your weapon attacks crit on a 19 or 20. On a crit, regain 1 Momentum, no more than once per turn and never above your cap.",
       "meta": {
         "action": "Passive"
       }

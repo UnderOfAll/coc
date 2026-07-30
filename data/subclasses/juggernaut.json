@@ -11,7 +11,7 @@
       "role": "combat",
       "description": "You feed on the wreckage you cause. In addition to your baseline Grit generation, you gain 1 additional Grit the first time each turn you deal damage to a creature with a Heave throw, and you gain 1 Grit the first time each turn you knock a creature prone by some means OTHER than a Heave (a shove, Bulldozer Charge, Earthshaker, and the like) — two separate sources, each capped at once per turn, exactly like your baseline Grit generation. A Heave already pays out through the first source, so the prone it also causes never grants a second Grit off the same throw. The bigger the mess you make, the more you have left to make it worse.",
       "narration": "Wreckage agrees with you. Every body you throw, every thing you put on its back, feeds the next one — you do not tire across a fight, you accumulate.",
-      "sheetSummary": "Passive. On top of baseline Grit: +1 Grit the first time each turn you damage a creature with a Heave throw, and +1 Grit the first time each turn you knock a creature prone by any means other than a Heave. Two sources, each once per turn; a Heave never pays both.",
+      "sheetSummary": "On top of baseline Grit: +1 Grit the first time each turn you damage a creature with a Heave throw, and +1 Grit the first time each turn you knock a creature prone by any means other than a Heave. Two sources, each once per turn; a Heave never pays both.",
       "meta": {
         "action": "Passive"
       }

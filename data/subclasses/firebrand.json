@@ -11,7 +11,7 @@
       "role": "combat",
       "description": "Your implements trail fire. A creature hit by at least one of your implements on your turn is set alight and takes [[1d4]] fire damage at the start of its next turn — this is added on top of the implement's normal damage, not a replacement for it, and the die scales as your implements do. The flames flare at the start of the creature's turn and then gutter out, so there is no window for it to smother them first; hit it again and it simply burns again the following turn.",
       "narration": "Everything that leaves your hands is trailing flame. It catches on whatever it touches, and a moment later the thing you hit remembers it is burning, usually at the worst possible point in its own swing.",
-      "sheetSummary": "Passive. A creature hit by at least one implement on your turn takes [[1d4]] fire damage at the start of its next turn, on top of the implement's normal damage.",
+      "sheetSummary": "A creature hit by at least one implement on your turn takes [[1d4]] fire damage at the start of its next turn, on top of the implement's normal damage.",
       "meta": {
         "action": "Passive"
       }

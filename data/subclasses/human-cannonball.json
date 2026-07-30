@@ -11,7 +11,7 @@
       "role": "combat",
       "description": "You build charge the way a cannon builds pressure, through speed and impact. In addition to your baseline Grit generation, you gain 1 additional Grit the first time each turn you move at least half your speed in a straight line and then hit a creature with a melee attack before the end of that turn, and you gain 1 Grit the first time each turn a creature takes damage from your Cannon Launch — the impact of a landing slam feeding your next charge. Two separate sources, each capped at once per turn, exactly like your baseline Grit generation.",
       "narration": "You run on pressure. A straight sprint into something solid does for you what a long rest does for other people, and every landing packs the next launch tighter.",
-      "sheetSummary": "Passive. On top of baseline Grit: +1 Grit the first time each turn you move at least half your speed in a straight line and then hit with a melee attack, and +1 Grit the first time each turn a creature takes damage from your Cannon Launch. Two sources, each once per turn.",
+      "sheetSummary": "On top of baseline Grit: +1 Grit the first time each turn you move at least half your speed in a straight line and then hit with a melee attack, and +1 Grit the first time each turn a creature takes damage from your Cannon Launch. Two sources, each once per turn.",
       "meta": {
         "action": "Passive"
       }

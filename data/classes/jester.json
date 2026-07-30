@@ -128,7 +128,7 @@
       "name": "Play to the Room",
       "role": "combat",
       "description": "You can carry a joke to more than one person. When you cast a Turn that targets a single ally, you may target a second willing ally within 30 feet of the first with the same effect. You can do this {{uses per combat|1 at levels 1-4, 2 at 5-10, 3 at 11-16, 4 at 17+ — the same breakpoints the Scaling Die uses}} times per combat. This never doubles a trick aimed at an enemy.",
-      "sheetSummary": "{{uses per combat|1 at levels 1-4, 2 at 5-10, 3 at 11-16, 4 at 17+ — the same breakpoints the Scaling Die uses}} uses per combat. A Turn that targets a single ALLY may also target a second willing ally within 30 ft of the first. Never applies to a trick aimed at an enemy.",
+      "sheetSummary": "A Turn that targets a single ALLY may also target a second willing ally within 30 ft of the first. Never applies to a trick aimed at an enemy.",
       "narration": "You deliver it to the pair of them at once, the way a good line is thrown to two people on opposite sides of the stage. Both of them get it. Both of them straighten up.",
       "meta": {
         "action": "Part of casting",

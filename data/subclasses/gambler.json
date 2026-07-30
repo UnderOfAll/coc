@@ -11,7 +11,7 @@
       "role": "combat",
       "description": "You've learned to load the deck in your favor. {{uses per combat|1 at levels 1-4, 2 at 5-10, 3 at 11-16, 4 at 17+ — the same breakpoints the Scaling Die uses}} times per combat, you can do one of the following, no action required: choose the result of a Wild Card draw instead of rolling the d8; reroll a d20 you just rolled for your own attack roll, ability check, or saving throw and use the new result; or target one creature within 30 feet of you that just made an attack roll or saving throw, forcing it to succeed on a Charisma saving throw against your gambit DC or reroll that d20 and use the new result. These uses cost no Mayhem and draw on nothing else you have.",
       "narration": "The deck was never honest and neither were you. When the moment matters you simply arrange for the result you needed — or reach across the table and make somebody else take theirs again, which is worse.",
-      "sheetSummary": "Free, {{uses per combat|1 at levels 1-4, 2 at 5-10, 3 at 11-16, 4 at 17+ — the same breakpoints the Scaling Die uses}} times per combat. Choose one: pick a Wild Card result instead of rolling; reroll your own d20 attack, check, or save and use the new result; or force a creature that just rolled a d20 to make a Charisma save vs {{gambit DC|8 + proficiency bonus + Charisma modifier}} or reroll and use the new result. Costs no Mayhem.",
+      "sheetSummary": "Choose one: pick a Wild Card result instead of rolling; reroll your own d20 attack, check, or save and use the new result; or force a creature that just rolled a d20 to make a Charisma save vs {{gambit DC|8 + proficiency bonus + Charisma modifier}} or reroll and use the new result. Costs no Mayhem.",
       "meta": {
         "action": "Free",
         "uses": "Scaling: 1/2/3/4 per combat",
@@ -25,7 +25,7 @@
       "role": "combat",
       "description": "You can bet on your own luck before you know how a roll lands. Once per turn, before making an attack roll, ability check, or saving throw (not a Parry roll), you can spend 1 Mayhem to roll a d6 and add it to the total. If that d6 comes up a 1, the bet turns on you: you take [[1d4]] psychic damage as the trick backfires, in addition to whatever the roll itself produces. You must decide to Double Down before the roll's outcome is known.",
       "narration": "You commit before you know. The bet goes down while the outcome is still in the air, and most of the time it comes back better than it had any right to. Occasionally it turns on you, and the recoil of it hurts somewhere behind your eyes.",
-      "sheetSummary": "Free, declared before the roll. Add a d6 to an attack roll, ability check, or saving throw (never a Parry). If the d6 comes up 1, you take [[1d4]] psychic damage.",
+      "sheetSummary": "Declared before the roll. Add a d6 to an attack roll, ability check, or saving throw (never a Parry). If the d6 comes up 1, you take [[1d4]] psychic damage.",
       "meta": {
         "action": "Free",
         "cost": "1 Mayhem",

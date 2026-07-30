@@ -136,7 +136,7 @@
       "name": "Decoy Detonation",
       "description": "As an action, you cause one of your Clones to burst in a flash of shattering reflections, destroying it. Because you choose which Clone, you decide where the blast lands — spawn a Clone into a cluster of enemies, or Swap one there, then detonate it. Each creature within 5 feet of that Clone must make a Dexterity saving throw against your {{save DC|8 + proficiency bonus + Constitution modifier}}. On a failed save a creature takes [[1d6+Con]] psychic damage and is shoved 5 feet straight away from the Clone's space; on a success it takes half as much damage and is not moved. From 3rd level, Splintered Reflexes also lets you trigger Decoy Detonation as a reaction on another creature's turn. You can trigger Decoy Detonation at most once per turn.",
       "narration": "You let one of them go. The Clone comes apart all at once, not into smoke but into a bursting sphere of edged reflections, and everything close enough is briefly looking at a hundred small pictures of its own surprised face before the shards go through it.",
-      "sheetSummary": "Action (reaction from L3 via Splintered Reflexes). Each creature within 5 ft of the Clone makes a Dexterity save vs your {{save DC|8 + proficiency bonus + Constitution modifier}}. Fail: [[1d6+Con]] psychic and shoved 5 ft from the Clone's space. Success: half damage, not moved.",
+      "sheetSummary": "Each creature within 5 ft of the Clone makes a Dexterity save vs your {{save DC|8 + proficiency bonus + Constitution modifier}}. Fail: [[1d6+Con]] psychic and shoved 5 ft from the Clone's space. Success: half damage, not moved. Splintered Reflexes (L3) makes this a reaction instead.",
       "meta": {
         "action": "Action (or Reaction from L3)",
         "cost": "1 Clone",
@@ -150,7 +150,7 @@
       "name": "Flanking Reflection",
       "description": "When you make a melee weapon attack against a creature that has one of your Clones within 5 feet of it, you have advantage on the attack roll — the creature can't watch both you and your reflection at once. This costs nothing and doesn't destroy the Clone, but requires one to already be positioned correctly; it applies at most once per attack and doesn't stack with other sources of advantage on the same roll.",
       "narration": "It cannot watch you both. Every time its eyes flick to the copy at its shoulder, its guard drifts a finger's width in that direction — and a finger's width is all you were ever asking for.",
-      "sheetSummary": "Passive. Advantage on a melee weapon attack against a creature that has one of your Clones within 5 ft of it. Costs nothing, destroys no Clone, doesn't stack with other advantage.",
+      "sheetSummary": "Advantage on a melee weapon attack against a creature that has one of your Clones within 5 ft of it. Costs nothing, destroys no Clone, doesn't stack with other advantage.",
       "meta": {
         "action": "Passive",
         "uses": "1 / attack",
@@ -162,7 +162,7 @@
       "name": "Splintered Reflexes",
       "description": "Your reflections let you answer more than one threat at once. You gain one additional reaction each round, for two total, both refreshing at the start of your turn. This extra reaction can be used only to make an opportunity attack or to activate a Clone feature that costs a reaction — most usefully, it lets you trigger Decoy Detonation on another creature's turn. It can never be used to cast a trick — Parting Shot and any other reaction trick still spend your normal reaction. It can never be used to Parry a second time: you still redirect only one hit per round onto a Clone, so the Acrobat remains the surer dodger. Each reaction is spent once; you choose which threat each one answers.",
       "narration": "You have stopped answering threats one at a time. Part of your attention lives out in the reflections now, and while one of you is dealing with the blade in front, another is already turning toward the thing coming from the side.",
-      "sheetSummary": "Passive. One additional reaction each round (two total), both refreshing at the start of your turn. The extra one may only make an opportunity attack or activate a Clone feature costing a reaction — never a trick, never a second Parry.",
+      "sheetSummary": "One additional reaction each round (two total), both refreshing at the start of your turn. The extra one may only make an opportunity attack or activate a Clone feature costing a reaction — never a trick, never a second Parry.",
       "meta": {
         "action": "Passive",
         "uses": "+1 reaction / round"
@@ -186,7 +186,7 @@
       "name": "Hall of Mirrors",
       "description": "Your reflections run deeper and reach farther: your Clone cap increases by 1 (in addition to whatever your proficiency bonus already grants it), and the range on Clone creation, Swap, and a Clone's leash all increase from 30 to 45 feet.",
       "narration": "The trick has outgrown the room. Your reflections stand further out than they used to and hold together at distances that should have snapped them, until fighting you feels less like facing a man than being surrounded by a hallway of him.",
-      "sheetSummary": "Passive. Clone cap +1 on top of your proficiency bonus. Clone creation, Swap, and a Clone's leash all increase from 30 ft to 45 ft.",
+      "sheetSummary": "Clone cap +1 on top of your proficiency bonus. Clone creation, Swap, and a Clone's leash all increase from 30 ft to 45 ft.",
       "meta": {
         "action": "Passive"
       }

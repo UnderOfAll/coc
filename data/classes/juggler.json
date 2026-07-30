@@ -177,7 +177,7 @@
       "name": "Grand Cascade",
       "description": "Your cascade widens. Your Set Size increases by 2 — it is now your proficiency bonus + 3 — so you juggle, hold, and can throw that many more implements each turn. Every extra one you keep still shores up your Deflect, and every extra one you throw still feeds your Barrage, Ricochet, and Trick Shot.",
       "narration": "The pattern widens. There is more in the air than a person should be able to track, and you are not tracking it — you stopped needing to a long time ago.",
-      "sheetSummary": "Passive. Set Size increases by 2, becoming your proficiency bonus + 3.",
+      "sheetSummary": "Set Size increases by 2, becoming your proficiency bonus + 3.",
       "meta": {
         "action": "Passive"
       }

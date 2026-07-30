@@ -11,7 +11,7 @@
       "role": "combat",
       "description": "Your body is trained to feed off danger, your own and the danger aimed at those you're shielding. In addition to your baseline Grit generation, you gain 1 additional Grit the first time each turn you are targeted by an attack from any source (whether it hits or misses), and you gain 1 Grit the first time each turn a hostile creature targets an ally within 5 feet of you with an attack (attacks against you are already covered by the first clause) — two separate sources, each capped at once per turn, exactly like your baseline Grit generation. Standing at the front and drawing fire, onto himself or off an ally, is how a Bulwark keeps his Grit topped up.",
       "narration": "Being shot at agrees with you. Every blade that turns your way, every arrow meant for the smaller person behind you, settles in your chest as something hot and useful — you are never so full of fight as when the whole room is trying to get through you.",
-      "sheetSummary": "Passive. On top of baseline Grit: +1 Grit the first time each turn you are targeted by an attack (hit or miss), and +1 Grit the first time each turn a hostile targets an ally within 5 ft of you. Two sources, each once per turn.",
+      "sheetSummary": "On top of baseline Grit: +1 Grit the first time each turn you are targeted by an attack (hit or miss), and +1 Grit the first time each turn a hostile targets an ally within 5 ft of you. Two sources, each once per turn.",
       "meta": {
         "action": "Passive"
       }

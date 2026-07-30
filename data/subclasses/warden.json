@@ -24,7 +24,7 @@
       "role": "combat",
       "description": "A willing creature you have a String attached to has advantage on saving throws made to avoid being knocked prone or forcibly moved, as long as it remains within your leash range — your wire keeps it steady on its feet. Additionally, if such a creature is knocked prone anyway, it can spend only 5 feet of movement (instead of half its speed) to stand back up, guided upright by the string.",
       "narration": "There is a line on them and the line does not let go. Shoves land and they stay upright, and if they do go down the wire has them on their feet again almost before they have finished falling.",
-      "sheetSummary": "Passive, within leash. A willing Stringed creature has advantage on saves against being knocked prone or forcibly moved, and needs only 5 ft of movement to stand up from prone.",
+      "sheetSummary": "Within leash. A willing Stringed creature has advantage on saves against being knocked prone or forcibly moved, and needs only 5 ft of movement to stand up from prone.",
       "meta": {
         "action": "Passive",
         "range": "Leash"

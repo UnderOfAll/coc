@@ -145,6 +145,28 @@ def lint_summary_preamble(obj, rel):
     return out
 
 
+# A summary that OPENS by naming its action economy — "Passive.", "Free,", "Action:", "Special," —
+# says nothing the Cost chip has not already said.
+LEAD_ACTION_RE = re.compile(
+    r"^(passive|free|special|automatic|movement|action|bonus action|reaction|no action)\b\s*[:,.]", re.I)
+# The scaling-uses ladder written out longhand next to a Uses chip that already says "Scaling".
+LEAD_USES_RE = re.compile(r"^\{\{uses per combat\|[^}]*\}\}\s*(times|uses) per combat$", re.I)
+
+
+def _split_parts(text):
+    """Split on commas that are OUTSIDE a {{...}} token — the tokens contain commas of their own."""
+    parts, depth, buf = [], 0, ""
+    for i, ch in enumerate(text):
+        if text.startswith("{{", i): depth += 1
+        if text.startswith("}}", i) and depth: depth -= 1
+        if ch == "," and depth == 0:
+            parts.append(buf); buf = ""
+        else:
+            buf += ch
+    parts.append(buf)
+    return [p.strip().rstrip(".") for p in parts if p.strip()]
+
+
 def lint_feature_preambles(obj, rel):
     """Same rule for every feature carrying a `meta` block."""
     out = []
@@ -152,7 +174,13 @@ def lint_feature_preambles(obj, rel):
         meta = feat.get("meta") or {}
         summary = feat.get("sheetSummary") or ""
         head = summary.split(". ")[0] if ". " in summary else summary
-        for part in (p.strip().rstrip(".") for p in head.split(",")):
+        if meta.get("action") and LEAD_ACTION_RE.match(summary):
+            out.append(f"summary preamble in {rel} ({feat.get('name')}): opens by naming its action "
+                       f"economy, which meta.action already renders as a chip")
+        for part in _split_parts(head):
+            if meta.get("uses") and LEAD_USES_RE.match(part):
+                out.append(f"summary preamble in {rel} ({feat.get('name')}): spells out the uses "
+                           f"ladder that meta.uses already renders as a chip")
             for field, rx in FEATURE_PREAMBLE_RES:
                 if meta.get(field) and rx.match(part):
                     out.append(f"summary preamble in {rel} ({feat.get('name')}): {part!r} duplicates "

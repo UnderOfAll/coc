@@ -24,7 +24,7 @@
       "role": "combat",
       "description": "You thrive surrounded by danger. At the start of your turn, if you are within 5 feet of at least two hostile creatures, you gain temporary hit points equal to your {{Charisma modifier (min 1)|set from your stats on your character sheet}}, and for the rest of the turn moving through a space occupied by a hostile creature costs you no extra movement (you still can't end your movement there). As with temporary hit points from any other source, these don't stack — if you already have some, keep whichever total is higher.",
       "narration": "You are happiest with the ring closed around you. Surrounded, outnumbered, laughing — something in you sits up and starts working, and you slip between them like they are scenery rather than people.",
-      "sheetSummary": "Passive. At the start of your turn, if at least two hostiles are within 5 ft, gain temporary hit points equal to your {{Charisma modifier (min 1)|set from your stats on your character sheet}}, and for that turn moving through a hostile's space costs no extra movement. Temporary hit points don't stack.",
+      "sheetSummary": "At the start of your turn, if at least two hostiles are within 5 ft, gain temporary hit points equal to your {{Charisma modifier (min 1)|set from your stats on your character sheet}}, and for that turn moving through a hostile's space costs no extra movement. Temporary hit points don't stack.",
       "meta": {
         "action": "Passive",
         "range": "5 ft"

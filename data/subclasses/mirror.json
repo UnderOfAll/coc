@@ -11,7 +11,7 @@
       "role": "combat",
       "description": "Your Clones don't break quietly. Whenever a creature destroys one of your Clones with an attack roll (including a Clone destroyed by an attack redirected onto it via Mirror Image, but never a Clone you destroy yourself through one of your own features), that creature must make a Dexterity saving throw against your {{save DC|8 + proficiency bonus + Constitution modifier}}. On a failed save, it takes [[1d6+Con]] psychic damage as shards of the shattered illusion rake across it, and it has disadvantage on the next attack roll it makes before the end of its next turn. On a successful save, it takes half as much damage and suffers no other effect. This triggers at most once per turn (no matter how many Clones are destroyed that turn) and requires no action or reaction from you to resolve.",
       "narration": "Your reflections do not break quietly. Whoever strikes one down is standing far too close when it goes — a hard bright spray of edges, all of them briefly showing that creature its own face, and then not.",
-      "sheetSummary": "Automatic. When a creature destroys one of your Clones with an attack roll (never a Clone you destroy yourself), it makes a Dexterity save vs your {{save DC|8 + proficiency bonus + Constitution modifier}}. Fail: [[1d6+Con]] psychic and disadvantage on its next attack roll before the end of its next turn. Success: half damage only.",
+      "sheetSummary": "When a creature destroys one of your Clones with an attack roll (never a Clone you destroy yourself), it makes a Dexterity save vs your {{save DC|8 + proficiency bonus + Constitution modifier}}. Fail: [[1d6+Con]] psychic and disadvantage on its next attack roll before the end of its next turn. Success: half damage only.",
       "meta": {
         "action": "Passive (auto)",
         "uses": "1 / turn",
@@ -24,7 +24,7 @@
       "role": "combat",
       "description": "Your Swap doubles as a parting insult, and in a pinch as an escape. It does two separate things:",
       "narration": "You are gone before the space you left has finished being empty, and the thing nearest it commits to a lunge at nothing. On the occasions you leave it later than that, you trade places with the blow already falling and let the reflection catch what was yours.",
-      "sheetSummary": "Two separate effects, listed below: a free rider on your Swap (1/turn) and a defensive Swap (reaction, 1/combat).",
+      "sheetSummary": "Two separate effects, listed below: a rider on your Swap, and a defensive Swap.",
       "meta": {
         "action": "Free with Swap / Reaction (defensive)",
         "uses": "Disadv 1 / turn; defensive Swap 1 / combat",

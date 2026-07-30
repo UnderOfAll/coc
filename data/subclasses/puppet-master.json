@@ -25,7 +25,7 @@
       "role": "combat",
       "description": "Your Control Wires cut deeper into a foe already caught in your web. When you hit a creature you have a String attached to with a Control Wires attack, it takes extra damage equal to your {{Wisdom modifier (min 1)|set from your stats on your character sheet}}. You can deal this extra damage only once per turn. This extra damage applies only to unwilling creatures — it never triggers against a willing creature, such as an ally you've strung for support rather than control.",
       "narration": "The wire is already inside their guard, so your strike does not have to find a way in — it just follows the line that is already there, into somewhere that was never protected.",
-      "sheetSummary": "Passive. When you hit an unwilling Stringed creature with a Control Wires attack, it takes extra damage equal to your {{Wisdom modifier (min 1)|set from your stats on your character sheet}}. Never triggers against a willing creature.",
+      "sheetSummary": "When you hit an unwilling Stringed creature with a Control Wires attack, it takes extra damage equal to your {{Wisdom modifier (min 1)|set from your stats on your character sheet}}. Never triggers against a willing creature.",
       "meta": {
         "action": "Passive",
         "uses": "1 / turn",
@@ -38,7 +38,7 @@
       "role": "roleplay",
       "description": "Your wires are fine enough to vanish in lamplight and precise enough to sign your name. As an action, you can manipulate an object within 30 feet of you as though with your own hands: open a latch, pull a lever, lift or carry up to 10 pounds, pour a drink, palm a key from a belt. Dexterity (Sleight of Hand) checks made this way can target creatures and objects at that range, and you have advantage on them when your hands are visibly elsewhere — nobody suspects the man across the room.",
       "narration": "Your wires are fine enough to disappear in lamplight and steady enough to sign your name with. Latches lift, levers pull, and a cup crosses a room to your hand with nobody able to say quite how.",
-      "sheetSummary": "Action: manipulate an object within 30 ft as if by hand (open, pull, lift up to 10 lb, pickpocket at range). Advantage on Sleight of Hand made this way while your hands are visibly elsewhere.",
+      "sheetSummary": "Manipulate an object within 30 ft as if by hand (open, pull, lift up to 10 lb, pickpocket at range). Advantage on Sleight of Hand made this way while your hands are visibly elsewhere.",
       "meta": {
         "action": "Action",
         "range": "30 ft"

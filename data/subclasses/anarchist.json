@@ -26,7 +26,7 @@
       "role": "combat",
       "description": "Your chaos never stays contained to one target. The first time each turn you resolve a Wild Card result or a Gambit option that targets a single creature, and a second valid target for that same effect (an additional hostile creature if the original target was hostile, or an additional willing ally if the original was an ally) is within 5 feet of the original target, you may extend the effect to that second creature as well. The second creature is affected exactly as the first, including making its own saving throw if the effect calls for one. This costs no additional Mayhem, happens as part of the Wild Card or Gambit you're already resolving (not a separate action or reaction), and can happen only once per turn.",
       "narration": "Whatever you did to one of them does not have the manners to stop there. It splashes — the same joke, the same trick, the same unpleasant surprise landing on whoever had the poor judgement to be standing next to them.",
-      "sheetSummary": "Passive. The first time each turn a Wild Card or Gambit targets a single creature, extend it to one more valid target of the same kind within 5 ft of the original. The second creature makes its own save. Costs no extra Mayhem and no action.",
+      "sheetSummary": "The first time each turn a Wild Card or Gambit targets a single creature, extend it to one more valid target of the same kind within 5 ft of the original. The second creature makes its own save. Costs no extra Mayhem and no action.",
       "meta": {
         "action": "Passive",
         "uses": "1 / turn",

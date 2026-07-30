@@ -92,7 +92,7 @@
       "name": "Wild Talent",
       "description": "Your chaos answers your personality, not your hands: you use your Charisma modifier, instead of Strength or Dexterity, for attack and damage rolls you make with a finesse weapon you're proficient with (your Razor Cards, Harlequin's Cane, or Dagger). Any saving throw a Joker feature or Wild Card forces on a creature uses your {{gambit DC|8 + proficiency bonus + Charisma modifier}}.",
       "narration": "You do not fight like someone who trained. You fight like someone talking — the whole thing runs on nerve and timing and the absolute confidence that the card will go where you said it would, and somehow it does.",
-      "sheetSummary": "Passive. Use your Charisma modifier for attack and damage rolls with a finesse weapon you're proficient with. Every save a Joker feature or Wild Card forces uses your {{gambit DC|8 + proficiency bonus + Charisma modifier}}.",
+      "sheetSummary": "Use your Charisma modifier for attack and damage rolls with a finesse weapon you're proficient with. Every save a Joker feature or Wild Card forces uses your {{gambit DC|8 + proficiency bonus + Charisma modifier}}.",
       "meta": {
         "action": "Passive"
       }
@@ -171,7 +171,7 @@
       "name": "Trickster's Luck",
       "description": "The deck looks after its own. {{uses per combat|1 at levels 1-4, 2 at 5-10, 3 at 11-16, 4 at 17+ — the same breakpoints the Scaling Die uses}} times per combat, when you roll below your effective Parry DC (an Overcommitted result), you can treat that Parry as a Grazing Parry instead — taking half damage rather than +50%. You decide after seeing the roll. This doesn't change your Parry DC, only how badly a failed one lands.",
       "narration": "The blow that should have opened you up somehow only skims. A boot slips, a lamp swings, the floor is fractionally where it needed to be — the deck looks after its own, and you take the graze with an expression that suggests you arranged it.",
-      "sheetSummary": "Free, {{uses per combat|1 at levels 1-4, 2 at 5-10, 3 at 11-16, 4 at 17+ — the same breakpoints the Scaling Die uses}} times per combat. Treat an Overcommitted Parry as a Grazing Parry instead (half damage rather than +50%). Decided after seeing the roll; your Parry DC is unchanged.",
+      "sheetSummary": "Treat an Overcommitted Parry as a Grazing Parry instead (half damage rather than +50%). Decided after seeing the roll; your Parry DC is unchanged.",
       "meta": {
         "action": "Free",
         "uses": "Scaling: 1/2/3/4 per combat",
@@ -251,7 +251,7 @@
       "name": "Full House",
       "description": "When you spend Mayhem to draw a Wild Card, you may spend 1 additional Mayhem (2 total) to draw two cards instead of one. If you do, resolve only one of the two results — your choice — and discard the other; you never resolve both at once.",
       "narration": "You draw two and fan them out where only you can see. Whatever the second card was, nobody will ever know: you let it fall, play the one you like, and act as though that was the only card there ever was.",
-      "sheetSummary": "Special, +1 Mayhem (2 total) when drawing a Wild Card. Draw two cards and resolve only one of your choice; the other is discarded.",
+      "sheetSummary": "When drawing a Wild Card, draw two cards and resolve only one of your choice; the other is discarded.",
       "meta": {
         "action": "Special",
         "cost": "+1 Mayhem (2 total)",
