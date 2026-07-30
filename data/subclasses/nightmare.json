@@ -10,7 +10,7 @@
       "name": "It Gets Worse",
       "role": "combat",
       "description": "You find the crack in one mind and keep working it. When a creature fails a saving throw against one of your tricks, you can make it your **Subject** — no action required. While a creature is your Subject it makes **every** saving throw against your tricks with disadvantage, for as long as the fight lasts. You can have only one Subject at a time: naming a new one releases the old immediately, and your Subject is released when combat ends. This deliberately never applies to more than one creature at once — the table has exactly one name to remember, however many enemies are in the room.",
-      "sheetSummary": "No action, when a creature fails a save against one of your tricks: it becomes your Subject. Your Subject makes EVERY save against your tricks with disadvantage for the rest of the combat. Only one Subject at a time — naming a new one releases the old, and it ends when combat does.",
+      "sheetSummary": "When a creature fails a save against one of your tricks: it becomes your Subject. Your Subject makes EVERY save against your tricks with disadvantage for the rest of the combat. Only one Subject at a time — naming a new one releases the old, and it ends when combat does.",
       "narration": "You watched what went through them the first time and you simply do not let it go. Every trick you throw at them after that lands on ground you already broke, and they can feel you choosing them.",
       "meta": {
         "action": "No action (on a failed save)",
@@ -23,7 +23,7 @@
       "name": "Feed the Fear",
       "role": "combat",
       "description": "Terror is credibility. The first time each turn a creature fails a saving throw against one of your tricks that deals psychic damage, you gain 1 additional Phantasm, over and above whatever your engine already granted this turn.",
-      "sheetSummary": "1/turn. Gain 1 additional Phantasm the first time each turn a creature fails a save against one of your psychic-damage tricks.",
+      "sheetSummary": "Gain 1 additional Phantasm the first time each turn a creature fails a save against one of your psychic-damage tricks.",
       "narration": "You watch it land and something in you banks it. The scream is not the point. The scream is the receipt.",
       "meta": {
         "action": "Passive",

@@ -111,7 +111,7 @@
       "name": "Deflect",
       "description": "Your Parry is a deflection made with an implement still in hand, so how well you can do it depends on how many you are still holding. Your effective Parry DC is your base of 12 while you hold your full set, and it worsens by 1 for each implement you have thrown and not yet caught back — that is, +1 for each one short of a full set. If you are holding no implements at all, you cannot Parry until your set refills at the start of your next turn. Because the set refills every turn, this resets each round: a turn you throw everything is a turn you stand defenseless, and a turn you hold some back keeps your guard up at a worse DC. Deflecting still costs your reaction like any Parry.",
       "narration": "You do not block with your hands, you block with whatever is passing through them. A club comes down and something of yours is there to meet it — provided anything of yours is still in the air. Empty-handed, there is nothing to do but watch it land.",
-      "sheetSummary": "Reaction, 1/round. Your effective Parry DC is 12 while holding a full set, worsening by 1 for each implement thrown and not yet caught back. Holding none means you cannot Parry at all until your set refills at the start of your next turn. Costs your reaction like any Parry.",
+      "sheetSummary": "Your effective Parry DC is 12 while holding a full set, worsening by 1 for each implement thrown and not yet caught back. Holding none means you cannot Parry at all until your set refills at the start of your next turn. Costs your reaction like any Parry.",
       "meta": {
         "action": "Reaction",
         "uses": "1 / round",
@@ -123,7 +123,7 @@
       "name": "Nimble Cascade",
       "description": "A juggler never plants his feet. As a bonus action on your turn, you can move up to half your speed, and that movement doesn't provoke opportunity attacks. Open the range before you empty your set, or slip away on a turn you're left defenseless.",
       "narration": "You keep the pattern going with your hands while your feet leave. It is the oldest trick in the act: nobody watches the man's boots when his hands are doing that.",
-      "sheetSummary": "Bonus action, 1/turn. Move up to half your speed without provoking opportunity attacks.",
+      "sheetSummary": "Move up to half your speed without provoking opportunity attacks.",
       "meta": {
         "action": "Bonus Action",
         "uses": "1 / turn",
@@ -135,7 +135,7 @@
       "name": "Ricochet",
       "description": "Your implements carom off their targets. Once on each of your turns, when a thrown implement hits a creature during your Barrage, you can have it ricochet outward from that target: make a separate ranged attack roll against every other creature you can see within 15 feet of it, and on each hit the implement deals [[1d4+Dex]] damage (rolled separately for each). Only ONE implement ricochets per turn, no matter how many you throw — so a full 3-implement Barrage still gets a single ricochet. The ricochet is a free bonus of an implement you already threw: it doesn't cost you an implement or further worsen your Deflect.",
       "narration": "The implement does not stop where it hit. It skips off at an angle you called before you threw and goes on to find someone else, then someone after that, still spinning.",
-      "sheetSummary": "Part of your Barrage, 1/turn, 15-ft burst. When a thrown implement hits, make a separate ranged attack against every other creature within 15 ft of that target; each hit deals [[1d4+Dex]]. Only one implement ricochets per turn. Costs no implement and doesn't worsen Deflect.",
+      "sheetSummary": "Part of your Barrage, 15-ft burst. When a thrown implement hits, make a separate ranged attack against every other creature within 15 ft of that target; each hit deals [[1d4+Dex]]. Only one implement ricochets per turn. Costs no implement and doesn't worsen Deflect.",
       "meta": {
         "action": "Part of your Barrage",
         "uses": "1 / turn",
@@ -147,7 +147,7 @@
       "name": "Trick Shot",
       "description": "You don't just throw hard — you throw smart, reading angles and gaps mid-cascade. Once on each of your turns you can designate ONE implement in your Barrage as a Trick Shot — never more than that single implement, no matter how many you throw. On a hit, in addition to its normal damage, the target must succeed on a saving throw against your {{Trick Shot DC|6 + proficiency bonus + Intelligence modifier}} or suffer one effect of your choice (the save ability depends on the effect):",
       "narration": "You throw at what everyone is looking at and hit something else — a wrist, a knee, the buckle of a strap. One implement out of the stream does something the others were only ever a distraction for.",
-      "sheetSummary": "Part of your Barrage, 1/turn. Designate one implement as a Trick Shot. On a hit, in addition to damage, the target makes a save vs your {{Trick Shot DC|6 + proficiency bonus + Intelligence modifier}} or suffers one effect of your choice (the save ability depends on the effect).",
+      "sheetSummary": "Part of your Barrage. Designate one implement as a Trick Shot. On a hit, in addition to damage, the target makes a save vs your {{Trick Shot DC|6 + proficiency bonus + Intelligence modifier}} or suffers one effect of your choice (the save ability depends on the effect).",
       "options": [
         {
           "name": "Blind",
@@ -187,7 +187,7 @@
       "name": "Chain Reaction",
       "description": "Keep the show going. Once per combat, you can choose to make your Ricochet chain: after it sprays its targets, pick one creature it hit and the implement caroms off and ricochets a second time from that creature's space — a separate ranged attack against every other creature you can see within 15 feet of it, dealing [[1d4+Dex]] on each hit, exactly like Ricochet. You decide when to trigger it; it does not require dropping a target.",
       "narration": "You keep it going past the point where it should have fallen. The implement caroms, caroms again, and by the time it finally comes down the crowd is on its feet and half the room is bleeding.",
-      "sheetSummary": "Part of your Barrage, 1/combat, 15-ft burst. After your Ricochet resolves, pick one creature it hit; the implement ricochets a second time from that creature's space, dealing [[1d4+Dex]] on each hit. You choose when to trigger it.",
+      "sheetSummary": "Part of your Barrage, 15-ft burst. After your Ricochet resolves, pick one creature it hit; the implement ricochets a second time from that creature's space, dealing [[1d4+Dex]] on each hit. You choose when to trigger it.",
       "meta": {
         "action": "Part of your Barrage",
         "uses": "1 / combat",

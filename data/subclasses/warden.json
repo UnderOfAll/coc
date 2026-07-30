@@ -11,7 +11,7 @@
       "role": "combat",
       "description": "When a creature you have a String attached to is hit by an attack, you can use your reaction to snap its wire taut, guiding it half a step aside at the last instant and granting it resistance to the damage from that attack. This draws on the same reaction as Parry, Disrupting Pull, and Guiding Pull — you still get only one reaction per round, so protecting an ally this way costs the same reaction you'd otherwise spend defending yourself or disrupting a foe.",
       "narration": "The blow is landing and there is no time to stop it, so you do not — you snap the wire and move them half a step into it instead, turning something that would have gone through them into something that only glances.",
-      "sheetSummary": "Reaction, 1/round, within leash. When a Stringed creature is hit by an attack, grant it resistance to that attack's damage. Uses the same single reaction as Parry.",
+      "sheetSummary": "Within leash. When a Stringed creature is hit by an attack, grant it resistance to that attack's damage. Uses the same single reaction as Parry.",
       "meta": {
         "action": "Reaction",
         "uses": "1 / round",
@@ -36,7 +36,7 @@
       "role": "roleplay",
       "description": "Some strings aren't for pulling — they're for holding on. Over 1 minute, you can tie a hair-fine thread to a willing creature you touch. For the next 24 hours, while the creature is within 1 mile of you, you know its direction and its general condition (unharmed, wounded, unconscious, or dead), and if it is in danger while you sleep, the thread's tug wakes you instantly. You can maintain a number of threads equal to your {{Wisdom modifier (min 1)|set from your stats on your character sheet}}.",
       "narration": "Some strings are not for pulling. A hair-fine thread, tied in a quiet minute, and for a day afterwards you know which way they are and roughly how they are doing — and if something goes badly wrong out there, you are awake before you know why.",
-      "sheetSummary": "1-minute ritual, touch, one willing creature, 24 hours. Know its direction and rough condition (unharmed, wounded, unconscious, dead) within 1 mile, and its danger wakes you from sleep. Hold {{Wisdom modifier (min 1)|set from your stats on your character sheet}} threads at once.",
+      "sheetSummary": "1-minute ritual, one willing creature, 24 hours. Know its direction and rough condition (unharmed, wounded, unconscious, dead) within 1 mile, and its danger wakes you from sleep. Hold {{Wisdom modifier (min 1)|set from your stats on your character sheet}} threads at once.",
       "meta": {
         "action": "Special",
         "uses": "Wis mod active threads",

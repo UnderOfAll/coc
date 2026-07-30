@@ -386,6 +386,9 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
   .attack-table td:nth-child(4) { min-width: 0; }
   /* Top bar wraps: brand + Parry button on row 1, search full-width on row 2. */
   .topbar { flex-wrap: wrap; gap: 0.5rem 0.75rem; padding: 0.6rem 0.9rem; }
+  .brand { min-width: 0; }
+  .brand-name { font-size: 1.25rem; overflow-wrap: break-word; }
+  .legend-btn { flex: 0 0 auto; }
   .brand { order: 1; }
   .brand-sub { display: none; }
   .legend-btn { order: 2; margin-left: auto; }
@@ -427,7 +430,7 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 
   /* Keep wide tables readable and prevent unbreakable text from overflowing. */
   .data-table { font-size: 0.87rem; }
-  .data-table th, .data-table td { word-break: break-word; }
+  .data-table th, .data-table td { overflow-wrap: break-word; }
 
   /* Bigger, clearer ⓘ so it reads as a tappable hint (tap toggles the tooltip). */
   .tip-mark { font-size: 0.9em; margin-left: 0.25em; }
@@ -507,7 +510,10 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
    Those tooltips are position:absolute with width:max-content, so they (a) count toward the
    container's scroll width, producing a scrollbar even when the table fits, and (b) get clipped
    by the scroll box when opened. Let the cells wrap instead. */
-.attack-table td, .attack-table th { word-break: normal; overflow-wrap: anywhere; }
+/* NOT overflow-wrap: anywhere. `anywhere` also drops a cell's min-content width to a single
+   character, so columns collapse and every word shatters — "mar ke d car d one" per line.
+   `break-word` breaks only a word that genuinely cannot fit and leaves column sizing alone. */
+.data-table td, .data-table th { overflow-wrap: break-word; }
 .attack-table td:nth-child(4) { min-width: 8rem; }
 
 /* The choosable property (armour trait, weapon mastery) shown on a list card, so a player can
@@ -618,8 +624,10 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
   background: var(--panel-2); border: 1px solid var(--gold); border-radius: var(--radius); }
 .lv-k { font-size: 0.80rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
 .lv-v { font-family: var(--serif); font-size: 1.9rem; line-height: 1; color: var(--gold); }
-/* Resolved tokens are real numbers on a sheet, so they read as values, not as jargon. */
-.tip-term.resolved { font-weight: 600; }
+/* A token whose tooltip holds YOUR number rather than the abstract formula. Marked with a solid
+   underline instead of the dotted one, so it is visible at a glance which terms have been worked
+   out for this character. */
+.tip-term.resolved { border-bottom-style: solid; }
 .inplay-tip { font-size: 0.80rem; white-space: nowrap; }
 .panel { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
   padding: 1rem 1.1rem; margin-bottom: 1rem; }
@@ -642,8 +650,9 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
    it and the working-out under that. The old layout put a small grey label on top of a smaller
    number and read like a spreadsheet. */
 .kn-grid { display: grid; gap: 0.55rem; grid-template-columns: repeat(auto-fit, minmax(min(8.5rem, 100%), 1fr)); }
-.kn { background: var(--panel-2); border: 1px solid var(--border); border-left: 3px solid var(--gold);
-  border-radius: var(--radius); padding: 0.6rem 0.7rem; text-align: center; }
+.kn { min-width: 0; background: var(--panel-2); border: 1px solid var(--border);
+  border-left: 3px solid var(--gold); border-radius: var(--radius);
+  padding: 0.6rem 0.7rem; text-align: center; overflow-wrap: break-word; }
 .kn-v { display: block; font-family: var(--serif); font-size: 1.6rem; font-weight: 600; color: var(--gold); line-height: 1.1; }
 .kn-l { display: block; margin-top: 0.25rem; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1px; }
 .kn-n { display: block; margin-top: 0.15rem; font-size: 0.78rem; color: var(--muted); }
@@ -693,6 +702,9 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 .feat-text { font-size: 0.89rem; line-height: 1.55; }
 .feat-card .feature-meta { margin: 0.1rem 0; }
 .feat-card .data-table { margin: 0.3rem 0 0; }
+/* A card showing its options takes the whole row: an option table cannot lay out two or three
+   columns inside a third of the panel, and squeezing it is what shattered the text. */
+.feat-card:has(.option-table) { grid-column: 1 / -1; }
 .feat-card .uses { margin-top: auto; padding-top: 0.4rem; }
 .opts-toggle { align-self: flex-start; display: inline-flex; align-items: center; gap: 0.4rem; }
 .opts-mark { color: var(--gold); font-family: var(--serif); font-size: 1.10rem; line-height: 1; }
@@ -741,7 +753,7 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
   .step, .panel { padding: 0.9rem 0.85rem; }
   .pick-grid { grid-template-columns: 1fr; }
   .abils { grid-template-columns: 1fr 1fr; }
-  .kn-grid { grid-template-columns: repeat(auto-fit, minmax(min(5.5rem, 100%), 1fr)); }
+  .kn-grid { grid-template-columns: repeat(auto-fit, minmax(min(9rem, 100%), 1fr)); }
   .kn-v { font-size: 1.1rem; }
   /* Touch targets: 44px is the smallest comfortable tap area. */
   .chip, .btn, .btn-quiet, .toggle-btn { min-height: 2.75rem; padding-inline: 0.9rem; }

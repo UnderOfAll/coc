@@ -22,7 +22,7 @@
       "role": "combat",
       "description": "Once on each of your turns, one implement you throw can burst on impact instead of ricocheting: each creature within 10 feet of the space it strikes must make a Dexterity saving throw against your {{Trick Shot DC|6 + proficiency bonus + Intelligence modifier}}, taking [[2d4]] fire damage on a failure or half as much on a success. That space then burns until the start of your next turn — the first time a creature enters it on a turn, or ends its turn there, it takes [[1d4]] fire damage.",
       "narration": "One of them does not carom off — it bursts, a low orange bloom that goes out sideways and leaves the floor burning behind it. That patch stays lit and stays angry, and anyone who wants to cross it is going to have opinions about it afterwards.",
-      "sheetSummary": "Part of your Barrage, 1/turn, 10-ft burst. One implement bursts instead of ricocheting: Dexterity save vs your {{Trick Shot DC|6 + proficiency bonus + Intelligence modifier}}, [[2d4]] fire on a failure, half on a success. That space burns until the start of your next turn, dealing [[1d4]] fire the first time a creature enters it on a turn or ends its turn there.",
+      "sheetSummary": "Part of your Barrage, 10-ft burst. One implement bursts instead of ricocheting: Dexterity save vs your {{Trick Shot DC|6 + proficiency bonus + Intelligence modifier}}, [[2d4]] fire on a failure, half on a success. That space burns until the start of your next turn, dealing [[1d4]] fire the first time a creature enters it on a turn or ends its turn there.",
       "meta": {
         "action": "Part of your Barrage",
         "uses": "1 / turn",

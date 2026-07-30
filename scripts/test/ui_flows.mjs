@@ -172,15 +172,17 @@ ok($(".sheet-level .lv-v").textContent==="5","the level has a field of its own, 
 ok($(".sheet-class").textContent.includes("Illusionist"),"the class is on its own line");
 ok($(".sheet-class").textContent.includes("Nightmare"),"with the discipline");
 
-console.log("\n— NUMBERS, NOT FORMULAS —");
+console.log("\n— YOUR NUMBERS IN THE TOOLTIP —");
 // The whole point of {{Label|formula}}: the compendium cannot know whose sheet it is, a sheet can.
 const dc=peek(`derive(sheet.ch).saveDC`);
 const resolved=$$("#tool .tip-term.resolved");
 ok(resolved.length>0,"tokens resolve on a sheet ("+resolved.length+" of them)");
-ok(resolved.some(n=>n.firstChild.textContent===String(dc)),"a save DC shows its value ("+dc+")");
-ok(resolved.every(n=>!/proficiency bonus \+ your/.test(n.firstChild.textContent)),"no formula left showing as the label");
-const tipTxt=resolved.find(n=>n.firstChild.textContent===String(dc)).querySelector(".term-tip").textContent;
-ok(/= *"?"?/.test(tipTxt)&&tipTxt.includes("= "+dc),"and the working is in the tooltip: "+tipTxt);
+// The LABEL stays — it is what the sentence is about. The tooltip gains the number.
+const dcTerm=resolved.find(n=>/save DC/i.test(n.firstChild.textContent));
+ok(dcTerm,"a save DC still reads as 'save DC', not as a bare number");
+const tipTxt=dcTerm.querySelector(".term-tip").textContent;
+ok(tipTxt.trim().startsWith(String(dc)),"and its tooltip leads with your number ("+dc+"): "+tipTxt.trim());
+ok(/proficiency/.test(tipTxt),"followed by the working");
 // …while the compendium still shows the label, because there is no character there.
 await go("#/tricks/waking-nightmare");
 ok(peek("TOKEN_RESOLVER")===null,"the resolver is put back after rendering");

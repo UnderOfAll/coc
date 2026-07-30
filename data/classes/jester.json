@@ -115,7 +115,7 @@
       "name": "Never the Target",
       "role": "combat",
       "description": "Nobody's first instinct is to kill the clown. Once per round, when a hostile creature that can see both you and an ally within 5 feet of you makes an attack roll against you, it has disadvantage on that roll — it does the arithmetic everyone does and decides the armed one is the problem. This costs no action and no reaction, and it refreshes at the start of each of your turns.",
-      "sheetSummary": "No action, once per round, refreshing at the start of your turn. When a hostile that can see both you and an ally within 5 ft of you attacks you, it has disadvantage on that roll.",
+      "sheetSummary": "Refreshing at the start of your turn. When a hostile that can see both you and an ally within 5 ft of you attacks you, it has disadvantage on that roll.",
       "narration": "It looks at you, then at the armed and serious person beside you, and does the arithmetic everyone does. You are not a threat. You are a distraction with bells on. It swings at you like it is swatting something.",
       "meta": {
         "action": "No action",
@@ -141,7 +141,7 @@
       "name": "Heckler's Timing",
       "role": "combat",
       "description": "Your interruptions land where they hurt, but only in the two places a heckle can actually reach. Spend your reaction and 1 Mirth to aim it at one creature within 30 feet that can hear and understand you, choosing one of the applications below. **It never touches an attack roll or an ability check** — you cannot talk someone out of a swing they have already started.",
-      "sheetSummary": "Reaction, 30 ft, costs 1 Mirth. Target must hear and understand you. Choose one application below. Never applies to an attack roll or an ability check. Uses the same single reaction as Parry.",
+      "sheetSummary": "Target must hear and understand you. Choose one application below. Never applies to an attack roll or an ability check. Uses the same single reaction as Parry.",
       "narration": "You wait for the exact instant before it commits and then say the one thing guaranteed to get in. It is petty, it is unfair, and the wince is worth every penny.",
       "meta": {
         "action": "Reaction",
@@ -176,7 +176,7 @@
       "name": "The Show Must Go On",
       "role": "combat",
       "description": "You do not let a performance end badly. When an ally you can see within 30 feet is reduced to 0 hit points, you can use your reaction to keep them upright: they drop to 1 hit point instead. You can do this once per combat.",
-      "sheetSummary": "Reaction, 30 ft, once per combat. When an ally you can see drops to 0 hit points, they drop to 1 instead.",
+      "sheetSummary": "When an ally you can see drops to 0 hit points, they drop to 1 instead.",
       "narration": "You are already talking before they hit the ground — some rubbish about the second act, delivered at a shout — and somehow it is enough to keep their feet under them for one more round.",
       "meta": {
         "action": "Reaction",

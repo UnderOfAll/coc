@@ -121,6 +121,17 @@ PREAMBLE_RES = [
 ]
 
 
+# The same duplication on a FEATURE, where the chips are built from its own `meta` block. A part is
+# only a duplicate if the matching meta field actually exists — otherwise the summary is the only
+# place it is written down.
+FEATURE_PREAMBLE_RES = [
+    ("action", re.compile(r"^(1\s+)?(action|bonus action|reaction|free action|no action)$", re.I)),
+    ("range", re.compile(r"^(\d+\s*(ft|feet)|self|touch|self\s*/\s*\d+\s*ft)$", re.I)),
+    ("uses", re.compile(r"^(\d+\s*/\s*(turn|combat|round)|once per (turn|combat|round))$", re.I)),
+    ("cost", re.compile(r"^(costs?\s+)?\d+\s+[A-Z][a-z]+$")),
+]
+
+
 def lint_summary_preamble(obj, rel):
     """A trick summary must not restate the meta chips the renderer builds from its own fields."""
     out = []
@@ -131,6 +142,21 @@ def lint_summary_preamble(obj, rel):
             out.append(f"summary preamble in {rel} ({obj.get('name')}): {part!r} — castingTime, range, "
                        f"cooldown, engineCost and the Prestige tier already render as chips; "
                        f"say only what they cannot (targeting, shape, requirements)")
+    return out
+
+
+def lint_feature_preambles(obj, rel):
+    """Same rule for every feature carrying a `meta` block."""
+    out = []
+    for feat in (obj.get("features") or []):
+        meta = feat.get("meta") or {}
+        summary = feat.get("sheetSummary") or ""
+        head = summary.split(". ")[0] if ". " in summary else summary
+        for part in (p.strip().rstrip(".") for p in head.split(",")):
+            for field, rx in FEATURE_PREAMBLE_RES:
+                if meta.get(field) and rx.match(part):
+                    out.append(f"summary preamble in {rel} ({feat.get('name')}): {part!r} duplicates "
+                               f"meta.{field}, which already renders as a chip")
     return out
 
 
@@ -201,6 +227,8 @@ def main():
                         errors.extend(lint_summary_duplication(obj, rel))
                         if cat == "tricks":
                             errors.extend(lint_summary_preamble(obj, rel))
+                        if cat in ("classes", "subclasses"):
+                            errors.extend(lint_feature_preambles(obj, rel))
                     obj["_file"] = rel
                     objs.append(obj)
                 files.append(rel)

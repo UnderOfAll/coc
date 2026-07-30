@@ -153,7 +153,7 @@
       "name": "Hold the Line",
       "description": "When a hostile creature within your reach makes a melee attack against a creature other than you, you can use your reaction to make one melee weapon attack against the attacker. Additionally, whenever a hostile creature within your reach moves in a way that provokes an opportunity attack from you and you hit it with that opportunity attack, its speed becomes 0 for the rest of the current turn — it's stopped where it stands instead of completing its move. Hold the Line draws on the same single reaction as Parry and any other reaction-costed feature you have: punish an attacker or a fleeing creature, or hold your reaction in reserve to Parry — never both on the same round. This is not mind control: a creature is never forced to act against its will, only stopped or made to pay for what it already chose to do.",
       "narration": "You are standing where you are standing and that is the end of the discussion. Something tries to go past you toward someone smaller, and you make it regret the attempt before it gets there.",
-      "sheetSummary": "Reaction, 1/round, reach. When a hostile in reach melee-attacks someone other than you, make one melee weapon attack against it. Also, when you hit with an opportunity attack, that creature's speed becomes 0 for the rest of its turn. Uses the same single reaction as Parry.",
+      "sheetSummary": "Reach. When a hostile in reach melee-attacks someone other than you, make one melee weapon attack against it. Also, when you hit with an opportunity attack, that creature's speed becomes 0 for the rest of its turn. Uses the same single reaction as Parry.",
       "meta": {
         "action": "Reaction",
         "uses": "1 / round",
@@ -200,7 +200,7 @@
       "name": "Earthshaker",
       "description": "As an action, spend 3 Grit to slam a weapon, fist, or heavy object into the ground and send a shockwave through every creature of your choice within 15 feet of you. Each must succeed on a Strength saving throw against your {{save DC|8 + proficiency bonus + Strength modifier}} or be pushed 5 feet directly away from you and knocked prone. Earthshaker deals no damage on its own — it's forced movement and control, a battlefield reset, not another source of hurt. You can use Earthshaker once per turn.",
       "narration": "You bring everything you have down into the floor. The boards jump, the dust comes off the rafters, and everyone standing near you discovers they are no longer standing.",
-      "sheetSummary": "Action, 1/turn, 3 Grit, 15-ft radius, creatures of your choice. Strength save vs your {{save DC|8 + proficiency bonus + Strength modifier}} or pushed 5 ft away from you and knocked prone. No damage.",
+      "sheetSummary": "15-ft radius, creatures of your choice. Strength save vs your {{save DC|8 + proficiency bonus + Strength modifier}} or pushed 5 ft away from you and knocked prone. No damage.",
       "meta": {
         "action": "Action",
         "cost": "3 Grit",

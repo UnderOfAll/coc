@@ -10,7 +10,7 @@
       "name": "Suggestion Under the Patter",
       "role": "combat",
       "description": "You never stop talking, and none of it sounds like an order. Once on each of your turns, as a bonus action, choose one creature within 30 feet that can hear and understand you. It must succeed on a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + Intelligence modifier}} or, on its next turn, it cannot willingly move closer to you and cannot target you with an attack. It may act freely otherwise — this never takes its turn away, it only takes YOU off the list of things it is willing to do something about. This costs nothing and has no daily limit: keeping one creature off you is simply what a Hypnotist does with his bonus action.",
-      "sheetSummary": "Bonus action, 1/turn, no cost, 30 ft. Target must hear and understand you. Wisdom save vs {{trick save DC|8 + proficiency bonus + Intelligence modifier}} or on its next turn it can't willingly move closer to you and can't target you with an attack. It acts freely otherwise.",
+      "sheetSummary": "No cost. Target must hear and understand you. Wisdom save vs {{trick save DC|8 + proficiency bonus + Intelligence modifier}} or on its next turn it can't willingly move closer to you and can't target you with an attack. It acts freely otherwise.",
       "narration": "You keep talking. Nothing you say is an order and none of it sounds like magic, and somewhere in the middle of it the thing decides, entirely on its own, that you are not who it wants to be dealing with.",
       "meta": {
         "action": "Bonus Action",

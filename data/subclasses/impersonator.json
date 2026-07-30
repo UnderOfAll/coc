@@ -16,7 +16,7 @@
         "range": "Self"
       },
       "role": "roleplay",
-      "sheetSummary": "Action, at will, 1 hour, one face at a time. Assume the exact appearance and voice of a Medium or Small humanoid you observed for 1+ minute. Appearance only — statistics and gear are unchanged. Advantage on Deception to pass as them; seeing through it takes an Insight check vs your Deception."
+      "sheetSummary": "At will, 1 hour, one face at a time. Assume the exact appearance and voice of a Medium or Small humanoid you observed for 1+ minute. Appearance only — statistics and gear are unchanged. Advantage on Deception to pass as them; seeing through it takes an Insight check vs your Deception."
     },
     {
       "level": 3,
@@ -69,7 +69,7 @@
       "role": "combat",
       "description": "A borrowed face is a weapon the moment you stop needing it. Once per combat, the first attack roll you make against a creature that currently believes a Perfect Mimicry disguise of yours is genuine is made with advantage and deals an extra [[1d6]] damage on a hit. Making an attack immediately ends the deception for every creature that sees it — the face stays, but nobody believes it anymore.",
       "narration": "They are still talking to a face they trust when it hits them. That is the whole trick, and it only works once per face, because after that nobody in the room believes anything wearing it.",
-      "sheetSummary": "1/combat. Your first attack roll against a creature currently fooled by your Perfect Mimicry has advantage and deals an extra [[1d6]] damage on a hit. Attacking ends the deception for every creature that sees it.",
+      "sheetSummary": "Your first attack roll against a creature currently fooled by your Perfect Mimicry has advantage and deals an extra [[1d6]] damage on a hit. Attacking ends the deception for every creature that sees it.",
       "meta": {
         "action": "Part of Attack",
         "uses": "1 / combat"

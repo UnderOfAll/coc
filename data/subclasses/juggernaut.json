@@ -22,7 +22,7 @@
       "role": "combat",
       "description": "When you move at least 15 feet in a straight line toward a creature and then hit it with a melee weapon attack before the end of the same turn, the attack deals an extra [[1d6]] bludgeoning damage, and the target must succeed on a Strength saving throw against your {{save DC|8 + proficiency bonus + Strength modifier}} or be knocked prone and pushed 5 feet directly away from you, your choice of direction. You can use Bulldozer Charge only once per turn.",
       "narration": "You do not close the distance so much as delete it. Fifteen feet of straight-line acceleration arrives all at once, and whatever it arrives at goes over backwards and slides.",
-      "sheetSummary": "1/turn. After moving at least 15 ft in a straight line toward a creature and hitting it with a melee weapon attack: extra [[1d6]] bludgeoning, and a Strength save vs your {{save DC|8 + proficiency bonus + Strength modifier}} or knocked prone and pushed 5 ft away.",
+      "sheetSummary": "After moving at least 15 ft in a straight line toward a creature and hitting it with a melee weapon attack: extra [[1d6]] bludgeoning, and a Strength save vs your {{save DC|8 + proficiency bonus + Strength modifier}} or knocked prone and pushed 5 ft away.",
       "meta": {
         "action": "Part of Attack",
         "uses": "1 / turn",

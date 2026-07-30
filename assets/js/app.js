@@ -844,18 +844,17 @@ const ABILITY_NAMES = {
 // A hover/tap tooltip term for an inline derived number (e.g. a save DC): shows the label + ⓘ,
 // reveals the formula on hover/tap. Mirrors the keyStats formula tooltip so descriptions stay clean.
 //
-// On a CHARACTER SHEET we know the character, so the token shows the computed number instead and
-// keeps the working in the tooltip — which is what {{Label|formula}} was always for (see the file
-// header). creator.js installs a resolver while it renders and clears it afterwards; the compendium
-// leaves it null and the label shows, because there is no character to compute against. A resolver
-// that does not recognise a formula returns null and the label renders exactly as before, so an
-// unrecognised token degrades instead of breaking.
+// On a CHARACTER SHEET we know the character, so the TOOLTIP can carry the actual number instead of
+// the abstract formula. The label never changes: "trick save DC" is what the sentence is about, and
+// swapping it for a bare 14 costs the reader the name of the thing they are looking at.
+// creator.js installs a resolver while it renders and clears it afterwards; the compendium leaves it
+// null and the tooltip shows the formula, because there is no character to compute against. A
+// resolver that does not recognise a formula returns null and the token renders exactly as before.
 let TOKEN_RESOLVER = null;
 function tipTermHTML(label, formula) {
   const hit = TOKEN_RESOLVER ? TOKEN_RESOLVER(label, formula) : null;
-  const shown = hit ? hit.value : label;
   const tip = hit ? hit.explain : formula;
-  return `<span class="tip-term${hit ? " resolved" : ""}" tabindex="0" title="${esc(tip)}">${esc(shown)}<sup class="tip-mark">&#9432;</sup>` +
+  return `<span class="tip-term${hit ? " resolved" : ""}" tabindex="0" title="${esc(tip)}">${esc(label)}<sup class="tip-mark">&#9432;</sup>` +
     `<span class="term-tip" role="tooltip">${esc(tip)}</span></span>`;
 }
 

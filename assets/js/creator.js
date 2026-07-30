@@ -182,29 +182,29 @@ function tokenResolver(d) {
     [new RegExp(`^(\\d+)\\s*\\+\\s*proficiency bonus\\s*\\+\\s*${ABIL_RE} modifier`, "i"), (m) => {
       const a = modOf(m[2]); if (!a) return null;
       const v = Number(m[1]) + d.prof + a.mod;
-      return { value: v, explain: `${m[1]} + proficiency ${sign(d.prof)} + ${a.name} ${sign(a.mod)} = ${v}` };
+      return { value: v, explain: `${v} for you — ${m[1]} + proficiency ${sign(d.prof)} + ${a.name} ${sign(a.mod)}` };
     }],
     // "d20 + proficiency bonus + Intelligence modifier" (either order) — a to-hit.
     [new RegExp(`^d20\\s*\\+\\s*(?:proficiency bonus\\s*\\+\\s*${ABIL_RE} modifier|${ABIL_RE} modifier\\s*\\+\\s*proficiency bonus)`, "i"), (m) => {
       const a = modOf(m[1] || m[2]); if (!a) return null;
       const v = d.prof + a.mod;
-      return { value: "d20 " + sign(v), explain: `d20 + proficiency ${sign(d.prof)} + ${a.name} ${sign(a.mod)} — so roll d20 ${sign(v)}` };
+      return { value: sign(v), explain: `roll d20 ${sign(v)} — proficiency ${sign(d.prof)} + ${a.name} ${sign(a.mod)}` };
     }],
     // The Scaling Uses ladder (MECHANICS §2.2).
     [/at levels 1-4/i, () => ({
       value: d.scalingUses,
-      explain: `${d.scalingUses} at level ${d.level} — the ladder is 1 at levels 1-4, 2 at 5-10, 3 at 11-16, 4 at 17+`,
+      explain: `${d.scalingUses} for you at level ${d.level} — the ladder is 1 at levels 1-4, 2 at 5-10, 3 at 11-16, 4 at 17+`,
     })],
     // "proficiency bonus + Constitution modifier" with nothing in front of it.
     [new RegExp(`^proficiency bonus\\s*\\+\\s*${ABIL_RE} modifier`, "i"), (m) => {
       const a = modOf(m[1]); if (!a) return null;
       const v = d.prof + a.mod;
-      return { value: v, explain: `proficiency ${sign(d.prof)} + ${a.name} ${sign(a.mod)} = ${v}` };
+      return { value: v, explain: `${v} for you — proficiency ${sign(d.prof)} + ${a.name} ${sign(a.mod)}` };
     }],
     // "2 + your Sandow level"
     [/^(\d+)\s*\+\s*your \w[\w-]* level/i, (m) => {
       const v = Number(m[1]) + d.level;
-      return { value: v, explain: `${m[1]} + your level (${d.level}) = ${v}` };
+      return { value: v, explain: `${v} for you — ${m[1]} + your level (${d.level})` };
     }],
     // "set from your stats on your character sheet" — the ability is named in the label, and the
     // formula sometimes carries a floor ("minimum 1").
@@ -216,7 +216,7 @@ function tokenResolver(d) {
       const v = floor ? Math.max(Number(floor[1]), raw) : raw;
       return {
         value: v,
-        explain: `your ${a.name} modifier ${sign(raw)}${floor && v !== raw ? `, raised to the minimum of ${floor[1]}` : ""} = ${v}`,
+        explain: `${v} for you — your ${a.name} modifier ${sign(raw)}${floor && v !== raw ? `, raised to the minimum of ${floor[1]}` : ""}`,
       };
     }],
   ];

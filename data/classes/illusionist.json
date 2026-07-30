@@ -134,7 +134,7 @@
       "name": "Misdirection",
       "role": "combat",
       "description": "The audience looks where you tell it to. Once on each of your turns, immediately after you cast a trick, you can move up to 10 feet without provoking opportunity attacks. This movement costs no action and does not use your movement for the turn — every eye in the room is on the thing you just did, and none of them are on your feet.",
-      "sheetSummary": "1/turn, immediately after casting a trick: move up to 10 ft without provoking opportunity attacks. Costs no action and doesn't use your movement.",
+      "sheetSummary": "Immediately after casting a trick: move up to 10 ft without provoking opportunity attacks. Costs no action and doesn't use your movement.",
       "narration": "The whole room is watching the hand you wanted it to watch. You are somewhere else by the time anybody thinks to check the rest of you.",
       "meta": {
         "action": "Free (after casting)",
@@ -159,7 +159,7 @@
       "name": "Did You See That?",
       "role": "combat",
       "description": "You have something to do on other people's turns. When a creature you can see within 60 feet makes an attack roll, you can use your reaction and spend 1 Phantasm to put something in the corner of its eye at exactly the wrong moment: it has disadvantage on that attack roll. You must decide before the roll is made. This uses the same single reaction as your Parry, so on any given round you are choosing between defending yourself and spoiling someone else's swing.",
-      "sheetSummary": "Reaction, 60 ft, costs 1 Phantasm, declared before the roll. A creature you can see has disadvantage on that attack roll. Uses the same single reaction as Parry.",
+      "sheetSummary": "Declared before the roll. A creature you can see has disadvantage on that attack roll. Uses the same single reaction as Parry.",
       "narration": "Something moves at the edge of its vision — a shape, a face, a flicker of motion that resolves into nothing at all. It is a tenth of a second of doubt, and it arrives while the blade is already moving.",
       "meta": {
         "action": "Reaction",
@@ -184,7 +184,7 @@
       "name": "Vivid Cruelty",
       "role": "combat",
       "description": "Your phantasms have stopped being pictures. When a creature fails a saving throw against one of your tricks that deals psychic damage, it also has disadvantage on the next attack roll it makes before the end of its next turn. This applies at most once per turn, however many creatures fail.",
-      "sheetSummary": "1/turn. A creature that fails a save against one of your psychic-damage tricks also has disadvantage on its next attack roll before the end of its next turn.",
+      "sheetSummary": "A creature that fails a save against one of your psychic-damage tricks also has disadvantage on its next attack roll before the end of its next turn.",
       "narration": "It is not the pain, it is the detail. Whatever you showed them is still there when they blink, and their next swing goes wide because half of them is still looking at it.",
       "meta": {
         "action": "Passive",

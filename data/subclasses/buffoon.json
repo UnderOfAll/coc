@@ -10,7 +10,7 @@
       "name": "Take the Fall",
       "role": "combat",
       "description": "When an attack **hits** an ally within 10 feet of you, you can use your reaction to get in the way. This resolves after the attack has already hit: **nothing is re-rolled and your own AC never comes into it** — the blow was always going to land, and you are only deciding who it lands on. You take the damage in your ally's place, and you take **half** of it. Because your reaction is spent doing this, you cannot Parry the same blow, and this never counts as a Parry.",
-      "sheetSummary": "Reaction, 10 ft. When an attack hits an ally you take it instead, at HALF damage. Its requirements and how it resolves are listed below.",
+      "sheetSummary": "When an attack hits an ally you take it instead, at HALF damage. Its requirements and how it resolves are listed below.",
       "narration": "You do not push anybody. You could not shift the strongman if you tried, and you have never once got there in time. What you do is trip — a beautifully judged, entirely deliberate accident that puts you in the path with your feet already going out from under you. The blow catches you on the way down instead of square on, and you ride it into the floor, roll through it, and come up talking. It is the oldest thing you know how to do: you have been falling over professionally since you were nine, and the whole craft of it is that the floor never gets you as hard as it should.",
       "meta": {
         "action": "Reaction",

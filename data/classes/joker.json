@@ -102,7 +102,7 @@
       "name": "Wild Card",
       "description": "As a bonus action, spend 1 Mayhem to draw a Wild Card: roll a d8 and immediately resolve the matching result below, with no further action needed. Any saving throw listed is a Charisma saving throw against your gambit DC. Drawing costs a bonus action and 1 Mayhem, so it happens at most once per turn.",
       "narration": "You draw off the top without looking and let the deck decide what happens next. So does everyone else. The card turns over, the room finds out together, and for one second you are as surprised as anybody — you just hide it better.",
-      "sheetSummary": "Bonus action, 1/turn, 1 Mayhem. Roll a d8 and resolve the matching result. Saves listed are Charisma saves vs {{gambit DC|8 + proficiency bonus + Charisma modifier}}.",
+      "sheetSummary": "Roll a d8 and resolve the matching result. Saves listed are Charisma saves vs {{gambit DC|8 + proficiency bonus + Charisma modifier}}.",
       "options": [
         {
           "roll": 1,
@@ -158,7 +158,7 @@
       "name": "Chaotic Parry",
       "description": "Once per turn when you Parry, after seeing the result, you may spend 1 Mayhem to reroll your Parry d20 — you must use the new roll, even if it is worse. Every Parry of yours narrates as a lunatic, last-second contortion rather than a clean block; the crowd can never tell whether it was skill or dumb luck.",
       "narration": "Your defence is not a block. It is a stumble, a duck that turns into a spin, a hand thrown up at the last possible instant — and when it looks like it went badly you simply refuse the result and flail your way into a better one. Nobody can tell whether you meant any of it. Neither can you.",
-      "sheetSummary": "1/turn, 1 Mayhem. After seeing your Parry result, reroll the Parry d20. You must use the new roll even if it is worse.",
+      "sheetSummary": "After seeing your Parry result, reroll the Parry d20. You must use the new roll even if it is worse.",
       "meta": {
         "action": "When you Parry",
         "cost": "1 Mayhem",
@@ -197,7 +197,7 @@
       "name": "Gambit",
       "description": "As a bonus action, spend 1 Mayhem to attempt a Gambit — a small, rule-bending trick. Choose one:",
       "narration": "You try something the fight has no rule for. It is fast, it is cheap, it is beneath you, and the moment it works everyone watching hates that it worked.",
-      "sheetSummary": "Bonus action, 1/turn, 1 Mayhem, 30 ft. Choose one Gambit below. Charisma save vs {{gambit DC|8 + proficiency bonus + Charisma modifier}}.",
+      "sheetSummary": "Choose one Gambit below. Charisma save vs {{gambit DC|8 + proficiency bonus + Charisma modifier}}.",
       "options": [
         {
           "name": "Switcheroo",
@@ -225,7 +225,7 @@
       "name": "Loaded Deck",
       "description": "The first time each turn you hit a creature with a finesse weapon you're proficient with, you can spend 1 Mayhem to deal an extra [[1d6]] damage of that weapon's damage type.\n\n**On a critical hit — whether it came up naturally on a 20 or was forced by Ace in the Hole — everything doubles together.** You double the weapon's damage dice as normal AND you double Loaded Deck's extra dice, because they are damage dice on the same attack. A natural 20 also means Loaded Deck costs you no Mayhem at all: the deck was already loaded.",
       "narration": "The card that leaves your hand is heavier than it has any right to be. It goes in past the guard at an angle a card should not hold, and the wound it opens is much worse than the sound it made.",
-      "sheetSummary": "1/turn, 1 Mayhem, on your first hit of the turn with a finesse weapon you're proficient with: extra [[1d6]] damage of that weapon's type. On ANY critical hit — natural 20 or forced by Ace in the Hole — the weapon's dice AND Loaded Deck's dice are both doubled. On a natural 20 it also costs no Mayhem.",
+      "sheetSummary": "On your first hit of the turn with a finesse weapon you're proficient with: extra [[1d6]] damage of that weapon's type. On ANY critical hit — natural 20 or forced by Ace in the Hole — the weapon's dice AND Loaded Deck's dice are both doubled. On a natural 20 it also costs no Mayhem.",
       "meta": {
         "action": "Part of Attack",
         "cost": "1 Mayhem",
@@ -238,7 +238,7 @@
       "name": "Contagious Panic",
       "description": "As an action, spend 2 Mayhem to unravel the nerve of up to two creatures you can see within 30 feet of you and within 10 feet of each other. Each must succeed on a Charisma saving throw against your gambit DC or have disadvantage on the next attack roll it makes before the start of your next turn. This deals no damage and imposes no condition beyond that single disadvantage — a moment of dread, not a stun.",
       "narration": "You say the one thing nobody in the room wanted said out loud, and you say it while smiling. Two of them catch it at once — the confidence goes out of their arms, and for the next few seconds neither is quite committing to anything.",
-      "sheetSummary": "Action, 2 Mayhem, 30 ft, up to 2 creatures within 10 ft of each other. Charisma save vs {{gambit DC|8 + proficiency bonus + Charisma modifier}} or disadvantage on the target's next attack roll before the start of your next turn. No damage, no other condition.",
+      "sheetSummary": "Up to 2 creatures within 10 ft of each other. Charisma save vs {{gambit DC|8 + proficiency bonus + Charisma modifier}} or disadvantage on the target's next attack roll before the start of your next turn. No damage, no other condition.",
       "meta": {
         "action": "Action",
         "cost": "2 Mayhem",
@@ -263,7 +263,7 @@
       "name": "Ace in the Hole",
       "description": "Once per turn, when you hit a creature with an attack using a finesse weapon you're proficient with, you can spend 2 Mayhem to treat the attack as a critical hit, doubling its damage dice as normal for a critical hit. This doesn't stack with an attack that was already a natural-20 critical hit — Ace in the Hole turns an ordinary hit into a showstopper, it doesn't make an already-crit hit bigger. Forcing the deck this hard leaves you exposed: until the start of your next turn, attack rolls against you have advantage.",
       "narration": "You force it. The strike goes exactly where nothing should be able to go, perfect and vicious and completely beyond what luck owed you — and the deck collects immediately. For the next few seconds you are wide open and everyone can see it, including you.",
-      "sheetSummary": "1/turn, 2 Mayhem, on a hit with a finesse weapon you're proficient with. Treat the attack as a critical hit (damage dice doubled). Doesn't stack with a natural-20 crit. Until the start of your next turn, attack rolls against you have advantage.",
+      "sheetSummary": "On a hit with a finesse weapon you're proficient with. Treat the attack as a critical hit (damage dice doubled). Doesn't stack with a natural-20 crit. Until the start of your next turn, attack rolls against you have advantage.",
       "meta": {
         "action": "Part of Attack",
         "cost": "2 Mayhem",

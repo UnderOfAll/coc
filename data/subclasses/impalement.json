@@ -11,7 +11,7 @@
       "role": "combat",
       "description": "As a bonus action, you can Mark one creature you can see — a cold read of its guard and rhythm. Until the end of your next turn, your thrown implements score a critical hit against the Marked creature on a roll of 19 or 20, and the first of your implements to hit it each turn deals extra damage equal to your {{Intelligence modifier|set from your stats on your character sheet}}. You can have only one creature Marked at a time; Marking a new one ends the old.",
       "narration": "You watch one of them for a moment — the guard, the rhythm, the tell in the shoulder before it commits. After that you are not really aiming any more; you are just waiting for the gap you already know is coming.",
-      "sheetSummary": "Bonus action, one creature at a time, within sight. Until the end of your next turn your thrown implements crit against it on a 19 or 20, and your first implement to hit it each turn deals extra damage equal to your {{Intelligence modifier|set from your stats on your character sheet}}.",
+      "sheetSummary": "One creature at a time, within sight. Until the end of your next turn your thrown implements crit against it on a 19 or 20, and your first implement to hit it each turn deals extra damage equal to your {{Intelligence modifier|set from your stats on your character sheet}}.",
       "meta": {
         "action": "Bonus Action",
         "uses": "1 creature at a time",

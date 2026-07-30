@@ -11,7 +11,7 @@
       "role": "combat",
       "description": "Your Clones don't break quietly. Whenever a creature destroys one of your Clones with an attack roll (including a Clone destroyed by an attack redirected onto it via Mirror Image, but never a Clone you destroy yourself through one of your own features), that creature must make a Dexterity saving throw against your {{save DC|8 + proficiency bonus + Constitution modifier}}. On a failed save, it takes [[1d6+Con]] psychic damage as shards of the shattered illusion rake across it, and it has disadvantage on the next attack roll it makes before the end of its next turn. On a successful save, it takes half as much damage and suffers no other effect. This triggers at most once per turn (no matter how many Clones are destroyed that turn) and requires no action or reaction from you to resolve.",
       "narration": "Your reflections do not break quietly. Whoever strikes one down is standing far too close when it goes — a hard bright spray of edges, all of them briefly showing that creature its own face, and then not.",
-      "sheetSummary": "Automatic, 1/turn, no action. When a creature destroys one of your Clones with an attack roll (never a Clone you destroy yourself), it makes a Dexterity save vs your {{save DC|8 + proficiency bonus + Constitution modifier}}. Fail: [[1d6+Con]] psychic and disadvantage on its next attack roll before the end of its next turn. Success: half damage only.",
+      "sheetSummary": "Automatic. When a creature destroys one of your Clones with an attack roll (never a Clone you destroy yourself), it makes a Dexterity save vs your {{save DC|8 + proficiency bonus + Constitution modifier}}. Fail: [[1d6+Con]] psychic and disadvantage on its next attack roll before the end of its next turn. Success: half damage only.",
       "meta": {
         "action": "Passive (auto)",
         "uses": "1 / turn",
@@ -47,7 +47,7 @@
       "role": "roleplay",
       "description": "A reflection doesn't have to stay in the glass. As an action, you can create a mirror-copy of a Small or smaller nonmagical object you have held within the last minute. The copy is identical to close inspection but is all surface: it shatters into harmless light if it takes any damage, and dissolves on its own after 1 hour. A forged key opens nothing and a forged coin won't survive a bite test — but for a swap, a con, or a decoy on a cushion, it is perfect. There is no limit on how often you do this — you can maintain **one** forgery at a time, and making a new one crumbles the old.",
       "narration": "A reflection does not have to stay in the glass. You lift a copy of something you were holding a moment ago — perfect down to the wear on the handle, flawless right up until anybody treats it like a real object.",
-      "sheetSummary": "Action, at will, 1 hour, one forgery at a time. Create a mirror-copy of a Small or smaller nonmagical object you held in the last minute: perfect to inspection, shatters on any damage.",
+      "sheetSummary": "At will, 1 hour, one forgery at a time. Create a mirror-copy of a Small or smaller nonmagical object you held in the last minute: perfect to inspection, shatters on any damage.",
       "meta": {
         "action": "Action",
         "uses": "At will, one at a time",
