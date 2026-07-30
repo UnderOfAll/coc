@@ -17,7 +17,7 @@
   "flavor": "You have been hit by a cannonball, a horse, and a man twice your size, and you got up every time. Mostly it is a matter of being told to.",
   "description": "You haul one ally you can see within range back into the act — a slap on the back, a hand up, a line delivered too fast to argue with. It regains [[2d6+Cha]] hit points. This is the only true healing in the circus: nobody else in the company can put hit points back, which is why a Buffoon is worth having. Casting this costs 1 Mirth, spent as you cast; like every costed Turn it generates none back.",
   "narration": "You are already talking before you reach them, and none of it is sympathetic. Somehow they are on their feet by the end of the sentence, insulted and breathing.",
-  "sheetSummary": "Action, 30 ft, cooldown 2, costs 1 Mirth. One ally regains [[2d6+Cha]] hit points.",
+  "sheetSummary": "One ally regains [[2d6+Cha]] hit points.",
   "classes": [
     "jester"
   ],

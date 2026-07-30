@@ -105,6 +105,35 @@ def _iter_optioned(obj):
             yield from _iter_optioned(v)
 
 
+# A trick's sheetSummary used to open with "Action, 30 ft, cooldown 2, costs 1 Mirth." — every one
+# of which the sheet and the trick page now render as its own at-a-glance chip, from the trick's own
+# castingTime/range/cooldown/engineCost fields. Restating them is duplication that goes stale the
+# moment one of those fields changes. Targeting ("10-ft radius burst", "one creature") is NOT this
+# and must stay: it is nowhere else.
+PREAMBLE_RES = [
+    re.compile(r"^(1\s+)?(action|bonus action|reaction)$", re.I),
+    re.compile(r"^\d+\s*(ft|feet)$", re.I),
+    re.compile(r"^(self|touch)$", re.I),
+    re.compile(r"^cooldown\s+\d+$", re.I),
+    re.compile(r"^costs?\s+\d+\s+\w+$", re.I),
+    re.compile(r"^concentration(\s+up\s+to\s+.+)?$", re.I),
+    re.compile(r"^once per combat$", re.I),
+]
+
+
+def lint_summary_preamble(obj, rel):
+    """A trick summary must not restate the meta chips the renderer builds from its own fields."""
+    out = []
+    summary = obj.get("sheetSummary") or ""
+    head = summary.split(". ")[0] if ". " in summary else summary
+    for part in (p.strip().rstrip(".") for p in head.split(",")):
+        if any(rx.match(part) for rx in PREAMBLE_RES):
+            out.append(f"summary preamble in {rel} ({obj.get('name')}): {part!r} — castingTime, range, "
+                       f"cooldown, engineCost and the Prestige tier already render as chips; "
+                       f"say only what they cannot (targeting, shape, requirements)")
+    return out
+
+
 def lint_inline_formulas(obj, rel):
     """Return a list of error strings for inline calculus found in prose (tokens exempt)."""
     out = []
@@ -170,6 +199,8 @@ def main():
                     if cat not in LINT_EXEMPT_CATEGORIES:
                         errors.extend(lint_inline_formulas(obj, rel))
                         errors.extend(lint_summary_duplication(obj, rel))
+                        if cat == "tricks":
+                            errors.extend(lint_summary_preamble(obj, rel))
                     obj["_file"] = rel
                     objs.append(obj)
                 files.append(rel)

@@ -3529,7 +3529,7 @@
       "duration": "Instantaneous",
       "description": "You peel a creature's own reflection off it, a half-second behind and a half-step wrong, and let it strike. Make a {{trick attack|d20 + proficiency bonus + your trick ability modifier}} against a creature you can see within range; on a hit it takes [[1d6]] psychic damage as its body flinches from a blow its eyes swear it already took. The after-image is a fleeting image with no substance: it is not a Clone, it occupies no space, it cannot be attacked or interacted with, and it is gone before your turn ends. Because this is an attack roll and not a saving throw, it can be parried like any other attack.",
       "narration": "You catch the edge of its own reflection and peel it off — a half-second behind, a half-step wrong — and let the copy swing. The blow it takes is one it has already watched itself take, and the body flinches from a wound that never opened.",
-      "sheetSummary": "Action, 30 ft. Ranged trick attack ({{trick attack|d20 + proficiency bonus + your trick ability modifier}}). Hit: [[1d6]] psychic. Scales at 5/11/17. Creates no Clone. Can be parried.",
+      "sheetSummary": "Ranged trick attack ({{trick attack|d20 + proficiency bonus + your trick ability modifier}}). Hit: [[1d6]] psychic. Scales at 5/11/17. Creates no Clone. Can be parried.",
       "classes": [
         "doppelganger"
       ],
@@ -3554,7 +3554,7 @@
       "flavor": "Nothing you did. The rope was always frayed, the flagstone was always loose, and this was always the moment.",
       "description": "You call the odds against one creature you can see within range and let them arrive. It makes a Dexterity saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure it takes [[2d6]] physical damage as something around it gives way — footing, fitting, its own weapon's grip — and it is knocked prone. On a success it takes half as much damage and stays on its feet. Casting this costs 1 Mirth, spent as you cast; like every costed Turn it generates none back.",
       "narration": "You do not touch it and you do not point. You just say something that turns out to be true a half-second later, and the world does the rest.",
-      "sheetSummary": "Action, 60 ft, cooldown 2, costs 1 Mirth. Dexterity save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[2d6]] physical and knocked prone. Success: half damage, not prone.",
+      "sheetSummary": "Dexterity save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[2d6]] physical and knocked prone. Success: half damage, not prone.",
       "classes": [
         "jester"
       ],
@@ -3580,7 +3580,7 @@
       "duration": "Instantaneous",
       "description": "You click your tongue at exactly the wrong moment, and the universe agrees with you. When a creature you can see within range makes an attack roll, ability check, or saving throw, you can force it to reroll and use the lower of the two results. You can use this trick after the original roll is seen but before its effect (hit or miss, success or failure) is determined.",
       "narration": "\"Ooh — unlucky,\" you say, tutting, at exactly the wrong moment. The universe, for reasons of its own, agrees with you.",
-      "sheetSummary": "Reaction, 60 ft, cooldown 2. Force a seen d20 roll (attack, check, or save) to be made twice; the lower result is used.",
+      "sheetSummary": "Force a seen d20 roll (attack, check, or save) to be made twice; the lower result is used.",
       "classes": [
         "jester"
       ],
@@ -3603,7 +3603,7 @@
       "duration": "Instantaneous",
       "description": "You snap a razor-edged card at a creature you can see within range. Make a {{trick attack|d20 + proficiency bonus + your trick ability modifier}} against the target; on a hit it takes [[1d6]] slashing damage. Because this is an attack roll and not a saving throw, it can be parried like any other attack.",
       "narration": "A flick of the wrist and the top card leaves the deck edge-first, humming as it goes. It should be paper. It arrives like a razor.",
-      "sheetSummary": "Action, 30 ft. Ranged trick attack ({{trick attack|d20 + proficiency bonus + your trick ability modifier}}). Hit: [[1d6]] slashing. Scales at 5/11/17. Can be parried.",
+      "sheetSummary": "Ranged trick attack ({{trick attack|d20 + proficiency bonus + your trick ability modifier}}). Hit: [[1d6]] slashing. Scales at 5/11/17. Can be parried.",
       "classes": [
         "joker"
       ],
@@ -3628,7 +3628,7 @@
       "save": "Wisdom",
       "description": "You throw the spotlight onto a pairing of your choosing. Choose one creature you can see within range and one other creature you can see — the one you want it dealing with. The target makes a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure, until the start of your next turn it must direct its next attack, trick, or other harmful single-target effect at the creature you named, if that creature is a legal target for it; if it is not, the effect simply lapses for that action. **This changes who it aims at, nothing else:** it makes its own attack roll against the named creature's AC as normal, and can miss, exactly as with the Puppeteer's Turncoat Strings. You cannot name yourself — the Jester books the act, he does not headline it.",
       "narration": "You gesture the way a ringmaster gestures, and the thing turns to look at whoever is standing at the end of your arm. It was going to hurt somebody anyway. Now it is going to hurt the one wearing armour.",
-      "sheetSummary": "Action, 60 ft, cooldown 3. Name a target and another creature you can see. Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or, until the start of your next turn, it must aim its next attack or harmful single-target effect at the creature you named, if legal. It still rolls its attack against that creature's AC as normal and can miss. You can never name yourself.",
+      "sheetSummary": "Name a target and another creature you can see. Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or, until the start of your next turn, it must aim its next attack or harmful single-target effect at the creature you named, if legal. It still rolls its attack against that creature's AC as normal and can miss. You can never name yourself.",
       "classes": [
         "jester"
       ],
@@ -3663,7 +3663,7 @@
           "effect": "On a failed save, the target is knocked prone."
         }
       ],
-      "sheetSummary": "Bonus action, 60 ft, cooldown 2. Requires a String on the target. Choose one: Disarm (Wis save or drop one held item of your choice) or Trip (Con save or knocked prone). Success: no effect.",
+      "sheetSummary": "Requires a String on the target. Choose one: Disarm (Wis save or drop one held item of your choice) or Trip (Con save or knocked prone). Success: no effect.",
       "classes": [
         "puppeteer"
       ],
@@ -3689,7 +3689,7 @@
       "save": "Constitution",
       "description": "You lay down a hand that should not exist — aces and eights, face up, in a fight nobody was playing cards in — and let its meaning land like a verdict. Choose one creature you can see within range. It makes a Constitution saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure it takes [[6d8]] psychic damage as the certainty of its own death arrives ahead of schedule, and it is stunned until the end of your next turn. On a success it takes half as much damage and is not stunned. Either way it is hurt: this is the biggest thing you do all fight, and it does not hinge on one roll.",
       "narration": "You deal it out onto whatever surface is nearest — a table, a crate, the floor between you — and you do not have to explain it. Everyone at a table knows that hand. So, somehow, does the thing you dealt it to.",
-      "sheetSummary": "Once per combat. Action, 30 ft, one creature, costs 4 Mayhem. Constitution save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[6d8]] psychic and stunned until the end of your next turn. Success: half damage, no stun.",
+      "sheetSummary": "One creature. Constitution save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[6d8]] psychic and stunned until the end of your next turn. Success: half damage, no stun.",
       "classes": [
         "joker"
       ],
@@ -3713,7 +3713,7 @@
       "concentration": true,
       "description": "Illusory afterimages of yourself flicker into being every time you move, blurring exactly where your real body is. Attack rolls against you have disadvantage for the duration, unless the attacker doesn't rely on sight to locate you (a blind attacker, or one with truesight or another sense that sees through the illusion) or can otherwise track you by a non-visual sense.",
       "narration": "Afterimages of you flicker off every movement, half a beat behind and slightly to the left. Which one is real is the wrong question; the right one is which one anybody is actually swinging at.",
-      "sheetSummary": "Bonus action, self, cooldown 3, concentration up to 1 min. Attack rolls against you have disadvantage (no effect on attackers who don't rely on sight, e.g. truesight or blind).",
+      "sheetSummary": "Attack rolls against you have disadvantage (no effect on attackers who don't rely on sight, e.g. truesight or blind).",
       "classes": [
         "illusionist"
       ],
@@ -3738,7 +3738,7 @@
       "save": "Dexterity",
       "description": "You throw a pinch of flash powder that bursts into a searing white flash in a 10-foot radius centered on a point you choose within range. Each creature in that area makes a Dexterity saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure, a creature is blinded until the end of its next turn. On a success, it is unaffected. The burst is light and noise, not fire — it deals no damage; it just takes the crowd's eyes away for a beat.",
       "narration": "A pinch between two fingers, a snap of the wrist, and the world goes white and orange for exactly as long as it takes you to be somewhere else.",
-      "sheetSummary": "Action, 30 ft, 10-ft radius burst, cooldown 3. Dex save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: blinded until end of its next turn. Success: no effect. Deals no damage.",
+      "sheetSummary": "10-ft radius burst. Dex save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: blinded until end of its next turn. Success: no effect. Deals no damage.",
       "classes": [
         "joker"
       ],
@@ -3763,7 +3763,7 @@
       "save": "Strength",
       "description": "You sever every String at once, and the recoil slams each stringed body against itself. Every creature you currently have a String attached to within range is wrenched by its own wire: each makes a Strength saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure, a creature takes [[3d8]] physical damage, is knocked prone, and is restrained until it or another creature uses an action to cut it free. On a success, it takes half as much damage and is neither knocked prone nor restrained. You must have at least two Strings attached to cast Grand Guignol, and when it resolves the String on every creature it targets detaches and is consumed at once — leaving you to re-establish your control from scratch.",
       "narration": "Every wire you have laid snaps taut at once. For one terrible instant every puppet on your stage moves exactly as you meant it to and then does not move again, and the wires come away empty.",
-      "sheetSummary": "Once per combat. Action, 60 ft. Requires 2+ Strings attached; detaches and consumes the String on every creature it hits. Every Stringed creature in range: Str save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[3d8]] physical, prone + restrained (escape = an action to cut it free). Success: half damage only.",
+      "sheetSummary": "Requires 2+ Strings attached; detaches and consumes the String on every creature it hits. Every Stringed creature in range: Str save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[3d8]] physical, prone + restrained (escape = an action to cut it free). Success: half damage only.",
       "classes": [
         "puppeteer"
       ],
@@ -3786,7 +3786,7 @@
       "duration": "Up to 1 minute",
       "description": "You conjure a harmless sound or image of an object no larger than a 5-foot cube within range - a burst of applause, a shimmering curtain, a shadow that looks like a second performer standing in the wings. The illusion has no substance and cannot deal damage, move on its own, or convincingly imitate a specific creature's voice or appearance beyond a rough silhouette. Any creature that uses its action to inspect the image can determine it is an illusion with a successful Intelligence (Investigation) check against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. The image lasts until you dismiss it (no action required), you move more than 30 feet from it, or its duration ends.",
       "narration": "A little something for the audience to hold on to while the other hand does the real work: a burst of applause from an empty corner, a curtain that is not there, a shadow crossing a doorway nobody is standing in.",
-      "sheetSummary": "Action, 30 ft. Harmless illusory sound or image (max 5-ft cube), up to 1 minute or until dismissed/out of range. No damage, no self-movement, no true creature mimicry. Investigation check vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} to see through on close inspection.",
+      "sheetSummary": "Harmless illusory sound or image (max 5-ft cube), up to 1 minute or until dismissed/out of range. No damage, no self-movement, no true creature mimicry. Investigation check vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} to see through on close inspection.",
       "classes": [
         "illusionist"
       ],
@@ -3812,7 +3812,7 @@
       "save": "Wisdom",
       "description": "You spend banked Mirth on a bit that takes the whole room at once. Each creature of your choice within a 15-foot radius of a point you can see within range that can hear and understand you makes a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure it takes [[2d8]] psychic damage; on a success it takes half as much. Casting this costs 3 Mirth, spent whether or not anybody fails, and you may freely exclude your own company from the area — nobody has ever been hurt by a joke they were in on.",
       "narration": "You have the whole room and you know it. Whatever you say next goes through every one of them at the same moment, and the ones who are not in on it come away genuinely hurt.",
-      "sheetSummary": "Action, 60 ft, 15-ft radius, cooldown 3, costs 3 Mirth. Creatures of your choice that can hear and understand you; allies can be excluded. Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[2d8]] psychic. Success: half damage.",
+      "sheetSummary": "15-ft radius. Creatures of your choice that can hear and understand you; allies can be excluded. Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[2d8]] psychic. Success: half damage.",
       "classes": [
         "jester"
       ],
@@ -3837,7 +3837,7 @@
       "save": "Wisdom",
       "description": "You take one creature that can see and hear you within range through the old parlour routine — the voice, the count, the slow hand — and its shoulders come down. The target makes a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure it is charmed by you until the end of its next turn: its speed becomes 0 and it cannot take actions or reactions, though it is fully aware and remembers everything afterwards. **Any damage ends the effect immediately**, so it removes a creature from the fight only for as long as your allies leave it alone — waking it is always an option and often the right one.",
       "narration": "The voice does the work. Their weapon lowers, their weight settles, and for a few seconds they stand in the middle of a fight looking mildly interested in nothing at all.",
-      "sheetSummary": "Action, 30 ft, cooldown 3. Target must see and hear you. Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or charmed until the end of its next turn: speed 0, no actions or reactions, still aware. ANY damage ends it immediately.",
+      "sheetSummary": "Target must see and hear you. Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or charmed until the end of its next turn: speed 0, no actions or reactions, still aware. ANY damage ends it immediately.",
       "classes": [
         "illusionist"
       ],
@@ -3863,7 +3863,7 @@
       "duration": "Up to 1 minute",
       "description": "You conjure a near-invisible puppet hand, hung on wires, in an unoccupied space you can see within range. It lasts for the duration, until you dismiss it (no action required), or until it ends up more than 30 feet from you. As a bonus action on your turn you can direct the hand: it flies up to 30 feet and manipulates one object — open an unlocked door or container, stow or retrieve an item, pour a flask, pull a lever, or carry an object weighing up to 10 pounds. The hand cannot attack, cannot activate magic items, and cannot wield a weapon or move a creature or anything a creature is holding.",
       "narration": "A hand that is not there, hung on wires you never quite show the audience, doing the small work at a distance — lifting a latch, sliding a bolt, carrying a cup — while both of yours stay visibly, innocently empty.",
-      "sheetSummary": "Action, 30 ft. Conjure a spectral puppet hand (up to 1 min, dismiss free). Bonus action to move it up to 30 ft and manipulate an object: open/carry (max 10 lb), stow/retrieve, pour, pull a lever. No attacks, no magic items, cannot affect creatures or held items.",
+      "sheetSummary": "Conjure a spectral puppet hand (up to 1 min, dismiss free). Bonus action to move it up to 30 ft and manipulate an object: open/carry (max 10 lb), stow/retrieve, pour, pull a lever. No attacks, no magic items, cannot affect creatures or held items.",
       "classes": [
         "puppeteer"
       ],
@@ -3888,7 +3888,7 @@
       "duration": "10 minutes",
       "description": "You wrap yourself in a small illusion of bearing and reputation — a borrowed title, a fresh face, an unearned air of importance. For the duration, you have advantage on Charisma (Deception) and Charisma (Performance) checks, and your voice and appearance seem subtly different (the color of your eyes, the cut of your clothes, small mannerisms) to anyone who hasn't already seen through the act. This trick cannot make you pass for a specific individual.",
       "narration": "You throw your arms wide and borrow a reputation you never earned. For the length of the introduction you are precisely who the room needs you to be, and nobody thinks to check.",
-      "sheetSummary": "Action, self, cooldown 1, 10 minutes. Advantage on Deception and Performance checks; minor cosmetic disguise (not impersonation of a specific person).",
+      "sheetSummary": "Advantage on Deception and Performance checks; minor cosmetic disguise (not impersonation of a specific person).",
       "classes": [
         "jester"
       ],
@@ -3913,7 +3913,7 @@
       "save": "Strength",
       "description": "You haul on the String fixed to a creature you have a String attached to within range, dragging its body where you want it and pinning it there as a living barricade. The target makes a Strength saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure, you drag it up to 15 feet — through spaces it could normally move through, without provoking opportunity attacks — to an unoccupied space of your choice, where it is restrained until the start of your next turn. While it is pinned this way its body is a shield: any creature has half cover against an attack or effect whose path passes through the meat shield's space. On a success, the wire snaps — the String detaches and nothing else happens. You must already have a String attached to the target to use this trick.",
       "narration": "Why stop a blade when you can stand someone else in front of it? You haul on the wire and drag the nearest unwilling volunteer into the space you did not want to occupy, and there they stay.",
-      "sheetSummary": "Bonus action, 60 ft, cooldown 3. Requires a String on the target. Str save. Fail: drag it up to 15 ft (no opportunity attacks) to a space you choose; it is restrained until the start of your next turn and its body grants half cover to anyone behind it. Success: the String detaches, no effect.",
+      "sheetSummary": "Requires a String on the target. Str save. Fail: drag it up to 15 ft (no opportunity attacks) to a space you choose; it is restrained until the start of your next turn and its body grants half cover to anyone behind it. Success: the String detaches, no effect.",
       "classes": [
         "puppeteer"
       ],
@@ -3939,7 +3939,7 @@
       "save": "Wisdom",
       "description": "You leave something behind in a creature's head and let it work on its own. The target makes a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}; on a success nothing happens and the trick ends. On a failure the horror settles in: at the start of each of its turns it takes [[1d8]] psychic damage, and at the end of each of its turns it may repeat the saving throw, ending the effect on itself on a success. Because the target rolls against you again and again, this is the trick that keeps a Nightmare's other features fed.",
       "narration": "You put it there and then you walk away and talk to somebody else. It comes back to them at the worst moment of every round, and each time it costs them something.",
-      "sheetSummary": "Action, 60 ft, cooldown 3, concentration up to 1 min. Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or: [[1d8]] psychic at the start of each of its turns, repeating the save at the end of each of its turns to end it.",
+      "sheetSummary": "Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or: [[1d8]] psychic at the start of each of its turns, repeating the save at the end of each of its turns to end it.",
       "classes": [
         "illusionist"
       ],
@@ -3966,7 +3966,7 @@
       "duration": "1 round",
       "description": "You vanish behind a snap of silk and misdirection, becoming invisible until the start of your next turn or until you make an attack roll, force a saving throw, or force an ability check, whichever comes first. As part of casting this, you may also move up to 10 feet without provoking opportunity attacks — the last thing anyone saw of you was already the wrong direction. This is misdirection, not true invisibility, and it can be beaten by simply watching you properly: each creature that can see you at the moment you cast it makes a Wisdom (Perception) check against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. **If any one of them succeeds, the trick ends immediately for everybody** — they call out where you went, the room's eyes follow, and you are simply standing there. One person seeing through it is enough; there is never a state where you are hidden from some creatures and not others.",
       "narration": "The curtain drops for exactly one second. When it lifts you are not where anyone is looking — until somebody who was watching your feet instead of your hands points and shouts, and then the whole room is looking at you again.",
-      "sheetSummary": "Bonus action, self, cooldown 3. Invisible until the start of your next turn or until you attack or force a save or check; may move 10 ft without provoking as part of the trick. Each creature that can SEE you cast it makes a Wisdom (Perception) check vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} — ANY success ends it for everyone. Never partial: you are hidden from all of them or none.",
+      "sheetSummary": "Invisible until the start of your next turn or until you attack or force a save or check; may move 10 ft without provoking as part of the trick. Each creature that can SEE you cast it makes a Wisdom (Perception) check vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} — ANY success ends it for everyone. Never partial: you are hidden from all of them or none.",
       "classes": [
         "illusionist"
       ],
@@ -3989,7 +3989,7 @@
       "duration": "Instantaneous",
       "description": "Your empty hand produces something with an edge and sends it on its way in the same motion. Make a {{trick attack|d20 + proficiency bonus + Intelligence modifier}} against a creature you can see within range; on a hit it takes [[1d8]] psychic damage from a wound it cannot account for and will not find afterwards. Because this is an attack roll rather than a saving throw, it can be parried like any other attack — and because it is a Pledge, your Palmed feature lets you throw it inside a Turn you were casting anyway.",
       "narration": "The hand was open. You are certain the hand was open. Then there is a flick of the wrist, a sound like a card being dealt, and something is very wrong under your collarbone.",
-      "sheetSummary": "Action, 30 ft. Ranged trick attack ({{your trick attack|d20 + proficiency bonus + Intelligence modifier}}). Hit: [[1d8]] psychic. Scales at 5/11/17. Can be parried.",
+      "sheetSummary": "Ranged trick attack ({{your trick attack|d20 + proficiency bonus + Intelligence modifier}}). Hit: [[1d8]] psychic. Scales at 5/11/17. Can be parried.",
       "classes": [
         "illusionist"
       ],
@@ -4016,7 +4016,7 @@
       "save": "Constitution",
       "description": "When a Clone of yours is destroyed — by an attack, by Mirror Image, by Decoy Detonation, or by any other means — you can flood the space it occupied with a last flare of false light. Each creature within 5 feet of the Clone's former space must succeed on a Constitution saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or be blinded until the end of its next turn. If several of your Clones are destroyed at the same instant — a failed Mirror Image gamble takes every Clone you committed — this still triggers only once, and you choose which of their spaces flares. This trick does not create, spend, or restore any Clones on its own — it only triggers off a Clone that is already being destroyed some other way.",
       "narration": "The Clone does not just fall. It goes out in a last hard flare of stagelight, and whoever put it down is left blinking at a white afterimage where a person used to be.",
-      "sheetSummary": "Reaction when a Clone is destroyed (any cause), 5 ft, cooldown 2. Con save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or blinded until end of its next turn. Several Clones dying at once still trigger it only once — you choose whose space flares. Doesn't cost or grant Clones.",
+      "sheetSummary": "Reaction when a Clone is destroyed (any cause). Con save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or blinded until end of its next turn. Several Clones dying at once still trigger it only once — you choose whose space flares. Doesn't cost or grant Clones.",
       "classes": [
         "doppelganger"
       ],
@@ -4042,7 +4042,7 @@
       "save": "Wisdom",
       "description": "You land a joke so devastatingly funny that one creature you can see within range doubles over. It must succeed on a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or collapse in helpless laughter, resolved exactly as below. A creature immune to being charmed automatically succeeds, and a creature that cannot hear or cannot understand you is unaffected.",
       "narration": "You tell the joke you have been saving all night, and it lands like a hammer. They fold in half laughing, hating it, entirely unable to stop.",
-      "sheetSummary": "Action, 30 ft, cooldown 3, concentration up to 1 minute. One creature: Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or helpless laughter. Resolution below.",
+      "sheetSummary": "One creature: Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or helpless laughter. Resolution below.",
       "classes": [
         "jester"
       ],
@@ -4083,7 +4083,7 @@
       "save": "Wisdom",
       "description": "You point at a creature you can see within range, and for one vivid instant it feels exactly what a blade sliding between its ribs would feel like. The target must succeed on a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or take [[1d8]] psychic damage, flinching from a wound that was never there. On a success, the target takes no damage.",
       "narration": "There is no blade in your hand. You point anyway, and somewhere three rows back a body doubles over clutching a rib that has not been touched, entirely convinced.",
-      "sheetSummary": "Action, 60 ft. Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[1d8]] psychic damage. Success: no effect.",
+      "sheetSummary": "Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[1d8]] psychic damage. Success: no effect.",
       "classes": [
         "illusionist"
       ],
@@ -4107,7 +4107,7 @@
       "flavor": "The call every company knows. Wherever they were standing, they are standing somewhere better one second later.",
       "description": "You call the company to their marks. Each ally of your choice within range may immediately use its reaction to move up to half its speed without provoking opportunity attacks. An ally with no reaction available simply does not move. Casting this costs 1 Mirth, spent as you cast; like every costed Turn it generates none back.",
       "narration": "One word, pitched to carry, in the voice that means it. Nobody argues with it and nobody is where they were.",
-      "sheetSummary": "Action, 30 ft, cooldown 3, costs 1 Mirth. Each ally of your choice may immediately use its reaction to move up to half its speed without provoking opportunity attacks. No reaction, no move.",
+      "sheetSummary": "Each ally of your choice may immediately use its reaction to move up to half its speed without provoking opportunity attacks. No reaction, no move.",
       "classes": [
         "jester"
       ],
@@ -4134,7 +4134,7 @@
       "duration": "1 minute",
       "description": "You detonate a charge of colored smoke, filling a 15-foot cube within range with a thick, drifting haze that heavily obscures the area for the duration or until a strong wind (such as one created by a Strength check or a trick) disperses it. You can see through this smoke without penalty; every other creature treats it as any other heavily obscuring smoke.",
       "narration": "One second you are standing there. The next there is a great deal of coloured smoke and a faint, receding laugh.",
-      "sheetSummary": "Action, 60 ft, 15-ft cube, cooldown 2, 1 min. Heavily obscures the area for everyone except you. Dispersible by strong wind.",
+      "sheetSummary": "15-ft cube. Heavily obscures the area for everyone except you. Dispersible by strong wind.",
       "classes": [
         "joker"
       ],
@@ -4159,7 +4159,7 @@
       "save": "Strength",
       "description": "You wrench hard on a String already fixed to a creature you can see within range, forcing its own limbs to whip against itself. The target makes a Strength saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure, it takes [[2d6]] physical damage and is knocked prone. On a success, it takes half as much damage and stays standing. You must already have a String attached to the target to use this trick.",
       "narration": "The wire goes taut and a body that was never truly its own snaps forward, whipping its own limbs against itself before slamming down flat.",
-      "sheetSummary": "Action, 60 ft, cooldown 2. Requires a String already on the target. Str save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[2d6]] physical, prone. Success: half damage only.",
+      "sheetSummary": "Requires a String already on the target. Str save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[2d6]] physical, prone. Success: half damage only.",
       "classes": [
         "puppeteer"
       ],
@@ -4183,7 +4183,7 @@
       "duration": "1 hour",
       "description": "You reshape your face, voice, and build into those of a specific Small or Medium humanoid you have seen before, or into a generic member of a humanoid race you have seen. Your clothing and gear don't change in appearance, but you can present them as part of the disguise. A creature that interacts with you can see through the disguise only if it succeeds on an Intelligence (Investigation) check against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. The disguise ends early if you attack, cast another trick with a visible Flourish, or dismiss it yourself (no action).",
       "narration": "Your face reorganises itself around somebody else's — the build, the voice, the way they hold their shoulders when they are tired. The clothes are still yours; the room stops noticing.",
-      "sheetSummary": "Action, self, cooldown 2, 1 hour. Disguises you as a specific or generic humanoid seen before. Investigation check vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} to see through. Ends on attacking or casting another visible-Flourish trick.",
+      "sheetSummary": "Disguises you as a specific or generic humanoid seen before. Investigation check vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} to see through. Ends on attacking or casting another visible-Flourish trick.",
       "classes": [
         "doppelganger"
       ],
@@ -4208,7 +4208,7 @@
       "save": "Wisdom",
       "description": "You conjure a flickering reflection of a creature you can see within range, twisted into a vision of its own mortal wound. The target makes a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure, it takes [[2d6]] psychic damage as its mind flinches from damage that was never real. On a success, it takes half as much damage.",
       "narration": "You show it a version of itself already broken, held up like a mirror at the wrong angle, and for one sick instant its own body believes the picture and starts hurting where the reflection is open.",
-      "sheetSummary": "Action, 60 ft, cooldown 2. Wis save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[2d6]] psychic. Success: half damage.",
+      "sheetSummary": "Wis save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[2d6]] psychic. Success: half damage.",
       "classes": [
         "doppelganger"
       ],
@@ -4232,7 +4232,7 @@
       "duration": "Instantaneous",
       "description": "You gesture at a creature you can see within range, and fate quietly turns against it. Choose one creature within range; the next attack roll or ability check it makes before the start of your next turn is made with disadvantage. This has no effect on saving throws — for those, see your Gambit's Jinx.",
       "narration": "You palm the card it needed and hand back one that guarantees it loses. Nothing visible happens. It simply has a worse next few seconds than it was expecting.",
-      "sheetSummary": "Bonus action, 30 ft, cooldown 2. Target's next attack roll or ability check before the start of your next turn is made with disadvantage. Does not affect saving throws.",
+      "sheetSummary": "Target's next attack roll or ability check before the start of your next turn is made with disadvantage. Does not affect saving throws.",
       "classes": [
         "joker"
       ],
@@ -4257,7 +4257,7 @@
       "duration": "1 round",
       "description": "You call a quiet promise to an ally: no fall is final tonight. Choose one ally you can see within range. It gains [[1d6]] temporary hit points, and until the start of your next turn it has advantage on saving throws against being frightened or charmed. Casting this costs 1 Mirth, spent as you cast; like every costed Turn it generates none back.",
       "narration": "There is always a net under the wire. Tonight it is you — a quiet promise called across the room to someone who is about to need it.",
-      "sheetSummary": "Bonus action, 30 ft, cooldown 2, costs 1 Mirth. Chosen ally gains [[1d6]] temporary hit points and advantage on saves vs frightened/charmed until the start of your next turn.",
+      "sheetSummary": "Chosen ally gains [[1d6]] temporary hit points and advantage on saves vs frightened/charmed until the start of your next turn.",
       "classes": [
         "jester"
       ],
@@ -4279,7 +4279,7 @@
       "duration": "Up to 1 hour",
       "description": "You perform a small feat of stage magic within range. You can produce a trivial effect: palm or vanish an object small enough to hide in one hand, make a coin walk across your knuckles and reappear anywhere within range, light or snuff a candle, chill or warm a mouthful of food, soil or clean an object, or create a harmless sensory flourish such as a puff of coloured smoke, a burst of confetti, or a single sour note from nowhere. The effect ends when you dismiss it, when you cast this trick again, or after 1 hour. It can never deal damage, and it can never move a creature or anything a creature is holding.",
       "narration": "Hands move, and something small stops being where everyone was looking. A coin walks your knuckles and reappears across the room, a candle gutters out, confetti happens for no reason. It is the first thing any performer learns and the last thing anyone catches you doing.",
-      "sheetSummary": "Action, 10 ft. Trivial stage-magic effect: vanish/palm a hand-sized object, move a coin, light or snuff a flame, clean or soil, minor sensory flourish. Up to 1 hour. No damage. Cannot affect creatures or held items.",
+      "sheetSummary": "Trivial stage-magic effect: vanish/palm a hand-sized object, move a coin, light or snuff a flame, clean or soil, minor sensory flourish. Up to 1 hour. No damage. Cannot affect creatures or held items.",
       "classes": [
         "illusionist",
         "jester",
@@ -4307,7 +4307,7 @@
       "concentration": true,
       "description": "You fill a 20-foot cube within range with a bank of illusory smoke and drifting false reflections. The area becomes heavily obscured for as long as you concentrate on this trick. The smoke has no substance - it doesn't impede movement and can't be dispersed by wind - and creatures relying on darkvision see only more illusory smoke, not through it. You may designate any number of creatures, including yourself, that see the area normally instead, letting you use the cloud as cover for yourself and your allies while it blinds everyone else.",
       "narration": "Fog rolls in and mirrors unfold out of nowhere, and suddenly nobody in the room — including the people you brought — is sure what they are looking at.",
-      "sheetSummary": "Action, 60 ft, cooldown 2, concentration up to 10 min. Fills a 20-ft cube with illusory heavily-obscuring smoke (no wind dispersal, ignores darkvision); you may designate chosen creatures to see through it normally.",
+      "sheetSummary": "Fills a 20-ft cube with illusory heavily-obscuring smoke (no wind dispersal, ignores darkvision); you may designate chosen creatures to see through it normally.",
       "classes": [
         "illusionist"
       ],
@@ -4332,7 +4332,7 @@
       "save": "Wisdom",
       "description": "You put a single vivid, wrong thing at a creature's shoulder — a shape, a breath, a hand closing — and let its own nerves do the work. The target makes a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure it takes [[2d6]] psychic damage as the fright goes through it like a shock; on a success it takes half as much. This is plain, reliable damage with no rider attached — it always works the same way, which is exactly what it is for.",
       "narration": "Your eyes flick to a point just past their shoulder and your face does something honest. Whatever they turn to find is already gone, and the jolt of it hits them somewhere under the ribs.",
-      "sheetSummary": "Action, 60 ft, cooldown 2. Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[2d6]] psychic. Success: half damage. No rider.",
+      "sheetSummary": "Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[2d6]] psychic. Success: half damage. No rider.",
       "classes": [
         "illusionist"
       ],
@@ -4358,7 +4358,7 @@
       "save": "Wisdom",
       "description": "You plant a single, perfectly convincing image of its own doom in one creature's mind within range. The target must make a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure, it is frightened of you for the duration and, on each of its turns while frightened this way, must use its action to move as far away from you as it can by the safest available route, unless there is nowhere safer to move. A frightened target can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success. On a success, the target is unaffected.",
       "narration": "You show them, for one heartbeat, exactly how badly this could go for them. Nothing about it is real. Their body does not care.",
-      "sheetSummary": "Action, 60 ft, cooldown 2, concentration up to 1 min. Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: frightened, must use its action to flee each turn; repeats save at end of each turn. Success: no effect.",
+      "sheetSummary": "Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: frightened, must use its action to flee each turn; repeats save at end of each turn. Success: no effect.",
       "classes": [
         "illusionist"
       ],
@@ -4382,7 +4382,7 @@
       "duration": "Instantaneous",
       "description": "You call out the number before the dice even settle. When an ally you can see within range is about to make an attack roll, ability check, or saving throw, you can roll a d20 and have the ally use your result in place of its own (the ally still adds any modifiers it would normally apply). You must commit to using this trick before the ally's roll is revealed, and once you do, the ally must use your roll instead of its own, for better or worse.",
       "narration": "\"Watch this,\" you mutter, and hand your own good fortune across the ring like a lifted pocket watch. It works. It always works. You just do not have it any more.",
-      "sheetSummary": "Reaction, 30 ft, cooldown 2. Before an ally's attack roll, check, or save is revealed, roll a d20; the ally uses your d20 result (plus its own modifiers) instead of its own die.",
+      "sheetSummary": "Before an ally's attack roll, check, or save is revealed, roll a d20; the ally uses your d20 result (plus its own modifiers) instead of its own die.",
       "classes": [
         "jester"
       ],
@@ -4405,7 +4405,7 @@
       "duration": "Instantaneous",
       "description": "You and one willing creature you can see within range instantly trade places, each appearing in the space the other just left and facing however you choose. Neither of you provokes opportunity attacks from the exchange, and neither of you can be moved into a space that would not hold you. This is the Trickster's answer to a companion standing in the wrong place: pull the wounded one out of reach and put yourself, or somebody better armoured, where the trouble already is.",
       "narration": "Two quick gestures and a step that goes nowhere, and the pair of you are simply standing where the other one was. Nobody sees the move, including the person you moved.",
-      "sheetSummary": "Action, 30 ft, cooldown 3. You and one willing creature you can see instantly swap places. Neither provokes opportunity attacks; neither can arrive in a space that wouldn't hold them.",
+      "sheetSummary": "You and one willing creature you can see instantly swap places. Neither provokes opportunity attacks; neither can arrive in a space that wouldn't hold them.",
       "classes": [
         "illusionist"
       ],
@@ -4432,7 +4432,7 @@
       "flavor": "Falling over is not the failure. Falling over is the bit. The failure would be staying down.",
       "description": "You turn the whole miserable situation into the routine you have done a thousand times. Each ally of your choice within range gains [[2d6]] temporary hit points, and any of them that is prone may stand up without spending movement. Casting this costs 2 Mirth, spent as you cast; like every costed Turn it generates none back.",
       "narration": "You take the worst thing happening to your friends and play it as though it were scripted — and it works, because they would rather be in on the joke than under it.",
-      "sheetSummary": "Action, 30 ft, cooldown 3, costs 2 Mirth. Each ally of your choice gains [[2d6]] temporary hit points, and any of them that is prone may stand without spending movement.",
+      "sheetSummary": "Each ally of your choice gains [[2d6]] temporary hit points, and any of them that is prone may stand without spending movement.",
       "classes": [
         "jester"
       ],
@@ -4461,7 +4461,7 @@
       "flavor": "Every performer's nightmare, handed to somebody else: the room decides it does not like you, and you can feel it happen.",
       "description": "You turn the mood of the room against creatures of your choice within a 15-foot radius of a point you can see within range. Each of them that can hear and understand you makes a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure it has disadvantage on attack rolls until the end of its next turn. This deals no damage. Casting this costs 2 Mirth, spent as you cast; like every costed Turn it generates none back.",
       "narration": "You do not insult them. You simply let the room know how this is going, and they feel every eye in it land on them at once.",
-      "sheetSummary": "Action, 60 ft, 15-ft radius, cooldown 3, costs 2 Mirth. Creatures of your choice that can hear and understand you: Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or disadvantage on attack rolls until the end of its next turn. No damage.",
+      "sheetSummary": "15-ft radius. Creatures of your choice that can hear and understand you: Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or disadvantage on attack rolls until the end of its next turn. No damage.",
       "classes": [
         "jester"
       ],
@@ -4491,7 +4491,7 @@
       "save": "Wisdom",
       "description": "You spend a surge of banked Phantasm to seize the minds of every creature you choose within a 30-foot-radius sphere centred on a point within range, showing each of them their own private, tailored nightmare all at once. Each target must make a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure, a target takes [[5d6]] psychic damage and is frightened of you for the duration; on a success, it takes half as much damage and is not frightened. **The damage happens once, as you cast it — this trick never deals damage again on a later turn.** What lasts for the duration is the fear: a frightened target repeats the saving throw at the end of each of its turns, ending the frightened condition on itself on a success. It requires at least 4 Phantasm banked, spent whether or not any target fails its save.",
       "narration": "Every eye in the tent turns to you at once, and what they see next they will never fully stop seeing.",
-      "sheetSummary": "Once per combat. Action, 90 ft, 30-ft-radius sphere, costs 4 Phantasm, concentration up to 1 min. Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[5d6]] psychic and frightened of you for the duration. Success: half damage, no fear. The damage is dealt ONCE on casting and never repeats; only the fear lasts. A frightened target repeats the save at the end of each of its turns to end it.",
+      "sheetSummary": "30-ft-radius sphere. Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[5d6]] psychic and frightened of you for the duration. Success: half damage, no fear. The damage is dealt ONCE on casting and never repeats; only the fear lasts. A frightened target repeats the save at the end of each of its turns to end it.",
       "classes": [
         "illusionist"
       ],
@@ -4517,7 +4517,7 @@
       "flavor": "Everyone gets a run. Nobody gets to keep it. You are simply the one who decides when the table closes.",
       "description": "You call in everything a creature's luck has been borrowing. One creature you can see within range makes a Dexterity saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure it takes [[3d6]] physical damage and has disadvantage on the next d20 it rolls before the start of your next turn; on a success it takes half as much damage and rolls normally. Casting this costs 2 Mirth, spent as you cast; like every costed Turn it generates none back.",
       "narration": "Its run of luck does not end so much as get repossessed, all at once, with interest — and for a moment afterwards nothing it tries quite works either.",
-      "sheetSummary": "Action, 60 ft, cooldown 3, costs 2 Mirth. Dexterity save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[3d6]] physical and disadvantage on its next d20 before the start of your next turn. Success: half damage only.",
+      "sheetSummary": "Dexterity save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[3d6]] physical and disadvantage on its next d20 before the start of your next turn. Success: half damage only.",
       "classes": [
         "jester"
       ],
@@ -4546,7 +4546,7 @@
       "save": "Wisdom",
       "description": "A 60-foot cube within range becomes a fully realised illusory environment — sight, sound, temperature and scent — of anything you can picture. It requires no concentration and holds for the duration. It has no substance: it deals no damage, supports no weight, and does not impede anything that does not rely on sight. Any creature may spend its action to attempt an Intelligence (Investigation) check against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}} to see through it, and a creature shoving through the cube may attempt that check as part of the movement; on any success the illusion collapses immediately and entirely, for every creature at once.",
       "narration": "The tent is gone. In its place is a rockfall, or a wall of fire, or a drop into nothing — cold on your face, loud in your ears, and entirely in the way. Nobody caught inside it can think straight, because nobody fights well in the middle of a disaster they believe in. It holds until one person stops, really looks, and says so out loud — and then there was never anything there at all.",
-      "sheetSummary": "Once per combat. Action, 120 ft, 60-ft cube, costs 3 Phantasm, up to 10 minutes, no concentration. Deals no damage, supports no weight, and never blocks movement. Its effects, its one-off dramatic moment and how it can be ended early are listed below.",
+      "sheetSummary": "60-ft cube, no concentration. Deals no damage, supports no weight, and never blocks movement. Its effects, its one-off dramatic moment and how it can be ended early are listed below.",
       "classes": [
         "illusionist"
       ],
@@ -4596,7 +4596,7 @@
       "duration": "Instantaneous",
       "description": "The blow lands. You drop. The crowd screams — and then you walk back out from somewhere else in the room, unmarked, while the thing on the floor turns out to have been a Clone all along. You can cast this trick only if you have at least 2 Clones active when the triggering blow lands. It resolves before you are reduced to 0 hit points, so you never become incapacitated and your Clones do not drop: you fall to 1 hit point instead and spend 2 of them — the first collapses in your space wearing your wounds, and the second is the one that walks away. You teleport to an unoccupied space you can see within 30 feet, and until the end of your next turn every creature that watched you fall has disadvantage on attack rolls against you — they are still looking at the body. Both Clones are spent whether or not anyone is fooled.",
       "narration": "The blow lands. You drop. The crowd screams — and then you walk back out from somewhere else in the room entirely, unmarked, while the thing crumpled on the floor turns out to have been wearing your face all along.",
-      "sheetSummary": "Once per combat. Reaction when reduced to 0 HP. Requires and spends 2 active Clones; resolves before you drop, so your Clones never fall with you. Drop to 1 HP instead; a Clone collapses in your space wearing your wounds; teleport up to 30 ft. Creatures that saw you fall have disadvantage on attacks against you until end of your next turn.",
+      "sheetSummary": "Reaction when reduced to 0 HP. Requires and spends 2 active Clones; resolves before you drop, so your Clones never fall with you. Drop to 1 HP instead; a Clone collapses in your space wearing your wounds; teleport up to 30 ft. Creatures that saw you fall have disadvantage on attacks against you until end of your next turn.",
       "classes": [
         "doppelganger"
       ],
@@ -4621,7 +4621,7 @@
       "save": "Wisdom",
       "description": "You deliver the line you have been building toward at one creature that can hear and understand you within range. It makes a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure it takes [[2d6]] psychic damage; on a success it takes half as much. Casting this costs 2 Mirth, spent as you cast; like every costed Turn it generates none back. Your damage is something you build the room up to, not something you open with.",
       "narration": "The timing is everything and you have had all fight to find it. It lands somewhere behind the eyes, and the worst part is that everyone else in the room laughs.",
-      "sheetSummary": "Action, 60 ft, cooldown 2, costs 2 Mirth. Target must hear and understand you. Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[2d6]] psychic. Success: half damage.",
+      "sheetSummary": "Target must hear and understand you. Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[2d6]] psychic. Success: half damage.",
       "classes": [
         "jester"
       ],
@@ -4645,7 +4645,7 @@
       "duration": "Up to 1 hour",
       "description": "You alter your appearance - your face, your clothing, your height and build within a modest range, even your voice - for the duration. You decide the specifics, including whether you resemble a generic member of some race or a specific individual you have seen. A creature that interacts with you can determine you are disguised with a successful Intelligence (Investigation) check against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}; the disguise otherwise fools sight and casual hearing. The disguise doesn't change any of your game statistics, ends early if you dismiss it (no action required), and ends immediately if you make an attack roll or force a saving throw.",
       "narration": "A different coat, a different walk, a different name if anyone asks. The performer underneath is unchanged and would like you to keep that to yourself.",
-      "sheetSummary": "Action, self, cooldown 1, up to 1 hour. Changes appearance/voice within modest limits; no stat changes. Investigation check vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} to see through on close interaction. Ends on attack or forcing a save, or if dismissed.",
+      "sheetSummary": "Changes appearance/voice within modest limits; no stat changes. Investigation check vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} to see through on close interaction. Ends on attack or forcing a save, or if dismissed.",
       "classes": [
         "illusionist"
       ],
@@ -4679,7 +4679,7 @@
         }
       ],
       "narration": "You say it plainly, as though confirming something already agreed, and they nod along with a decision they never made.",
-      "sheetSummary": "Action, 60 ft, cooldown 2. Target must hear and understand you. Choose an option as you cast; Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or it must obey on its next turn. Never made to harm itself or its allies; ends if you or your allies damage it.",
+      "sheetSummary": "Target must hear and understand you. Choose an option as you cast; Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or it must obey on its next turn. Never made to harm itself or its allies; ends if you or your allies damage it.",
       "classes": [
         "illusionist"
       ],
@@ -4708,7 +4708,7 @@
       "save": "Wisdom",
       "description": "You deliver the biggest punchline of the show and it lands on the whole room at once. It does two things at the same time, listed below — and the half aimed at your own company always works, whatever is standing on the other side of the room.",
       "narration": "You have been setting this up since the first round and everybody feels it arrive. Half the room goes down clutching its ribs; the other half — yours — straightens up, stops being afraid of anything, and gets back to work.",
-      "sheetSummary": "Once per combat. Action, 60 ft, costs 5 Mirth, concentration up to 1 minute. Two simultaneous effects: a Wisdom save or helpless laughter on creatures of your choice, and temporary hit points plus condition removal for your allies. The ally half always works. Full resolution below.",
+      "sheetSummary": "Two simultaneous effects: a Wisdom save or helpless laughter on creatures of your choice, and temporary hit points plus condition removal for your allies. The ally half always works. Full resolution below.",
       "classes": [
         "jester"
       ],
@@ -4758,7 +4758,7 @@
       "save": "Wisdom",
       "description": "You unleash a string of insults laced with subtle magic at a creature you can see within range that can hear you (the trick has no effect on a target that is deaf). The target must succeed on a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or take [[1d6]] psychic damage and have disadvantage on the next attack roll it makes before the end of its next turn, too busy stewing over what you said to focus.",
       "narration": "You find the one thing they already hate about themselves and say it louder than they can think it. It lands somewhere behind the sternum, and for a moment they are not fighting you, they are arguing with you.",
-      "sheetSummary": "Action, 60 ft. Wis save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[1d6]] psychic damage, disadvantage on target's next attack roll before end of its next turn. No effect on a deaf target.",
+      "sheetSummary": "Wis save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[1d6]] psychic damage, disadvantage on target's next attack roll before end of its next turn. No effect on a deaf target.",
       "classes": [
         "jester"
       ],
@@ -4784,7 +4784,7 @@
       "save": "Intelligence",
       "description": "You reach into a creature's mind within range and make it briefly, completely certain that it is being torn apart. The target must make an Intelligence saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}, taking [[3d8]] psychic damage on a failure, or half as much damage on a success. A creature immune to being frightened has advantage on this saving throw, since the illusion has nothing to take hold of. Casting this costs 3 Phantasm — it is the payoff you bank the meter for, not something you open with, and the Phantasm is spent whether or not the target's mind gives way.",
       "narration": "You do not show them anything real. You simply remind their nerves what being torn apart used to feel like, and let the body take it from there.",
-      "sheetSummary": "Action, 60 ft, cooldown 2, costs 3 Phantasm. Intelligence save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[3d8]] psychic damage. Success: half. Fear-immune creatures have advantage on the save.",
+      "sheetSummary": "Intelligence save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[3d8]] psychic damage. Success: half. Fear-immune creatures have advantage on the save.",
       "classes": [
         "illusionist"
       ],
@@ -4809,7 +4809,7 @@
       "flavor": "You have been hit by a cannonball, a horse, and a man twice your size, and you got up every time. Mostly it is a matter of being told to.",
       "description": "You haul one ally you can see within range back into the act — a slap on the back, a hand up, a line delivered too fast to argue with. It regains [[2d6+Cha]] hit points. This is the only true healing in the circus: nobody else in the company can put hit points back, which is why a Buffoon is worth having. Casting this costs 1 Mirth, spent as you cast; like every costed Turn it generates none back.",
       "narration": "You are already talking before you reach them, and none of it is sympathetic. Somehow they are on their feet by the end of the sentence, insulted and breathing.",
-      "sheetSummary": "Action, 30 ft, cooldown 2, costs 1 Mirth. One ally regains [[2d6+Cha]] hit points.",
+      "sheetSummary": "One ally regains [[2d6+Cha]] hit points.",
       "classes": [
         "jester"
       ],
@@ -4834,7 +4834,7 @@
       "duration": "1 round",
       "description": "You call out a quick word of encouragement to one creature you can see within range. The next time that creature makes an ability check, attack roll, or saving throw before the start of your next turn, it can add 1d4 to the roll. The creature can wait to see the roll before deciding whether to add the bonus.",
       "narration": "A quick warm aside from the wings — \"you've got this, kid\" — delivered like you have seen them do it a hundred times before. Somehow they always do.",
-      "sheetSummary": "Action, 30 ft, no save. Target may add 1d4 to its next ability check, attack roll, or save before the start of your next turn (decided after rolling).",
+      "sheetSummary": "No save. Target may add 1d4 to its next ability check, attack roll, or save before the start of your next turn (decided after rolling).",
       "classes": [
         "jester"
       ],
@@ -4858,7 +4858,7 @@
       "save": "Wisdom",
       "description": "A creature you can see within range meets its own eyes in something that should not be a mirror — older, opened up, already finished. It makes a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure it takes [[2d6]] psychic damage and is frightened of you until the end of its next turn. On a success it takes half as much damage and is not frightened.",
       "narration": "For a moment there is a second one of them standing in the room, wearing everything that is about to happen. Then there isn't, and the original will not look at you straight for the rest of the fight.",
-      "sheetSummary": "Action, 60 ft, cooldown 2. Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[2d6]] psychic and frightened of you until the end of its next turn. Success: half damage, no fear.",
+      "sheetSummary": "Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[2d6]] psychic and frightened of you until the end of its next turn. Success: half damage, no fear.",
       "classes": [
         "illusionist"
       ],

@@ -26,7 +26,7 @@
     }
   ],
   "narration": "You say it plainly, as though confirming something already agreed, and they nod along with a decision they never made.",
-  "sheetSummary": "Action, 60 ft, cooldown 2. Target must hear and understand you. Choose an option as you cast; Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or it must obey on its next turn. Never made to harm itself or its allies; ends if you or your allies damage it.",
+  "sheetSummary": "Target must hear and understand you. Choose an option as you cast; Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or it must obey on its next turn. Never made to harm itself or its allies; ends if you or your allies damage it.",
   "classes": [
     "illusionist"
   ],

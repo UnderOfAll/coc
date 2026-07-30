@@ -15,7 +15,7 @@
   "duration": "Up to 1 minute",
   "description": "You conjure a near-invisible puppet hand, hung on wires, in an unoccupied space you can see within range. It lasts for the duration, until you dismiss it (no action required), or until it ends up more than 30 feet from you. As a bonus action on your turn you can direct the hand: it flies up to 30 feet and manipulates one object — open an unlocked door or container, stow or retrieve an item, pour a flask, pull a lever, or carry an object weighing up to 10 pounds. The hand cannot attack, cannot activate magic items, and cannot wield a weapon or move a creature or anything a creature is holding.",
   "narration": "A hand that is not there, hung on wires you never quite show the audience, doing the small work at a distance — lifting a latch, sliding a bolt, carrying a cup — while both of yours stay visibly, innocently empty.",
-  "sheetSummary": "Action, 30 ft. Conjure a spectral puppet hand (up to 1 min, dismiss free). Bonus action to move it up to 30 ft and manipulate an object: open/carry (max 10 lb), stow/retrieve, pour, pull a lever. No attacks, no magic items, cannot affect creatures or held items.",
+  "sheetSummary": "Conjure a spectral puppet hand (up to 1 min, dismiss free). Bonus action to move it up to 30 ft and manipulate an object: open/carry (max 10 lb), stow/retrieve, pour, pull a lever. No attacks, no magic items, cannot affect creatures or held items.",
   "classes": [
     "puppeteer"
   ]

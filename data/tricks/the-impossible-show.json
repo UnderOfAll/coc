@@ -18,7 +18,7 @@
   "save": "Wisdom",
   "description": "A 60-foot cube within range becomes a fully realised illusory environment — sight, sound, temperature and scent — of anything you can picture. It requires no concentration and holds for the duration. It has no substance: it deals no damage, supports no weight, and does not impede anything that does not rely on sight. Any creature may spend its action to attempt an Intelligence (Investigation) check against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}} to see through it, and a creature shoving through the cube may attempt that check as part of the movement; on any success the illusion collapses immediately and entirely, for every creature at once.",
   "narration": "The tent is gone. In its place is a rockfall, or a wall of fire, or a drop into nothing — cold on your face, loud in your ears, and entirely in the way. Nobody caught inside it can think straight, because nobody fights well in the middle of a disaster they believe in. It holds until one person stops, really looks, and says so out loud — and then there was never anything there at all.",
-  "sheetSummary": "Once per combat. Action, 120 ft, 60-ft cube, costs 3 Phantasm, up to 10 minutes, no concentration. Deals no damage, supports no weight, and never blocks movement. Its effects, its one-off dramatic moment and how it can be ended early are listed below.",
+  "sheetSummary": "60-ft cube, no concentration. Deals no damage, supports no weight, and never blocks movement. Its effects, its one-off dramatic moment and how it can be ended early are listed below.",
   "classes": [
     "illusionist"
   ],

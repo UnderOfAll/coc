@@ -14,7 +14,7 @@
   "duration": "Instantaneous",
   "description": "Your empty hand produces something with an edge and sends it on its way in the same motion. Make a {{trick attack|d20 + proficiency bonus + Intelligence modifier}} against a creature you can see within range; on a hit it takes [[1d8]] psychic damage from a wound it cannot account for and will not find afterwards. Because this is an attack roll rather than a saving throw, it can be parried like any other attack — and because it is a Pledge, your Palmed feature lets you throw it inside a Turn you were casting anyway.",
   "narration": "The hand was open. You are certain the hand was open. Then there is a flick of the wrist, a sound like a card being dealt, and something is very wrong under your collarbone.",
-  "sheetSummary": "Action, 30 ft. Ranged trick attack ({{your trick attack|d20 + proficiency bonus + Intelligence modifier}}). Hit: [[1d8]] psychic. Scales at 5/11/17. Can be parried.",
+  "sheetSummary": "Ranged trick attack ({{your trick attack|d20 + proficiency bonus + Intelligence modifier}}). Hit: [[1d8]] psychic. Scales at 5/11/17. Can be parried.",
   "classes": [
     "illusionist"
   ],

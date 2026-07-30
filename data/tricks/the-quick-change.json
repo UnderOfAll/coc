@@ -16,7 +16,7 @@
   "duration": "Up to 1 hour",
   "description": "You alter your appearance - your face, your clothing, your height and build within a modest range, even your voice - for the duration. You decide the specifics, including whether you resemble a generic member of some race or a specific individual you have seen. A creature that interacts with you can determine you are disguised with a successful Intelligence (Investigation) check against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}; the disguise otherwise fools sight and casual hearing. The disguise doesn't change any of your game statistics, ends early if you dismiss it (no action required), and ends immediately if you make an attack roll or force a saving throw.",
   "narration": "A different coat, a different walk, a different name if anyone asks. The performer underneath is unchanged and would like you to keep that to yourself.",
-  "sheetSummary": "Action, self, cooldown 1, up to 1 hour. Changes appearance/voice within modest limits; no stat changes. Investigation check vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} to see through on close interaction. Ends on attack or forcing a save, or if dismissed.",
+  "sheetSummary": "Changes appearance/voice within modest limits; no stat changes. Investigation check vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} to see through on close interaction. Ends on attack or forcing a save, or if dismissed.",
   "classes": [
     "illusionist"
   ]

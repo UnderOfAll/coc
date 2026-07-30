@@ -16,7 +16,7 @@
   "save": "Wisdom",
   "description": "You point at a creature you can see within range, and for one vivid instant it feels exactly what a blade sliding between its ribs would feel like. The target must succeed on a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or take [[1d8]] psychic damage, flinching from a wound that was never there. On a success, the target takes no damage.",
   "narration": "There is no blade in your hand. You point anyway, and somewhere three rows back a body doubles over clutching a rib that has not been touched, entirely convinced.",
-  "sheetSummary": "Action, 60 ft. Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[1d8]] psychic damage. Success: no effect.",
+  "sheetSummary": "Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[1d8]] psychic damage. Success: no effect.",
   "classes": [
     "illusionist"
   ]

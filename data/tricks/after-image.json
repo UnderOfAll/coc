@@ -14,7 +14,7 @@
   "duration": "Instantaneous",
   "description": "You peel a creature's own reflection off it, a half-second behind and a half-step wrong, and let it strike. Make a {{trick attack|d20 + proficiency bonus + your trick ability modifier}} against a creature you can see within range; on a hit it takes [[1d6]] psychic damage as its body flinches from a blow its eyes swear it already took. The after-image is a fleeting image with no substance: it is not a Clone, it occupies no space, it cannot be attacked or interacted with, and it is gone before your turn ends. Because this is an attack roll and not a saving throw, it can be parried like any other attack.",
   "narration": "You catch the edge of its own reflection and peel it off — a half-second behind, a half-step wrong — and let the copy swing. The blow it takes is one it has already watched itself take, and the body flinches from a wound that never opened.",
-  "sheetSummary": "Action, 30 ft. Ranged trick attack ({{trick attack|d20 + proficiency bonus + your trick ability modifier}}). Hit: [[1d6]] psychic. Scales at 5/11/17. Creates no Clone. Can be parried.",
+  "sheetSummary": "Ranged trick attack ({{trick attack|d20 + proficiency bonus + your trick ability modifier}}). Hit: [[1d6]] psychic. Scales at 5/11/17. Creates no Clone. Can be parried.",
   "classes": [
     "doppelganger"
   ]

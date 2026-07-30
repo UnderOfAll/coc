@@ -18,7 +18,7 @@
   "save": "Wisdom",
   "description": "You plant a single, perfectly convincing image of its own doom in one creature's mind within range. The target must make a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure, it is frightened of you for the duration and, on each of its turns while frightened this way, must use its action to move as far away from you as it can by the safest available route, unless there is nowhere safer to move. A frightened target can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success. On a success, the target is unaffected.",
   "narration": "You show them, for one heartbeat, exactly how badly this could go for them. Nothing about it is real. Their body does not care.",
-  "sheetSummary": "Action, 60 ft, cooldown 2, concentration up to 1 min. Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: frightened, must use its action to flee each turn; repeats save at end of each turn. Success: no effect.",
+  "sheetSummary": "Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: frightened, must use its action to flee each turn; repeats save at end of each turn. Success: no effect.",
   "classes": [
     "illusionist"
   ]

@@ -27,7 +27,7 @@
       "effect": "On a failed save, the target is knocked prone."
     }
   ],
-  "sheetSummary": "Bonus action, 60 ft, cooldown 2. Requires a String on the target. Choose one: Disarm (Wis save or drop one held item of your choice) or Trip (Con save or knocked prone). Success: no effect.",
+  "sheetSummary": "Requires a String on the target. Choose one: Disarm (Wis save or drop one held item of your choice) or Trip (Con save or knocked prone). Success: no effect.",
   "classes": [
     "puppeteer"
   ]

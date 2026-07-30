@@ -17,7 +17,7 @@
   "save": "Wisdom",
   "description": "You take one creature that can see and hear you within range through the old parlour routine — the voice, the count, the slow hand — and its shoulders come down. The target makes a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure it is charmed by you until the end of its next turn: its speed becomes 0 and it cannot take actions or reactions, though it is fully aware and remembers everything afterwards. **Any damage ends the effect immediately**, so it removes a creature from the fight only for as long as your allies leave it alone — waking it is always an option and often the right one.",
   "narration": "The voice does the work. Their weapon lowers, their weight settles, and for a few seconds they stand in the middle of a fight looking mildly interested in nothing at all.",
-  "sheetSummary": "Action, 30 ft, cooldown 3. Target must see and hear you. Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or charmed until the end of its next turn: speed 0, no actions or reactions, still aware. ANY damage ends it immediately.",
+  "sheetSummary": "Target must see and hear you. Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or charmed until the end of its next turn: speed 0, no actions or reactions, still aware. ANY damage ends it immediately.",
   "classes": [
     "illusionist"
   ],

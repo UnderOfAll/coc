@@ -17,7 +17,7 @@
   "save": "Dexterity",
   "description": "You throw a pinch of flash powder that bursts into a searing white flash in a 10-foot radius centered on a point you choose within range. Each creature in that area makes a Dexterity saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure, a creature is blinded until the end of its next turn. On a success, it is unaffected. The burst is light and noise, not fire — it deals no damage; it just takes the crowd's eyes away for a beat.",
   "narration": "A pinch between two fingers, a snap of the wrist, and the world goes white and orange for exactly as long as it takes you to be somewhere else.",
-  "sheetSummary": "Action, 30 ft, 10-ft radius burst, cooldown 3. Dex save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: blinded until end of its next turn. Success: no effect. Deals no damage.",
+  "sheetSummary": "10-ft radius burst. Dex save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: blinded until end of its next turn. Success: no effect. Deals no damage.",
   "classes": [
     "joker"
   ]

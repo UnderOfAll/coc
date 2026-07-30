@@ -18,7 +18,7 @@
   "save": "Wisdom",
   "description": "You deliver the biggest punchline of the show and it lands on the whole room at once. It does two things at the same time, listed below — and the half aimed at your own company always works, whatever is standing on the other side of the room.",
   "narration": "You have been setting this up since the first round and everybody feels it arrive. Half the room goes down clutching its ribs; the other half — yours — straightens up, stops being afraid of anything, and gets back to work.",
-  "sheetSummary": "Once per combat. Action, 60 ft, costs 5 Mirth, concentration up to 1 minute. Two simultaneous effects: a Wisdom save or helpless laughter on creatures of your choice, and temporary hit points plus condition removal for your allies. The ally half always works. Full resolution below.",
+  "sheetSummary": "Two simultaneous effects: a Wisdom save or helpless laughter on creatures of your choice, and temporary hit points plus condition removal for your allies. The ally half always works. Full resolution below.",
   "classes": [
     "jester"
   ],

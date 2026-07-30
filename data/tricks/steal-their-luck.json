@@ -16,7 +16,7 @@
   "duration": "Instantaneous",
   "description": "You call out the number before the dice even settle. When an ally you can see within range is about to make an attack roll, ability check, or saving throw, you can roll a d20 and have the ally use your result in place of its own (the ally still adds any modifiers it would normally apply). You must commit to using this trick before the ally's roll is revealed, and once you do, the ally must use your roll instead of its own, for better or worse.",
   "narration": "\"Watch this,\" you mutter, and hand your own good fortune across the ring like a lifted pocket watch. It works. It always works. You just do not have it any more.",
-  "sheetSummary": "Reaction, 30 ft, cooldown 2. Before an ally's attack roll, check, or save is revealed, roll a d20; the ally uses your d20 result (plus its own modifiers) instead of its own die.",
+  "sheetSummary": "Before an ally's attack roll, check, or save is revealed, roll a d20; the ally uses your d20 result (plus its own modifiers) instead of its own die.",
   "classes": [
     "jester"
   ]

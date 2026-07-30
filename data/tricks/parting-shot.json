@@ -16,7 +16,7 @@
   "save": "Constitution",
   "description": "When a Clone of yours is destroyed — by an attack, by Mirror Image, by Decoy Detonation, or by any other means — you can flood the space it occupied with a last flare of false light. Each creature within 5 feet of the Clone's former space must succeed on a Constitution saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or be blinded until the end of its next turn. If several of your Clones are destroyed at the same instant — a failed Mirror Image gamble takes every Clone you committed — this still triggers only once, and you choose which of their spaces flares. This trick does not create, spend, or restore any Clones on its own — it only triggers off a Clone that is already being destroyed some other way.",
   "narration": "The Clone does not just fall. It goes out in a last hard flare of stagelight, and whoever put it down is left blinking at a white afterimage where a person used to be.",
-  "sheetSummary": "Reaction when a Clone is destroyed (any cause), 5 ft, cooldown 2. Con save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or blinded until end of its next turn. Several Clones dying at once still trigger it only once — you choose whose space flares. Doesn't cost or grant Clones.",
+  "sheetSummary": "Reaction when a Clone is destroyed (any cause). Con save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or blinded until end of its next turn. Several Clones dying at once still trigger it only once — you choose whose space flares. Doesn't cost or grant Clones.",
   "classes": [
     "doppelganger"
   ]

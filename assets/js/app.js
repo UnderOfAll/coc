@@ -839,9 +839,20 @@ const ABILITY_NAMES = {
 
 // A hover/tap tooltip term for an inline derived number (e.g. a save DC): shows the label + ⓘ,
 // reveals the formula on hover/tap. Mirrors the keyStats formula tooltip so descriptions stay clean.
+//
+// On a CHARACTER SHEET we know the character, so the token shows the computed number instead and
+// keeps the working in the tooltip — which is what {{Label|formula}} was always for (see the file
+// header). creator.js installs a resolver while it renders and clears it afterwards; the compendium
+// leaves it null and the label shows, because there is no character to compute against. A resolver
+// that does not recognise a formula returns null and the label renders exactly as before, so an
+// unrecognised token degrades instead of breaking.
+let TOKEN_RESOLVER = null;
 function tipTermHTML(label, formula) {
-  return `<span class="tip-term" tabindex="0" title="${esc(formula)}">${esc(label)}<sup class="tip-mark">&#9432;</sup>` +
-    `<span class="term-tip" role="tooltip">${esc(formula)}</span></span>`;
+  const hit = TOKEN_RESOLVER ? TOKEN_RESOLVER(label, formula) : null;
+  const shown = hit ? hit.value : label;
+  const tip = hit ? hit.explain : formula;
+  return `<span class="tip-term${hit ? " resolved" : ""}" tabindex="0" title="${esc(tip)}">${esc(shown)}<sup class="tip-mark">&#9432;</sup>` +
+    `<span class="term-tip" role="tooltip">${esc(tip)}</span></span>`;
 }
 
 /* Weapon Mastery (data/rules/weapon-mastery.json): the default maneuver any proficient wielder

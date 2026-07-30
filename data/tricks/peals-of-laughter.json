@@ -18,7 +18,7 @@
   "save": "Wisdom",
   "description": "You land a joke so devastatingly funny that one creature you can see within range doubles over. It must succeed on a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or collapse in helpless laughter, resolved exactly as below. A creature immune to being charmed automatically succeeds, and a creature that cannot hear or cannot understand you is unaffected.",
   "narration": "You tell the joke you have been saving all night, and it lands like a hammer. They fold in half laughing, hating it, entirely unable to stop.",
-  "sheetSummary": "Action, 30 ft, cooldown 3, concentration up to 1 minute. One creature: Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or helpless laughter. Resolution below.",
+  "sheetSummary": "One creature: Wisdom save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or helpless laughter. Resolution below.",
   "classes": [
     "jester"
   ],

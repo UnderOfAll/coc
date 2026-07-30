@@ -17,7 +17,7 @@
   "save": "Strength",
   "description": "You sever every String at once, and the recoil slams each stringed body against itself. Every creature you currently have a String attached to within range is wrenched by its own wire: each makes a Strength saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure, a creature takes [[3d8]] physical damage, is knocked prone, and is restrained until it or another creature uses an action to cut it free. On a success, it takes half as much damage and is neither knocked prone nor restrained. You must have at least two Strings attached to cast Grand Guignol, and when it resolves the String on every creature it targets detaches and is consumed at once — leaving you to re-establish your control from scratch.",
   "narration": "Every wire you have laid snaps taut at once. For one terrible instant every puppet on your stage moves exactly as you meant it to and then does not move again, and the wires come away empty.",
-  "sheetSummary": "Once per combat. Action, 60 ft. Requires 2+ Strings attached; detaches and consumes the String on every creature it hits. Every Stringed creature in range: Str save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[3d8]] physical, prone + restrained (escape = an action to cut it free). Success: half damage only.",
+  "sheetSummary": "Requires 2+ Strings attached; detaches and consumes the String on every creature it hits. Every Stringed creature in range: Str save vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. Fail: [[3d8]] physical, prone + restrained (escape = an action to cut it free). Success: half damage only.",
   "classes": [
     "puppeteer"
   ]

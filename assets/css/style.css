@@ -580,8 +580,21 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 .recent-open { flex: 1; display: flex; gap: 0.6rem; align-items: baseline; }
 /* --- sheet --- */
 .sheet-head { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between; }
-.sheet-id { display: flex; gap: 0.8rem; align-items: center; }
-.sheet-id h1 { margin: 0; }
+/* The sheet header: portrait, name, what they ARE, and the level as a field of its own rather than
+   a word buried in a comma-separated line. */
+.sheet-id { display: flex; gap: 0.9rem; align-items: center; flex-wrap: wrap; }
+.sheet-id h1 { margin: 0; line-height: 1.15; }
+.sheet-titles { min-width: 0; display: flex; flex-direction: column; gap: 0.15rem; }
+.sheet-class { margin: 0; font-family: var(--serif); font-size: 1.05rem; color: var(--gold); }
+.sheet-class .sep, .sheet-code .sep { color: var(--muted); }
+.sheet-code { margin: 0; font-size: 0.80rem; color: var(--muted); }
+.sheet-level { display: grid; place-items: center; min-width: 4.4rem; padding: 0.35rem 0.6rem;
+  background: var(--panel-2); border: 1px solid var(--gold); border-radius: var(--radius); }
+.lv-k { font-size: 0.80rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+.lv-v { font-family: var(--serif); font-size: 1.9rem; line-height: 1; color: var(--gold); }
+/* Resolved tokens are real numbers on a sheet, so they read as values, not as jargon. */
+.tip-term.resolved { font-weight: 600; }
+.inplay-tip { font-size: 0.80rem; white-space: nowrap; }
 .panel { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
   padding: 1rem 1.1rem; margin-bottom: 1rem; }
 .panel h2 { font-family: var(--serif); font-size: 1rem; color: var(--gold); margin: 0 0 0.7rem; }
@@ -642,16 +655,25 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 /* Features and tricks expand IN PLACE, and the open set lives in the sheet's UI state rather than in
    the DOM. They used to be <details>: any action anywhere re-rendered the panel and slammed every
    one of them shut, and a "Use" button living inside a <summary> both fired the action and toggled
-   the disclosure. Now the control sits beside the toggle, never inside it. */
-.feat { border-top: 1px solid var(--border); }
-.feat-head { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+   the disclosure. Now the control sits beside the toggle, never inside it.
+
+   Features are a card grid rather than a stack of lines — three across on desktop, and
+   align-items: start so opening one does not stretch the two beside it. */
+.feat-grid { display: grid; gap: 0.6rem; align-items: start;
+  grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.feat-card { display: flex; flex-direction: column; gap: 0.3rem; min-width: 0;
+  padding: 0.6rem 0.7rem; background: var(--panel-2); border: 1px solid var(--border);
+  border-left: 3px solid transparent; border-radius: var(--radius); }
+.feat-card:hover { border-left-color: var(--gold); }
+.feat-card.open { border-left-color: var(--gold); grid-column: 1 / -1; }
+.feat-from { margin: 0; font-size: 0.80rem; color: var(--muted); }
 .feat-toggle { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; gap: 0.45rem; align-items: center;
   text-align: left; background: none; border: none; color: inherit; font: inherit; cursor: pointer;
-  padding: 0.55rem 0; }
+  padding: 0; }
 .feat-toggle:hover .feat-name { color: var(--gold); }
 .feat-name { font-weight: 600; }
-.chev { margin-left: auto; color: var(--muted); font-family: var(--serif); font-size: 1.1rem; }
-.feat-body { padding: 0 0 0.9rem; }
+.chev { margin-left: auto; color: var(--muted); font-family: var(--serif); font-size: 1.10rem; }
+.feat-body { padding: 0.2rem 0 0.3rem; }
 .uses { display: flex; gap: 0.35rem; align-items: center; font-size: 0.85rem; }
 .uses .spent { color: var(--accent-soft); }
 .notes { color: var(--muted); white-space: pre-wrap; }
@@ -713,6 +735,7 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
   .save-row { flex-direction: column; align-items: stretch; }
   .code-input { width: 100%; }
   .feat-toggle { gap: 0.3rem; }
+  .feat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .uses { width: 100%; justify-content: flex-end; }
   .ab-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .lu-grid { grid-template-columns: 1fr; }
@@ -722,6 +745,7 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 /* Very narrow phones: stop the ability grid squeezing to unreadable. */
 @media (max-width: 380px) {
   .abils { grid-template-columns: 1fr; }
+  .feat-grid { grid-template-columns: 1fr; }
   .brand-sub { display: none; }
 }
 /* A pointer-less device gets no hover tooltips, so make the tap target obvious. */

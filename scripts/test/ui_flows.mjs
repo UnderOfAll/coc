@@ -136,8 +136,28 @@ ok(/\+5/.test($(".atk-hit").textContent),"Acrobat hits at +5 — finesse takes t
 ok(/Finesse/.test($(".atk-hit .term-tip").textContent),"and says so");
 mk("joker",5);
 
-console.log("\n— TRICKS ROW —");
+console.log("\n— HEADER —");
 mk("illusionist",5,"nightmare");
+ok($(".sheet-level .lv-v").textContent==="5","the level has a field of its own, not a word in a list");
+ok($(".sheet-class").textContent.includes("Illusionist"),"the class is on its own line");
+ok($(".sheet-class").textContent.includes("Nightmare"),"with the discipline");
+
+console.log("\n— NUMBERS, NOT FORMULAS —");
+// The whole point of {{Label|formula}}: the compendium cannot know whose sheet it is, a sheet can.
+const dc=peek(`derive(sheet.ch).saveDC`);
+const resolved=$$("#tool .tip-term.resolved");
+ok(resolved.length>0,"tokens resolve on a sheet ("+resolved.length+" of them)");
+ok(resolved.some(n=>n.firstChild.textContent===String(dc)),"a save DC shows its value ("+dc+")");
+ok(resolved.every(n=>!/proficiency bonus \+ your/.test(n.firstChild.textContent)),"no formula left showing as the label");
+const tipTxt=resolved.find(n=>n.firstChild.textContent===String(dc)).querySelector(".term-tip").textContent;
+ok(/= *"?"?/.test(tipTxt)&&tipTxt.includes("= "+dc),"and the working is in the tooltip: "+tipTxt);
+// …while the compendium still shows the label, because there is no character there.
+await go("#/tricks/waking-nightmare");
+ok(peek("TOKEN_RESOLVER")===null,"the resolver is put back after rendering");
+ok($("#detail").textContent.includes("trick save DC"),"the compendium still reads as a formula label");
+await go("#/sheet/123456");
+
+console.log("\n— TRICKS ROW —");
 ok($$('[data-act="open-trick"]').length===0,"no expander on a trick — the name is the link");
 const tn=$(".trick-name");
 ok(tn && tn.getAttribute("href").startsWith("#/tricks/"),"the name links to the full entry");
@@ -147,6 +167,14 @@ ok(chips.includes("Range"),"a Range chip");
 ok($$(".trick-row").some(r=>[...r.querySelectorAll(".fk")].some(k=>k.textContent==="Cooldown")),"a Cooldown chip on the Turns");
 ok($$(".trick-row").some(r=>[...r.querySelectorAll(".fk")].some(k=>k.textContent==="Uses")),"a Uses chip on the Prestiges");
 ok($$(".trick-head .fmeta .fv").every(n=>!/\{\{|\[\[/.test(n.textContent)),"chips carry no unexpanded tokens");
+ok($$(".trick-sum").every(n=>!/^\s*(Action|Bonus action|Reaction)[,.]/.test(n.textContent)),"summaries no longer restate the chips");
+ok($(".trick-sum .inplay-tip"),"and carry the In play description as a tooltip");
+ok($(".trick-sum .inplay-tip .term-tip").textContent.length>20,"which has real text in it");
+// the cooldown label is plain English, not the system's in-fiction word for it
+peek(`sheet.ch.play.inCombat=true; sheet.ch.play.cooldowns={"waking-nightmare":2}; renderSheet();`);
+ok([...$$(".why")].some(n=>/Ready in 2 rounds/.test(n.textContent)),"a cooldown reads 'Ready in 2 rounds', not 'Seen'");
+ok(![...$$(".why")].some(n=>/Seen/.test(n.textContent)),"the word Seen is gone from the sheet");
+peek(`sheet.ch.play.cooldowns={}; sheet.ch.play.inCombat=false; renderSheet();`);
 
 console.log("\n— COMING BACK TO A SHEET —");
 click($('[data-act="combat"]'));                       // put it in a state worth keeping
@@ -163,8 +191,14 @@ ok($("#hp-amt").value==="9","the damage box still holds 9");
 ok(peek("ui.sheetScroll")===640,"and the scroll position was remembered");
 click($('[data-act="combat"]'));
 
+console.log("\n— FEATURES AS CARDS —");
+mk("joker",5,"anarchist");
+ok($(".feat-grid"),"features are a grid");
+ok($$(".feat-card").length===peek("derive(sheet.ch).features.length"),"one card per feature");
+ok(/repeat\(3, minmax\(0, 1fr\)\)/.test(rule(".feat-grid")),"three across on desktop");
+ok(/align-items:\s*start/.test(rule(".feat-grid")),"and opening one does not stretch its neighbours");
+
 console.log("\n— EXPANDERS SURVIVE ACTIONS —");
-mk("joker",5);
 const feat=$$('[data-act="open-feat"]')[0];
 const fname=feat.dataset.val; click(feat);
 ok($$(".feat-body").length===1,"feature expands in place");

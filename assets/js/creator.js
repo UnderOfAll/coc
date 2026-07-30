@@ -160,6 +160,91 @@ function derive(ch) {
   };
 }
 
+/* ---------------------------------------------------------------- resolving formulas */
+
+/* A {{Label|formula}} token exists because a class page cannot know whose sheet it will be read on.
+   A character sheet CAN: it knows the level, the proficiency bonus and every modifier, so the token
+   should show the number and keep the working in the tooltip. That is what the token was always for
+   — the compendium half was only ever the fallback.
+   This reads the FORMULA, never the label. The formula is the machine-readable half of the pair by
+   construction (the build lint enforces which half is which), and labels are free prose that drift:
+   "trick save DC", "control DC", "gambit DC" and "Trick Shot DC" are four names for one calculation.
+   Anything unrecognised returns null and renders as it always did. */
+const ABIL_RE = "(Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma|your trick ability)";
+function tokenResolver(d) {
+  const modOf = (name) => {
+    const a = /trick ability/i.test(name) ? d.primary
+      : ABILITIES.find((x) => x.toLowerCase() === String(name).toLowerCase());
+    return a ? { name: a, mod: d.mods[a] || 0 } : null;
+  };
+  const rules = [
+    // "8 + proficiency bonus + Charisma modifier" — every DC in the game, whatever it is called.
+    [new RegExp(`^(\\d+)\\s*\\+\\s*proficiency bonus\\s*\\+\\s*${ABIL_RE} modifier`, "i"), (m) => {
+      const a = modOf(m[2]); if (!a) return null;
+      const v = Number(m[1]) + d.prof + a.mod;
+      return { value: v, explain: `${m[1]} + proficiency ${sign(d.prof)} + ${a.name} ${sign(a.mod)} = ${v}` };
+    }],
+    // "d20 + proficiency bonus + Intelligence modifier" (either order) — a to-hit.
+    [new RegExp(`^d20\\s*\\+\\s*(?:proficiency bonus\\s*\\+\\s*${ABIL_RE} modifier|${ABIL_RE} modifier\\s*\\+\\s*proficiency bonus)`, "i"), (m) => {
+      const a = modOf(m[1] || m[2]); if (!a) return null;
+      const v = d.prof + a.mod;
+      return { value: "d20 " + sign(v), explain: `d20 + proficiency ${sign(d.prof)} + ${a.name} ${sign(a.mod)} — so roll d20 ${sign(v)}` };
+    }],
+    // The Scaling Uses ladder (MECHANICS §2.2).
+    [/at levels 1-4/i, () => ({
+      value: d.scalingUses,
+      explain: `${d.scalingUses} at level ${d.level} — the ladder is 1 at levels 1-4, 2 at 5-10, 3 at 11-16, 4 at 17+`,
+    })],
+    // "proficiency bonus + Constitution modifier" with nothing in front of it.
+    [new RegExp(`^proficiency bonus\\s*\\+\\s*${ABIL_RE} modifier`, "i"), (m) => {
+      const a = modOf(m[1]); if (!a) return null;
+      const v = d.prof + a.mod;
+      return { value: v, explain: `proficiency ${sign(d.prof)} + ${a.name} ${sign(a.mod)} = ${v}` };
+    }],
+    // "2 + your Sandow level"
+    [/^(\d+)\s*\+\s*your \w[\w-]* level/i, (m) => {
+      const v = Number(m[1]) + d.level;
+      return { value: v, explain: `${m[1]} + your level (${d.level}) = ${v}` };
+    }],
+    // "set from your stats on your character sheet" — the ability is named in the label, and the
+    // formula sometimes carries a floor ("minimum 1").
+    [/set from your stats|equal to your/i, (_m, label, formula) => {
+      const named = new RegExp(ABIL_RE, "i").exec(label) || new RegExp(ABIL_RE, "i").exec(formula);
+      const a = named && modOf(named[1]); if (!a) return null;
+      const floor = /min(?:imum)?\s*(\d+)/i.exec(label + " " + formula);
+      const raw = a.mod;
+      const v = floor ? Math.max(Number(floor[1]), raw) : raw;
+      return {
+        value: v,
+        explain: `your ${a.name} modifier ${sign(raw)}${floor && v !== raw ? `, raised to the minimum of ${floor[1]}` : ""} = ${v}`,
+      };
+    }],
+  ];
+  return (label, formula) => {
+    for (const [rx, fn] of rules) {
+      const m = rx.exec(formula);
+      if (m) { const out = fn(m, label, formula); if (out) return out; }
+    }
+    return null;
+  };
+}
+
+/* How the thing LOOKS when it happens, as a tooltip on the end of the rules text. The sheet has no
+   room for a second paragraph per trick, but a player still needs to know what they are describing
+   to the table — that is the whole reason the two halves are authored separately (MECHANICS §5). */
+function inPlayTip(narration) {
+  if (!narration) return "";
+  return `<span class="tip-term inplay-tip" tabindex="0">In play<sup class="tip-mark">&#9432;</sup>` +
+    `<span class="term-tip" role="tooltip">${esc(narration)}</span></span>`;
+}
+
+/* Render `fn`'s HTML with every formula token resolved against this character, then put the
+   resolver back so the compendium is untouched. */
+function withTokens(d, fn) {
+  TOKEN_RESOLVER = d ? tokenResolver(d) : null;
+  try { return fn(); } finally { TOKEN_RESOLVER = null; }
+}
+
 /* ---------------------------------------------------------------- shared UI helpers */
 
 /* The draft being built, and the character being played. Both are plain JSON. */
@@ -169,7 +254,7 @@ let sheet = null;      // { code, ch } while a sheet is open
    level-up is being previewed. Never saved — none of it is part of the character. */
 const ui = {
   openFeats: new Set(), openSubs: new Set(),
-  hpAmt: 1, levelUp: null, deleteArmed: false, deleteText: "", sheetScroll: 0,
+  hpAmt: 1, levelUp: null, deleteArmed: false, deleteText: "", sheetScroll: 0, scrollTop: false,
 };
 
 function toolEl() { return $("#tool"); }
@@ -268,7 +353,7 @@ function routeCreate() {
 
 function renderCreator() {
   const cls = draft.classId ? idx.classes.get(draft.classId) : null;
-  paint(`
+  paint(withTokens(derive(draft), () => `
     <div class="tool-head">
       <a class="back" href="#/">&larr; Menu</a>
       <h1>Create a character</h1>
@@ -287,7 +372,7 @@ function renderCreator() {
       <aside class="creator-side">${sidePreview()}</aside>
     </div>
     ${cls ? stepSave() : ""}
-  `);
+  `));
 }
 
 function stepClass() {
@@ -793,16 +878,17 @@ function renderSheet() {
   const d = derive(ch);
   if (!d) { paint(`<p class="muted">This character's class no longer exists.</p>`); return; }
   const p = ch.play;
-  paint(`
+  paint(withTokens(d, () => `
     <div class="tool-head sheet-head">
       <a class="back" href="#/manage">&larr; My characters</a>
       <div class="sheet-id">
         ${ch.photo ? `<img class="portrait" src="${esc(ch.photo)}" alt="" />` : `<div class="portrait empty">${esc((ch.name || "?")[0])}</div>`}
-        <div>
+        <div class="sheet-titles">
           <h1>${esc(ch.name || "Unnamed")}</h1>
-          <p class="muted">${esc(d.cls.name)}${d.subclass ? " · " + esc(d.subclass.name) : ""} · level ${esc(d.level)}${ch.size ? " · " + esc(ch.size) : ""}
-            · code <strong>${esc(code)}</strong> · <span id="save-state">saved</span></p>
+          <p class="sheet-class">${esc(d.cls.name)}${d.subclass ? ` <span class="sep">&middot;</span> ${esc(d.subclass.name)}` : ""}${ch.size ? ` <span class="sep">&middot;</span> ${esc(ch.size)}` : ""}</p>
+          <p class="sheet-code">code <strong>${esc(code)}</strong> <span class="sep">&middot;</span> <span id="save-state">saved</span></p>
         </div>
+        <div class="sheet-level"><span class="lv-k">Level</span><span class="lv-v">${esc(d.level)}</span></div>
       </div>
       <button class="btn ${p.inCombat ? "btn-hot" : ""}" data-act="combat">${p.inCombat ? "End combat" : "Start combat"}</button>
     </div>
@@ -819,7 +905,7 @@ function renderSheet() {
     ${gearPanel(d, ch)}
     ${ui.levelUp ? "" : progressPanel(d)}
     ${ui.levelUp ? "" : dangerPanel()}
-  `);
+  `));
 }
 
 /* After a cast that forces a save, ask the one question the app cannot answer for itself. */
@@ -949,7 +1035,7 @@ function tricksPanel(d, p) {
     const cost = t.engineCost || 0;
     const tooPoor = cost > p.engine;
     const blocked = cd > 0 || spent || tooPoor;
-    const why = spent ? "used this combat" : cd > 0 ? `Seen — ${cd} round${cd === 1 ? "" : "s"}` : tooPoor ? `needs ${cost}` : "";
+    const why = spent ? "used this combat" : cd > 0 ? `Ready in ${cd} round${cd === 1 ? "" : "s"}` : tooPoor ? `needs ${cost}` : "";
     return `<div class="trick-row ${blocked ? "blocked" : ""}">
       <div class="trick-main">
         <div class="trick-head">
@@ -957,7 +1043,7 @@ function tricksPanel(d, p) {
           <span class="tier-badge tier-${esc(t.tier)}">${esc(cap(t.tier))}</span>
           ${trickMetaRow(t, d)}
         </div>
-        <div class="trick-sum">${fmtDesc(t.sheetSummary || "", trickLadder(t))}</div>
+        <div class="trick-sum">${fmtDesc(t.sheetSummary || "", trickLadder(t))} ${inPlayTip(t.narration)}</div>
       </div>
       <div class="trick-act">
         ${why ? `<span class="why">${esc(why)}</span>` : ""}
@@ -982,6 +1068,7 @@ function trickMetaRow(t, d) {
     range: t.range,
     save: t.save ? t.save + " save" : "",
     cooldown: t.cooldown ? `${t.cooldown} round${t.cooldown > 1 ? "s" : ""}` : "",
+    duration: /^instantaneous$/i.test(t.duration || "") ? "" : t.duration,
   });
 }
 
@@ -995,7 +1082,7 @@ function limitOf(f) {
 }
 
 function featuresPanel(d, p) {
-  const rows = d.features.map((f) => {
+  const cards = d.features.map((f) => {
     const lim = limitOf(f);
     const key = f.name;
     const open = ui.openFeats.has(key);
@@ -1010,24 +1097,21 @@ function featuresPanel(d, p) {
         ${used ? `<button class="btn-quiet" data-act="unuse" data-val="${esc(key)}">Undo</button>` : ""}
       </div>`;
     }
-    return `<div class="feat">
-      <div class="feat-head">
-        <button class="feat-toggle" data-act="open-feat" data-val="${esc(key)}">
-          <span class="lvl">L${esc(f.level)}</span>
-          <span class="feat-name">${esc(f.name)}</span>
-          ${f.role === "roleplay" ? `<span class="role-badge">Roleplay</span>` : ""}
-          <span class="muted">${esc(f._from)}</span>
-          <span class="chev">${open ? "&minus;" : "+"}</span>
-        </button>
-        ${ctl}
-      </div>
+    return `<div class="feat-card ${open ? "open" : ""}">
+      <button class="feat-toggle" data-act="open-feat" data-val="${esc(key)}">
+        <span class="lvl">L${esc(f.level)}</span>
+        <span class="feat-name">${esc(f.name)}</span>
+        <span class="chev">${open ? "&minus;" : "+"}</span>
+      </button>
+      <p class="feat-from">${esc(f._from)}${f.role === "roleplay" ? ` <span class="role-badge">Roleplay</span>` : ""}</p>
+      ${ctl}
       ${open ? `<div class="feat-body">${tabbed(
         metaRow(f.meta) + fmtDesc(f.sheetSummary || f.description || "")
           + (Array.isArray(f.options) && f.options.length ? optionTable(f.options) : ""),
         narrationHTML(f.narration))}</div>` : ""}
     </div>`;
   }).join("");
-  return `<section class="panel"><h2>Features</h2>${rows}</section>`;
+  return `<section class="panel"><h2>Features</h2><div class="feat-grid">${cards}</div></section>`;
 }
 
 /* Conditions any character can be under, plus whatever the class data declares. Nothing here is
@@ -1337,7 +1421,10 @@ function sheetAction(e) {
     ch.weapons = have.includes(val) ? have.filter((w) => w !== val) : have.concat(val);
   }
   else if (act === "open-feat") { ui.openFeats.has(val) ? ui.openFeats.delete(val) : ui.openFeats.add(val); }
-  else if (act === "levelup") ui.levelUp = { to: Math.min(20, d.level + 1), subclassId: "", asi: {} };
+  else if (act === "levelup") {
+    ui.levelUp = { to: Math.min(20, d.level + 1), subclassId: "", asi: {} };
+    ui.scrollTop = true;   // the panel opens above the fold; take the reader to it
+  }
   else if (act === "lu-cancel") ui.levelUp = null;
   else if (act === "lu-sub") ui.levelUp.subclassId = ui.levelUp.subclassId === val ? "" : val;
   else if (act === "sub-open") { ui.openSubs.has(val) ? ui.openSubs.delete(val) : ui.openSubs.add(val); }
@@ -1379,6 +1466,11 @@ function sheetAction(e) {
   } else return;
 
   renderSheet();
+  if (ui.scrollTop) {
+    ui.scrollTop = false;
+    const view = $("#tool-view");
+    if (view) view.scrollTo ? view.scrollTo({ top: 0, behavior: "smooth" }) : (view.scrollTop = 0);
+  }
   if (!UI_ONLY_ACTS.has(act)) persist();
 }
 
