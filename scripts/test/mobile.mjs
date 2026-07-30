@@ -73,6 +73,7 @@ for (const width of [360, 320]) {
   await page.evaluate((ch) => {
     CocStore.load = async () => JSON.parse(JSON.stringify(ch));
     CocStore.save = async () => {};
+    CocStore.all = async () => ({ "123456": ch, "998877": { name: "Second", classId: "the-sandow", level: 3 } });
   }, CH);
 
   const go = async (hash, ms = 500) => {
@@ -92,6 +93,7 @@ for (const width of [360, 320]) {
   await go("#/armor");                 await audit(page, "armour list");
   await go("#/create");                await audit(page, "creator");
   await go("#/manage");                await audit(page, "my characters");
+  await go("#/roster", 700);           await audit(page, "recovery roster");
   await go("#/sheet/123456", 800);     await audit(page, "character sheet");
   await tap('[data-act="combat"]');    await audit(page, "sheet in combat");
   await tap('[data-act="open-opts"]'); await audit(page, "feature options open");

@@ -797,6 +797,54 @@ async function openByCode() {
   }
 }
 
+/* ---------------------------------------------------------------- recovery roster */
+
+/* Every saved character and its code, for when somebody loses theirs. Deliberately NOT linked from
+   the menu — it is a recovery tool, not a browsing one.
+ *
+ * It exposes nothing that was not already exposed. The database URL sits in config.js, which every
+ * visitor downloads, and the rules open the `characters` path to anyone; so a roster makes an
+ * existing openness convenient rather than creating it. The six-digit code is the credential and the
+ * database is public — that is the whole security model, and it is a reasonable one for a table of
+ * friends and a bad one for anything private. */
+function routeRoster() {
+  paint(`<div class="tool-head"><a class="back" href="#/">&larr; Menu</a>
+    <h1>All characters</h1>
+    <p class="muted">Every character saved under this table's storage, with its code — so a lost code
+      is recoverable. ${esc(CocStore.describe())}</p></div>
+    <section class="step"><p class="muted">Reading…</p></section>`);
+  CocStore.all().then((rows) => {
+    const codes = Object.keys(rows).filter((c) => rows[c]).sort();
+    if (!codes.length) {
+      paint(toolEl().innerHTML.replace(/<section class="step">[\s\S]*<\/section>/,
+        `<section class="step"><p class="muted">Nothing saved yet.</p></section>`));
+      return;
+    }
+    const body = codes.map((code) => {
+      const ch = rows[code] || {};
+      const cls = idx.classes.get(ch.classId);
+      const sub = ch.subclassId ? idx.subclasses.get(ch.subclassId) : null;
+      return `<tr>
+        <td><a href="#/sheet/${esc(code)}"><strong>${esc(code)}</strong></a></td>
+        <td>${esc(ch.name || "Unnamed")}</td>
+        <td>${esc(cls ? cls.name : ch.classId || "—")}${sub ? ` <span class="muted">${esc(sub.name)}</span>` : ""}</td>
+        <td class="col-num">${esc(ch.level ?? "—")}</td>
+      </tr>`;
+    }).join("");
+    paint(`<div class="tool-head"><a class="back" href="#/">&larr; Menu</a>
+      <h1>All characters</h1>
+      <p class="muted">${esc(codes.length)} saved. A code is the only credential a character has, so
+        treat this list as private — and remember the database itself is readable by anyone who opens
+        the site's config.</p></div>
+      <section class="panel"><table class="data-table">
+        <thead><tr><th>Code</th><th>Name</th><th>Class</th><th>Level</th></tr></thead>
+        <tbody>${body}</tbody></table></section>`);
+  }).catch((err) => {
+    paint(`<div class="tool-head"><a class="back" href="#/">&larr; Menu</a>
+      <h1>All characters</h1><p class="muted">Could not read storage: ${esc(err.message)}</p></div>`);
+  });
+}
+
 /* ---------------------------------------------------------------- the live sheet */
 
 /* Play state: everything that changes during a session and nothing that does not. Reset by combat,
@@ -1088,7 +1136,12 @@ function limitOf(f) {
    There is no expander. A card that hides its own content is a click to read one sentence, and it
    made the grid ragged: cards changed size as you opened them. */
 function featuresPanel(d, p) {
-  const cards = d.features.map((f) => {
+  // A feature marked `panel` only announces a subsystem this sheet already shows live — "You gain
+  // the Grit pool, see the engine", "Full caster from level 1, you know the whole list". It belongs
+  // on the class page, where it explains what the class IS; here it would sit two inches from the
+  // Engine or Tricks panel saying that panel exists.
+  const shown = d.features.filter((f) => !(f.panel === "engine" ? d.engine : f.panel === "tricks" ? d.tricks.length : false));
+  const cards = shown.map((f) => {
     const lim = limitOf(f);
     const key = f.name;
     let ctl = "";
@@ -1498,6 +1551,7 @@ function sheetAction(e) {
 COC_ROUTES.create = routeCreate;
 COC_ROUTES.manage = routeManage;
 COC_ROUTES.sheet = routeSheet;
+COC_ROUTES.roster = routeRoster;
 
 document.addEventListener("click", (e) => {
   if (!toolEl() || $("#tool-view").classList.contains("hidden")) return;

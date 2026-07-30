@@ -78,7 +78,8 @@
       "sheetSummary": "You gain the Momentum pool. See the Momentum engine for generation, spending, and cap.",
       "meta": {
         "action": "Passive"
-      }
+      },
+      "panel": "engine"
     },
     {
       "level": 1,

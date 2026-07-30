@@ -93,7 +93,14 @@ body {
 
 /* Layout */
 .layout { display: flex; flex: 1; min-height: 0; align-items: flex-start; }
+/* The category list stays put while the page scrolls past it — it is navigation, not content.
+   --topbar-h is measured in app.js because the bar's height depends on whether its row has wrapped,
+   which no CSS length can know. */
 .sidebar {
+  position: sticky;
+  top: var(--topbar-h, 4rem);
+  max-height: calc(100dvh - var(--topbar-h, 4rem));
+  overflow-y: auto;
   width: 220px;
   flex-shrink: 0;
   background: var(--panel);
@@ -397,6 +404,9 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
   /* Sidebar turns into a horizontal, scrollable category strip above the content. */
   .layout { flex-direction: column; align-items: stretch; }
   .sidebar {
+    /* On a phone it is a horizontal strip above the content; pinning it too would eat a band of an
+       already short screen. */
+    position: static; max-height: none;
     width: auto; flex: 0 0 auto; flex-direction: row;
     overflow-x: auto; overflow-y: hidden;
     border-right: none; border-bottom: 1px solid var(--border);
@@ -430,9 +440,13 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
     color: var(--muted); font-size: 0.80rem; text-transform: uppercase; letter-spacing: 1px;
   }
 
-  /* Keep wide tables readable and prevent unbreakable text from overflowing. */
-  .data-table { font-size: 0.87rem; }
+  /* Keep wide tables readable and prevent unbreakable text from overflowing. table-layout: fixed
+     is the guarantee: an auto table sizes itself to its content and will happily exceed the screen,
+     a fixed one divides the width it is given and lets the cells wrap. */
+  .data-table { font-size: 0.87rem; table-layout: fixed; width: 100%; }
   .data-table th, .data-table td { overflow-wrap: break-word; }
+  /* Fixed layout would otherwise give a d8 roll column the same width as an effect column. */
+  .option-table .col-num, .option-table thead th:first-child { width: 3.2rem; }
 
   /* Bigger, clearer ⓘ so it reads as a tappable hint (tap toggles the tooltip). */
   .tip-mark { font-size: 0.9em; margin-left: 0.25em; }

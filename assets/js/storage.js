@@ -24,6 +24,11 @@ const CocStore = (() => {
 
   /* ---------- local ---------- */
   const local = {
+    async all() {
+      const out = {};
+      for (const code of await local.list()) out[code] = await local.load(code);
+      return out;
+    },
     async list() {
       try { return JSON.parse(localStorage.getItem(LOCAL_INDEX) || "[]"); }
       catch { return []; }
@@ -52,6 +57,11 @@ const CocStore = (() => {
   /* ---------- firebase realtime database (REST, no SDK) ---------- */
   const firebase = {
     url(code) { return `${cfg.firebaseUrl.replace(/\/$/, "")}/characters/${code}.json`; },
+    async all() {
+      const res = await fetch(`${cfg.firebaseUrl.replace(/\/$/, "")}/characters.json`);
+      if (!res.ok) throw new Error("cloud read failed: " + res.status);
+      return (await res.json()) || {};
+    },
     async list() {
       const res = await fetch(`${cfg.firebaseUrl.replace(/\/$/, "")}/characters.json?shallow=true`);
       if (!res.ok) throw new Error("cloud list failed: " + res.status);
@@ -128,6 +138,13 @@ const CocStore = (() => {
     async load(code) { return backend.load(code); },
     async save(code, character) { return backend.save(code, character); },
     async remove(code) { return backend.remove(code); },
+    /* Every saved character in one call. Used only by the recovery roster. */
+    async all() {
+      if (backend.all) return backend.all();
+      const out = {};
+      for (const code of await backend.list()) out[code] = await backend.load(code);
+      return out;
+    },
     /* True if the code is already taken — the creator refuses to overwrite silently. */
     async taken(code) {
       try { return (await backend.load(code)) != null; }

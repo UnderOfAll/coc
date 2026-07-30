@@ -225,9 +225,15 @@ click($('[data-act="combat"]'));
 
 console.log("\n— FEATURES AS CARDS —");
 mk("joker",5,"anarchist");
-const nFeat=peek("derive(sheet.ch).features.length");
+// A feature marked `panel` announces a subsystem the sheet already shows live, so it is left off.
+const nFeat=peek(`(function(){const d=derive(sheet.ch);
+  return d.features.filter(f=>!(f.panel==="engine"?d.engine:f.panel==="tricks"?d.tricks.length:false)).length;})()`);
+const nBanner=peek(`derive(sheet.ch).features.filter(f=>f.panel).length`);
 ok($(".feat-grid"),"features are a grid");
-ok($$(".feat-card").length===nFeat,"one card per feature");
+ok(nBanner>0,"this class has "+nBanner+" panel-banner features");
+ok($$(".feat-card").length===nFeat,"one card per feature, banners left out");
+ok(![...$$(".feat-name")].some(n=>n.textContent==="Tricks"),"no 'Tricks' card beside the Tricks panel");
+ok(![...$$(".feat-name")].some(n=>n.textContent==="Mayhem"),"no 'Mayhem' card beside the Mayhem panel");
 ok($$('[data-act="open-feat"]').length===0,"no expander — every card shows the whole feature");
 ok($$(".feat-card .feat-text").length===nFeat,"every card carries its rules text");
 ok($$(".feat-card .feat-text").every(n=>n.textContent.trim().length>15),"and it is real text, not a stub");
@@ -334,6 +340,17 @@ ok(log.length===1&&log[0].startsWith("remove:"),"it removes, and the pending sav
 ok(peek("sheet")===null,"the sheet lets go of it");
 ok(peek(`localStorage.getItem("coc:recent")`)==="[]","and it drops off this device's recent list");
 ok(peek("location.hash")==="#/manage","and you land back on My characters");
+
+console.log("\n— RECOVERY ROSTER —");
+peek(`CocStore.all = async () => ({
+  "123456": {name:"Rig", classId:"joker", subclassId:"anarchist", level:5},
+  "998877": {name:"Other", classId:"the-sandow", level:2} });`);
+await go("#/roster");
+const rows=$$("#tool .data-table tbody tr");
+ok(rows.length===2,"every saved character is listed ("+rows.length+")");
+ok(rows[0].textContent.includes("123456")&&rows[0].textContent.includes("Rig"),"code beside the name");
+ok(rows[0].querySelector("a").getAttribute("href")==="#/sheet/123456","and opens the sheet");
+ok(rows[1].textContent.includes("Sandow"),"class resolved from its id");
 
 console.log("\n— STATES —");
 mk("illusionist",5,"nightmare");

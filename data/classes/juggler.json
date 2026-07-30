@@ -66,7 +66,8 @@
       "sheetSummary": "You gain the Juggle Set. Set Size is 3 at 1st level and grows with level. See the engine for refills, Set Size, and how throwing feeds Barrage and drains Deflect.",
       "meta": {
         "action": "Passive"
-      }
+      },
+      "panel": "engine"
     },
     {
       "level": 1,

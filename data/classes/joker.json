@@ -85,7 +85,8 @@
       "sheetSummary": "You gain the Mayhem pool. See the Mayhem engine for generation, spending, and cap.",
       "meta": {
         "action": "Passive"
-      }
+      },
+      "panel": "engine"
     },
     {
       "level": 1,
@@ -190,7 +191,8 @@
         "uses": "Whole class list, from L2",
         "range": "Varies by trick",
         "save": "Str/Dex/Con/Int/Wis/Cha vs {{gambit DC|8 + proficiency bonus + Charisma modifier}}"
-      }
+      },
+      "panel": "tricks"
     },
     {
       "level": 2,

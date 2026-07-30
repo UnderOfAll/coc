@@ -141,7 +141,16 @@ function buildSidebar() {
   }
 }
 
+/* The sticky sidebar has to start below the sticky top bar, and that bar's height depends on whether
+   its row has wrapped — which is a layout fact no CSS length can state. Measure it and publish it. */
+function measureTopbar() {
+  const bar = $(".topbar");
+  if (bar) document.documentElement.style.setProperty("--topbar-h", bar.offsetHeight + "px");
+}
+
 function wireEvents() {
+  measureTopbar();
+  window.addEventListener("resize", measureTopbar, { passive: true });
   $("#back").addEventListener("click", () => { location.hash = "#/" + current; });
   // Landing menu needs the sidebar built even before the compendium is first opened.
 

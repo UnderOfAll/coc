@@ -120,7 +120,8 @@
         "uses": "Whole class list, from L2",
         "range": "Varies by trick",
         "save": "Str/Dex/Con/Int/Wis/Cha vs {{control DC|8 + proficiency bonus + Wisdom modifier}}"
-      }
+      },
+      "panel": "tricks"
     },
     {
       "level": 2,

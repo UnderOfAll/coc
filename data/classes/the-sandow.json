@@ -82,7 +82,8 @@
       "sheetSummary": "You gain the Grit pool. See the Grit engine for generation, spending, and cap.",
       "meta": {
         "action": "Passive"
-      }
+      },
+      "panel": "engine"
     },
     {
       "level": 1,

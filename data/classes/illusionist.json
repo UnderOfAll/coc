@@ -102,7 +102,8 @@
         "uses": "Whole class list",
         "range": "Varies by trick",
         "save": "Str/Dex/Con/Int/Wis/Cha vs {{trick save DC|8 + proficiency bonus + Intelligence modifier}}"
-      }
+      },
+      "panel": "tricks"
     },
     {
       "level": 1,

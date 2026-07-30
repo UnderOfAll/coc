@@ -145,6 +145,14 @@
             ],
             "description": "What the feature is for. Omitted = combat. Roleplay features are for dialogue, exploration, and improvised attempts outside combat."
           },
+          "panel": {
+            "type": "string",
+            "enum": [
+              "tricks",
+              "engine"
+            ],
+            "description": "This feature only ANNOUNCES a subsystem that a character sheet already renders as its own panel — \"You gain the Grit pool, see the engine\", \"Full caster from level 1, you know the whole list\". It stays on the class page, where it explains what the class IS, and is left off the sheet, where repeating it beside the live Engine or Tricks panel is noise. Declared here rather than matched on the feature's NAME, which is prose and drifts."
+          },
           "narration": {
             "type": "string",
             "description": "The IN-PLAY tab: how this looks, sounds, and is performed at the table when it happens mid-fight — the swing, the dodge, the wire going taut, what the crowd sees. Pure fiction, ZERO numbers: never restate a die, a DC, a range, a cost, or a condition name here (those live in the mechanics tab). 2-4 sentences. Written second person, present tense."
