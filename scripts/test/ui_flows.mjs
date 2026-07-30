@@ -55,6 +55,15 @@ ok($$('[data-pick="abil"]').filter(b=>b.dataset.val.endsWith("|1")&&!b.disabled)
 const anyAfford=$$('[data-pick="abil"]').filter(b=>b.dataset.val.endsWith("|1")&&!b.disabled).length;
 ok(spent<27||anyAfford===0,"when the budget is gone every + is disabled");
 
+// the creator picks a discipline off the same cards, not off a row of names
+type($("#lvl"),"3"); blur($("#lvl"));
+ok($$(".sub-card").length===3,"the creator offers disciplines as openable cards too");
+click($$('[data-pick="sub-open"]')[0]);
+ok($$(".sub-card .lu-sum").length>0,"and they open to their rules text");
+click($$('[data-pick="subclass"]')[0]);
+ok(peek("draft.subclassId")!=="","choosing one sticks");
+type($("#lvl"),"5"); blur($("#lvl"));
+
 // gear: weapons are a choice, and tooltips exist for what you are choosing
 const weps=$$('[data-pick="weapon"]');
 ok(weps.length===3,"three proficient weapons offered ("+weps.length+")");
@@ -148,7 +157,20 @@ click($('[data-act="levelup"]'));
 ok($(".levelup"),"preview panel opens");
 ok(peek("sheet.ch.level")===2,"nothing written yet");
 ok($('[data-act="lu-confirm"]').disabled,"confirm blocked until a discipline is chosen at 3");
+// You cannot pick a discipline off a name. Every option must open to its actual rules text.
+const cards=$$(".sub-card");
+ok(cards.length===3,"three disciplines offered as cards ("+cards.length+")");
+ok($$(".sub-card .lu-sum").length===0,"collapsed by default");
+click($$('[data-act="sub-open"]')[0]);
+const body=$(".sub-card .feat-body");
+ok(body,"a discipline opens");
+ok($$(".sub-card .lu-list li").length>=3,"and lists all of its features");
+ok($$(".sub-card .lu-sum").every(n=>n.textContent.trim().length>20),"each with real rules text, not just a name");
+ok(!/\{\{|\[\[/.test(body.textContent),"tokens are expanded, not leaked");
 click($$('[data-act="lu-sub"]')[0]);
+// …and the same must be true of the "what this level adds" list itself.
+const sums=$$(".levelup .lu-grid .lu-list .lu-sum");
+ok(sums.length>0&&sums.some(n=>n.textContent.trim().length>20),"new features show what they do, not only their name");
 ok(!$('[data-act="lu-confirm"]').disabled,"unblocked once chosen");
 const hpBefore=peek("sheet.ch.play.hp"), maxBefore=peek("derive(sheet.ch).hpMax");
 ok(/\+\d/.test($(".lu-hp").textContent),"shows the hit points it would add");
@@ -170,6 +192,35 @@ ok(peek("sheet.ch.scores.Dexterity")===17,"Dex 15 -> 17");
 ok(peek("sheet.ch.level")===4,"level 4");
 click($('[data-act="leveldown"]'));
 ok(peek("sheet.ch.level")===3&&peek("sheet.ch.scores.Dexterity")===15,"undo a level puts the ability points back");
+console.log("\n— PERMANENT DELETE —");
+ok($('[data-act="delete-arm"]'),"a delete control exists");
+ok(!$("#del-confirm"),"but no confirm box until you ask for one");
+click($('[data-act="delete-arm"]'));
+ok($("#del-confirm"),"asking for it reveals the box");
+ok($('[data-act="delete-go"]').disabled,"delete is locked");
+type($("#del-confirm"),"confirm");
+ok($('[data-act="delete-go"]').disabled,"lowercase does not unlock it");
+type($("#del-confirm"),"CONFIRM ");
+ok($('[data-act="delete-go"]').disabled,"nor a trailing space");
+type($("#del-confirm"),"CONFIRM");
+ok(!$('[data-act="delete-go"]').disabled,"exactly CONFIRM unlocks it");
+click($('[data-act="delete-cancel"]'));
+ok(!$("#del-confirm")&&$('[data-act="delete-arm"]'),"cancel puts it away again");
+// The real backend is the cloud, which this harness cannot reach, so record the calls instead.
+peek(`window.__log=[];
+  CocStore.remove=async(c)=>{window.__log.push("remove:"+c);};
+  CocStore.save=async(c)=>{window.__log.push("save:"+c);};
+  localStorage.setItem("coc:recent", JSON.stringify([{code:sheet.code,name:"Rig"}]));`);
+click($('[data-act="delete-arm"]'));
+type($("#del-confirm"),"CONFIRM");
+peek(`sheet.ch.play.hp=1; persist();`);   // a debounced save is now in flight
+click($('[data-act="delete-go"]'));
+await new Promise(r=>setTimeout(r,800));  // twice the 400ms save debounce
+const log=JSON.parse(peek("JSON.stringify(window.__log)"));
+ok(log.length===1&&log[0].startsWith("remove:"),"it removes, and the pending save never fires ("+log.join(",")+")");
+ok(peek("sheet")===null,"the sheet lets go of it");
+ok(peek(`localStorage.getItem("coc:recent")`)==="[]","and it drops off this device's recent list");
+ok(peek("location.hash")==="#/manage","and you land back on My characters");
 
 console.log("\n— STATES —");
 mk("illusionist",5,"nightmare");

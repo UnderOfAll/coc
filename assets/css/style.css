@@ -761,3 +761,24 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 .gear-line { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: baseline; margin: 0 0 0.6rem; }
 /* The level box is a stepper's middle, not a full-width field. */
 input.step-val { width: 3.4rem; }
+
+/* Choosing a discipline: a card each, openable to its full rules text, because the choice is
+   permanent and a name plus a flavour line is not something anyone can decide on. */
+.lu-full { grid-column: 1 / -1; }
+.sub-choice { display: grid; gap: 0.7rem; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); }
+.sub-card { display: flex; flex-direction: column; gap: 0.4rem; padding: 0.7rem 0.85rem;
+  background: var(--panel-2); border: 1px solid var(--border); border-left: 3px solid transparent;
+  border-radius: var(--radius); min-width: 0; }
+.sub-card.on { border-left-color: var(--gold); background: rgba(201, 165, 78, 0.1); }
+.sub-card .btn, .sub-card .btn-quiet { align-self: flex-start; margin-top: auto; }
+.lu-list li { margin-bottom: 0.6rem; }
+.lu-sum { display: block; color: var(--muted); font-size: 0.85rem; line-height: 1.55; margin-top: 0.15rem; }
+.lu-sum .data-table { margin: 0.4rem 0; }
+
+/* Deleting is irreversible — the six-digit code is the only copy — so it is gated behind typing
+   the word rather than behind a second click. */
+.danger { border-color: var(--border); }
+.danger.armed { border-color: var(--accent); background: rgba(192, 57, 43, 0.08); }
+.danger h2 { color: var(--accent-soft); }
+.danger-row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.danger-row .text { width: 11rem; letter-spacing: 2px; text-align: center; }

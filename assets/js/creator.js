@@ -167,7 +167,10 @@ let draft = null;
 let sheet = null;      // { code, ch } while a sheet is open
 /* Pure interface state: what is expanded, what number is sitting in the damage box, whether a
    level-up is being previewed. Never saved — none of it is part of the character. */
-const ui = { openFeats: new Set(), openTricks: new Set(), hpAmt: 1, levelUp: null };
+const ui = {
+  openFeats: new Set(), openTricks: new Set(), openSubs: new Set(),
+  hpAmt: 1, levelUp: null, deleteArmed: false, deleteText: "",
+};
 
 function toolEl() { return $("#tool"); }
 
@@ -259,6 +262,7 @@ function blankDraft() {
    name, scores and portrait to edit by accident. */
 function routeCreate() {
   draft = blankDraft();
+  ui.openSubs.clear();
   renderCreator();
 }
 
@@ -302,12 +306,10 @@ function stepBasics(cls) {
   const sizes = (cls.sizes || ["Small", "Medium"]).map((s) =>
     `<button class="chip ${draft.size === s ? "on" : ""}" data-pick="size" data-val="${esc(s)}">${esc(s)}</button>`).join("");
   const subLv = cls.subclassLevel || 3;
-  const subs = (store.subclasses || []).filter((s) => s.parentClass === cls.id);
   const subPick = draft.level >= subLv
     ? `<label class="field-label">${esc(cls.features.find((f) => /Discipline|Repertoire|Act|Archetype/i.test(f.name))?.name || "Subclass")}</label>
-       <div class="chips">${subs.map((s) =>
-         chipTip(`<button class="chip ${draft.subclassId === s.id ? "on" : ""}" data-pick="subclass" data-val="${esc(s.id)}">${esc(s.name)}</button>`,
-           esc(s.flavor || ""))).join("")}</div>`
+       <p class="muted">Open each one to read what it gives you — this choice is permanent.</p>
+       ${disciplineCards(cls, draft.subclassId, draft.level, "pick")}`
     : `<p class="muted">You choose a subclass at level ${esc(subLv)}.</p>`;
   return `<section class="step"><h2>2 · Level &amp; size</h2>
     <label class="field-label">Level <span class="muted">(features are written up to 5 for now)</span></label>
@@ -539,6 +541,7 @@ function creatorClick(e) {
     else if (cls && !(cls.sizes || []).includes(draft.size)) draft.size = "";
   } else if (pick === "size") draft.size = val;
   else if (pick === "subclass") draft.subclassId = draft.subclassId === val ? "" : val;
+  else if (pick === "sub-open") { ui.openSubs.has(val) ? ui.openSubs.delete(val) : ui.openSubs.add(val); }
   else if (pick === "level") {
     draft.level = Math.max(1, Math.min(20, draft.level + Number(val)));
     draft.levelText = String(draft.level);
@@ -583,6 +586,7 @@ function creatorInput(e) {
   else if (t.id === "notes") draft.notes = t.value;
   else if (t.id === "code") { draft._code = t.value.replace(/\D/g, "").slice(0, 6); delete draft._overwrite; }
   else if (t.id === "hp-amt") ui.hpAmt = Math.max(1, Number(t.value) || 1);
+  else if (t.id === "del-confirm" && sheet) { ui.deleteText = t.value; renderSheet(); }
 }
 
 /* Leaving a half-typed box puts it back to something legal, so an abandoned edit can never leave
@@ -743,7 +747,8 @@ function normalisePlay(ch) {
 
 function routeSheet(code) {
   if (!CocStore.validCode(code)) { location.hash = "#/manage"; return; }
-  ui.openFeats.clear(); ui.openTricks.clear(); ui.levelUp = null; ui.hpAmt = 1;
+  ui.openFeats.clear(); ui.openTricks.clear(); ui.openSubs.clear();
+  ui.levelUp = null; ui.hpAmt = 1; ui.deleteArmed = false; ui.deleteText = "";
   paint(`<div class="tool-head"><a class="back" href="#/manage">&larr; My characters</a><h1>Loading…</h1></div>`);
   CocStore.load(code).then((ch) => {
     if (!ch) { paint(`<div class="tool-head"><a class="back" href="#/manage">&larr; My characters</a>
@@ -803,6 +808,7 @@ function renderSheet() {
     ${statePanel(d, p)}
     ${gearPanel(d, ch)}
     ${ui.levelUp ? "" : progressPanel(d)}
+    ${ui.levelUp ? "" : dangerPanel()}
   `);
 }
 
@@ -1077,6 +1083,46 @@ function progressPanel(d) {
   </section>`;
 }
 
+/* Choosing a discipline is permanent and it is the single biggest decision on the ladder, so it is
+   not a row of chips with a flavour line. Each one opens to show every feature it will ever give —
+   with the rules text, the meta chips and any options table — plus the tricks it grants, marking
+   which of them are still out of reach at this level.
+
+   Shared by the creator and the level-up panel: it is the same decision either way, and it was the
+   creator's version that was a row of chips. `attr` is which event channel the caller listens on
+   ("pick" for the creator, "act" for the sheet) — the only thing that differs between them. */
+function disciplineCards(cls, selectedId, level, attr) {
+  const subs = (store.subclasses || []).filter((s) => s.parentClass === cls.id);
+  return `<div class="sub-choice">${subs.map((s) => {
+    const on = selectedId === s.id;
+    const open = ui.openSubs.has(s.id);
+    const feats = (s.features || []).slice().sort((a, b) => (a.level || 1) - (b.level || 1));
+    const gts = (store.tricks || []).filter((t) => (t.subclasses || []).includes(s.id || s.name));
+    return `<div class="sub-card ${on ? "on" : ""}">
+      <button class="feat-toggle" data-${attr}="sub-open" data-val="${esc(s.id)}">
+        <span class="feat-name">${esc(s.name)}</span>
+        <span class="muted">${esc(feats.length)} features${gts.length ? ` · ${esc(gts.length)} tricks` : ""}</span>
+        <span class="chev">${open ? "&minus;" : "+"}</span>
+      </button>
+      ${s.flavor ? `<p class="muted">${esc(s.flavor)}</p>` : ""}
+      ${open ? `<div class="feat-body">
+        <ul class="lu-list">${feats.map((f) => `<li>
+          <span class="lvl">L${esc(f.level)}</span> <strong>${esc(f.name)}</strong>
+          ${f.role === "roleplay" ? `<span class="role-badge">Roleplay</span>` : ""}
+          ${(f.level || 1) > level ? `<span class="why">not until level ${esc(f.level)}</span>` : ""}
+          <span class="lu-sum">${metaRow(f.meta)}${fmtDesc(f.sheetSummary || f.description || "")}
+            ${Array.isArray(f.options) && f.options.length ? optionTable(f.options) : ""}</span>
+        </li>`).join("")}
+        ${gts.map((t) => `<li>
+          <span class="lvl">L${esc(Math.max(t.minLevel || 1, cls.subclassLevel || 3))}</span>
+          <strong>${esc(t.name)}</strong> <span class="tier-badge tier-${esc(t.tier)}">${esc(cap(t.tier))}</span>
+          <span class="lu-sum">${fmtDesc(t.sheetSummary || "", trickLadder(t))}</span>
+        </li>`).join("")}</ul></div>` : ""}
+      <button class="${on ? "btn" : "btn-quiet"}" data-${attr}="${attr === "act" ? "lu-sub" : "subclass"}" data-val="${esc(s.id)}">${on ? "Chosen" : "Choose this"}</button>
+    </div>`;
+  }).join("")}</div>`;
+}
+
 /* A preview, not a mutation. Level is one of the few things actually STORED on a character, and
    every number on the sheet hangs off it, so the panel shows exactly what the level would add —
    hit points, features, tricks — and writes nothing until Confirm. */
@@ -1098,11 +1144,9 @@ function levelUpPanel(dNow) {
   const gainedT = dNext.tricks.filter((t) => !beforeT.has(t.id || slug(t)));
   const hpGain = dNext.hpMax - dNow.hpMax;
 
-  const subs = (store.subclasses || []).filter((s) => s.parentClass === cls.id);
-  const subBlock = needsSub ? `<div class="lu-block"><h3>Choose a discipline</h3>
-    <div class="chips">${subs.map((s) => chipTip(
-      `<button class="chip ${lu.subclassId === s.id ? "on" : ""}" data-act="lu-sub" data-val="${esc(s.id)}">${esc(s.name)}</button>`,
-      esc(s.flavor || ""))).join("")}</div></div>` : "";
+  const subBlock = needsSub ? `<div class="lu-block lu-full"><h3>Choose a discipline</h3>
+    <p class="muted">This is permanent. Open each one and read what it actually gives you before you pick.</p>
+    ${disciplineCards(cls, lu.subclassId, lu.to, "act")}</div>` : "";
 
   const spent = asiSpent(lu.asi);
   const asiBlock = isAsi ? `<div class="lu-block"><h3>Ability score increase
@@ -1120,9 +1164,15 @@ function levelUpPanel(dNow) {
     <p class="muted">Two points: +2 to one ability, or +1 to two. Nothing goes past 20.</p></div>` : "";
 
   const blocked = (needsSub && !lu.subclassId) || (isAsi && spent < 2);
+  // A name alone is not enough to decide anything on, which is the whole complaint: what a level
+  // gives you has to be readable at the moment you take it, not one navigation away.
   const list = (arr, empty) => arr.length
-    ? `<ul class="lu-list">${arr.map((x) => `<li><span class="lvl">L${esc(x.level || x._at)}</span> ${esc(x.name)}
-        ${x._from && x._from !== cls.name ? `<span class="muted">${esc(x._from)}</span>` : ""}</li>`).join("")}</ul>`
+    ? `<ul class="lu-list">${arr.map((x) => `<li>
+        <span class="lvl">L${esc(x.level || x._at)}</span> <strong>${esc(x.name)}</strong>
+        ${x._from && x._from !== cls.name ? `<span class="muted">${esc(x._from)}</span>` : ""}
+        ${x.role === "roleplay" ? `<span class="role-badge">Roleplay</span>` : ""}
+        <span class="lu-sum">${fmtDesc(x.sheetSummary || x.description || "", x.tier ? trickLadder(x) : undefined)}</span>
+      </li>`).join("")}</ul>`
     : `<p class="lu-none">${esc(empty)}</p>`;
 
   return `<section class="panel levelup">
@@ -1144,16 +1194,63 @@ function levelUpPanel(dNow) {
   </section>`;
 }
 
+/* ---------------------------------------------------------------- deleting */
+
+/* The six-digit code is the ONLY copy of a character — there is no account it also lives under and
+   no backup anywhere — so deleting is genuinely irreversible and is gated behind typing the word,
+   not behind a second click that muscle memory sails through. */
+function dangerPanel() {
+  if (!ui.deleteArmed) {
+    return `<section class="panel danger"><h2>Delete this character</h2>
+      <p class="muted">Erases it everywhere and frees the code for reuse. The code is the only copy —
+        there is no backup and no undo.</p>
+      <button class="btn-quiet" data-act="delete-arm">Delete permanently…</button></section>`;
+  }
+  return `<section class="panel danger armed"><h2>Delete this character</h2>
+    <p class="muted">This erases <strong>${esc(sheet.ch.name || "Unnamed")}</strong> from code
+      <strong>${esc(sheet.code)}</strong>, for everyone at your table. Type
+      <strong>CONFIRM</strong> — capitals and all — to unlock the button.</p>
+    <div class="danger-row">
+      <input id="del-confirm" class="text" type="text" autocomplete="off" spellcheck="false"
+        placeholder="CONFIRM" value="${esc(ui.deleteText)}" />
+      <button class="btn btn-hot" data-act="delete-go" ${ui.deleteText === "CONFIRM" ? "" : "disabled"}>Delete permanently</button>
+      <button class="btn-quiet" data-act="delete-cancel">Cancel</button>
+    </div>
+    <p id="del-msg" class="save-msg"></p></section>`;
+}
+
+async function deleteCharacter() {
+  if (ui.deleteText !== "CONFIRM" || !sheet) return;
+  const msg = $("#del-msg");
+  const code = sheet.code;
+  // A debounced save from the last action would otherwise land AFTER the delete and put the
+  // character straight back.
+  clearTimeout(saveTimer);
+  if (msg) { msg.textContent = "Deleting…"; msg.className = "save-msg"; }
+  try {
+    await CocStore.remove(code);
+    localStorage.setItem(RECENT_KEY, JSON.stringify(recentCodes().filter((r) => r.code !== code)));
+    sheet = null;
+    ui.deleteArmed = false; ui.deleteText = "";
+    location.hash = "#/manage";
+  } catch (err) {
+    if (msg) { msg.textContent = "Could not delete: " + err.message; msg.className = "save-msg bad"; }
+  }
+}
+
 /* ---------------------------------------------------------------- sheet actions */
 
 /* Actions that only move the interface around — expanding a feature, opening the level-up preview
    — must not write to storage. Listed here so the difference is declared rather than remembered. */
-const UI_ONLY_ACTS = new Set(["open-feat", "open-trick", "levelup", "lu-cancel", "lu-sub", "lu-asi"]);
+const UI_ONLY_ACTS = new Set(["open-feat", "open-trick", "levelup", "lu-cancel", "lu-sub",
+                              "sub-open", "lu-asi", "delete-arm", "delete-cancel"]);
 
 function sheetAction(e) {
   const b = e.target.closest("[data-act]");
   if (!b || b.disabled || !sheet) return;
   const { act, val } = b.dataset;
+  // The only action that leaves this page entirely, and the only asynchronous one.
+  if (act === "delete-go") { deleteCharacter(); return; }
   const ch = sheet.ch, p = ch.play, d = derive(ch);
   const amt = () => Math.max(1, Number(($("#hp-amt") || {}).value) || 1);
 
@@ -1229,6 +1326,9 @@ function sheetAction(e) {
   else if (act === "levelup") ui.levelUp = { to: Math.min(20, d.level + 1), subclassId: "", asi: {} };
   else if (act === "lu-cancel") ui.levelUp = null;
   else if (act === "lu-sub") ui.levelUp.subclassId = ui.levelUp.subclassId === val ? "" : val;
+  else if (act === "sub-open") { ui.openSubs.has(val) ? ui.openSubs.delete(val) : ui.openSubs.add(val); }
+  else if (act === "delete-arm") { ui.deleteArmed = true; ui.deleteText = ""; }
+  else if (act === "delete-cancel") { ui.deleteArmed = false; ui.deleteText = ""; }
   else if (act === "lu-asi") {
     const [a, delta] = val.split("|");
     const asi = ui.levelUp.asi;
