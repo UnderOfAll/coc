@@ -65,7 +65,10 @@ async function audit(page, label) {
   }
 }
 
-for (const width of [360, 320]) {
+// Real phone widths, not two round numbers. 390/412/430 are the common ones and they are WIDER
+// than 360 — which matters because a wider screen turns on multi-column grids that a narrow one
+// never reaches, so testing only the narrowest width misses every two-column bug.
+for (const width of [430, 412, 393, 360, 320]) {
   console.log(`\n— ${width}px —`);
   const page = await browser.newPage();
   await page.setViewport({ width, height: 800, deviceScaleFactor: 2, isMobile: true, hasTouch: true });

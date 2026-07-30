@@ -70,7 +70,14 @@ const weps=$$('[data-pick="weapon"]');
 ok(weps.length===3,"three proficient weapons offered ("+weps.length+")");
 ok($$('.chip-tip .term-tip').length>0,"armour/weapon chips carry an explanation tooltip");
 click(weps[0]);
-ok(peek("draft.weapons.length")===1,"weapon carried after picking");
+ok(peek("draft.weapons.length")===1,"weapon chosen");
+// You begin with ONE weapon, whatever your class is proficient with.
+click($$('[data-pick="weapon"]')[1]);
+ok(peek("draft.weapons.length")===1,"picking a second replaces the first, it does not add");
+ok(peek("draft.weapons")[0]!==weps[0].dataset.val,"and it is the new one");
+click($$('[data-pick="weapon"]')[1]);
+ok(peek("draft.weapons.length")===0,"tapping the chosen one clears it");
+click($$('[data-pick="weapon"]')[0]);
 ok(peek('validateDraft(derive(draft)).some(m=>/weapon/i.test(m))')===false,"weapon requirement satisfied");
 click($$('[data-pick="armor"]')[0]);
 type($("#cname"),"Test Joker");

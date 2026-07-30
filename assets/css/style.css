@@ -599,7 +599,12 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 .num, .text, .code-input { background: var(--panel-2); color: var(--text); border: 1px solid var(--border);
   border-radius: 6px; padding: 0.45rem 0.6rem; font: inherit; }
 .num { width: 5.5rem; } .text { width: 100%; } textarea.text { resize: vertical; }
-.abils { display: grid; gap: 0.5rem; grid-template-columns: repeat(auto-fit, minmax(min(11rem, 100%), 1fr)); }
+/* One rule for every width, rather than a fixed column count per breakpoint: auto-fit drops to
+   however many columns actually fit. `wide` is point buy, whose row carries a stepper and a cost
+   hint and needs far more room than a single <select> does — a fixed "two columns on mobile" gave it
+   180px and pushed the page off the screen on every phone WIDER than 380px, which is most of them. */
+.abils { display: grid; gap: 0.5rem; grid-template-columns: repeat(auto-fit, minmax(min(12rem, 100%), 1fr)); }
+.abils.wide { grid-template-columns: repeat(auto-fit, minmax(min(19rem, 100%), 1fr)); }
 /* Name + stepper + cost hint + modifier is a lot for one line on a 320px screen; let it wrap rather
    than push the page wider than the phone. */
 .abil { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; padding: 0.4rem 0.6rem;
@@ -635,6 +640,10 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 .portrait-actions input[type="file"] { max-width: 100%; font-size: 0.87rem; }
 .portrait { width: 72px; height: 72px; border-radius: var(--radius); object-fit: cover; border: 1px solid var(--border); }
 .portrait.empty { display: grid; place-items: center; color: var(--muted); font-family: var(--serif); font-size: 1.6rem; background: var(--panel-2); }
+/* 1.6rem is for the single initial the sheet shows in this box. A worded placeholder needs caption
+   sizing or it simply does not fit 72px. */
+.portrait.empty.caption { font-size: 0.80rem; font-family: var(--sans); line-height: 1.25;
+  text-align: center; padding: 0.3rem; overflow-wrap: break-word; }
 .recent-row { display: flex; align-items: center; gap: 0.6rem; padding: 0.45rem 0; border-top: 1px solid var(--border); }
 .recent-open { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; gap: 0.2rem 0.6rem; align-items: baseline; }
 /* --- sheet --- */
@@ -786,7 +795,6 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
   .tool-view { padding: 0 0.9rem 3rem; }
   .step, .panel { padding: 0.9rem 0.85rem; }
   .pick-grid { grid-template-columns: 1fr; }
-  .abils { grid-template-columns: 1fr 1fr; }
   .kn-grid { grid-template-columns: repeat(auto-fit, minmax(min(9rem, 100%), 1fr)); }
   .kn-v { font-size: 1.1rem; }
   /* Touch targets: 44px is the smallest comfortable tap area. */
@@ -810,7 +818,6 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 }
 /* Very narrow phones: stop the ability grid squeezing to unreadable. */
 @media (max-width: 380px) {
-  .abils { grid-template-columns: 1fr; }
   .step-cost { min-width: 0; }
   .brand-sub { display: none; }
 }

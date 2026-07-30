@@ -458,7 +458,7 @@ function stepAbilities(cls) {
       races to raise it.</p>` : ""}
     ${m === "array" ? `<p class="muted">Assign 15, 14, 13, 12, 10 and 8 in any order.</p>` : ""}
     ${m === "manual" ? `<p class="muted">Type what your table rolled. Nothing is validated beyond 3–20.</p>` : ""}
-    <div class="abils">${rows}</div></section>`;
+    <div class="abils ${m === "buy" ? "wide" : ""}">${rows}</div></section>`;
 }
 
 function stepSkills(cls) {
@@ -536,18 +536,18 @@ function stepGear(cls) {
     <p class="muted">Starter gear is free. The bought tier exists but your DM awards it in play — there is no money yet.
       Hover or tap the <span class="tip-term info-dot">&#9432;</span> beside anything to see what it does.</p>
     ${blocks}${shieldBlock}
-    <div class="sub-block"><h3 class="sub-title">Weapons carried
-        <span class="sub-note">— your class is proficient with all of these; choose what you actually hold</span></h3>
+    <div class="sub-block"><h3 class="sub-title">Starting weapon
+        <span class="sub-note">— your class is proficient with all three; you begin with <strong>one</strong></span></h3>
       <div class="chips">${weps}</div></div></section>`;
 }
 
 function stepIdentity() {
   return `<section class="step"><h2>6 · Identity</h2>
     <label class="field-label">Name</label>
-    <input id="cname" class="text" type="text" maxlength="40" value="${esc(draft.name)}" placeholder="Who are they?" />
+    <input id="cname" class="text" type="text" maxlength="40" value="${esc(draft.name)}" placeholder="Who are you?" />
     <label class="field-label">Portrait <span class="muted">(optional — stored with the character)</span></label>
     <div class="portrait-row">
-      ${draft.photo ? `<img class="portrait" src="${esc(draft.photo)}" alt="" />` : `<div class="portrait empty">no image</div>`}
+      ${draft.photo ? `<img class="portrait" src="${esc(draft.photo)}" alt="" />` : `<div class="portrait empty caption">No image yet</div>`}
       <div class="portrait-actions"><input id="photo" type="file" accept="image/*" />
       ${draft.photo ? `<button class="btn-quiet" data-pick="clearphoto" data-val="1">Remove</button>` : ""}</div>
     </div>
@@ -596,8 +596,8 @@ function validateDraft(d) {
   const need = parsed?.count || 2;
   if (parsed && parsed.skills.length && draft.skills.length < need) out.push(`Choose ${need - draft.skills.length} more skill${need - draft.skills.length === 1 ? "" : "s"}.`);
   if (!draft.armorId) out.push("Choose an armour (or clothing).");
-  if (!draft.weapons.length) out.push("Choose at least one weapon to carry.");
-  if (!String(draft.name).trim()) out.push("Give them a name.");
+  if (!draft.weapons.length) out.push("Choose your starting weapon.");
+  if (!String(draft.name).trim()) out.push("Give yourself a name.");
   return out;
 }
 
@@ -650,7 +650,9 @@ function creatorClick(e) {
   } else if (pick === "armor") draft.armorId = draft.armorId === val ? "" : val;
   else if (pick === "shield") draft.shieldId = draft.shieldId === val ? "" : val;
   else if (pick === "weapon") {
-    draft.weapons = draft.weapons.includes(val) ? draft.weapons.filter((w) => w !== val) : draft.weapons.concat(val);
+    // ONE starting weapon. Proficiency is what the class grants; the kit you begin with is a single
+    // weapon, so picking another replaces it rather than adding to a rack.
+    draft.weapons = draft.weapons.includes(val) ? [] : [val];
   } else if (pick === "clearphoto") draft.photo = "";
   else if (pick === "reroll") draft._code = suggestCode();
   renderCreator();
