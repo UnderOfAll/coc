@@ -16,10 +16,19 @@
 
 * { box-sizing: border-box; }
 
+/* Grid tracks are written minmax(min(Xrem, 100%), 1fr) throughout. A bare minmax(Xrem, 1fr) keeps
+   its Xrem floor even when the container is NARROWER than that, so on a phone the grid silently
+   pushes the page wider than the screen and the browser zooms out to compensate. */
+
 /* 17px root rather than the browser's 16. Every size in this sheet is in rem, so this lifts the
    whole thing together instead of nudging forty rules apart. */
 html { font-size: 106.25%; }
 
+/* The DOCUMENT scrolls. This used to be a viewport-locked shell — height:100dvh, overflow:hidden,
+   with .content as the only scrollable box — which meant a mouse wheel worked over the middle
+   column and nowhere else, and anything that was not .content simply got CLIPPED with no way to
+   reach it. That is why the landing page lost its third card on a phone: #menu-view is not
+   .content, so the Compendium link was below a fold that could not be scrolled to. */
 body {
   margin: 0;
   background: var(--bg);
@@ -27,13 +36,15 @@ body {
   font-family: var(--sans);
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  height: 100dvh; /* dvh = visible viewport, so mobile browser toolbars don't hide the footer */
-  overflow: hidden;
+  min-height: 100dvh;      /* fill the screen, but grow past it */
+  overflow-x: clip;        /* nothing may push the page wider than the screen — see the mobile pass.
+                              clip, not hidden: hidden would make body a scroll container and break
+                              the sticky top bar. */
 }
 
 /* Top bar */
 .topbar {
+  position: sticky; top: 0; z-index: 40;
   display: flex;
   align-items: center;
   gap: 1.5rem;
@@ -81,7 +92,7 @@ body {
 .legend-close:hover { color: var(--text); }
 
 /* Layout */
-.layout { display: flex; flex: 1; min-height: 0; }
+.layout { display: flex; flex: 1; min-height: 0; align-items: flex-start; }
 .sidebar {
   width: 220px;
   flex-shrink: 0;
@@ -91,7 +102,6 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  overflow-y: auto;
 }
 .nav-btn {
   display: flex;
@@ -117,9 +127,9 @@ body {
 }
 
 /* Content */
-.content { flex: 1; padding: 1.5rem 2rem; overflow-y: auto; }
+.content { flex: 1; min-width: 0; padding: 1.5rem 2rem; }
 h1 { font-family: var(--serif); font-weight: 600; margin: 0 0 1.25rem; }
-.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1rem; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(230px, 100%), 1fr)); gap: 1rem; }
 .card-summary {
   margin: 0.45rem 0 0; font-size: 0.85rem; color: var(--muted); line-height: 1.45;
   display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
@@ -163,7 +173,7 @@ h1 { font-family: var(--serif); font-weight: 600; margin: 0 0 1.25rem; }
 .detail-view h1 { margin-bottom: 0.25rem; }
 .detail-sub { color: var(--accent-soft); font-style: italic; margin: 0 0 1.5rem; }
 .detail-grid {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(min(140px, 100%), 1fr));
   gap: 0.75rem; margin-bottom: 1.5rem;
 }
 .stat {
@@ -334,7 +344,7 @@ h1 { font-family: var(--serif); font-weight: 600; margin: 0 0 1.25rem; }
 /* Key Numbers: headline mechanic stats up top of a class sheet */
 .key-stats-title { font-family: var(--serif); color: var(--gold); font-size: 1.05rem; margin: 0 0 0.6rem; }
 .key-stats {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
   gap: 0.75rem; margin-bottom: 1.75rem;
 }
 .key-stat {
@@ -362,7 +372,7 @@ h1 { font-family: var(--serif); font-weight: 600; margin: 0 0 1.25rem; }
 
 /* Footer */
 .statusbar {
-  padding: 0.5rem 1.25rem; background: var(--panel); border-top: 1px solid var(--border);
+  margin-top: auto; padding: 0.5rem 1.25rem; background: var(--panel); border-top: 1px solid var(--border);
   color: var(--muted); font-size: 0.85rem;
 }
 .muted { color: var(--muted); }
@@ -398,6 +408,22 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
      mobile browser's bottom toolbar (Brave) or the home indicator. */
   .content { padding: 1rem 1rem calc(3.5rem + env(safe-area-inset-bottom, 0px)); }
   .detail-view { max-width: 100%; }
+
+  /* The status bar reports entry counts and which storage backend is live. That is developer
+     reassurance, not something a player at a table needs pinned under their character sheet. */
+  .statusbar { display: none; }
+
+  /* Five columns cannot fit a phone. Stack each attack into label/value rows rather than putting
+     the table in a horizontal scroller, which would clip the mastery and property tooltips. */
+  .attack-table, .attack-table tbody, .attack-table tr, .attack-table td { display: block; width: 100%; }
+  .attack-table thead { display: none; }
+  .attack-table tr { padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--border); }
+  .attack-table td { display: flex; gap: 0.6rem; justify-content: space-between; align-items: baseline;
+    padding: 0.15rem 0; border: none; text-align: right; }
+  .attack-table td::before {
+    content: attr(data-label); color: var(--muted); font-size: 0.80rem;
+    text-transform: uppercase; letter-spacing: 1px; text-align: left; flex: 0 0 auto;
+  }
 
   /* Keep wide tables readable and prevent unbreakable text from overflowing. */
   .data-table { font-size: 0.87rem; }
@@ -496,7 +522,7 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 .menu-hero { text-align: center; margin-bottom: 2.5rem; }
 .menu-hero h1 { font-family: var(--serif); font-size: clamp(2rem, 6vw, 3.2rem); margin: 0 0 0.6rem; }
 .menu-tagline { color: var(--muted); max-width: 38rem; margin: 0 auto; line-height: 1.7; }
-.menu-cards { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
+.menu-cards { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr)); }
 .menu-card {
   display: flex; flex-direction: column; gap: 0.35rem;
   padding: 1.4rem 1.2rem; background: var(--panel); border: 1px solid var(--border);
@@ -520,7 +546,7 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 .step { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
   padding: 1.1rem 1.2rem; margin-bottom: 1.1rem; }
 .step h2 { font-family: var(--serif); font-size: 1.05rem; color: var(--gold); margin: 0 0 0.7rem; }
-.pick-grid { display: grid; gap: 0.6rem; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); }
+.pick-grid { display: grid; gap: 0.6rem; grid-template-columns: repeat(auto-fit, minmax(min(13rem, 100%), 1fr)); }
 .pick { display: flex; flex-direction: column; gap: 0.2rem; text-align: left; cursor: pointer;
   padding: 0.7rem 0.8rem; background: var(--panel-2); color: inherit;
   border: 1px solid var(--border); border-left: 3px solid transparent; border-radius: var(--radius); }
@@ -546,7 +572,7 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 .num, .text, .code-input { background: var(--panel-2); color: var(--text); border: 1px solid var(--border);
   border-radius: 6px; padding: 0.45rem 0.6rem; font: inherit; }
 .num { width: 5.5rem; } .text { width: 100%; } textarea.text { resize: vertical; }
-.abils { display: grid; gap: 0.5rem; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); }
+.abils { display: grid; gap: 0.5rem; grid-template-columns: repeat(auto-fit, minmax(min(11rem, 100%), 1fr)); }
 .abil { display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.6rem;
   background: var(--panel-2); border: 1px solid var(--border); border-radius: var(--radius); }
 .abil.primary { border-color: var(--gold); }
@@ -615,7 +641,7 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 /* Key numbers: the value is what you read, so it leads — big, centred, gold — with the label under
    it and the working-out under that. The old layout put a small grey label on top of a smaller
    number and read like a spreadsheet. */
-.kn-grid { display: grid; gap: 0.55rem; grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)); }
+.kn-grid { display: grid; gap: 0.55rem; grid-template-columns: repeat(auto-fit, minmax(min(8.5rem, 100%), 1fr)); }
 .kn { background: var(--panel-2); border: 1px solid var(--border); border-left: 3px solid var(--gold);
   border-radius: var(--radius); padding: 0.6rem 0.7rem; text-align: center; }
 .kn-v { display: block; font-family: var(--serif); font-size: 1.6rem; font-weight: 600; color: var(--gold); line-height: 1.1; }
@@ -652,28 +678,22 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 .trick-sum { font-size: 0.87rem; color: var(--muted); margin-top: 0.2rem; line-height: 1.5; }
 .trick-act { display: flex; gap: 0.4rem; align-items: center; flex-shrink: 0; }
 .why { font-size: 0.80rem; color: var(--accent-soft); }
-/* Features and tricks expand IN PLACE, and the open set lives in the sheet's UI state rather than in
-   the DOM. They used to be <details>: any action anywhere re-rendered the panel and slammed every
-   one of them shut, and a "Use" button living inside a <summary> both fired the action and toggled
-   the disclosure. Now the control sits beside the toggle, never inside it.
-
-   Features are a card grid rather than a stack of lines — three across on desktop, and
-   align-items: start so opening one does not stretch the two beside it. */
-.feat-grid { display: grid; gap: 0.6rem; align-items: start;
-  grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.feat-card { display: flex; flex-direction: column; gap: 0.3rem; min-width: 0;
-  padding: 0.6rem 0.7rem; background: var(--panel-2); border: 1px solid var(--border);
-  border-left: 3px solid transparent; border-radius: var(--radius); }
-.feat-card:hover { border-left-color: var(--gold); }
-.feat-card.open { border-left-color: var(--gold); grid-column: 1 / -1; }
-.feat-from { margin: 0; font-size: 0.80rem; color: var(--muted); }
-.feat-toggle { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; gap: 0.45rem; align-items: center;
-  text-align: left; background: none; border: none; color: inherit; font: inherit; cursor: pointer;
-  padding: 0; }
-.feat-toggle:hover .feat-name { color: var(--gold); }
+/* One card per feature, uniform and complete — no disclosure. auto-fit rather than a fixed 3
+   columns so the same rule gives three across on a desktop, two on a tablet and one on a phone;
+   stretch (the default) keeps every card in a row the same height, which is what stopped the grid
+   looking ragged. */
+.feat-grid { display: grid; gap: 0.6rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(17rem, 100%), 1fr)); }
+.feat-card { display: flex; flex-direction: column; gap: 0.35rem; min-width: 0;
+  padding: 0.7rem 0.8rem; background: var(--panel-2); border: 1px solid var(--border);
+  border-left: 3px solid var(--gold); border-radius: var(--radius); }
+.feat-title { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: baseline; }
 .feat-name { font-weight: 600; }
-.chev { margin-left: auto; color: var(--muted); font-family: var(--serif); font-size: 1.10rem; }
-.feat-body { padding: 0.2rem 0 0.3rem; }
+.feat-from { margin: 0; font-size: 0.80rem; color: var(--muted); }
+.feat-text { font-size: 0.89rem; line-height: 1.55; }
+.feat-card .feature-meta { margin: 0.1rem 0; }
+.feat-card .data-table { margin: 0.3rem 0 0; }
+.feat-card .uses { margin-top: auto; padding-top: 0.4rem; }
 .uses { display: flex; gap: 0.35rem; align-items: center; font-size: 0.85rem; }
 .uses .spent { color: var(--accent-soft); }
 .notes { color: var(--muted); white-space: pre-wrap; }
@@ -719,7 +739,7 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
   .step, .panel { padding: 0.9rem 0.85rem; }
   .pick-grid { grid-template-columns: 1fr; }
   .abils { grid-template-columns: 1fr 1fr; }
-  .kn-grid { grid-template-columns: repeat(auto-fit, minmax(5.5rem, 1fr)); }
+  .kn-grid { grid-template-columns: repeat(auto-fit, minmax(min(5.5rem, 100%), 1fr)); }
   .kn-v { font-size: 1.1rem; }
   /* Touch targets: 44px is the smallest comfortable tap area. */
   .chip, .btn, .btn-quiet, .toggle-btn { min-height: 2.75rem; padding-inline: 0.9rem; }
@@ -734,8 +754,6 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
   .sheet-head .btn { width: 100%; }
   .save-row { flex-direction: column; align-items: stretch; }
   .code-input { width: 100%; }
-  .feat-toggle { gap: 0.3rem; }
-  .feat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .uses { width: 100%; justify-content: flex-end; }
   .ab-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .lu-grid { grid-template-columns: 1fr; }
@@ -745,7 +763,6 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 /* Very narrow phones: stop the ability grid squeezing to unreadable. */
 @media (max-width: 380px) {
   .abils { grid-template-columns: 1fr; }
-  .feat-grid { grid-template-columns: 1fr; }
   .brand-sub { display: none; }
 }
 /* A pointer-less device gets no hover tooltips, so make the tap target obvious. */
@@ -776,7 +793,7 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
    the level would add BEFORE anything is written, because the level is stored and the derived
    numbers are not — an accidental tap would otherwise be a silent, permanent change. */
 .levelup { border-color: var(--gold); background: rgba(201, 165, 78, 0.07); }
-.lu-grid { display: grid; gap: 0.9rem; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); }
+.lu-grid { display: grid; gap: 0.9rem; grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr)); }
 .lu-block h3 { font-size: 0.80rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted);
   margin: 0 0 0.4rem; }
 .lu-list { margin: 0; padding-left: 1.1rem; font-size: 0.92rem; line-height: 1.6; }
@@ -784,7 +801,7 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 .lu-none { color: var(--muted); font-size: 0.92rem; margin: 0; }
 .lu-hp { font-family: var(--serif); font-size: 1.5rem; color: var(--ok); }
 .lu-acts { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
-.lu-asi { display: grid; gap: 0.4rem; grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr)); }
+.lu-asi { display: grid; gap: 0.4rem; grid-template-columns: repeat(auto-fit, minmax(min(7.5rem, 100%), 1fr)); }
 .lu-asi .stepper { justify-content: space-between; width: 100%; }
 
 /* Attacks: one row per weapon actually carried, with the to-hit and damage already worked out. */
@@ -799,7 +816,13 @@ input.step-val { width: 3.4rem; }
 /* align-items: start — grid items stretch to the tallest in their row by default, so opening
    one discipline visibly grew the two beside it. Each card keeps its own height. */
 .sub-choice { display: grid; gap: 0.7rem; align-items: start;
-  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); }
+  grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr)); }
+.feat-toggle { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; gap: 0.45rem; align-items: center;
+  text-align: left; background: none; border: none; color: inherit; font: inherit; cursor: pointer;
+  padding: 0.2rem 0; }
+.feat-toggle:hover .feat-name { color: var(--gold); }
+.chev { margin-left: auto; color: var(--muted); font-family: var(--serif); font-size: 1.10rem; }
+.feat-body { padding: 0.2rem 0 0.3rem; }
 .sub-card { display: flex; flex-direction: column; gap: 0.4rem; padding: 0.7rem 0.85rem;
   background: var(--panel-2); border: 1px solid var(--border); border-left: 3px solid transparent;
   border-radius: var(--radius); min-width: 0; }

@@ -41,6 +41,9 @@ const listScroll = {};   // key -> remembered list scroll position, restored on 
 const ABILITY_ORDER = ["Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma"];
 
 const $ = (sel) => document.querySelector(sel);
+/* The whole document scrolls (see the shell note in style.css), so every "where were we" question
+   is asked of the page, never of a panel inside it. */
+const pageScroller = () => document.scrollingElement || document.documentElement;
 const el = (tag, cls, html) => {
   const n = document.createElement(tag);
   if (cls) n.className = cls;
@@ -266,8 +269,7 @@ function selectCategory(key) {
   $("#list-title").textContent = CATEGORIES.find((c) => c.key === key).label;
   renderList(key);
   if (location.hash !== "#/" + key) history.replaceState(null, "", "#/" + key);
-  const content = $(".content");
-  if (content) content.scrollTop = listScroll[key] || 0;
+  pageScroller().scrollTop = listScroll[key] || 0;
 }
 
 function renderList(key) {
@@ -649,19 +651,21 @@ function clampTip(term) {
   if (box.left < area.left + pad) dx = (area.left + pad) - box.left;
   else if (box.right > area.right - pad) dx = (area.right - pad) - box.right;
   if (dx) tip.style.setProperty("--nudge", Math.round(dx) + "px");
-  // Vertical: the box sits above its term by default, which puts it off the top of the reading
-  // area for any term near the top — the tier badge is the first thing on every trick page. Flip
-  // it below the term instead of letting it render out of view.
-  term.classList.toggle("tip-below", box.top < area.top + pad);
+  // Vertical: the box sits above its term by default, which puts it off-screen — or underneath the
+  // sticky top bar — for any term near the top of the VIEWPORT. That is a viewport question, not a
+  // reading-column one: the column starts far above the screen once the page is scrolled.
+  const bar = $(".topbar");
+  const ceiling = (bar ? bar.getBoundingClientRect().bottom : 0) + pad;
+  term.classList.toggle("tip-below", box.top < ceiling);
 }
 
 function showDetail(key, id, keepScroll) {
   const it = store[key].find((x) => slug(x) === id);
   if (!it) { selectCategory(key); return; }
-  const content = $(".content");
-  const at = keepScroll && content ? content.scrollTop : 0;
+  const page = pageScroller();
+  const at = keepScroll ? page.scrollTop : 0;
   // Remember where the list was scrolled so Back can return to that spot.
-  if (content && !$("#list-view").classList.contains("hidden")) listScroll[current] = content.scrollTop;
+  if (!$("#list-view").classList.contains("hidden")) listScroll[current] = page.scrollTop;
   current = key;
   $("#list-view").classList.add("hidden");
   $("#detail-view").classList.remove("hidden");
@@ -675,7 +679,7 @@ function showDetail(key, id, keepScroll) {
       `<p class="muted">This entry could not be rendered — its data is probably malformed. ` +
       `Run <code>bash scripts/check.sh</code>. Details are in the browser console.</p>`;
   }
-  if (content) content.scrollTop = at;
+  page.scrollTop = at;
 }
 
 /* ---------- renderers (one per category) ---------- */

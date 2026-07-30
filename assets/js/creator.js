@@ -253,7 +253,7 @@ let sheet = null;      // { code, ch } while a sheet is open
 /* Pure interface state: what is expanded, what number is sitting in the damage box, whether a
    level-up is being previewed. Never saved — none of it is part of the character. */
 const ui = {
-  openFeats: new Set(), openSubs: new Set(),
+  openSubs: new Set(),
   hpAmt: 1, levelUp: null, deleteArmed: false, deleteText: "", sheetScroll: 0, scrollTop: false,
 };
 
@@ -265,8 +265,8 @@ function toolEl() { return $("#tool"); }
    focus after every keystroke — which is exactly why the level box could not be cleared. */
 function paint(html) {
   const host = toolEl();
-  const view = $("#tool-view");
-  const top = view ? view.scrollTop : 0;
+  const page = pageScroller();
+  const top = page.scrollTop;
   const active = document.activeElement;
   let key = null, caret = null;
   if (active && host.contains(active)) {
@@ -275,7 +275,7 @@ function paint(html) {
     if (key) { try { caret = active.selectionStart; } catch { caret = null; } }
   }
   host.innerHTML = html;
-  if (view) view.scrollTop = top;
+  page.scrollTop = top;
   if (key) {
     const next = host.querySelector(key);
     if (next) {
@@ -838,11 +838,10 @@ function routeSheet(code) {
   // This is the path taken every time you follow a trick link and come back.
   if (sheet && sheet.code === code) {
     renderSheet();
-    const view = $("#tool-view");
-    if (view) view.scrollTop = ui.sheetScroll || 0;
+    pageScroller().scrollTop = ui.sheetScroll || 0;
     return;
   }
-  ui.openFeats.clear(); ui.openSubs.clear();
+  ui.openSubs.clear();
   ui.levelUp = null; ui.hpAmt = 1; ui.deleteArmed = false; ui.deleteText = ""; ui.sheetScroll = 0;
   paint(`<div class="tool-head"><a class="back" href="#/manage">&larr; My characters</a><h1>Loading…</h1></div>`);
   CocStore.load(code).then((ch) => {
@@ -984,12 +983,14 @@ function attacksPanel(d) {
     const vers = (w.properties || []).includes("versatile") && w.versatileDamage
       ? ` <span class="muted">(${esc(w.versatileDamage)} ${esc(sign(mod))} two-handed)</span>` : "";
     const rng = w.range ? `<span class="muted">${esc(w.range.normal)}/${esc(w.range.long)} ft</span>` : "";
+    // data-label drives the stacked layout on a phone, where five columns cannot fit and a
+    // horizontal scroller would clip the mastery tooltips.
     return `<tr>
-      <td><strong>${esc(w.name)}</strong> ${rng}</td>
-      <td class="atk-hit">${tipTermHTML(sign(hit), `${why} Proficiency ${sign(d.prof)} + ${ability} ${sign(mod)}.`)}</td>
-      <td class="atk-dmg">${esc(w.damage.die)} ${esc(sign(mod))}${vers}<br><span class="muted">${esc(w.damage.type)}</span></td>
-      <td>${propsHTML(w.properties)}</td>
-      <td>${masteryHTML(w.mastery)}</td></tr>`;
+      <td data-label="Weapon"><strong>${esc(w.name)}</strong> ${rng}</td>
+      <td data-label="To hit" class="atk-hit">${tipTermHTML(sign(hit), `${why} Proficiency ${sign(d.prof)} + ${ability} ${sign(mod)}.`)}</td>
+      <td data-label="Damage" class="atk-dmg">${esc(w.damage.die)} ${esc(sign(mod))}${vers} <span class="muted">${esc(w.damage.type)}</span></td>
+      <td data-label="Properties">${propsHTML(w.properties)}</td>
+      <td data-label="Mastery">${masteryHTML(w.mastery)}</td></tr>`;
   }).join("");
   return `<section class="panel"><h2>Attacks</h2>
     <table class="data-table attack-table">
@@ -1081,11 +1082,15 @@ function limitOf(f) {
   return null;
 }
 
+/* One card per feature, each showing the whole thing: level, name, where it came from, its
+   at-a-glance chips, its rules text and any options table, with the in-play description on a
+   tooltip at the end — the same shape a trick row uses, so the page reads one way throughout.
+   There is no expander. A card that hides its own content is a click to read one sentence, and it
+   made the grid ragged: cards changed size as you opened them. */
 function featuresPanel(d, p) {
   const cards = d.features.map((f) => {
     const lim = limitOf(f);
     const key = f.name;
-    const open = ui.openFeats.has(key);
     let ctl = "";
     if (lim) {
       const max = lim.kind === "combat" ? 1 : d.scalingUses;
@@ -1097,18 +1102,17 @@ function featuresPanel(d, p) {
         ${used ? `<button class="btn-quiet" data-act="unuse" data-val="${esc(key)}">Undo</button>` : ""}
       </div>`;
     }
-    return `<div class="feat-card ${open ? "open" : ""}">
-      <button class="feat-toggle" data-act="open-feat" data-val="${esc(key)}">
+    return `<div class="feat-card">
+      <div class="feat-title">
         <span class="lvl">L${esc(f.level)}</span>
         <span class="feat-name">${esc(f.name)}</span>
-        <span class="chev">${open ? "&minus;" : "+"}</span>
-      </button>
-      <p class="feat-from">${esc(f._from)}${f.role === "roleplay" ? ` <span class="role-badge">Roleplay</span>` : ""}</p>
+        ${f.role === "roleplay" ? `<span class="role-badge">Roleplay</span>` : ""}
+      </div>
+      <p class="feat-from">${esc(f._from)}</p>
+      ${metaRow(f.meta)}
+      <div class="feat-text">${fmtDesc(f.sheetSummary || f.description || "")} ${inPlayTip(f.narration)}</div>
+      ${Array.isArray(f.options) && f.options.length ? optionTable(f.options) : ""}
       ${ctl}
-      ${open ? `<div class="feat-body">${tabbed(
-        metaRow(f.meta) + fmtDesc(f.sheetSummary || f.description || "")
-          + (Array.isArray(f.options) && f.options.length ? optionTable(f.options) : ""),
-        narrationHTML(f.narration))}</div>` : ""}
     </div>`;
   }).join("");
   return `<section class="panel"><h2>Features</h2><div class="feat-grid">${cards}</div></section>`;
@@ -1341,7 +1345,7 @@ async function deleteCharacter() {
 
 /* Actions that only move the interface around — expanding a feature, opening the level-up preview
    — must not write to storage. Listed here so the difference is declared rather than remembered. */
-const UI_ONLY_ACTS = new Set(["open-feat", "levelup", "lu-cancel", "lu-sub",
+const UI_ONLY_ACTS = new Set(["levelup", "lu-cancel", "lu-sub",
                               "sub-open", "lu-asi", "delete-arm", "delete-cancel"]);
 
 function sheetAction(e) {
@@ -1420,7 +1424,6 @@ function sheetAction(e) {
     const have = Array.isArray(ch.weapons) ? ch.weapons : [];
     ch.weapons = have.includes(val) ? have.filter((w) => w !== val) : have.concat(val);
   }
-  else if (act === "open-feat") { ui.openFeats.has(val) ? ui.openFeats.delete(val) : ui.openFeats.add(val); }
   else if (act === "levelup") {
     ui.levelUp = { to: Math.min(20, d.level + 1), subclassId: "", asi: {} };
     ui.scrollTop = true;   // the panel opens above the fold; take the reader to it
@@ -1468,8 +1471,8 @@ function sheetAction(e) {
   renderSheet();
   if (ui.scrollTop) {
     ui.scrollTop = false;
-    const view = $("#tool-view");
-    if (view) view.scrollTo ? view.scrollTo({ top: 0, behavior: "smooth" }) : (view.scrollTop = 0);
+    if (window.scrollTo) window.scrollTo({ top: 0, behavior: "smooth" });
+    else pageScroller().scrollTop = 0;
   }
   if (!UI_ONLY_ACTS.has(act)) persist();
 }
@@ -1505,10 +1508,9 @@ document.addEventListener("focusout", (e) => {
   if (!toolEl() || $("#tool-view").classList.contains("hidden")) return;
   creatorBlur(e);
 });
-// #tool-view is display:none while the compendium is showing, which resets its scrollTop, so the
-// position has to be remembered rather than read back on return.
-const toolView = $("#tool-view");
-if (toolView) toolView.addEventListener("scroll", () => { if (sheet) ui.sheetScroll = toolView.scrollTop; });
+// Switching views replaces the page's content, so the browser has nothing to restore the scroll
+// position from — it has to be remembered on the way out.
+window.addEventListener("scroll", () => { if (sheet) ui.sheetScroll = pageScroller().scrollTop; }, { passive: true });
 
 document.addEventListener("keydown", (e) => {
   if (e.key !== "Enter") return;

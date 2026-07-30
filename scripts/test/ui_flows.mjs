@@ -16,6 +16,7 @@ window.fetch=async(u)=>{const f=path.join(REPO,String(u).split("?")[0]);
   const t=fs.readFileSync(f,"utf8");return{ok:true,status:200,json:async()=>JSON.parse(t),text:async()=>t};};
 for(const f of ["assets/js/config.js","assets/js/storage.js","assets/js/app.js","assets/js/creator.js"]){
   const s=doc.createElement("script"); s.textContent=fs.readFileSync(path.join(REPO,f),"utf8"); doc.body.appendChild(s);}
+window.scrollTo = () => {};   // jsdom has no layout, so smooth scrolling is a no-op here
 const peek=e=>window.eval(e);
 const t0=Date.now(); while(peek("(typeof store!=='undefined'&&store.classes)?store.classes.length:0")===0&&Date.now()-t0<8000) await new Promise(r=>setTimeout(r,40));
 let fails=0; const ok=(c,m)=>{ if(!c){fails++;console.log("  FAIL "+m);} else console.log("  ok   "+m); };
@@ -101,6 +102,34 @@ for (const n of [".term-tip", ".scale-tip"]) {
   ok(/letter-spacing:\s*normal/.test(rule(n)), n + " drops the label's letter-spacing too");
 }
 
+console.log("\n— THE PAGE SCROLLS, NOT A PANEL —");
+// A viewport-locked shell meant the wheel worked over the middle column and nowhere else, and
+// anything that was not .content got clipped with no way to reach it — which is how the landing
+// page lost its Compendium card on a phone.
+const bodyRule=(css.match(/\nbody \{[^}]*\}/)||[""])[0];
+ok(!/overflow:\s*hidden/.test(bodyRule),"body does not trap the page");
+ok(/min-height:\s*100dvh/.test(bodyRule)&&!/[^-]height:\s*100dvh/.test(bodyRule),"body has a floor, not a fixed height");
+ok(!/overflow-y:\s*auto/.test(rule(".content")),".content is no longer its own scroller");
+ok(/position:\s*sticky/.test((css.match(/\n\.topbar \{[^}]*\}/)||[""])[0]),"the top bar stays put while the page scrolls");
+ok(/overflow-x:\s*clip/.test(bodyRule),"and nothing can push the page wider than the screen");
+// every landing card must be reachable, since one of them is the only way into the compendium
+await go("#/");
+const menuCards=$$("#menu-view .menu-card").map(a=>a.getAttribute("href"));
+ok(menuCards.length===3&&menuCards.includes("#/classes"),"all three landing cards are present, including the compendium");
+await go("#/classes");
+ok(!$("#compendium-view").classList.contains("hidden"),"and it opens");
+
+console.log("\n— MOBILE —");
+const mob=(css.match(/@media \(max-width: 640px\) \{[\s\S]*?\n\}/)||[""])[0];
+ok(/\.statusbar \{ display: none/.test(mob),"the entry-count status bar is off on a phone");
+ok(/\.attack-table[^{]*\{[^}]*display: block/.test(mob),"five attack columns stack instead of overflowing");
+ok(/content: attr\(data-label\)/.test(mob),"stacked rows are labelled");
+// A bare minmax(Xrem, 1fr) keeps its floor even when the container is narrower, which is a grid
+// pushing the page wider than the phone and making the browser zoom out.
+const rigid=[...css.matchAll(/minmax\((\d[\d.]*(?:rem|px)), 1fr\)/g)].map(m=>m[0]);
+ok(rigid.length===0,"no grid track refuses to shrink below its floor ("+rigid.join(", ")+")");
+await go("#/sheet/123456");
+
 console.log("\n— DRAFT RESETS —");
 await go("#/manage"); await go("#/create");
 ok(peek("draft.classId")===""&&peek("draft.name")===""&&peek("draft.photo")==="","a second visit to #/create starts blank");
@@ -116,6 +145,7 @@ ok($$(".kn").length===6,"key numbers: six headline boxes");
 ok($$(".ab-box").length===6,"six ability boxes");
 ok($$(".ab-box.prof").length===2,"the two proficient saves are marked");
 ok($(".ab-save").textContent.includes("+"),"each ability shows its saving throw");
+ok($$(".attack-table td").every(n=>n.getAttribute("data-label")),"every attack cell carries its stacked-view label");
 const atk=$$(".attack-table tbody tr");
 ok(atk.length===3,"attacks listed for a character who chose nothing (falls back to proficiency)");
 // Dagger is finesse and this Joker has Dex 15 (+2) but Cha 13 (+1). The default rule would give
@@ -178,37 +208,32 @@ peek(`sheet.ch.play.cooldowns={}; sheet.ch.play.inCombat=false; renderSheet();`)
 
 console.log("\n— COMING BACK TO A SHEET —");
 click($('[data-act="combat"]'));                       // put it in a state worth keeping
-click($$('[data-act="open-feat"]')[0]);
+click($('[data-act="endturn"]'));
 type($("#hp-amt"),"9");
-const beforeRound=peek("sheet.ch.play.round"), beforeOpen=peek("ui.openFeats.size");
+const beforeRound=peek("sheet.ch.play.round");
 peek(`ui.sheetScroll = 640;`);                         // as if the page had been scrolled
 await go("#/tricks/" + tn.getAttribute("href").split("/").pop());
 ok($("#tool-view").classList.contains("hidden"),"following a trick link leaves the sheet");
 await go("#/sheet/123456");
 ok(peek("sheet.ch.play.inCombat")===true && peek("sheet.ch.play.round")===beforeRound,"combat state intact on return");
-ok(peek("ui.openFeats.size")===beforeOpen,"the feature is still open");
+ok(beforeRound===2,"the round advanced before leaving");
 ok($("#hp-amt").value==="9","the damage box still holds 9");
 ok(peek("ui.sheetScroll")===640,"and the scroll position was remembered");
 click($('[data-act="combat"]'));
 
 console.log("\n— FEATURES AS CARDS —");
 mk("joker",5,"anarchist");
+const nFeat=peek("derive(sheet.ch).features.length");
 ok($(".feat-grid"),"features are a grid");
-ok($$(".feat-card").length===peek("derive(sheet.ch).features.length"),"one card per feature");
-ok(/repeat\(3, minmax\(0, 1fr\)\)/.test(rule(".feat-grid")),"three across on desktop");
-ok(/align-items:\s*start/.test(rule(".feat-grid")),"and opening one does not stretch its neighbours");
-
-console.log("\n— EXPANDERS SURVIVE ACTIONS —");
-const feat=$$('[data-act="open-feat"]')[0];
-const fname=feat.dataset.val; click(feat);
-ok($$(".feat-body").length===1,"feature expands in place");
-ok($$(".feat-body .toggle-btn").length===2,"and carries its How it works / In play tabs");
+ok($$(".feat-card").length===nFeat,"one card per feature");
+ok($$('[data-act="open-feat"]').length===0,"no expander — every card shows the whole feature");
+ok($$(".feat-card .feat-text").length===nFeat,"every card carries its rules text");
+ok($$(".feat-card .feat-text").every(n=>n.textContent.trim().length>15),"and it is real text, not a stub");
+ok($$(".feat-card .feat-text").every(n=>!/\{\{|\[\[/.test(n.textContent)),"tokens expanded");
+ok(/auto-fit/.test(rule(".feat-grid")),"the grid adapts to the width instead of forcing three");
 click($('[data-act="combat"]'));
-ok($$(".feat-body").length===1,"still open after starting combat (used to slam shut)");
 const useBtn=$$('[data-act="use"]')[0];
-if(useBtn){ click(useBtn); ok($$(".feat-body").length===1,"still open after spending a use"); }
-click($$('[data-act="open-feat"]').find(b=>b.dataset.val===fname));
-ok($$(".feat-body").length===0,"closes again");
+if(useBtn){ click(useBtn); ok($$(".feat-card").length===nFeat,"cards survive an action unchanged"); }
 
 console.log("\n— HP BOX KEEPS ITS NUMBER —");
 type($("#hp-amt"),"7");
