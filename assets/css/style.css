@@ -288,6 +288,7 @@ h1 { font-family: var(--serif); font-weight: 600; margin: 0 0 1.25rem; }
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.55);
   opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 0.12s ease, transform 0.12s ease;
   max-width: min(320px, 70vw); font-size: 0.9rem; line-height: 1.35;
+  text-transform: none; letter-spacing: normal; font-weight: 400; font-style: normal;
 }
 .scale-tip-title { color: var(--gold); font-family: var(--serif); font-size: 0.8rem; letter-spacing: 0.5px; }
 .scale-tip-lv { color: var(--muted); font-size: 0.78rem; }
@@ -309,7 +310,12 @@ h1 { font-family: var(--serif); font-weight: 600; margin: 0 0 1.25rem; }
   border: 1px solid var(--gold); border-radius: var(--radius);
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.55);
   opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 0.12s ease, transform 0.12s ease;
-  font-size: 0.85rem; line-height: 1.4; white-space: normal; font-weight: 400;
+  font-size: 0.85rem; line-height: 1.4; white-space: normal;
+  /* A tooltip is a sentence, wherever it happens to be anchored. Its term usually sits in a small
+     caps label — a key-number heading, an ability abbreviation, a field label — and text-transform,
+     letter-spacing and weight all inherit, so the explanation came out SHOUTING AND SPACED OUT.
+     Reset them here rather than at the thirteen places that set uppercase. */
+  text-transform: none; letter-spacing: normal; font-weight: 400; font-style: normal;
 }
 .term-tip::after {
   content: ""; position: absolute; top: 100%;

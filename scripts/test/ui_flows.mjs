@@ -78,6 +78,12 @@ ok(/\.tip-term\.tip-open \.term-tip \{[^}]*display:\s*block/.test(css),"and on t
 // A link styled as a button sits under `.content a`, which is more specific than `.btn` — so
 // "Create a new character" rendered gold text on a gold pill and could not be read.
 ok(/\.content a\.btn,[^{]*\{[^}]*color:\s*var\(--bg\)/.test(css),"a button-shaped link keeps the button's text colour");
+// Tooltip terms usually sit inside a small-caps label (a key-number heading, an ability
+// abbreviation), and text-transform inherits — so the explanation came out shouting.
+for (const n of [".term-tip", ".scale-tip"]) {
+  ok(/text-transform:\s*none/.test(rule(n)), n + " reads as a sentence, not as the label it hangs off");
+  ok(/letter-spacing:\s*normal/.test(rule(n)), n + " drops the label's letter-spacing too");
+}
 
 console.log("\n— DRAFT RESETS —");
 await go("#/manage"); await go("#/create");
