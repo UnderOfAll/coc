@@ -361,6 +361,10 @@ ok(/2d8 \+ 1 → \[5, 5\] = 11/.test(lines[0].text), "with the dice shown, not j
 ok(/^DM rolled/.test(lines[0].text), "and who threw them");
 ok(/2d8 \+ 1/.test($("#vtt-lastroll").textContent), "the newest roll is visible even with the panel shut");
 ok($$(".roll-line").length === 1, "and listed in the log");
+// Reopening the panel must show the rolls that already happened, not "nothing rolled yet".
+openPanel("dice"); openPanel("dice");
+await wait(40);
+ok($$(".roll-line").length === 1, "and the log is still there when the panel is reopened");
 // A natural 20 and a natural 1 are what a table reacts to, so they are marked.
 peek(`window.__seq = [0.999];`);
 peek(`tbl.ui.dice = { sides: 20, count: 1, mod: 0, mode: "normal" }; paintSide();`);

@@ -788,7 +788,12 @@ function paintSide() {
     b.classList.toggle("on", b.dataset.val === which));
   if (!which) { side.innerHTML = ""; return; }
   if (which === "dm") side.innerHTML = dmPanelHTML();
-  else if (which === "dice") side.innerHTML = dicePanelHTML();
+  else if (which === "dice") {
+    side.innerHTML = dicePanelHTML();
+    // The log lives in this panel and is filled by the stream, so a freshly opened panel would sit
+    // empty until the next roll — showing "nothing rolled yet" under four rolls.
+    paintLog();
+  }
   else if (which === "claim") side.innerHTML = claimPanelHTML();
   else if (which === "sheet") { side.innerHTML = `<p class="muted">Opening your sheet…</p>`; paintSheetPanel(); }
 }
