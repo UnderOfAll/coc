@@ -52,7 +52,7 @@ used.update(["on", "blocked", "btn-hot", "down", "hurt", "primary", "spent", "wa
              "who-dm", "mine", "movable", "npc", "turn", "dragging", "dropped", "half", "low",
              "rolling", "landed", "nat20", "nat1"])
 # dynamic families the linter cannot resolve statically
-DYNAMIC = ("tier-", "badge-", "shape-", "die-")
+DYNAMIC = ("tier-", "badge-", "shape-")
 used.update(c for c in re.findall(r'\.([a-z][a-z0-9-]+)', CSS) if c.startswith(DYNAMIC))
 
 # A trailing dash is an artifact of stripping a ${...} out of e.g. "tier-${tier}" — not a class.

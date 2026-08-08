@@ -1330,7 +1330,7 @@ function tblShowRoll(entry) {
   const keptIdx = entry.keptIdx == null ? -1 : Number(entry.keptIdx);
   const faces = rolls.map((v, i) => {
     const dropped = keptIdx >= 0 && i !== keptIdx ? " dropped" : "";
-    return `<span class="die die-${sides}${dropped}" data-final="${esc(v)}">${esc(v)}</span>`;
+    return `<span class="die${dropped}" data-final="${esc(v)}">${esc(v)}<em>d${esc(sides)}</em></span>`;
   }).join("");
   node.className = "roll-stage on rolling " + nat;
   node.innerHTML = `<div class="roll-box">
@@ -1392,6 +1392,18 @@ function dicePanelHTML() {
     </section>`;
 }
 
+/* The newest roll, in one line, for the bar that is visible whatever panel is open. */
+function lastRollHTML(e) {
+  if (e.kind !== "roll" || !Array.isArray(e.rolls)) return esc(e.text || "");
+  const mod = Number(e.mod) || 0;
+  const keptIdx = e.keptIdx == null ? -1 : Number(e.keptIdx);
+  const dice = e.rolls.map((v, i) =>
+    `<span class="pip-die${keptIdx >= 0 && i !== keptIdx ? " dropped" : ""}">${esc(v)}</span>`).join("");
+  return `<strong>${esc(e.who || "Someone")}</strong>${e.label ? " " + esc(e.label) : ""} ${dice}` +
+    `${mod ? `<span class="roll-card-mod">${mod > 0 ? "+" : "−"}${esc(Math.abs(mod))}</span>` : ""}` +
+    `<span class="roll-card-total">${esc(e.total)}</span>`;
+}
+
 /* One line of the log. Laid out rather than written as a sentence: who, what for, the dice as dice, and
    the total big enough to read from across a table. Entries from before this existed, and the DM's
    system lines, still have their sentence and fall back to it. */
@@ -1426,7 +1438,9 @@ function paintLog() {
   }
   if (last) {
     const top = entries[0];
-    last.textContent = top ? top[1].text : "";
+    // Built from the numbers, not from the stored sentence: the sentence is a fallback for old entries
+    // and for the DM's system lines, and a bar that reads whatever prose was saved cannot be relied on.
+    last.innerHTML = top ? lastRollHTML(top[1]) : "";
     last.classList.toggle("hidden", !top);
     last.classList.toggle("nat20", !!(top && top[1].nat === 20));
     last.classList.toggle("nat1", !!(top && top[1].nat === 1));

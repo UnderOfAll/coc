@@ -366,7 +366,13 @@ const lines = Object.values(log || {});
 ok(lines.length === 1, "rolling writes one line to the table's log");
 ok(/2d8 \+ 1 → \[5, 5\] = 11/.test(lines[0].text), "with the dice shown, not just the total: " + lines[0].text);
 ok(/^DM rolled/.test(lines[0].text), "and who threw them");
-ok(/2d8 \+ 1/.test($("#vtt-lastroll").textContent), "the newest roll is visible even with the panel shut");
+const lastBits = () => ({
+  who: $("#vtt-lastroll").textContent,
+  total: ($("#vtt-lastroll .roll-card-total") || {}).textContent,
+  dice: [...$$("#vtt-lastroll .pip-die")].map((n) => n.textContent),
+});
+ok(lastBits().total === "11" && lastBits().dice.join(",") === "5,5",
+  "the newest roll is visible even with the panel shut (" + JSON.stringify(lastBits()) + ")");
 ok($$(".roll-line").length === 1, "and listed in the log");
 // Reopening the panel must show the rolls that already happened, not "nothing rolled yet".
 openPanel("dice"); openPanel("dice");
@@ -397,12 +403,13 @@ peek(`document.body.insertAdjacentHTML("beforeend",
 click($("#sheetroll"));
 await wait(60);
 ok(/Dagger to hit/.test($("#vtt-lastroll").textContent), "a sheet number posts to the table's log by name");
-ok(/= 18/.test($("#vtt-lastroll").textContent), "with your bonus already in it: " + $("#vtt-lastroll").textContent);
+ok(lastBits().total === "18", "with your bonus already in it: " + JSON.stringify(lastBits()));
 // Shift and alt are the shortcut for advantage and disadvantage.
 peek(`window.__seq = [0.1, 0.9];`);
 $("#sheetroll").dispatchEvent(new window.MouseEvent("click", { bubbles: true, shiftKey: true }));
 await wait(60);
-ok(/keep high/.test($("#vtt-lastroll").textContent), "shift-click rolls with advantage: " + $("#vtt-lastroll").textContent);
+ok($$("#vtt-lastroll .pip-die.dropped").length === 1,
+  "shift-click rolls with advantage, and says which die was dropped: " + JSON.stringify(lastBits()));
 peek(`$("#sheetroll").remove();`);
 
 console.log("\n— DISTANCE —");
@@ -520,7 +527,7 @@ click($$("#vtt-sheet .roll")[0]);
 await wait(80);
 const logLenAfter = Object.keys(await aget(`CocLive.get("tables/482910/log")`) || {}).length;
 ok(logLenAfter === logLenBefore + 1, "a number rolled off the drawer reaches the shared log");
-ok(/Rig rolled/.test($("#vtt-lastroll").textContent), "under your character's name: " + $("#vtt-lastroll").textContent);
+ok(/^Rig/.test($("#vtt-lastroll").textContent.trim()), "under your character's name: " + $("#vtt-lastroll").textContent.trim());
 // Closing it hands the page back — otherwise the next sheet opened anywhere paints into nothing.
 click($('[data-tbl="sheet-close"]'));
 await wait(60);
