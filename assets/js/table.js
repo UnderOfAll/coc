@@ -97,7 +97,7 @@ function tblFresh(code, role) {
   return {
     code, role,
     me: tblMe(code),
-    data: { meta: null, scenes: null, tokens: null, log: null, presence: null, handouts: null, dm: null },
+    data: { meta: null, scenes: null, tokens: null, log: null, presence: null, handouts: null, dm: null, notes: null },
     view: { x: 0, y: 0, z: 1 },
     drag: null,
     offs: [],          // live subscriptions, closed on teardown
@@ -364,10 +364,21 @@ function tblOpen(code) {
     // Placing a figure has to wait until the board's contents are known, or a second device places a
     // second figure. But waiting for the next heartbeat meant sitting down and appearing to the table
     // up to twenty seconds later, which is how it behaved live. Try the moment the data lands.
-    if (first) tblEnsureToken();
+    if (first) { tblEnsureToken(); tblStraightenTokens(); tblMigrateDmNotes(); }
   }));
   tblAnnounce();
   tbl.beat = setInterval(tblAnnounce, 20000);
+}
+
+/* Figures left between squares by a drag that was interrupted before this was fixed. The DM's browser
+   straightens them once on opening the table — one client only, so two of them cannot fight over it. */
+function tblStraightenTokens() {
+  if (!tbl || tbl.role !== "dm") return;
+  for (const [id, t] of Object.entries(tblTokens())) {
+    if (!t) continue;
+    const x = Math.round(Number(t.x) || 0), y = Math.round(Number(t.y) || 0);
+    if (x !== t.x || y !== t.y) CocLive.patch(tblPath("tokens/" + id), { x, y }).catch(() => {});
+  }
 }
 
 /* Presence is a heartbeat, not a connection: without the Firebase SDK there is no onDisconnect, so
@@ -462,6 +473,7 @@ function renderTableShell() {
         <span id="vtt-who" class="vtt-who"></span>
         <span class="vtt-acts">
           <button class="btn-quiet" data-tbl="panel" data-val="dice">Dice</button>
+          <button class="btn-quiet" data-tbl="panel" data-val="notes">Notes</button>
           ${tbl.role === "dm" || tbl.me.charCode
             ? `<button class="btn-quiet" data-tbl="panel" data-val="sheet">My sheet</button>`
             : `<button class="btn-quiet" data-tbl="panel" data-val="mine">My figure</button>`}
@@ -616,7 +628,14 @@ function applyView() {
    a figure eleven pixels wide — unreadable, and impossible to hit with a finger. So the fit has a
    FLOOR: a square never shrinks below something you can tap, and the map simply becomes pannable,
    which is what every map on a phone is anyway. */
+/* A square must be big enough to hit with a FINGER, which is why this floor exists — and on a mouse it
+   is only ever harmful: it zoomed a map past the edges of a desktop window that could have shown all of
+   it. So it applies to touch devices only. */
 const TBL_MIN_CELL_PX = 40;
+function tblMinCell() {
+  const coarse = typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches;
+  return coarse ? TBL_MIN_CELL_PX : 0;
+}
 function tblFit() {
   const stage = $("#vtt-stage"), scene = tblScene();
   if (!stage) return;
@@ -628,7 +647,7 @@ function tblFit() {
   if (box.width < 40 || box.height < 40) return;
   const pad = 16;
   const whole = Math.min((box.width - pad) / w, (box.height - pad) / h, 1.6) || 1;
-  const z = tblSnapZoom(Math.max(0.12, whole, Math.min(1, TBL_MIN_CELL_PX / cell)), cell);
+  const z = tblSnapZoom(Math.max(0.12, whole, Math.min(1, tblMinCell() / cell)), cell);
   tbl.view.z = z;
   // Centred on YOUR figure when you have one: opening a table should show you where you are, not the
   // top-left corner of a map you then have to go looking through.
@@ -809,6 +828,9 @@ function tblResetGestures() {
   if (tbl.drag && !tbl.drag.pan) {
     const node = $("#vtt-tokens") && $("#vtt-tokens").querySelector(`[data-token="${tbl.drag.id}"]`);
     if (node) node.classList.remove("dragging");
+    // A drag that is cut short still has to LAND on a square. Without this the last throttled write
+    // stood — a position like x = 10.34 — and the figure sat straddling four grid lines for good.
+    tblLandDrag(tbl.drag);
   }
   tbl.drag = null;
   paintTokens();
@@ -906,15 +928,21 @@ function onPointerUp(e) {
   if (d.pan) return;
   const node = $("#vtt-tokens").querySelector(`[data-token="${d.id}"]`);
   if (node) node.classList.remove("dragging");
-  // Snap to the grid on release. Squares are integers; a large token still sits on square corners.
+  tblLandDrag(d);
+  paintTokens();
+  paintRuler();
+}
+
+/* Where a dragged figure comes to rest. Squares are integers — a figure between two of them is the thing
+   that makes a board unreadable — so this rounds, clamps to the map and charges the distance. Shared by
+   a normal release and by a gesture that was interrupted. */
+function tblLandDrag(d) {
   const scene = tblScene();
   const x = Math.max(0, Math.min((Number(scene.cols) || 30) - 1, Math.round(d.x)));
   const y = Math.max(0, Math.min((Number(scene.rows) || 20) - 1, Math.round(d.y)));
   CocLive.put(tblPath("tokens/" + d.id + "/x"), x).catch(tblFail);
   CocLive.put(tblPath("tokens/" + d.id + "/y"), y).catch(tblFail);
   tblCountMove(d, x, y);
-  paintTokens();
-  paintRuler();
 }
 
 /* ---------------------------------------------------------------- the side panel */
@@ -936,7 +964,7 @@ function paintSide() {
   document.querySelectorAll("[data-tbl='panel']").forEach((b) =>
     b.classList.toggle("on", b.dataset.val === which));
   if (!which) { side.innerHTML = ""; return; }
-  if (which === "dm") side.innerHTML = dmPanelHTML();
+  if (which === "dm") { const html = dmPanelHTML(); side.innerHTML = html; side.dataset.rendered = html; }
   else if (which === "dice") {
     side.innerHTML = dicePanelHTML();
     // The log lives in this panel and is filled by the stream, so a freshly opened panel would sit
@@ -945,17 +973,51 @@ function paintSide() {
   }
   else if (which === "claim") side.innerHTML = claimPanelHTML();
   else if (which === "figure") side.innerHTML = figureInfoHTML(tbl.ui.lookAt);
+  else if (which === "notes") side.innerHTML = notesPanelHTML();
   else if (which === "mine") side.innerHTML = figureInfoHTML(tblMyTokens()[0] || "");
   else if (which === "sheet") { side.innerHTML = `<p class="muted">Opening your sheet…</p>`; paintSheetPanel(); }
 }
-/* Re-render the DM's panel only if it is the one open — the scenes stream fires for everyone. */
+/* Re-render the DM's panel, keeping what is half-typed in it.
+ *
+ * The first version simply SKIPPED the re-render whenever the cursor was inside the panel, to avoid
+ * eating half-typed notes. That was much worse than the problem: click into any field and the panel
+ * froze, so deleting a scene appeared to do nothing (the row it deleted stayed on screen), which looked
+ * like a ten-second lag and led to thirty scenes being added by someone reasonably assuming the button
+ * was broken.
+ *
+ * So: build the new markup, and if it is identical, touch nothing at all — which is the common case and
+ * costs one string compare. Otherwise swap it and put back the values, the focus and the caret, exactly
+ * as paint() does for the sheet. */
 function paintDmPanel() {
   if (tbl.ui.panel !== "dm") return;
-  // Never mid-sentence: this runs on every stream event now, and rebuilding the panel under a cursor
-  // would eat the DM's notes as they typed them.
   const side = $("#vtt-side");
-  if (side && side.contains(document.activeElement)) return;
-  paintSide();
+  if (!side) return;
+  // A chosen file cannot be restored into a file input, so while one is waiting to be uploaded the
+  // panel is left alone — a few seconds, and losing the file would be worse than a stale list.
+  const file = side.querySelector('input[type="file"]');
+  if (file && file.files && file.files.length) return;
+  const next = dmPanelHTML();
+  if (next === side.dataset.rendered) return;
+  const active = document.activeElement;
+  const focusId = active && side.contains(active) && active.id ? active.id : "";
+  let caret = null;
+  if (focusId) { try { caret = active.selectionStart; } catch { caret = null; } }
+  const kept = {};
+  side.querySelectorAll("input[id], textarea[id]").forEach((n) => {
+    if (n.type !== "file") kept[n.id] = n.value;
+  });
+  side.innerHTML = next;
+  side.dataset.rendered = next;
+  side.querySelectorAll("input[id], textarea[id]").forEach((n) => {
+    if (n.type !== "file" && kept[n.id] !== undefined) n.value = kept[n.id];
+  });
+  if (focusId) {
+    const back = side.querySelector("#" + focusId);
+    if (back) {
+      back.focus();
+      if (caret != null && back.setSelectionRange) { try { back.setSelectionRange(caret, caret); } catch { /* number inputs refuse */ } }
+    }
+  }
 }
 
 /* ---------------------------------------------------------------- maps and scenes (DM only) */
@@ -1153,7 +1215,21 @@ function tblRowsFor(cols, w, h) {
 
 async function tblAddScene() {
   const msg = $("#tbl-scene-msg");
-  const say = (t, bad) => { if (msg) { msg.textContent = t; msg.className = "save-msg" + (bad ? " bad" : ""); } };
+  // Anything that ENDS the attempt — a refusal or a success — hands the button back. A refusal that
+  // left it locked for four seconds was the first version of this, and it is its own small insult.
+  const say = (t, bad) => {
+    tbl.ui.adding = false;
+    const b = $('[data-tbl="scene-add"]');
+    if (b) b.disabled = false;
+    if (msg) { msg.textContent = t; msg.className = "save-msg" + (bad ? " bad" : ""); }
+  };
+  // One scene per press. A URL or an upload has to be measured before it can be written, and during
+  // that wait the button looked dead — which is how thirty identical blank grids got added.
+  if (tbl.ui.adding) return;
+  tbl.ui.adding = true;
+  const btn = $('[data-tbl="scene-add"]');
+  // The timeout is a safety net for a measurement that never comes back at all (a URL that hangs).
+  if (btn) { btn.disabled = true; setTimeout(() => { if (btn) btn.disabled = false; }, 8000); }
   const src = tbl.ui.mapSource || "blank";
   const name = String(($("#tbl-scene-name") || {}).value || "").slice(0, 60);
   const cols = Math.max(4, Math.min(120, Number(($("#tbl-scene-cols") || {}).value) || 30));
@@ -1165,6 +1241,7 @@ async function tblAddScene() {
     await CocLive.put(tblPath("scenes/" + id), {
       name: name || label, image: image || "", cols, rows, cell: 70, createdAt: Date.now(),
     });
+    tbl.ui.adding = false;
     // A new scene becomes the one on screen: the DM added it to use it.
     await CocLive.put(tblPath("meta/activeScene"), id);
     tbl.view.fitted = false;
@@ -1975,6 +2052,71 @@ function tblForgetTable(code) {
   localStorage.setItem(TBL_RECENT, JSON.stringify(tblRecent().filter((r) => r.code !== code)));
 }
 
+/* ---------------------------------------------------------------- notes
+ *
+ * A notepad in the app, so a session does not need a text editor open beside it. Several notes, each with
+ * a title, kept per person: the DM's follow the DM chair (so they are there on another device with the
+ * key), a player's follow their character code, and a guest's follow their browser.
+ *
+ * They are stored in the table, which is what makes them survive a refresh and reach another device —
+ * and which means anyone holding the room code could read them if they went digging. Said in the panel,
+ * because a private-looking box that is not private is worse than no box. */
+function tblNoteOwner() {
+  if (tbl.role === "dm") return "dm";
+  return tbl.me.charCode ? "pc:" + tbl.me.charCode : "browser:" + tbl.me.clientId;
+}
+function tblMyNotes() {
+  const mine = tblNoteOwner();
+  return Object.entries(tbl.data.notes || {})
+    .filter(([, n]) => n && n.by === mine)
+    .sort((a, b) => (a[1].at || 0) - (b[1].at || 0));
+}
+
+function notesPanelHTML() {
+  const notes = tblMyNotes();
+  const openId = tbl.ui.note && notes.some(([id]) => id === tbl.ui.note) ? tbl.ui.note : "";
+  const open = openId ? (tbl.data.notes || {})[openId] : null;
+  const list = notes.map(([id, n]) => `<div class="scene-row ${id === openId ? "on" : ""}">
+      <button class="scene-pick" data-tbl="note-open" data-val="${esc(id)}">
+        <strong>${esc(n.title || "Untitled")}</strong>
+        <span class="muted">${esc(String(n.body || "").replace(/\s+/g, " ").slice(0, 40))}</span>
+      </button>
+      <button class="btn-quiet" data-tbl="note-del" data-val="${esc(id)}">Delete</button>
+    </div>`).join("");
+  return `<section class="panel" id="notes-panel">
+      <h2>Notes</h2>
+      <div class="scene-list">${list || `<p class="muted">Nothing written yet.</p>`}</div>
+      <button class="btn-quiet" data-tbl="note-new">New note</button>
+    </section>
+    ${open ? `<section class="panel">
+      <label class="field"><span>Title</span>
+        <input id="note-title" class="text" type="text" maxlength="60" value="${esc(open.title || "")}" /></label>
+      <label class="field"><span>Note</span>
+        <textarea id="note-body" class="text notes-body" rows="12" maxlength="8000">${esc(open.body || "")}</textarea></label>
+      <p class="muted">Saved as you type. Kept with the table, so it is here on your next device — and
+        not secret: anyone with the room code could read it if they went looking.</p>
+    </section>` : `<p class="muted">Open a note to write in it.</p>`}`;
+}
+
+async function tblNewNote() {
+  const id = await CocLive.push(tblPath("notes"), {
+    title: "New note", body: "", by: tblNoteOwner(), at: Date.now(),
+  });
+  tbl.ui.note = id;
+  paintSide();
+}
+
+/* The DM used to have a single unnamed notes box. Anything already in it becomes the first note rather
+   than being stranded somewhere the interface no longer shows. */
+function tblMigrateDmNotes() {
+  if (!tbl || tbl.role !== "dm") return;
+  const old = (tbl.data.dm || {}).notes;
+  if (!old || !String(old).trim()) return;
+  CocLive.push(tblPath("notes"), { title: "Notes", body: String(old).slice(0, 8000), by: "dm", at: 1 })
+    .then(() => CocLive.put(tblPath("dm/notes"), null))
+    .catch(() => {});
+}
+
 /* ---------------------------------------------------------------- the DM's screen and handouts */
 
 /* Notes that survive a refresh and follow the DM to another device — which means they live in the
@@ -1982,7 +2124,6 @@ function tblForgetTable(code) {
    rather than implied, because the alternative (keeping them in this browser only) loses them the
    moment the DM picks up a different device mid-session. */
 function dmScreenHTML() {
-  const notes = (tbl.data.dm || {}).notes || "";
   const handouts = tbl.data.handouts || {};
   const showing = (tbl.data.meta || {}).handout || "";
   const rows = Object.entries(handouts)
@@ -1994,14 +2135,7 @@ function dmScreenHTML() {
       </button>
       <button class="btn-quiet" data-tbl="hand-del" data-val="${esc(id)}">Delete</button>
     </div>`).join("");
-  return `<section class="panel">
-      <h2>Your notes</h2>
-      <textarea id="dm-notes" class="text" rows="6" maxlength="4000"
-        placeholder="Whatever you would have had in the other window.">${esc(notes)}</textarea>
-      <p class="muted">Saved as you type, and they follow you to another device. They are not secret:
-        anyone with the room code could read them if they went looking.</p>
-    </section>
-    <section class="panel" id="dm-handouts">
+  return `<section class="panel" id="dm-handouts">
       <p class="panel-sub">Handouts</p>
       <div class="scene-list">${rows || `<p class="muted">Nothing yet.</p>`}</div>
       ${showing ? `<button class="btn-quiet" data-tbl="hand-hide">Take it off their screens</button>` : ""}
@@ -2063,9 +2197,13 @@ document.addEventListener("input", (e) => {
     if (go) go.disabled = tbl.ui.closeText !== tbl.code;
     return;
   }
-  if (tbl.role !== "dm") return;
-  if (e.target.id !== "dm-notes") return;
-  CocLive.throttled(tblPath("dm/notes"), String(e.target.value || "").slice(0, 4000), 600);
+  // A notepad saves itself. Coalesced, so a paragraph is a handful of writes rather than one per letter.
+  if ((e.target.id === "note-title" || e.target.id === "note-body") && tbl.ui.note) {
+    const field = e.target.id === "note-title" ? "title" : "body";
+    const cap = field === "title" ? 60 : 8000;
+    CocLive.throttled(tblPath("notes/" + tbl.ui.note + "/" + field),
+      String(e.target.value || "").slice(0, cap), 700);
+  }
 });
 
 /* Rolling from a sheet. Listened for here rather than in creator.js because the dice belong to the
@@ -2166,6 +2304,16 @@ document.addEventListener("click", (e) => {
   else if (act === "ed-del") {
     CocLive.del(tblPath("tokens/" + val)).catch(tblFail);
     tbl.ui.editToken = ""; paintSide();
+  }
+  else if (act === "note-new") tblNewNote().catch(tblFail);
+  else if (act === "note-open") { tbl.ui.note = tbl.ui.note === val ? "" : val; paintSide(); }
+  else if (act === "note-del") {
+    const n = (tbl.data.notes || {})[val];
+    if (n && n.by === tblNoteOwner()) {
+      CocLive.del(tblPath("notes/" + val)).catch(tblFail);
+      if (tbl.ui.note === val) tbl.ui.note = "";
+      paintSide();
+    }
   }
   else if (act === "close-arm") { tbl.ui.closeArmed = true; tbl.ui.closeText = ""; paintSide(); }
   else if (act === "close-cancel") { tbl.ui.closeArmed = false; tbl.ui.closeText = ""; paintSide(); }

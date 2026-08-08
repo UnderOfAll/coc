@@ -163,6 +163,40 @@ console.log("\n— 393px, as a player, by touch —");
   ok(zAfter > zBefore * 1.2, `pinching out zooms in (${zBefore.toFixed(2)} -> ${zAfter.toFixed(2)})`);
   ok((await page.evaluate(() => !!tbl.pinch)) === false, "and lifting the fingers ends it");
 
+  // THE reported bug: zoom, then try to move things. Both gestures, both orders, because "it works
+  // until I zoom" was the whole complaint and neither a pinch nor a wheel may leave the board deaf.
+  await page.evaluate(() => { tblFit(); tbl.cameraIsYours = false; });
+  for (const zoomBy of ["pinch", "wheel"]) {
+    if (zoomBy === "pinch") {
+      const cdp2 = await page.target().createCDPSession();
+      const c = { x: 200, y: 380 };
+      await cdp2.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [
+        { x: c.x - 40, y: c.y, id: 11 }, { x: c.x + 40, y: c.y, id: 12 }] });
+      await cdp2.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [
+        { x: c.x - 90, y: c.y, id: 11 }, { x: c.x + 90, y: c.y, id: 12 }] });
+      // One finger lifts before the other — the awkward case, and the usual one.
+      await cdp2.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [{ x: c.x + 90, y: c.y, id: 12 }] });
+      await cdp2.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    } else {
+      await page.mouse.move(200, 380);
+      await page.mouse.wheel({ deltaY: -120 });
+    }
+    await new Promise((r) => setTimeout(r, 200));
+    const ghosts = await page.evaluate(() => ({ ptrs: tbl.pointers.size, drag: !!tbl.drag, pinch: !!tbl.pinch }));
+    ok(ghosts.ptrs === 0 && !ghosts.drag && !ghosts.pinch,
+      `after a ${zoomBy} nothing is left held down (${JSON.stringify(ghosts)})`);
+    const at = await tokenAt(page, "t1");
+    const bx = await tokenBox(page, "t1");
+    const cellPx = await page.evaluate(() => tblScene().cell * tbl.view.z);
+    await touchDrag(page, bx, { x: bx.x + cellPx, y: bx.y });
+    const moved = await tokenAt(page, "t1");
+    ok(moved.x === at.x + 1, `and a figure still drags after a ${zoomBy} (${at.x} -> ${moved.x})`);
+    const viewBefore = await page.evaluate(() => tbl.view.x);
+    await touchDrag(page, { x: 300, y: 600 }, { x: 180, y: 600 });
+    const viewAfter = await page.evaluate(() => tbl.view.x);
+    ok(viewAfter !== viewBefore, `and the map still pans after a ${zoomBy} (${Math.round(viewBefore)} -> ${Math.round(viewAfter)})`);
+  }
+
   // The sheet drawer, on a phone, over the board.
   await page.evaluate(() => { document.querySelector('[data-tbl="panel"][data-val="sheet"]').click(); });
   await new Promise((r) => setTimeout(r, 600));

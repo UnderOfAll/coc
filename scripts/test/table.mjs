@@ -265,6 +265,18 @@ const cave = Object.values(sc3).find((v) => v.name === "Cave");
 ok(cave && cave.image === "https://example.com/cave.jpg", "the URL is stored as the map");
 ok(cave && cave.cols === 20 && cave.rows === 10,
   "and 20 squares across a 1000x500 picture is 10 down, so nothing is stretched (got " + (cave && cave.rows) + ")");
+// One press, one scene. A URL has to be MEASURED before it can be written, and during that wait the
+// button looked dead — which is how thirty identical blank grids got added.
+const scenesNow = $$("#dm-maps .scene-row").length;
+type($("#tbl-scene-name"), "Twice");
+type($("#tbl-scene-url"), "https://example.com/twice.jpg");
+click($('[data-tbl="scene-add"]'));
+click($('[data-tbl="scene-add"]'));
+click($('[data-tbl="scene-add"]'));
+await wait(200);
+ok($$("#dm-maps .scene-row").length === scenesNow + 1,
+  "three presses while it is measuring add ONE scene (" + ($$("#dm-maps .scene-row").length - scenesNow) + ")");
+
 // A dead link must not add a scene that shows nothing.
 peek(`window.__imgFail = true;`);
 type($("#tbl-scene-name"), "Broken");
@@ -661,12 +673,34 @@ ok((await aget(`CocLive.get("tables/482910/tokens/${gob[0]}")`)) === null, "and 
 console.log("\n— THE DM SCREEN —");
 openPanel("dm");
 await wait(60);
-ok($("#dm-notes"), "the DM has notes in the app instead of in another window");
-ok(/not secret/.test($("#tool").textContent), "with an honest word about who could read them");
-type($("#dm-notes"), "The innkeeper is lying.");
-await wait(900);
-ok((await aget(`CocLive.get("tables/482910/dm/notes")`)) === "The innkeeper is lying.",
-  "they save as you type");
+// Notes are a notepad of their own now — several, each with a title, for the DM and for every player.
+openPanel("notes");
+await wait(60);
+ok($("#notes-panel"), "everyone has a notepad in the app instead of beside it");
+ok(!$("#note-body"), "and nothing to write in until you make a note");
+click($('[data-tbl="note-new"]'));
+await wait(120);
+ok($("#note-title") && $("#note-body"), "a new note opens ready to write in");
+type($("#note-title"), "The innkeeper");
+type($("#note-body"), "He is lying about the cellar.");
+await wait(950);
+const myNotes = await aget(`Object.values(await CocLive.get("tables/482910/notes"))`);
+ok(myNotes.length === 1 && myNotes[0].title === "The innkeeper", "the title saves as you type");
+ok(/lying about the cellar/.test(myNotes[0].body), "and so does the note");
+ok(myNotes[0].by === "dm", "kept for the DM chair, so it is there on another device");
+ok(/not secret/.test($("#tool").textContent), "with an honest word about who could read it");
+// A second note, and the list of them.
+click($('[data-tbl="note-new"]'));
+await wait(120);
+ok($$("#notes-panel .scene-row").length === 2, "a second note lists beside the first");
+type($("#note-title"), "Rooftop chase");
+await wait(950);
+click($$('[data-tbl="note-del"]')[1]);
+await wait(120);
+ok($$("#notes-panel .scene-row").length === 1, "and a note can be thrown away");
+ok((await aget(`Object.values(await CocLive.get("tables/482910/notes"))`)).length === 1, "for good");
+openPanel("dm");
+await wait(60);
 // Handouts: shown to everyone at once, closable by each person.
 click($('[data-tbl="hand-add"]'));
 await wait(40);

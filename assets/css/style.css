@@ -551,7 +551,12 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 .menu-icon { font-size: 1.6rem; color: var(--gold); line-height: 1; }
 .menu-card-title { font-family: var(--serif); font-size: 1.15rem; }
 .menu-card-sub { color: var(--muted); font-size: 0.90rem; line-height: 1.5; }
-.tool-view { width: 100%; max-width: 64rem; margin: 0 auto; }
+/* 64rem was borrowed from the compendium, where a column of prose SHOULD be narrow. The creator, the
+   sheet and the table are not prose — they are forms and a board, and on a 1400px screen that cap left
+   a third of the window empty with everything squeezed into the middle. Wider for those, and the table
+   takes the whole window, because a map is the one thing that can always use more room. */
+.tool-view { width: 100%; max-width: 96rem; margin: 0 auto; }
+.tool-view:has(.vtt) { max-width: none; }
 .brand { text-decoration: none; color: inherit; }
 
 /* ============================================================
@@ -984,7 +989,7 @@ input.step-val { width: 3.4rem; }
 /* The stage is the window; the world inside it is the map, and the camera is one transform on that
    world. touch-action: none is not optional — without it the browser scrolls and zooms the PAGE
    while you are trying to drag a token, and the board becomes unusable on a phone. */
-.vtt-stage { position: relative; flex: 1; min-width: 0; height: 68dvh; min-height: 320px;
+.vtt-stage { position: relative; flex: 1; min-width: 0; height: 74dvh; min-height: 320px;
   overflow: hidden; touch-action: none; overscroll-behavior: contain; cursor: grab;
   background: #0b0b0a; border: 1px solid var(--border); border-radius: var(--radius); }
 .vtt-stage:active { cursor: grabbing; }
@@ -1008,7 +1013,10 @@ input.step-val { width: 3.4rem; }
 /* A figure's outline. A player is always a square — it stands on a square, and a circle among squares
    reads as an AREA rather than a person. The DM's own markers can be any of these, which is what makes
    a scene readable (a pit is not a goblin) and is where the Illusionist's zones will hang. */
-.tok-art { width: 84%; height: 84%; border-radius: 4px; background: var(--panel-2);
+/* A fixed hairline of air, NOT a percentage. At 84% a one-square figure looked right and a four-square
+   one was inset by twenty-two pixels a side — it read as a box floating inside four squares rather than a
+   creature filling them, which is the second half of "it doesn't fit the grid". */
+.tok-art { width: calc(100% - 6px); height: calc(100% - 6px); border-radius: 4px; background: var(--panel-2);
   background-size: cover; background-position: center; border: 2px solid var(--border);
   display: grid; place-items: center; font-family: var(--serif); font-size: 1.3rem; color: var(--muted); }
 .tok.mine .tok-art { border-color: var(--gold); }
@@ -1025,7 +1033,7 @@ input.step-val { width: 3.4rem; }
 
 /* The side panel: dice, your sheet, the DM's tools. A column beside the board on a desktop, and a
    sheet over it on a phone, because 320px cannot spare a column. */
-.vtt-side { width: min(360px, 40vw); flex-shrink: 0; max-height: 68dvh; overflow-y: auto;
+.vtt-side { width: min(400px, 32vw); flex-shrink: 0; max-height: 74dvh; overflow-y: auto;
   background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
   padding: 0.8rem; }
 .vtt-side .panel { background: none; border: none; padding: 0; margin: 0 0 0.9rem; }
@@ -1222,3 +1230,6 @@ input.step-val { width: 3.4rem; }
 .shape-dot.shape-circle { border-radius: 50%; }
 .shape-dot.shape-triangle { clip-path: polygon(50% 0, 100% 100%, 0 100%); }
 .shape-dot.shape-diamond { clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+
+/* The notepad: a title, and a box big enough to actually write in. */
+.notes-body { min-height: 12rem; line-height: 1.55; font-family: var(--sans); }
