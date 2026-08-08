@@ -1085,3 +1085,21 @@ input.step-val { width: 3.4rem; }
   cursor: pointer; border-bottom: 1px dashed rgba(201,165,78,0.5); }
 .roll:hover { color: var(--gold); border-bottom-color: var(--gold); }
 .roll:disabled { cursor: default; border-bottom: none; }
+
+/* The ruler: a line on the map, and a label that does NOT shrink with it — the whole point is to read
+   the distance while zoomed out far enough to see where you are going. */
+.ruler-line { stroke: var(--gold); stroke-width: 3; stroke-dasharray: 8 6; }
+.ruler-dot { fill: var(--gold); }
+.vtt-measure { position: absolute; transform: translate(0.6rem, -1.6rem); padding: 0.15rem 0.45rem;
+  border-radius: var(--radius); background: rgba(11,11,10,0.85); border: 1px solid var(--gold);
+  color: var(--gold); font-size: 0.85rem; white-space: nowrap; pointer-events: none; }
+.vtt-measure.over { border-color: var(--accent); color: var(--accent-soft); }
+.turn-round { font-family: var(--serif); color: var(--gold); }
+.turn-who { min-width: 0; }
+.turn-move { font-size: 0.85rem; color: var(--ok); }
+.turn-move.spent { color: var(--accent-soft); }
+.turn-acts { margin-left: auto; display: flex; gap: 0.3rem; flex-wrap: wrap; }
+@media (max-width: 760px) {
+  .turn-acts { margin-left: 0; width: 100%; }
+  .turn-acts .btn-quiet { flex: 1; }
+}

@@ -276,7 +276,7 @@ function tblOpen(code) {
     tbl.data[branch] = val;
     try { apply(); } catch (err) { tblFail(err); }
   }));
-  watch("meta", () => { paintHeader(); paintBoard(); });
+  watch("meta", () => { paintHeader(); paintBoard(); paintTurnBar(); });
   watch("scenes", () => { paintBoard(); paintDmPanel(); });
   watch("tokens", () => { paintTokens(); paintTurnBar(); });
   watch("log", () => { paintLog(); });
@@ -322,6 +322,7 @@ async function tblEnsureToken() {
       image: ch.photo || "",
       x, y: 1, size: 1,
       kind: "pc",
+      initMod: d ? (d.mods.Dexterity || 0) : 0,
       hp: d ? (ch.play && ch.play.hp != null ? ch.play.hp : d.hpMax) : 0,
       hpMax: d ? d.hpMax : 0,
       speed: 30,
@@ -365,6 +366,7 @@ function renderTableShell() {
             <div id="vtt-tokens" class="vtt-tokens"></div>
             <svg id="vtt-ruler" class="vtt-ruler" aria-hidden="true"></svg>
           </div>
+          <div id="vtt-measure" class="vtt-measure hidden"></div>
           <div class="vtt-zoom">
             <button class="btn-quiet" data-tbl="zoom" data-val="-1">&minus;</button>
             <button class="btn-quiet" data-tbl="zoom" data-val="0">Fit</button>
@@ -1035,11 +1037,152 @@ function paintLog() {
   }
 }
 
-/* ---------------------------------------------------------------- filled in by later checkpoints */
+/* ---------------------------------------------------------------- distance, and the ruler */
 
-function paintRuler() { /* checkpoint: ruler + movement budget */ }
-function tblCountMove() { /* checkpoint: ruler + movement budget */ }
-function paintTurnBar() { /* checkpoint: turn order */ }
+/* Five feet a square, and a diagonal costs the same as a straight line — the ordinary grid rule. It
+   lives in one function because the ruler you watch while dragging and the total that is charged to
+   your movement when you let go MUST be the same number, or the app is lying to you. */
+const TBL_FEET_PER_SQUARE = 5;
+function tblFeetBetween(x0, y0, x1, y1) {
+  const dx = Math.abs(Math.round(x1) - Math.round(x0));
+  const dy = Math.abs(Math.round(y1) - Math.round(y0));
+  return Math.max(dx, dy) * TBL_FEET_PER_SQUARE;
+}
+
+/* The line you see while dragging, with the distance at the end of it. The line is drawn in the
+   world (so it sits on the map, under the camera); the label is drawn in the stage (so it stays
+   readable however far you are zoomed out). */
+function paintRuler() {
+  const svg = $("#vtt-ruler"), label = $("#vtt-measure");
+  if (!svg || !label) return;
+  const drag = tbl.drag;
+  if (!drag || drag.pan) { svg.innerHTML = ""; label.classList.add("hidden"); return; }
+  const scene = tblScene();
+  const cell = Number(scene.cell) || 70;
+  const size = Math.max(1, Number(drag.token.size) || 1);
+  const half = (size * cell) / 2;
+  const x0 = drag.fromX * cell + half, y0 = drag.fromY * cell + half;
+  const x1 = drag.x * cell + half, y1 = drag.y * cell + half;
+  svg.innerHTML = `<line x1="${x0}" y1="${y0}" x2="${x1}" y2="${y1}" class="ruler-line" />
+    <circle cx="${x0}" cy="${y0}" r="${Math.max(4, cell * 0.08)}" class="ruler-dot" />`;
+  const feet = tblFeetBetween(drag.fromX, drag.fromY, drag.x, drag.y);
+  const budget = tblBudgetFor(drag.id, drag.token);
+  label.classList.remove("hidden");
+  label.style.left = (tbl.view.x + x1 * tbl.view.z) + "px";
+  label.style.top = (tbl.view.y + y1 * tbl.view.z) + "px";
+  // The budget is only shown when it means something: it is your turn, and this is your figure.
+  const over = budget && feet > budget.left;
+  label.className = "vtt-measure" + (over ? " over" : "");
+  label.textContent = budget
+    ? `${feet} ft — ${Math.max(0, budget.left - feet)} of ${budget.speed} left`
+    : `${feet} ft`;
+}
+
+/* What this token has left to walk this turn, or null when the question does not apply. Nothing is
+   ever BLOCKED: difficult terrain, dashing and every other reason to go further are settled out loud
+   at the table (Kayki's call), so the app's job is to tell you the number, not to police it. */
+function tblBudgetFor(id, token) {
+  const turn = (tbl.data.meta || {}).turn;
+  if (!turn || !Array.isArray(turn.order) || turn.order[turn.idx] !== id) return null;
+  const speed = Math.max(0, Number(token.speed) || 30);
+  const used = Math.max(0, Number(token.moved) || 0);
+  return { speed, used, left: Math.max(0, speed - used) };
+}
+
+/* Charged on release, from the same function the ruler used. */
+function tblCountMove(drag, x, y) {
+  const feet = tblFeetBetween(drag.fromX, drag.fromY, x, y);
+  if (!feet) return;
+  const used = Math.max(0, Number(drag.token.moved) || 0) + feet;
+  CocLive.put(tblPath("tokens/" + drag.id + "/moved"), used).catch(() => {});
+}
+
+/* ---------------------------------------------------------------- turn order */
+
+/* Initiative is rolled for everyone at once, by the DM, because that is how it happens at a table:
+   somebody says "roll initiative" and then reads the order out. Each token carries the modifier its
+   character sheet works out, so this is the same number the player would have added by hand. */
+async function tblRollInitiative() {
+  const activeScene = tblSceneId();
+  const rolled = [];
+  for (const [id, t] of Object.entries(tblTokens())) {
+    if (!t) continue;
+    if (t.kind === "npc" && t.scene && t.scene !== activeScene) continue;
+    const mod = Number(t.initMod) || 0;
+    const res = tblDoRoll({ count: 1, sides: 20, mod }, "normal");
+    rolled.push({ id, name: t.name || "Someone", total: res.total, mod });
+    await CocLive.put(tblPath("tokens/" + id + "/init"), res.total);
+    await CocLive.put(tblPath("tokens/" + id + "/moved"), 0);
+  }
+  // Highest first; a tie is broken by the modifier, then by name, so the order is at least stable
+  // rather than whatever key order the database happens to return.
+  rolled.sort((a, b) => b.total - a.total || b.mod - a.mod || a.name.localeCompare(b.name));
+  await CocLive.put(tblPath("meta/turn"), {
+    order: rolled.map((r) => r.id), idx: 0, round: 1, startedAt: Date.now(),
+  });
+  await CocLive.push(tblPath("log"), {
+    t: Date.now(), who: "DM", kind: "system",
+    text: "Initiative — " + rolled.map((r) => `${r.name} ${r.total}`).join(", "),
+  });
+}
+
+async function tblTurnStep(delta) {
+  const turn = (tbl.data.meta || {}).turn;
+  if (!turn || !Array.isArray(turn.order) || !turn.order.length) return;
+  const n = turn.order.length;
+  let idx = turn.idx + delta;
+  let round = turn.round || 1;
+  if (idx >= n) { idx = 0; round += 1; }
+  if (idx < 0) { idx = n - 1; round = Math.max(1, round - 1); }
+  await CocLive.patch(tblPath("meta/turn"), { idx, round });
+  // A turn starts with your movement unspent. Reset on ARRIVAL rather than on departure, so someone
+  // who steps back through the order does not find a spent budget waiting for them.
+  const id = turn.order[idx];
+  if (id) await CocLive.put(tblPath("tokens/" + id + "/moved"), 0);
+}
+
+async function tblTurnEnd() {
+  await CocLive.put(tblPath("meta/turn"), null);
+}
+
+/* The bar above the board: whose turn it is, what round, and what they have left to walk. Everyone
+   sees it; the DM can move it along, and so can whoever's turn it is — pressing "Done" on your own
+   turn is the one piece of the tracker a player should not have to ask for. */
+function paintTurnBar() {
+  const bar = $("#vtt-turn");
+  if (!bar) return;
+  const turn = (tbl.data.meta || {}).turn;
+  const tokens = tblTokens();
+  const order = turn && Array.isArray(turn.order) ? turn.order.filter((id) => tokens[id]) : [];
+  // Highlight has to be cleared even when the tracker is off, or a stale ring stays on a token.
+  const currentId = order.length ? order[Math.min(turn.idx || 0, order.length - 1)] : "";
+  document.querySelectorAll("#vtt-tokens .tok").forEach((n) =>
+    n.classList.toggle("turn", n.dataset.token === currentId));
+  if (!order.length) {
+    bar.classList.toggle("hidden", tbl.role !== "dm");
+    if (tbl.role === "dm") {
+      bar.innerHTML = `<span class="muted">No turn order.</span>
+        <button class="btn-quiet" data-tbl="init-roll">Roll initiative</button>`;
+    }
+    return;
+  }
+  bar.classList.remove("hidden");
+  const t = tokens[currentId] || {};
+  const budget = tblBudgetFor(currentId, t);
+  const mine = !!t.charCode && t.charCode === tbl.me.charCode;
+  const canStep = tbl.role === "dm" || mine;
+  const upNext = order[(order.indexOf(currentId) + 1) % order.length];
+  bar.innerHTML = `<span class="turn-round">Round ${esc(turn.round || 1)}</span>
+    <strong class="turn-who">${esc(t.name || "?")}${mine ? " — you" : ""}</strong>
+    ${budget ? `<span class="turn-move ${budget.left ? "" : "spent"}">${esc(budget.left)} of ${esc(budget.speed)} ft left</span>` : ""}
+    ${upNext && upNext !== currentId ? `<span class="muted">next: ${esc((tokens[upNext] || {}).name || "?")}</span>` : ""}
+    <span class="turn-acts">
+      ${canStep ? `<button class="btn-quiet" data-tbl="turn" data-val="1">${mine && tbl.role !== "dm" ? "Done" : "Next"} &rarr;</button>` : ""}
+      ${tbl.role === "dm" ? `<button class="btn-quiet" data-tbl="turn" data-val="-1">&larr; Back</button>
+        <button class="btn-quiet" data-tbl="init-roll">Reroll</button>
+        <button class="btn-quiet" data-tbl="turn-end">End</button>` : ""}
+    </span>`;
+}
 function paintSheetPanel() { /* checkpoint: the sheet drawer */ }
 function tblOpenToken() { /* checkpoint: token editor */ }
 
@@ -1074,9 +1217,14 @@ document.addEventListener("click", (e) => {
     paintSide();
   } else if (act === "dice-mode") { tbl.ui.dice.mode = val; paintSide(); }
   else if (act === "roll") tblRollAndPost(val, btn.dataset.label || "", tbl.ui.dice ? tbl.ui.dice.mode : "normal");
+  // Stepping the turn is the DM's — or yours, on your own turn. paintTurnBar only renders the button
+  // for those two, and this is the only way in, so it sits above the DM-only guard below.
+  else if (act === "turn") tblTurnStep(Number(val)).catch(tblFail);
   // Everything below changes the board itself, which is the DM's alone. The buttons are not rendered
   // for a player, and the check is here as well because a rendered-away control is not a locked one.
   else if (tbl.role !== "dm") return;
+  else if (act === "init-roll") tblRollInitiative().catch(tblFail);
+  else if (act === "turn-end") tblTurnEnd().catch(tblFail);
   else if (act === "map-source") { tbl.ui.mapSource = val; paintSide(); }
   else if (act === "repo-pick") { tbl.ui.repoPick = val; paintSide(); }
   else if (act === "scene") { CocLive.put(tblPath("meta/activeScene"), val).catch(tblFail); tbl.view.fitted = false; }

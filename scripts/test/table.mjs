@@ -385,6 +385,96 @@ await wait(60);
 ok(/keep high/.test($("#vtt-lastroll").textContent), "shift-click rolls with advantage: " + $("#vtt-lastroll").textContent);
 peek(`$("#sheetroll").remove();`);
 
+console.log("\n— DISTANCE —");
+// Five feet a square, and a diagonal costs the same as a straight line: the ordinary grid rule.
+ok(peek(`tblFeetBetween(0, 0, 3, 0)`) === 15, "three squares across is 15 ft");
+ok(peek(`tblFeetBetween(0, 0, 3, 3)`) === 15, "three diagonally is also 15 ft, not 21");
+ok(peek(`tblFeetBetween(0, 0, 1, 4)`) === 20, "a knight's move costs the longer leg");
+ok(peek(`tblFeetBetween(2, 2, 2, 2)`) === 0, "standing still is free");
+
+console.log("\n— TURN ORDER —");
+peek(`tbl.role = "dm"; tbl.me.charCode = ""; renderTableShell(); paintTokens(); paintTurnBar();`);
+// Two figures with known initiative modifiers, so the order below is arithmetic and not luck.
+await peek(`CocLive.put("tables/482910/tokens/tRig", { name: "Rig", charCode: "123456", x: 2, y: 2, size: 1, kind: "pc", hp: 30, hpMax: 44, speed: 30, initMod: 3 })`);
+await peek(`CocLive.put("tables/482910/tokens/tOrc", { name: "Orc", x: 8, y: 8, size: 1, kind: "npc", hp: 15, hpMax: 15, speed: 30, initMod: 1 })`);
+await wait(60);
+ok(/No turn order/.test($("#vtt-turn").textContent), "the DM is offered a turn order before there is one");
+ok($('[data-tbl="init-roll"]'), "with a button to roll it");
+// Orc rolls high, Rig rolls low: the order must follow the dice, not the list.
+peek(`window.__seq = [0.05, 0.95];`);   // Rig 2+3 = 5, Orc 20+1 = 21
+click($('[data-tbl="init-roll"]'));
+await wait(120);
+const turn = await aget(`CocLive.get("tables/482910/meta/turn")`);
+ok(turn && turn.order.length === 2, "everyone on the scene is in the order");
+ok(turn.order[0] === "tOrc" && turn.order[1] === "tRig", "highest first (" + turn.order.join(" then ") + ")");
+ok(turn.idx === 0 && turn.round === 1, "starting at the top of round 1");
+ok((await aget(`CocLive.get("tables/482910/tokens/tOrc/init")`)) === 21, "each figure keeps the number it rolled");
+const initLine = Object.values(await aget(`CocLive.get("tables/482910/log")`)).map(e => e.text).find(t => /^Initiative/.test(t));
+ok(/Orc 21/.test(initLine || "") && /Rig 5/.test(initLine || ""), "and the order is read out into the log: " + initLine);
+ok(/Round 1/.test($("#vtt-turn").textContent), "the bar says the round");
+ok(/Orc/.test($("#vtt-turn").textContent), "and whose turn it is");
+ok(/next: Rig/.test($("#vtt-turn").textContent), "and who is up after them");
+ok($('[data-token="tOrc"]').classList.contains("turn"), "the current figure is ringed on the board");
+ok(!$('[data-token="tRig"]').classList.contains("turn"), "and nobody else is");
+
+click($('[data-tbl="turn"][data-val="1"]'));
+await wait(80);
+ok((await aget(`CocLive.get("tables/482910/meta/turn/idx")`)) === 1, "Next moves down the order");
+ok($('[data-token="tRig"]').classList.contains("turn"), "and the ring moves with it");
+click($('[data-tbl="turn"][data-val="1"]'));
+await wait(80);
+const t2 = await aget(`CocLive.get("tables/482910/meta/turn")`);
+ok(t2.idx === 0 && t2.round === 2, "past the last one is round 2, back at the top");
+click($('[data-tbl="turn"][data-val="-1"]'));
+await wait(80);
+const t3 = await aget(`CocLive.get("tables/482910/meta/turn")`);
+ok(t3.idx === 1 && t3.round === 1, "and Back steps into the previous round");
+
+console.log("\n— HOW FAR CAN I WALK —");
+// It is Rig's turn (idx 1). A turn arrives with the movement unspent.
+await peek(`CocLive.put("tables/482910/tokens/tRig/moved", 25)`);
+click($('[data-tbl="turn"][data-val="-1"]'));
+await wait(60);
+click($('[data-tbl="turn"][data-val="1"]'));
+await wait(80);
+ok((await aget(`CocLive.get("tables/482910/tokens/tRig/moved")`)) === 0, "arriving at your turn clears what you had walked");
+ok(/30 of 30 ft left/.test($("#vtt-turn").textContent), "the bar says how far you can go: " + $("#vtt-turn").textContent);
+peek(`tbl.view = { x: 0, y: 0, z: 1, fitted: true }; applyView();`);
+// Drag four squares: the ruler must show it while the finger is down…
+pointer("pointerdown", $('[data-token="tRig"]'), 2 * 70 + 35, 2 * 70 + 35, 1);
+pointer("pointermove", $("#vtt-stage"), 6 * 70 + 35, 2 * 70 + 35, 1);
+ok(!$("#vtt-measure").classList.contains("hidden"), "a ruler appears while dragging");
+ok(/20 ft/.test($("#vtt-measure").textContent), "showing the distance: " + $("#vtt-measure").textContent);
+ok(/10 of 30 left/.test($("#vtt-measure").textContent), "and what it leaves you");
+ok($("#vtt-ruler").innerHTML.includes("ruler-line"), "with a line drawn on the map");
+pointer("pointerup", $("#vtt-stage"), 6 * 70 + 35, 2 * 70 + 35, 1);
+await wait(80);
+ok($("#vtt-measure").classList.contains("hidden"), "and it goes away when you let go");
+ok((await aget(`CocLive.get("tables/482910/tokens/tRig/moved")`)) === 20, "the distance is charged to your movement");
+ok(/10 of 30 ft left/.test($("#vtt-turn").textContent), "which the bar now says");
+// Going further than your speed is SHOWN, never blocked — dashing and difficult terrain are settled
+// out loud at the table.
+pointer("pointerdown", $('[data-token="tRig"]'), 6 * 70 + 35, 2 * 70 + 35, 1);
+pointer("pointermove", $("#vtt-stage"), 16 * 70 + 35, 2 * 70 + 35, 1);
+ok($("#vtt-measure").classList.contains("over"), "overspending is marked");
+pointer("pointerup", $("#vtt-stage"), 16 * 70 + 35, 2 * 70 + 35, 1);
+await wait(80);
+ok((await aget(`CocLive.get("tables/482910/tokens/tRig/x")`)) === 16, "but the move still happens");
+
+console.log("\n— A PLAYER ENDS THEIR OWN TURN —");
+peek(`tbl.role = "player"; tbl.me.charCode = "123456"; renderTableShell(); paintTokens(); paintTurnBar(); paintWho();`);
+ok(/Rig — you/.test($("#vtt-turn").textContent), "the bar tells you it is your turn");
+ok($('[data-tbl="turn"][data-val="1"]'), "and lets you end it");
+ok(!$('[data-tbl="turn"][data-val="-1"]'), "but not step back through everyone else's");
+ok(!$('[data-tbl="init-roll"]'), "nor reroll the whole order");
+click($('[data-tbl="turn"][data-val="1"]'));
+await wait(80);
+ok((await aget(`CocLive.get("tables/482910/meta/turn/idx")`)) === 0, "pressing Done passes the turn on");
+paintTurnBarCheck();
+function paintTurnBarCheck() {
+  ok(!$('[data-tbl="turn"][data-val="1"]'), "and once it is somebody else's, you cannot touch the tracker");
+}
+
 console.log("\n— PLAYERS CANNOT REDECORATE —");
 peek(`tbl.role = "player"; tbl.me.charCode = "123456"; renderTableShell(); paintSide();`);
 ok(!$('[data-tbl="panel"][data-val="dm"]'), "a player is offered no DM panel");
