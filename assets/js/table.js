@@ -354,8 +354,13 @@ function tblOpen(code) {
   tbl.offs.push(CocLive.watch(tblPath(""), (all) => {
     if (!tbl) return;
     tbl.data = all || {};
+    const first = !tbl.gotData;
     tbl.gotData = true;
     try { paintEverything(); } catch (err) { tblFail(err); }
+    // Placing a figure has to wait until the board's contents are known, or a second device places a
+    // second figure. But waiting for the next heartbeat meant sitting down and appearing to the table
+    // up to twenty seconds later, which is how it behaved live. Try the moment the data lands.
+    if (first) tblEnsureToken();
   }));
   tblAnnounce();
   tbl.beat = setInterval(tblAnnounce, 20000);

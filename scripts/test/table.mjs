@@ -699,6 +699,8 @@ await wait(120);
 ok(peek(`location.hash`) === "#/table/482910", "joining with a real one walks you in");
 await go("#/table/482910", 200);
 ok(peek(`tbl.role`) === "player", "as a player, not the DM");
+// Not on the next heartbeat twenty seconds later: the figure has to be there as you arrive.
+ok(peek(`tblMyTokens().length`) === 1, "and your figure is there as soon as the board loads");
 ok(peek(`tbl.me.charCode`) === "123456", "carrying your character code");
 await wait(200);
 const mine = await aget(`Object.values(await CocLive.get("tables/482910/tokens")).filter(t => t.charCode === "123456")`);
