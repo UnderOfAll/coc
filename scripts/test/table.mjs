@@ -140,6 +140,9 @@ await wait(40);
 const pointer = (type, node, x, y, id) => {
   const e = new window.MouseEvent(type, { bubbles: true, clientX: x, clientY: y });
   Object.defineProperty(e, "pointerId", { value: id == null ? 1 : id });
+  // isPrimary matters: a real second finger reports false, and the board uses that to know a stale
+  // pointer from a genuine second one. Without it these events lie about being first fingers.
+  Object.defineProperty(e, "isPrimary", { value: (id == null ? 1 : id) === 1 });
   (node || $("#vtt-stage")).dispatchEvent(e);
 };
 const drag = (node, fromX, fromY, toX, toY) => {
@@ -173,7 +176,9 @@ peek(`tbl.role = "player"; tbl.me.charCode = "123456"; paintTokens();`);
 ok($('[data-token="tRig"]').classList.contains("mine"), "your own figure is marked as yours");
 ok($('[data-token="tRig"]').classList.contains("movable"), "and is movable");
 ok(!$('[data-token="tOrc"]').classList.contains("movable"), "the DM's monster is not");
-ok(!/15\/15/.test($('[data-token="tOrc"]').textContent), "and a player is not shown its hit points");
+// Kayki's call after the first playtest: players DO see a monster's hit points. Not knowing whether the
+// thing in front of you is nearly down was simply unhelpful.
+ok(/15\/15/.test($('[data-token="tOrc"]').textContent), "and a player can read its hit points");
 const orcX = await peek(`CocLive.get("tables/482910/tokens/tOrc/x")`);
 drag($('[data-token="tOrc"]'), 10 * 70 + 35, 6 * 70 + 35, 3 * 70, 3 * 70);
 await wait(60);
@@ -376,7 +381,11 @@ click($('[data-tbl="roll"]'));
 await wait(60);
 ok($("#vtt-lastroll").classList.contains("nat1"), "and so does a natural 1");
 ok($$(".roll-line").length === 3, "the log keeps them, newest first");
-ok(/= 1$|→ 1$/.test($$(".roll-line")[0].textContent), "newest at the top: " + $$(".roll-line")[0].textContent);
+// The log is laid out now, not written as a sentence: who, the dice as dice, the total on the right.
+const topLine = $$(".roll-line")[0];
+ok(/^1$/.test(topLine.querySelector(".roll-card-total").textContent.trim()),
+  "newest at the top, and its total reads on its own: " + topLine.querySelector(".roll-card-total").textContent.trim());
+ok(topLine.querySelectorAll(".pip-die").length === 1, "with the die that produced it beside it");
 
 // The other half of the brief: numbers ON THE SHEET are the roll buttons. The sheet drawer arrives in
 // a later checkpoint; what matters here is that a data-roll control anywhere posts to this table.
@@ -536,6 +545,46 @@ await wait(200);
 ok($$("#vtt-sheet .ab-box").length === 6, "a real code opens that character beside the board");
 click($('[data-tbl="sheet-close"]'));
 await wait(40);
+
+console.log("\n— A ROLL YOU CAN WATCH —");
+// The overlay is built on demand and lives on the body, because every page can roll.
+peek(`window.__seq = [0.95];`);
+openPanel("dice");
+peek(`tbl.ui.dice = { sides: 20, count: 1, mod: 2, mode: "normal" }; paintSide();`);
+click($('[data-tbl="roll"]'));
+await wait(60);
+const stage = doc.getElementById("roll-stage");
+ok(stage && stage.classList.contains("on"), "rolling puts the dice on screen");
+ok(stage.classList.contains("rolling"), "tumbling before they land");
+ok(stage.querySelectorAll(".die").length === 1, "one die for a d20");
+ok(stage.querySelector(".roll-total").textContent.trim() === "22",
+  "and the total, once the modifier is in: " + stage.querySelector(".roll-total").textContent);
+ok(stage.classList.contains("nat20"), "a natural 20 is marked on the overlay too");
+await wait(700);
+ok(!stage.classList.contains("rolling") && stage.classList.contains("landed"), "then they settle");
+ok(stage.querySelector(".die").textContent === String(peek(`Object.values(tbl.data.log).sort((a,b)=>b.t-a.t)[0].rolls[0]`)),
+  "showing the number that was actually rolled, not a random face");
+// Advantage keeps both dice on screen, with the discarded one dimmed — "which did I keep" is the first
+// thing anyone asks.
+peek(`window.__seq = [0.1, 0.9]; tbl.ui.dice.mode = "adv"; paintSide();`);
+click($('[data-tbl="roll"]'));
+await wait(700);
+const dice = [...doc.querySelectorAll("#roll-stage .die")];
+ok(dice.length === 2, "advantage shows both dice");
+ok(dice.filter((d) => d.classList.contains("dropped")).length === 1, "with the one you did not keep dimmed");
+ok(dice.findIndex((d) => !d.classList.contains("dropped")) ===
+   peek(`Object.values(tbl.data.log).sort((a,b)=>b.t-a.t)[0].keptIdx`),
+  "and it is the die the roll actually kept, which two equal dice could not tell you");
+// Somebody ELSE's roll is rolled on your screen too — that is the point of everyone being in the room.
+const seenBefore = peek(`tbl.lastRollAt`);
+await peek(`CocLive.push("tables/482910/log", { t: Date.now() + 5000, who: "Sable", kind: "roll",
+  label: "Longbow", sides: 20, count: 1, mod: 5, rolls: [11], kept: [11], mode: "normal", total: 16,
+  text: "Sable rolled Longbow: d20 + 5 → 11 = 16" })`);
+await wait(80);
+ok(peek(`tbl.lastRollAt`) > seenBefore, "a roll from another device is noticed");
+ok(/Sable/.test(doc.getElementById("roll-stage").textContent), "and rolled on this screen: " +
+  doc.getElementById("roll-stage").querySelector(".roll-head").textContent.trim());
+peek(`tbl.ui.dice.mode = "normal";`);
 
 console.log("\n— PLAYERS CANNOT REDECORATE —");
 peek(`tbl.role = "player"; tbl.me.charCode = "123456"; renderTableShell(); paintSide();`);

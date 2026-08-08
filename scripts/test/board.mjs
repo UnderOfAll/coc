@@ -196,6 +196,9 @@ console.log("\n— 1280px, as the DM, with a mouse —");
   const { page, errs } = await openTable(1280, 900, true);
   ok(await page.evaluate(() => tbl.role === "dm"), "the stored key makes this browser the DM");
   // The wheel is a camera, and the point under the cursor must stay put.
+  // Zoom in first, so the map is BIGGER than the window: that is the state anchoring has to hold in,
+  // and with a map smaller than the window the camera is clamped to keep it fully visible instead.
+  await page.evaluate(() => { tbl.view.z = 1.2; tbl.cameraIsYours = true; tblClampView(); applyView(); });
   const at = { x: 500, y: 400 };
   const worldBefore = await page.evaluate((p) => toSquares(p.x - document.querySelector("#vtt-stage").getBoundingClientRect().left,
     p.y - document.querySelector("#vtt-stage").getBoundingClientRect().top), at);

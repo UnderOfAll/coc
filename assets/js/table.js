@@ -331,6 +331,7 @@ function tblOpen(code) {
   tbl.offs.push(CocLive.watch(tblPath(""), (all) => {
     if (!tbl) return;
     tbl.data = all || {};
+    tbl.gotData = true;
     try { paintEverything(); } catch (err) { tblFail(err); }
   }));
   tblAnnounce();
@@ -350,18 +351,41 @@ function tblAnnounce() {
   tblEnsureToken();
 }
 
+/* Every figure at this table belonging to my character, oldest first — the ids sort by creation time. */
+function tblMyTokens() {
+  if (!tbl.me.charCode) return [];
+  return Object.entries(tblTokens())
+    .filter(([, t]) => t && t.charCode === tbl.me.charCode)
+    .map(([id]) => id)
+    .sort();
+}
+/* Two devices joining at the same moment can each place a figure before either sees the other's. The
+   owner clears up after itself: keep the oldest, drop the rest. Only the owner does this, so two
+   clients cannot fight over it. */
+function tblPruneMyTokens() {
+  const mine = tblMyTokens();
+  if (mine.length < 2) return;
+  for (const id of mine.slice(1)) CocLive.del(tblPath("tokens/" + id)).catch(() => {});
+  tbl.me.tokenId = mine[0];
+}
+
 /* A player who sits down gets a token, once. It carries their portrait and their character code —
    the code is what proves ownership later, so nobody else can drag them around. */
 async function tblEnsureToken() {
   if (!tbl || tbl.role === "dm" || !tbl.me.charCode) return;
-  const tokens = tblTokens();
-  const mine = Object.entries(tokens).find(([, t]) => t && t.charCode === tbl.me.charCode);
-  if (mine) { tbl.me.tokenId = mine[0]; return; }
+  // NEVER place before the table's data has arrived. Sitting down on a second device placed a second
+  // figure, because at that moment this client believed the board was empty.
+  if (!tbl.gotData) return;
+  const mineNow = tblMyTokens();
+  if (mineNow.length) { tbl.me.tokenId = mineNow[0]; tblPruneMyTokens(); return; }
   if (tbl.me._placing) return;
   tbl.me._placing = true;
   try {
     const ch = await CocStore.load(tbl.me.charCode);
     if (!ch) return;
+    // The stream may well have delivered while that was loading.
+    if (tblMyTokens().length) { tbl.me.tokenId = tblMyTokens()[0]; return; }
+    const tokens = tblTokens();
     const d = (typeof derive === "function") ? derive(ch) : null;
     const id = CocLive.newId();
     // Dropped on the first free square of the top row, so two players joining at once do not land
@@ -515,6 +539,25 @@ function paintBoard() {
 
 /* Camera. Everything is one CSS transform on the world, so panning and zooming never touch a token:
    the browser composites the whole board, which is why this stays smooth on a phone. */
+/* The camera is kept over the map: panning it into empty space loses the board completely, which is
+   what "I try to move the map and the characters pop off the screen" was. Same rule the fit uses. */
+function tblClampView() {
+  const stage = $("#vtt-stage"), scene = tblScene();
+  if (!stage) return;
+  const box = stage.getBoundingClientRect();
+  if (box.width < 40) return;
+  const cell = Number(scene.cell) || 70;
+  const w = (Number(scene.cols) || 30) * cell * tbl.view.z;
+  const h = (Number(scene.rows) || 20) * cell * tbl.view.z;
+  // Smaller than the window: keep it fully visible, but WHERE the player left it — forcing it back to
+  // the centre would fight every zoom. Bigger: never uncover an edge.
+  const clamp = (v, size, stageSize) => size <= stageSize
+    ? Math.max(0, Math.min(stageSize - size, v))
+    : Math.max(stageSize - size, Math.min(0, v));
+  tbl.view.x = clamp(tbl.view.x, w, box.width);
+  tbl.view.y = clamp(tbl.view.y, h, box.height);
+}
+
 function applyView() {
   const world = $("#vtt-world");
   if (!world) return;
@@ -570,6 +613,7 @@ function tblZoomBy(factor, cx, cy) {
   tbl.view.x = px - ((px - tbl.view.x) / z0) * z1;
   tbl.view.y = py - ((py - tbl.view.y) / z0) * z1;
   tbl.view.z = z1;
+  tblClampView();
   applyView();
 }
 
@@ -595,7 +639,8 @@ function paintTokens() {
       node = document.createElement("div");
       node.className = "tok";
       node.dataset.token = id;
-      node.innerHTML = `<span class="tok-art"></span><span class="tok-name"></span><span class="tok-hp"></span>`;
+      node.innerHTML = `<span class="tok-art"></span><span class="tok-name"></span>` +
+        `<span class="tok-hp"></span><span class="tok-cond"></span>`;
       host.appendChild(node);
     }
     // The token being dragged on THIS screen is not moved by incoming data: the drag is the truth
@@ -612,6 +657,7 @@ function paintTokens() {
     node.classList.toggle("movable", tblCanMove(t));
     node.classList.toggle("npc", t.kind === "npc");
     const art = node.querySelector(".tok-art");
+    art.className = "tok-art shape-" + tblShapeOf(t);
     if (t.image) {
       if (art.dataset.src !== t.image) { art.dataset.src = t.image; art.style.backgroundImage = `url("${t.image}")`; }
       art.textContent = "";
@@ -621,14 +667,20 @@ function paintTokens() {
     }
     node.querySelector(".tok-name").textContent = t.name || "";
     const hp = node.querySelector(".tok-hp");
-    // A player sees their own numbers and the DM sees everything; a monster's remaining hit points
-    // are the DM's business, so the bar is there and the digits are not.
+    // Everyone reads everyone's hit points. Hiding a monster's numbers from the players sounded tidy
+    // and was simply unhelpful: they are the ones who need to know whether it is nearly down.
     if (t.hpMax) {
       const pct = Math.max(0, Math.min(100, Math.round((Number(t.hp) || 0) / t.hpMax * 100)));
-      const show = tbl.role === "dm" || (t.charCode && t.charCode === tbl.me.charCode);
-      hp.innerHTML = `<span class="tok-bar"><span style="width:${pct}%"></span></span>${
-        show ? `<span class="tok-num">${esc(t.hp)}/${esc(t.hpMax)}</span>` : ""}`;
+      const hurt = pct <= 25 ? " low" : pct <= 60 ? " half" : "";
+      hp.innerHTML = `<span class="tok-bar${hurt}"><span style="width:${pct}%"></span></span>` +
+        `<span class="tok-num">${esc(t.hp)}/${esc(t.hpMax)}</span>`;
     } else hp.innerHTML = "";
+    // Conditions, set by the DM, read by everybody — the second half of "what is going on with that
+    // thing". Two letters each, because a token is 40px wide on a phone.
+    const cond = node.querySelector(".tok-cond");
+    const list = Array.isArray(t.conditions) ? t.conditions : [];
+    cond.innerHTML = list.map((c) =>
+      `<span class="tok-flag" title="${esc(TBL_CONDITION_NAMES[c] || c)}">${esc((TBL_CONDITION_NAMES[c] || c).slice(0, 2))}</span>`).join("");
   }
   for (const node of [...host.children]) {
     if (!seen.has(node.dataset.token)) node.remove();
@@ -648,13 +700,28 @@ function paintTokens() {
 /* Pointer events, not mouse and touch separately: a stylus, a finger and a mouse all arrive here as
    the same three events, which is the only reason the board works on a phone without a second
    implementation to keep in step. */
+let tblGesturesBound = false;
 function bindStage() {
   const stage = $("#vtt-stage");
   if (!stage) return;
   stage.addEventListener("pointerdown", onPointerDown);
-  stage.addEventListener("pointermove", onPointerMove);
-  stage.addEventListener("pointerup", onPointerUp);
-  stage.addEventListener("pointercancel", onPointerUp);
+  /* move / up / cancel are bound to the WINDOW, not to the board, and this is the whole of the
+     "zoom, then dragging stops working until I leave the room" bug. A finger or a mouse released
+     OUTSIDE the board — which is most of a phone screen, and is where a pinch usually ends — never
+     sends its pointerup to the board. The pointer was then never deleted, so the next touch counted as
+     a SECOND finger and every drag was read as a pinch: nothing moved, and only reopening the table
+     (which rebuilt the state) fixed it.
+     Bound once, on the window, because the shell is re-rendered and stacking listeners on every render
+     would fire each handler as many times as the table had been repainted. */
+  if (!tblGesturesBound) {
+    tblGesturesBound = true;
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerUp);
+    window.addEventListener("pointercancel", onPointerUp);
+    // The other ways a gesture can end without telling you: switching app, rotating, alt-tabbing.
+    window.addEventListener("blur", tblResetGestures);
+    document.addEventListener("visibilitychange", () => { if (document.hidden) tblResetGestures(); });
+  }
   stage.addEventListener("wheel", (e) => {
     e.preventDefault();
     tblZoomBy(e.deltaY < 0 ? 1.12 : 1 / 1.12, e.clientX, e.clientY);
@@ -679,9 +746,28 @@ function toSquares(sx, sy) {
   return { x: ((sx - tbl.view.x) / tbl.view.z) / cell, y: ((sy - tbl.view.y) / tbl.view.z) / cell };
 }
 
+/* Every finger is up and nothing is being dragged. Called whenever the browser tells us a gesture
+   ended in a way we cannot track, so a lost event can never leave the board deaf. */
+function tblResetGestures() {
+  if (!tbl) return;
+  tbl.pointers.clear();
+  tbl.pinch = null;
+  if (tbl.drag && !tbl.drag.pan) {
+    const node = $("#vtt-tokens") && $("#vtt-tokens").querySelector(`[data-token="${tbl.drag.id}"]`);
+    if (node) node.classList.remove("dragging");
+  }
+  tbl.drag = null;
+  paintTokens();
+  paintRuler();
+}
+
 function onPointerDown(e) {
   if (!tbl) return;
   const stage = $("#vtt-stage");
+  if (!stage || !stage.contains(e.target)) return;   // the window hears everything; the board owns only itself
+  // A primary pointerdown is by definition the FIRST finger of a gesture, so anything still recorded
+  // is a ghost from an event we never received. Self-healing beats hoping.
+  if (e.isPrimary !== false && tbl.pointers.size) { tbl.pointers.clear(); tbl.pinch = null; tbl.drag = null; }
   tbl.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
   // Two fingers down: this is a pinch, and whatever the first finger had started is abandoned.
   if (tbl.pointers.size === 2) { tbl.drag = null; tbl.pinch = tblPinchState(); return; }
@@ -726,6 +812,7 @@ function onPointerMove(e) {
     tbl.cameraIsYours = true;
     tbl.view.x = d.ox + (p.sx - d.sx);
     tbl.view.y = d.oy + (p.sy - d.sy);
+    tblClampView();
     applyView();
     return;
   }
@@ -751,6 +838,14 @@ function onPointerUp(e) {
   if (!tbl) return;
   tbl.pointers.delete(e.pointerId);
   if (tbl.pointers.size < 2) tbl.pinch = null;
+  // Lifting one finger of a pinch leaves the other one down. Hand it the map rather than ignoring it
+  // until it lifts too — otherwise the board feels stuck for as long as that finger rests on it.
+  if (tbl.pointers.size === 1 && !tbl.drag) {
+    const [only] = [...tbl.pointers.values()];
+    const stage = $("#vtt-stage").getBoundingClientRect();
+    tbl.drag = { pan: true, sx: only.x - stage.left, sy: only.y - stage.top, ox: tbl.view.x, oy: tbl.view.y };
+    return;
+  }
   const d = tbl.drag;
   if (!d) return;
   tbl.drag = null;
@@ -795,6 +890,7 @@ function paintSide() {
     paintLog();
   }
   else if (which === "claim") side.innerHTML = claimPanelHTML();
+  else if (which === "figure") side.innerHTML = figureInfoHTML(tbl.ui.lookAt);
   else if (which === "sheet") { side.innerHTML = `<p class="muted">Opening your sheet…</p>`; paintSheetPanel(); }
 }
 /* Re-render the DM's panel only if it is the one open — the scenes stream fires for everyone. */
@@ -831,6 +927,7 @@ function dmPanelHTML() {
 
 function dmMapsHTML() {
   const scenes = tbl.data.scenes || {};
+  const active = tblScene();
   const activeId = tblSceneId();
   const src = tbl.ui.mapSource || "blank";
   const ids = Object.keys(scenes).sort((a, b) => (scenes[a].createdAt || 0) - (scenes[b].createdAt || 0));
@@ -874,15 +971,28 @@ function dmMapsHTML() {
       <button class="btn" data-tbl="scene-add">Add the scene</button>
       <p id="tbl-scene-msg" class="save-msg"></p>
     </section>
-    <section class="panel">
-      <p class="panel-sub">This scene</p>
-      <div class="hp-controls">
-        <button class="btn-quiet" data-tbl="grid-cols" data-val="-1">Narrower</button>
-        <button class="btn-quiet" data-tbl="grid-cols" data-val="1">Wider</button>
-        <button class="btn-quiet" data-tbl="grid-rows" data-val="-1">Shorter</button>
-        <button class="btn-quiet" data-tbl="grid-rows" data-val="1">Taller</button>
+    <section class="panel" id="dm-grid">
+      <p class="panel-sub">This scene's grid</p>
+      <p class="grid-now"><strong>${esc(active.cols || 30)}</strong> across
+        <span class="sep">&times;</span> <strong>${esc(active.rows || 20)}</strong> down
+        <span class="muted">= ${esc((active.cols || 30) * 5)} ft by ${esc((active.rows || 20) * 5)} ft</span></p>
+      <div class="grid-row">
+        <label class="field"><span>Across</span>
+          <span class="stepper">
+            <button class="step-btn" data-tbl="grid-cols" data-val="-1">&minus;</button>
+            <span class="step-val">${esc(active.cols || 30)}</span>
+            <button class="step-btn" data-tbl="grid-cols" data-val="1">+</button>
+          </span></label>
+        <label class="field"><span>Down</span>
+          <span class="stepper">
+            <button class="step-btn" data-tbl="grid-rows" data-val="-1">&minus;</button>
+            <span class="step-val">${esc(active.rows || 20)}</span>
+            <button class="step-btn" data-tbl="grid-rows" data-val="1">+</button>
+          </span></label>
       </div>
-      <p class="muted">Nudge the grid until a square is a square. Five feet per square, as usual.</p>
+      <p class="muted">More squares across makes each one smaller: change it until the grid matches the
+        picture. Five feet a square, so ${esc(active.cols || 30)} across is a room
+        ${esc((active.cols || 30) * 5)} feet wide.</p>
     </section>`;
 }
 
@@ -913,6 +1023,10 @@ function dmFiguresHTML() {
         <label class="field"><span>Squares</span>
           <input id="tbl-npc-size" class="num" type="number" min="1" max="4" value="1" /></label>
       </div>
+      <p class="panel-sub">Shape <span class="muted">— players are always squares; yours need not be</span></p>
+      <div class="chips">${TBL_SHAPES.map(([k, label]) =>
+        `<button class="chip ${(tbl.ui.npcShape || "square") === k ? "on" : ""}" data-tbl="npc-shape"
+          data-val="${k}"><span class="shape-dot shape-${k}"></span>${esc(label)}</button>`).join("")}</div>
       <label class="field"><span>Picture (URL, optional)</span>
         <input id="tbl-npc-img" class="text" type="text" placeholder="https://… or maps/…" /></label>
       <button class="btn" data-tbl="spawn">Drop it on the board</button>
@@ -1092,10 +1206,13 @@ function tblDoRoll(spec, mode) {
   const rolls = [];
   const n = twin ? 2 : spec.count;
   for (let i = 0; i < n; i++) rolls.push(d(spec.sides));
-  const kept = twin ? [mode === "adv" ? Math.max(...rolls) : Math.min(...rolls)] : rolls.slice();
+  // WHICH die was kept, not just its value: with two 14s the value cannot tell you, and every screen
+  // has to dim the same one.
+  const keptIdx = twin ? rolls.indexOf(mode === "adv" ? Math.max(...rolls) : Math.min(...rolls)) : -1;
+  const kept = twin ? [rolls[keptIdx]] : rolls.slice();
   const sum = kept.reduce((a, b) => a + b, 0);
   return {
-    rolls, kept, mode: twin ? mode : "normal", spec,
+    rolls, kept, keptIdx, mode: twin ? mode : "normal", spec,
     total: sum + spec.mod,
     natural: spec.sides === 20 && kept.length === 1 ? kept[0] : 0,
   };
@@ -1127,32 +1244,86 @@ function tblRollAndPost(spec, label, mode, whoOverride) {
   // is what makes the log readable when the DM is running an NPC from a real sheet.
   const who = whoOverride || (tbl ? (tbl.me.name || (tbl.role === "dm" ? "DM" : "Player")) : "You");
   const text = tblRollLine(who, label, res);
+  const entry = {
+    t: Date.now(), who, kind: "roll", text,
+    nat: res.natural === 20 ? 20 : res.natural === 1 ? 1 : 0,
+    // The numbers, not just the sentence: every screen at the table renders the roll itself from these,
+    // and a sentence cannot be animated or laid out.
+    label: label || "", sides: parsed.sides, count: parsed.count, mod: parsed.mod,
+    rolls: res.rolls, kept: res.kept, keptIdx: res.keptIdx, mode: res.mode, total: res.total,
+  };
   if (tbl) {
-    CocLive.push(tblPath("log"), {
-      t: Date.now(), who, kind: "roll", text,
-      nat: res.natural === 20 ? 20 : res.natural === 1 ? 1 : 0,
-    }).catch(() => {});
+    // Shown here at once, and marked as seen so the stream's echo does not roll it a second time.
+    tbl.lastRollAt = entry.t;
+    tblShowRoll(entry);
+    CocLive.push(tblPath("log"), entry).catch(() => {});
   } else {
-    tblToast(text);
+    tblShowRoll(entry);
   }
   return res;
 }
 
-/* Away from a table a roll has nowhere to appear, so it says itself and fades. Built here rather
-   than in the markup because the sheet is not the only page that can roll. */
-let tblToastTimer = null;
-function tblToast(text) {
-  let node = document.getElementById("roll-toast");
+/* A roll you can WATCH. "17" appearing in a list is information; a die tumbling and landing on 17 is
+   the moment everyone looks up for, and it costs one element and no library. The same overlay is used
+   on a sheet away from a table, because a roll is a roll.
+   Built in JS rather than in index.html because every page can roll, and none of them should have to
+   carry the markup for it. */
+let tblRollTimers = [];
+function tblRollStage() {
+  let node = document.getElementById("roll-stage");
   if (!node) {
     node = document.createElement("div");
-    node.id = "roll-toast";
-    node.className = "roll-toast";
+    node.id = "roll-stage";
+    node.className = "roll-stage";
+    node.addEventListener("click", () => node.classList.remove("on"));
     document.body.appendChild(node);
   }
-  node.textContent = text;
-  node.classList.add("on");
-  clearTimeout(tblToastTimer);
-  tblToastTimer = setTimeout(() => node.classList.remove("on"), 4000);
+  return node;
+}
+
+function tblShowRoll(entry) {
+  if (!entry) return;
+  const node = tblRollStage();
+  for (const t of tblRollTimers) clearTimeout(t);
+  tblRollTimers = [];
+  const sides = Number(entry.sides) || 20;
+  const kept = Array.isArray(entry.kept) ? entry.kept : [];
+  const rolls = Array.isArray(entry.rolls) ? entry.rolls : kept;
+  const mod = Number(entry.mod) || 0;
+  const nat = entry.nat === 20 ? "nat20" : entry.nat === 1 ? "nat1" : "";
+  // Each die gets a face that will tumble; the discarded one of an advantage pair stays visible and
+  // dimmed, because "which one did I keep" is the first question anyone asks.
+  const keptIdx = entry.keptIdx == null ? -1 : Number(entry.keptIdx);
+  const faces = rolls.map((v, i) => {
+    const dropped = keptIdx >= 0 && i !== keptIdx ? " dropped" : "";
+    return `<span class="die die-${sides}${dropped}" data-final="${esc(v)}">${esc(v)}</span>`;
+  }).join("");
+  node.className = "roll-stage on rolling " + nat;
+  node.innerHTML = `<div class="roll-box">
+    <p class="roll-head"><strong>${esc(entry.who || "Someone")}</strong>${
+      entry.label ? ` &middot; ${esc(entry.label)}` : ""}</p>
+    <div class="roll-dice">${faces}</div>
+    <p class="roll-sum">
+      <span class="roll-spec">${esc(entry.count > 1 ? entry.count : "")}d${esc(sides)}${
+        mod ? (mod > 0 ? " + " + mod : " − " + Math.abs(mod)) : ""}${
+        entry.mode === "adv" ? " · advantage" : entry.mode === "dis" ? " · disadvantage" : ""}</span>
+      <span class="roll-total">${esc(entry.total)}</span>
+    </p>
+  </div>`;
+  // The tumble: real dice do not fade in, they clatter. Faces change fast, then settle on the truth.
+  const dice = [...node.querySelectorAll(".die")];
+  let ticks = 0;
+  const spin = setInterval(() => {
+    ticks += 1;
+    for (const die of dice) die.textContent = String(1 + Math.floor(Math.random() * sides));
+    if (ticks > 9) {
+      clearInterval(spin);
+      for (const die of dice) die.textContent = die.dataset.final;
+      node.classList.remove("rolling");
+      node.classList.add("landed");
+    }
+  }, 55);
+  tblRollTimers.push(setTimeout(() => node.classList.remove("on"), 3200));
 }
 
 const TBL_DICE = [4, 6, 8, 10, 12, 20, 100];
@@ -1187,11 +1358,38 @@ function dicePanelHTML() {
     </section>`;
 }
 
+/* One line of the log. Laid out rather than written as a sentence: who, what for, the dice as dice, and
+   the total big enough to read from across a table. Entries from before this existed, and the DM's
+   system lines, still have their sentence and fall back to it. */
+function rollLineHTML(e) {
+  const nat = e.nat === 20 ? " nat20" : e.nat === 1 ? " nat1" : "";
+  if (e.kind !== "roll" || !Array.isArray(e.rolls)) {
+    return `<p class="roll-line${nat}">${esc(e.text || "")}</p>`;
+  }
+  const mod = Number(e.mod) || 0;
+  const keptIdx = e.keptIdx == null ? -1 : Number(e.keptIdx);
+  const dice = e.rolls.map((v, i) =>
+    `<span class="pip-die${keptIdx >= 0 && i !== keptIdx ? " dropped" : ""}">${esc(v)}</span>`).join("");
+  return `<div class="roll-line roll-card${nat}">
+    <span class="roll-card-who">${esc(e.who || "Someone")}${e.label ? ` <span class="muted">${esc(e.label)}</span>` : ""}</span>
+    <span class="roll-card-dice">${dice}${mod ? `<span class="roll-card-mod">${mod > 0 ? "+" : "−"}${esc(Math.abs(mod))}</span>` : ""}</span>
+    <span class="roll-card-total">${esc(e.total)}</span>
+  </div>`;
+}
+
 /* The log is newest-first: a side panel on a phone has no room to auto-scroll, and the roll you care
    about is the one that just happened. */
 function paintLog() {
   const last = $("#vtt-lastroll");
   const entries = Object.entries(tbl.data.log || {}).sort((a, b) => (b[1].t || 0) - (a[1].t || 0));
+  // Somebody else's roll is rolled on your screen too — that is the point of everyone being here. The
+  // first paint only records where the log had got to, or joining would replay the whole session.
+  const newest = entries.length ? entries[0][1] : null;
+  if (tbl.lastRollAt == null) tbl.lastRollAt = newest ? (newest.t || 0) : 0;
+  else if (newest && (newest.t || 0) > tbl.lastRollAt) {
+    tbl.lastRollAt = newest.t;
+    if (newest.kind === "roll") tblShowRoll(newest);
+  }
   if (last) {
     const top = entries[0];
     last.textContent = top ? top[1].text : "";
@@ -1201,8 +1399,7 @@ function paintLog() {
   }
   const host = $("#vtt-log");
   if (host) {
-    host.innerHTML = entries.slice(0, 60).map(([, e]) =>
-      `<p class="roll-line ${e.nat === 20 ? "nat20" : e.nat === 1 ? "nat1" : ""}">${esc(e.text || "")}</p>`).join("")
+    host.innerHTML = entries.slice(0, 60).map(([, e]) => rollLineHTML(e)).join("")
       || `<p class="muted">Nothing rolled yet.</p>`;
   }
   // A log nobody prunes grows for as long as the table exists. The DM's browser does it, once it is
@@ -1446,8 +1643,8 @@ async function tblSpawn() {
   const hp = Math.max(0, Number(($("#tbl-npc-hp") || {}).value) || 0);
   const size = Math.max(1, Math.min(4, Number(($("#tbl-npc-size") || {}).value) || 1));
   const image = String(($("#tbl-npc-img") || {}).value || "").trim();
-  if (!name) return say("Give it a name — a board of unnamed circles is unreadable.", true);
-  await tblPlaceNpc({ name, hp, hpMax: hp, size, image });
+  if (!name) return say("Give it a name — a board of unnamed markers is unreadable.", true);
+  await tblPlaceNpc({ name, hp, hpMax: hp, size, image, shape: tbl.ui.npcShape || "square" });
   say("Dropped " + name + " on the board.");
 }
 
@@ -1475,7 +1672,7 @@ async function tblPlaceNpc(fields) {
   for (let i = 0; i < 40 && taken.has(`${x},${y}`); i++) { x += 1; if (x > 40) { x = at.x; y += 1; } }
   const id = CocLive.newId();
   await CocLive.put(tblPath("tokens/" + id), Object.assign({
-    name: "Figure", hp: 0, hpMax: 0, size: 1, image: "", speed: 30, initMod: 0,
+    name: "Figure", hp: 0, hpMax: 0, size: 1, image: "", speed: 30, initMod: 0, shape: "square",
   }, fields, {
     kind: "npc",
     scene: tblSceneId(),      // monsters belong to the map they were put on
@@ -1498,16 +1695,65 @@ async function tblDuplicate(id) {
 
 /* Double-tapping a figure opens it. For a player that is a look at their own numbers; for the DM it is
    the editor, which is the only place a monster's hit points can be changed. */
+/* Conditions a figure can be under. The same words the sheet uses for a player, so the table has one
+   vocabulary; the DM sets them on a monster and everyone can read them. */
+/* A player's figure is a SQUARE — it stands on a square, and a circle among squares reads as an area
+   rather than a person. The DM chooses per figure, because building a scene means marking things that
+   are not people: a pit, a rune, a zone. (The Illusionist's areas will want this too, which is why the
+   list is data rather than two hard-coded cases.) */
+const TBL_SHAPES = [["square", "Square"], ["circle", "Circle"], ["triangle", "Triangle"], ["diamond", "Diamond"]];
+const TBL_SHAPE_IDS = TBL_SHAPES.map(([k]) => k);
+function tblShapeOf(t) {
+  // A player's figure is always a square, whatever is stored — one less thing to get wrong at a table.
+  if (t.kind !== "npc") return "square";
+  return TBL_SHAPE_IDS.includes(t.shape) ? t.shape : "square";
+}
+
+const TBL_CONDITION_NAMES = {
+  prone: "Prone", grappled: "Grappled", restrained: "Restrained", frightened: "Frightened",
+  blinded: "Blinded", stunned: "Stunned", poisoned: "Poisoned", concentrating: "Concentrating",
+  bloodied: "Bloodied", down: "Down",
+};
+
 function tblOpenToken(id) {
   const t = tblTokens()[id];
   if (!t) return;
-  if (tbl.role !== "dm") {
-    if (t.charCode && t.charCode === tbl.me.charCode) { tbl.ui.panel = "sheet"; paintSide(); }
+  if (tbl.role === "dm") {
+    tbl.ui.editToken = id;
+    tbl.ui.panel = "dm";
+    paintSide();
     return;
   }
-  tbl.ui.editToken = id;
-  tbl.ui.panel = "dm";
+  // A player gets their own sheet for their own figure, and a read-only look at anything else. Being
+  // told nothing at all about the thing about to eat you was the wrong answer.
+  if (t.charCode && t.charCode === tbl.me.charCode) { tbl.ui.panel = "sheet"; paintSide(); return; }
+  tbl.ui.lookAt = id;
+  tbl.ui.panel = "figure";
   paintSide();
+}
+
+/* What a player can see about a figure: what it is, how hurt it is, what it is suffering from, and how
+   far it moves. Read-only — only the DM changes any of it. */
+function figureInfoHTML(id) {
+  const t = tblTokens()[id];
+  if (!t) return `<p class="muted">That figure is no longer on the board.</p>`;
+  const pct = t.hpMax ? Math.max(0, Math.min(100, Math.round((Number(t.hp) || 0) / t.hpMax * 100))) : 0;
+  const conds = Array.isArray(t.conditions) ? t.conditions : [];
+  return `<section class="panel">
+    <h2>${esc(t.name || "Figure")}</h2>
+    ${t.image ? `<img class="figure-art" src="${esc(t.image)}" alt="" />` : ""}
+    ${t.hpMax ? `<div class="hp-head"><span class="panel-sub">Hit points</span>
+        <div class="hp-num ${pct <= 25 ? "hurt" : ""}"><strong>${esc(t.hp)}</strong><span>/ ${esc(t.hpMax)}</span></div></div>
+      <div class="hp-bar"><div class="hp-fill ${pct <= 25 ? "hurt" : ""}" style="width:${pct}%"></div></div>`
+      : `<p class="muted">No hit points recorded for this one.</p>`}
+    <p class="panel-sub">Conditions</p>
+    <div class="chips">${conds.length
+      ? conds.map((c) => `<span class="chip on">${esc(TBL_CONDITION_NAMES[c] || c)}</span>`).join("")
+      : `<span class="muted">None.</span>`}</div>
+    <p class="panel-sub">Speed</p>
+    <p>${esc(Number(t.speed) || 30)} ft${t.size > 1 ? ` <span class="muted">· ${esc(t.size)} squares across</span>` : ""}</p>
+    <p class="muted">Read-only: the DM owns this figure. Double-tap any figure to look at it.</p>
+  </section>`;
 }
 
 function tokenEditorHTML(id) {
@@ -1535,6 +1781,16 @@ function tokenEditorHTML(id) {
     </div>
     <label class="field"><span>Picture (URL, or maps/… )</span>
       <input id="ed-img" class="text" type="text" value="${esc(t.image || "")}" /></label>
+    ${t.kind === "npc" ? `<p class="panel-sub">Shape</p>
+      <div class="chips">${TBL_SHAPES.map(([k, label]) =>
+        `<button class="chip ${tblShapeOf(t) === k ? "on" : ""}" data-tbl="ed-shape"
+          data-val="${esc(id)}|${k}"><span class="shape-dot shape-${k}"></span>${esc(label)}</button>`).join("")}</div>`
+      : `<p class="muted">A player's figure is always a square.</p>`}
+    <p class="panel-sub">Conditions <span class="muted">— every player can read these</span></p>
+    <div class="chips">${Object.entries(TBL_CONDITION_NAMES).map(([k, label]) => {
+      const on = Array.isArray(t.conditions) && t.conditions.includes(k);
+      return `<button class="chip ${on ? "on" : ""}" data-tbl="ed-cond" data-val="${esc(id)}|${k}">${esc(label)}</button>`;
+    }).join("")}</div>
     <div class="hp-controls">
       <button class="btn" data-tbl="ed-save" data-val="${esc(id)}">Save</button>
       <button class="btn-quiet" data-tbl="ed-dup" data-val="${esc(id)}">Duplicate</button>
@@ -1699,6 +1955,20 @@ document.addEventListener("click", (e) => {
   else if (act === "ed-close") { tbl.ui.editToken = ""; paintSide(); }
   else if (act === "ed-save") tblSaveToken(val).catch(tblFail);
   else if (act === "ed-dup") tblDuplicate(val).catch(tblFail);
+  else if (act === "npc-shape") { tbl.ui.npcShape = val; paintSide(); }
+  else if (act === "ed-shape") {
+    const [id, shape] = String(val).split("|");
+    if (TBL_SHAPE_IDS.includes(shape)) CocLive.put(tblPath("tokens/" + id + "/shape"), shape).catch(tblFail);
+  }
+  else if (act === "ed-cond") {
+    const [id, cond] = String(val).split("|");
+    const t = tblTokens()[id];
+    if (t) {
+      const list = Array.isArray(t.conditions) ? t.conditions.slice() : [];
+      const next = list.includes(cond) ? list.filter((c) => c !== cond) : list.concat(cond);
+      CocLive.put(tblPath("tokens/" + id + "/conditions"), next.length ? next : null).catch(tblFail);
+    }
+  }
   else if (act === "ed-del") {
     CocLive.del(tblPath("tokens/" + val)).catch(tblFail);
     tbl.ui.editToken = ""; paintSide();

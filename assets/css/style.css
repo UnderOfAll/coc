@@ -807,9 +807,6 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 .step-save { border-color: var(--gold); }
 .vitals .hp-controls { margin-top: 0.2rem; }
 .engine-panel .muted { font-size: 0.87rem; line-height: 1.5; }
-/* The engine out of combat: part of the one line that says the fight has not started, because
-   everything it would otherwise show is disabled. */
-.engine-idle strong, .engine-idle span { font-family: var(--serif); color: var(--gold); font-weight: 600; }
 .trick-list-sheet > .trick-row:first-child { border-top: none; }
 .recent { display: flex; flex-direction: column; }
 
@@ -1003,7 +1000,10 @@ input.step-val { width: 3.4rem; }
   justify-content: center; cursor: default; user-select: none; }
 .tok.movable { cursor: grab; }
 .tok.dragging { z-index: 5; filter: drop-shadow(0 6px 12px rgba(0,0,0,0.6)); }
-.tok-art { width: 84%; height: 84%; border-radius: 50%; background: var(--panel-2);
+/* A figure's outline. A player is always a square — it stands on a square, and a circle among squares
+   reads as an AREA rather than a person. The DM's own markers can be any of these, which is what makes
+   a scene readable (a pit is not a goblin) and is where the Illusionist's zones will hang. */
+.tok-art { width: 84%; height: 84%; border-radius: 4px; background: var(--panel-2);
   background-size: cover; background-position: center; border: 2px solid var(--border);
   display: grid; place-items: center; font-family: var(--serif); font-size: 1.3rem; color: var(--muted); }
 .tok.mine .tok-art { border-color: var(--gold); }
@@ -1082,13 +1082,62 @@ input.step-val { width: 3.4rem; }
 .roll-log { display: flex; flex-direction: column; gap: 0.25rem; max-height: 40dvh; overflow-y: auto; }
 .roll-line { margin: 0; padding: 0.25rem 0.4rem; font-size: 0.87rem; color: var(--muted);
   border-left: 3px solid transparent; }
-/* Rolling from a sheet that is not at a table: the answer has nowhere to go, so it says itself. */
-.roll-toast { position: fixed; left: 50%; bottom: 1.2rem; transform: translateX(-50%) translateY(1rem);
-  max-width: min(92vw, 30rem); padding: 0.6rem 0.9rem; border-radius: var(--radius);
-  background: var(--panel); border: 1px solid var(--gold); color: var(--text);
-  box-shadow: 0 10px 26px rgba(0,0,0,0.55); font-size: 0.94rem; z-index: 60;
-  opacity: 0; pointer-events: none; transition: opacity 0.18s ease, transform 0.18s ease; }
-.roll-toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
+/* A roll you can watch. Dice tumble for half a second and land on the truth — the moment the table
+   looks up for. Used on a sheet away from a table as well, because a roll is a roll. */
+.roll-stage { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center;
+  background: rgba(6,6,5,0.55); opacity: 0; pointer-events: none; transition: opacity 0.16s ease; }
+.roll-stage.on { opacity: 1; pointer-events: auto; }
+.roll-box { min-width: min(20rem, 88vw); padding: 1rem 1.2rem; text-align: center;
+  background: var(--panel); border: 1px solid var(--gold); border-radius: var(--radius);
+  box-shadow: 0 18px 50px rgba(0,0,0,0.65); }
+.roll-head { margin: 0 0 0.7rem; color: var(--muted); font-size: 0.94rem; }
+.roll-head strong { color: var(--text); }
+.roll-dice { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; margin-bottom: 0.7rem; }
+/* The die itself: a rounded square for everything except a d20, which gets a cut corner so it reads as
+   the twenty it is without needing an icon set. */
+.die { display: grid; place-items: center; width: 3.4rem; height: 3.4rem;
+  font-family: var(--serif); font-size: 1.7rem; color: var(--gold);
+  background: var(--panel-2); border: 2px solid var(--gold); border-radius: 8px; }
+.die.die-20 { clip-path: polygon(50% 0, 100% 27%, 100% 73%, 50% 100%, 0 73%, 0 27%); border-radius: 0; }
+.die.die-4 { clip-path: polygon(50% 4%, 96% 96%, 4% 96%); border-radius: 0; }
+.die.dropped { opacity: 0.35; color: var(--muted); border-color: var(--border); }
+.roll-stage.rolling .die { animation: die-tumble 0.22s linear infinite; }
+.roll-stage.landed .die { animation: die-land 0.28s ease-out 1; }
+@keyframes die-tumble {
+  0%   { transform: translateY(0) rotate(-8deg); }
+  50%  { transform: translateY(-7px) rotate(9deg); }
+  100% { transform: translateY(0) rotate(-8deg); }
+}
+@keyframes die-land {
+  0%   { transform: scale(1.35); }
+  60%  { transform: scale(0.94); }
+  100% { transform: scale(1); }
+}
+.roll-sum { margin: 0; display: flex; align-items: baseline; justify-content: center; gap: 0.7rem; }
+.roll-spec { color: var(--muted); font-size: 0.85rem; }
+.roll-total { font-family: var(--serif); font-size: 2.4rem; line-height: 1; color: var(--text); }
+/* The two results a table reacts to, said with colour rather than with a word. */
+.roll-stage.nat20 .roll-box { border-color: var(--ok); }
+.roll-stage.nat20 .roll-total { color: var(--ok); }
+.roll-stage.nat1 .roll-box { border-color: var(--accent); }
+.roll-stage.nat1 .roll-total { color: var(--accent-soft); }
+/* A line of the log: who, the dice as dice, the total big enough to read from across the table. */
+.roll-card { display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.45rem; }
+.roll-card-who { flex: 1; min-width: 0; font-size: 0.85rem; color: var(--text);
+  overflow-wrap: break-word; }
+.roll-card-dice { display: flex; gap: 0.2rem; align-items: center; flex-shrink: 0; }
+.pip-die { display: grid; place-items: center; min-width: 1.5rem; height: 1.5rem; padding: 0 0.2rem;
+  font-size: 0.85rem; color: var(--gold); background: var(--panel-2);
+  border: 1px solid var(--border); border-radius: 4px; }
+.pip-die.dropped { opacity: 0.4; color: var(--muted); }
+.roll-card-mod { font-size: 0.85rem; color: var(--muted); margin-left: 0.15rem; }
+.roll-card-total { font-family: var(--serif); font-size: 1.3rem; color: var(--text); min-width: 2rem;
+  text-align: right; flex-shrink: 0; }
+.roll-card.nat20 .roll-card-total { color: var(--ok); }
+.roll-card.nat1 .roll-card-total { color: var(--accent-soft); }
+@media (prefers-reduced-motion: reduce) {
+  .roll-stage.rolling .die, .roll-stage.landed .die { animation: none; }
+}
 /* Any number on a sheet you can actually throw dice for. It has to look like the number it replaced,
    or the sheet turns into a wall of buttons — so it is the same type, with a hairline and a cursor. */
 .roll { background: none; border: none; padding: 0; margin: 0; font: inherit; color: inherit;
@@ -1135,3 +1184,31 @@ input.step-val { width: 3.4rem; }
 .handout-head strong { font-family: var(--serif); color: var(--gold); font-size: 1.05rem; }
 .handout-img { max-width: 100%; max-height: 40dvh; object-fit: contain; border-radius: var(--radius); }
 .handout-body { margin: 0; white-space: pre-wrap; line-height: 1.55; }
+
+/* Conditions on a figure: two letters each, because a token is 40px wide on a phone and the full word
+   would cover the board. The title attribute carries the real name. */
+.tok-cond { position: absolute; top: -0.35rem; right: -0.35rem; display: flex; flex-wrap: wrap;
+  gap: 0.1rem; max-width: 100%; justify-content: flex-end; }
+.tok-flag { font-size: 0.78rem; line-height: 1; padding: 0.1rem 0.2rem; border-radius: 3px;
+  background: var(--accent); color: #fff; }
+.tok-bar.half > span { background: var(--gold); }
+.tok-bar.low > span { background: var(--accent); }
+/* What a player sees when they look at a figure they do not own. */
+.figure-art { max-width: 100%; max-height: 30dvh; object-fit: contain; border-radius: var(--radius);
+  margin-bottom: 0.5rem; }
+.grid-now { margin: 0 0 0.5rem; }
+.grid-now strong { font-family: var(--serif); font-size: 1.2rem; color: var(--gold); }
+.grid-now .sep { color: var(--muted); }
+
+.tok-art.shape-square { border-radius: 4px; }
+.tok-art.shape-circle { border-radius: 50%; }
+.tok-art.shape-triangle { border-radius: 0; clip-path: polygon(50% 2%, 98% 98%, 2% 98%); }
+.tok-art.shape-diamond { border-radius: 0; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+/* The same shapes, small, so the picker shows what it is offering rather than naming it. */
+.shape-dot { display: inline-block; width: 0.75rem; height: 0.75rem; margin-right: 0.35rem;
+  vertical-align: -1px; background: var(--muted); }
+.chip.on .shape-dot { background: var(--gold); }
+.shape-dot.shape-square { border-radius: 2px; }
+.shape-dot.shape-circle { border-radius: 50%; }
+.shape-dot.shape-triangle { clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+.shape-dot.shape-diamond { clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }

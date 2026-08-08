@@ -1021,7 +1021,7 @@ function renderSheet() {
     ${vitals(d, p)}
     ${p.inCombat ? combatBar(d, p) : idleLine(d)}
     ${p.prompt ? promptBar(p.prompt) : ""}
-    ${p.inCombat && d.engine ? enginePanel(d, p) : ""}
+    ${d.engine ? enginePanel(d, p) : ""}
     ${sheetFields(d, p, ch)}
   `));
 }
@@ -1205,21 +1205,21 @@ function attacksPanel(d) {
   </section>`;
 }
 
-/* Out of combat there is nothing to operate: no round to end, the engine is forced to 0 with every
-   trigger disabled, and the only useful control is Start combat, directly above. So the whole strip
-   between the vitals and the fields collapses to the one sentence that says so — a full engine panel
-   here spent most of a phone screen saying that it could not be used. */
-function idleLine(d) {
-  const cap = d.engineCap ?? 0;
-  return `<p class="muted out-of-combat">Out of combat. Cooldowns and once-per-combat uses are clear.${
-    d.engine ? ` <span class="engine-panel engine-idle"><strong>${esc(d.engine.name)}</strong>
-      <span>0 / ${esc(cap)}</span> — built during a fight, never banked before one.</span>` : ""}</p>`;
+/* Out of combat there is no round to end and nothing to spend, so this is one line rather than a bar.
+   The ENGINE is not folded into it: Kayki could not find his Mayhem on the sheet, which is fair — a
+   class's whole resource cannot be a clause in a grey sentence. It keeps its own panel either way. */
+function idleLine() {
+  return `<p class="muted out-of-combat">Out of combat. Cooldowns and once-per-combat uses are clear.</p>`;
 }
 
+/* The class's own resource, always on the sheet — in combat with everything that fills and spends it,
+   and out of combat as the pool it will be, at 0. It used to vanish entirely between fights, which made
+   a Joker's sheet look like it had no Mayhem at all. */
 function enginePanel(d, p) {
   const e = d.engine, cap = d.engineCap ?? 0;
   const pips = Array.from({ length: cap }, (_, i) =>
-    `<button class="pip ${i < p.engine ? "on" : ""}" data-act="engine-set" data-val="${i + 1}" title="Set to ${i + 1}"></button>`).join("");
+    `<button class="pip ${i < p.engine ? "on" : ""}" data-act="engine-set" data-val="${i + 1}"
+      title="Set to ${i + 1}" ${p.inCombat ? "" : "disabled"}></button>`).join("");
   const play = d.cls.play || {};
   // One button per way this class GAINS engine, worded as the player would say it. Once-per-turn
   // triggers grey out until End my turn, which is the only thing that resets them.
@@ -1231,6 +1231,8 @@ function enginePanel(d, p) {
   return `<section class="panel engine-panel">
     <h2>${esc(e.name)} <span class="muted">${esc(p.engine)} / ${esc(cap)}</span></h2>
     <div class="pips">${pips || `<span class="muted">cap 0</span>`}</div>
+    ${p.inCombat ? "" : `<p class="muted">Built during a fight and lost when it ends — it cannot be
+      banked beforehand, so it sits at 0 until you start one.</p>`}
     ${trig ? `<div class="triggers">${trig}</div>` : ""}
     ${play.autoRefill === "turn" ? `<p class="muted">Refills to ${esc(cap)} at the start of each of your turns — press <strong>End my turn</strong>.</p>` : ""}
     <div class="hp-controls">
