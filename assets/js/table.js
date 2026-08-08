@@ -673,7 +673,7 @@ function paintTokens() {
       node.className = "tok";
       node.dataset.token = id;
       node.innerHTML = `<span class="tok-art"></span><span class="tok-name"></span>` +
-        `<span class="tok-hp"></span><span class="tok-cond"></span>`;
+        `<span class="tok-cond"></span>`;
       host.appendChild(node);
     }
     // The token being dragged on THIS screen is not moved by incoming data: the drag is the truth
@@ -699,18 +699,13 @@ function paintTokens() {
       art.textContent = (t.name || "?").slice(0, 1).toUpperCase();
     }
     node.querySelector(".tok-name").textContent = t.name || "";
-    const hp = node.querySelector(".tok-hp");
-    // Everyone reads everyone's hit points. Hiding a monster's numbers from the players sounded tidy
-    // and was simply unhelpful: they are the ones who need to know whether it is nearly down.
-    if (t.hpMax) {
-      const pct = Math.max(0, Math.min(100, Math.round((Number(t.hp) || 0) / t.hpMax * 100)));
-      const hurt = pct <= 25 ? " low" : pct <= 60 ? " half" : "";
-      hp.innerHTML = `<span class="tok-bar${hurt}"><span style="width:${pct}%"></span></span>` +
-        `<span class="tok-num">${esc(t.hp)}/${esc(t.hpMax)}</span>`;
-    } else hp.innerHTML = "";
+    // NO hit points on the board, for anybody. Kayki's call: the scene is where figures stand, and hit
+    // points belong to whoever owns them — a player reads their own on their sheet, and the DM reads
+    // every one of them in the DM panel. A row of bars over the map turns a scene into a dashboard.
+    // Conditions are different: they change what a figure can DO, so they stay visible to everyone.
+    const cond = node.querySelector(".tok-cond");
     // Conditions, set by the DM, read by everybody — the second half of "what is going on with that
     // thing". Two letters each, because a token is 40px wide on a phone.
-    const cond = node.querySelector(".tok-cond");
     const list = Array.isArray(t.conditions) ? t.conditions : [];
     cond.innerHTML = list.map((c) =>
       `<span class="tok-flag" title="${esc(TBL_CONDITION_NAMES[c] || c)}">${esc((TBL_CONDITION_NAMES[c] || c).slice(0, 2))}</span>`).join("");
@@ -1792,14 +1787,16 @@ function figureInfoHTML(id) {
   // yours to change. Somebody else's is read-only.
   if (tblIsMine(t) && !tbl.me.charCode) return myFigureHTML(id, t);
   const pct = t.hpMax ? Math.max(0, Math.min(100, Math.round((Number(t.hp) || 0) / t.hpMax * 100))) : 0;
+  const showHp = tbl.role === "dm" || tblIsMine(t);
   const conds = Array.isArray(t.conditions) ? t.conditions : [];
   return `<section class="panel">
     <h2>${esc(t.name || "Figure")}</h2>
     ${t.image ? `<img class="figure-art" src="${esc(t.image)}" alt="" />` : ""}
-    ${t.hpMax ? `<div class="hp-head"><span class="panel-sub">Hit points</span>
+    ${showHp && t.hpMax ? `<div class="hp-head"><span class="panel-sub">Hit points</span>
         <div class="hp-num ${pct <= 25 ? "hurt" : ""}"><strong>${esc(t.hp)}</strong><span>/ ${esc(t.hpMax)}</span></div></div>
       <div class="hp-bar"><div class="hp-fill ${pct <= 25 ? "hurt" : ""}" style="width:${pct}%"></div></div>`
-      : `<p class="muted">No hit points recorded for this one.</p>`}
+      : showHp ? `<p class="muted">No hit points recorded for this one.</p>`
+      : `<p class="muted">How badly hurt it is, is the DM's to know.</p>`}
     <p class="panel-sub">Conditions</p>
     <div class="chips">${conds.length
       ? conds.map((c) => `<span class="chip on">${esc(TBL_CONDITION_NAMES[c] || c)}</span>`).join("")

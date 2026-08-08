@@ -1014,12 +1014,6 @@ input.step-val { width: 3.4rem; }
 .tok-name { position: absolute; bottom: -0.15rem; max-width: 130%; padding: 0 0.25rem;
   font-size: 0.78rem; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   background: rgba(11,11,10,0.72); border-radius: 3px; }
-.tok-hp { position: absolute; top: -0.35rem; display: flex; align-items: center; gap: 0.2rem; }
-.tok-bar { display: block; width: 2.6rem; height: 4px; border-radius: 999px; background: var(--panel-2);
-  border: 1px solid var(--border); overflow: hidden; }
-.tok-bar > span { display: block; height: 100%; background: var(--ok); }
-.tok-num { font-size: 0.78rem; color: var(--muted); background: rgba(11,11,10,0.72); padding: 0 0.2rem;
-  border-radius: 3px; }
 
 .vtt-zoom { position: absolute; right: 0.5rem; bottom: 0.5rem; display: flex; gap: 0.25rem;
   background: rgba(11,11,10,0.7); padding: 0.25rem; border-radius: var(--radius); }
@@ -1195,8 +1189,6 @@ input.step-val { width: 3.4rem; }
   gap: 0.1rem; max-width: 100%; justify-content: flex-end; }
 .tok-flag { font-size: 0.78rem; line-height: 1; padding: 0.1rem 0.2rem; border-radius: 3px;
   background: var(--accent); color: #fff; }
-.tok-bar.half > span { background: var(--gold); }
-.tok-bar.low > span { background: var(--accent); }
 /* What a player sees when they look at a figure they do not own. */
 .figure-art { max-width: 100%; max-height: 30dvh; object-fit: contain; border-radius: var(--radius);
   margin-bottom: 0.5rem; }

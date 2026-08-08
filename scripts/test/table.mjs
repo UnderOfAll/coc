@@ -123,8 +123,10 @@ const tok = $('[data-token="tRig"]');
 ok(tok, "a token written by another device appears on the board");
 ok(tok.style.left === "210px" && tok.style.top === "280px", "at its square (3,4 at 70px = 210,280) — got " + tok.style.left + "," + tok.style.top);
 ok(/Rig/.test(tok.querySelector(".tok-name").textContent), "carrying its name");
-ok(tok.querySelector(".tok-bar"), "and a hit-point bar");
-ok(/30\/44/.test(tok.textContent), "the DM sees the numbers on it");
+// No hit points on the board, for anyone — Kayki's call. A scene is where figures stand; a row of bars
+// over the map turns it into a dashboard. The DM reads them in the DM panel, a player on their sheet.
+ok(!tok.querySelector(".tok-bar") && !/30\/44/.test(tok.textContent),
+  "and no hit points on it, not even for the DM");
 await peek(`CocLive.put("tables/482910/tokens/tRig/x", 8)`);
 await wait(40);
 ok($('[data-token="tRig"]').style.left === "560px", "a move made elsewhere lands on this screen");
@@ -178,9 +180,14 @@ peek(`tbl.role = "player"; tbl.me.charCode = "123456"; paintTokens();`);
 ok($('[data-token="tRig"]').classList.contains("mine"), "your own figure is marked as yours");
 ok($('[data-token="tRig"]').classList.contains("movable"), "and is movable");
 ok(!$('[data-token="tOrc"]').classList.contains("movable"), "the DM's monster is not");
-// Kayki's call after the first playtest: players DO see a monster's hit points. Not knowing whether the
-// thing in front of you is nearly down was simply unhelpful.
-ok(/15\/15/.test($('[data-token="tOrc"]').textContent), "and a player can read its hit points");
+ok(!/15\/15/.test($('[data-token="tOrc"]').textContent), "and no hit points on a monster either");
+// A player can still look at a monster — what it is and what it is suffering from — but not how close
+// to dead it is.
+peek(`tblOpenToken("tOrc");`);
+await wait(40);
+ok(/Orc/.test($("#vtt-side").textContent), "a player can look at a monster");
+ok(/DM's to know/.test($("#vtt-side").textContent), "without being told how hurt it is");
+peek(`tbl.ui.panel = ""; paintSide();`);
 const orcX = await peek(`CocLive.get("tables/482910/tokens/tOrc/x")`);
 drag($('[data-token="tOrc"]'), 10 * 70 + 35, 6 * 70 + 35, 3 * 70, 3 * 70);
 await wait(60);
@@ -519,7 +526,7 @@ await wait(120);
 ok(peek(`sheet.ch.play.hp`) === peek(`derive(sheet.ch).hpMax`) - 7, "damage lands on the character");
 ok((await aget(`CocLive.get("tables/482910/tokens/tRig/hp")`)) === peek(`sheet.ch.play.hp`),
   "and the token's hit points follow it (" + hpBefore + " -> " + (await aget(`CocLive.get("tables/482910/tokens/tRig/hp")`)) + ")");
-ok(/\d+\/44/.test($('[data-token="tRig"]').textContent), "which the board shows under the figure");
+ok(peek(`tblTokens().tRig.hp`) === peek(`sheet.ch.play.hp`), "which the DM's figure list reads from");
 // Rolling from the drawer goes to the table's log, not to a toast nobody else sees.
 peek(`window.__seq = [0.5];`);
 const logLenBefore = Object.keys(await aget(`CocLive.get("tables/482910/log")`) || {}).length;
@@ -746,7 +753,7 @@ click($('[data-tbl="mine-save"]'));
 await wait(100);
 const saved = await aget(`CocLive.get("tables/482910/tokens/${gid}")`);
 ok(saved.name === "Greta the Bold" && saved.hp === 18 && saved.hpMax === 22, "and they are saved to the board");
-ok(/18\/22/.test($(`[data-token="${gid}"]`).textContent), "so the whole table can read them");
+ok(!/18\/22/.test($(`[data-token="${gid}"]`).textContent), "and stay off the board, like everyone else's");
 type($("#mine-amt"), "5");
 click($('[data-tbl="mine-hp"][data-val="' + gid + '|-1"]'));
 await wait(80);
