@@ -123,10 +123,10 @@ const tok = $('[data-token="tRig"]');
 ok(tok, "a token written by another device appears on the board");
 ok(tok.style.left === "210px" && tok.style.top === "280px", "at its square (3,4 at 70px = 210,280) — got " + tok.style.left + "," + tok.style.top);
 ok(/Rig/.test(tok.querySelector(".tok-name").textContent), "carrying its name");
-// No hit points on the board, for anyone — Kayki's call. A scene is where figures stand; a row of bars
-// over the map turns it into a dashboard. The DM reads them in the DM panel, a player on their sheet.
-ok(!tok.querySelector(".tok-bar") && !/30\/44/.test(tok.textContent),
-  "and no hit points on it, not even for the DM");
+// Hit points on the board are the DM's alone: they run the fight, and opening a panel per goblin is
+// slower than the fight. A player sees none of this — their own are on their sheet.
+ok(tok.querySelector(".tok-bar"), "the DM gets a hit-point bar on a figure");
+ok(/30\/44/.test(tok.textContent), "with the numbers, so nothing has to be opened mid-fight");
 await peek(`CocLive.put("tables/482910/tokens/tRig/x", 8)`);
 await wait(40);
 ok($('[data-token="tRig"]').style.left === "560px", "a move made elsewhere lands on this screen");
@@ -180,7 +180,9 @@ peek(`tbl.role = "player"; tbl.me.charCode = "123456"; paintTokens();`);
 ok($('[data-token="tRig"]').classList.contains("mine"), "your own figure is marked as yours");
 ok($('[data-token="tRig"]').classList.contains("movable"), "and is movable");
 ok(!$('[data-token="tOrc"]').classList.contains("movable"), "the DM's monster is not");
-ok(!/15\/15/.test($('[data-token="tOrc"]').textContent), "and no hit points on a monster either");
+ok(!$('[data-token="tOrc"] .tok-bar'), "a player is sent no bar at all");
+ok(!/15\/15/.test($('[data-token="tOrc"]').textContent), "nor any numbers");
+ok(!$('[data-token="tRig"] .tok-bar'), "not even on their own figure — that is what the sheet is for");
 // A player can still look at a monster — what it is and what it is suffering from — but not how close
 // to dead it is.
 peek(`tblOpenToken("tOrc");`);

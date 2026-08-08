@@ -49,7 +49,7 @@ for m in re.finditer(r'class="([^"]+)"', HTML):
 # ever-greedier regex (a wider one starts reading data-act values as class names).
 used.update(["on", "blocked", "btn-hot", "down", "hurt", "primary", "spent", "warn", "good", "bad",
              "hidden", "active", "empty", "over", "prof", "resolved", "inplay-tip", "wide", "caption",
-             "who-dm", "mine", "movable", "npc", "turn", "dragging", "dropped",
+             "who-dm", "mine", "movable", "npc", "turn", "dragging", "dropped", "half", "low",
              "rolling", "landed", "nat20", "nat1"])
 # dynamic families the linter cannot resolve statically
 DYNAMIC = ("tier-", "badge-", "shape-")

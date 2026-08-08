@@ -673,7 +673,7 @@ function paintTokens() {
       node.className = "tok";
       node.dataset.token = id;
       node.innerHTML = `<span class="tok-art"></span><span class="tok-name"></span>` +
-        `<span class="tok-cond"></span>`;
+        `<span class="tok-hp"></span><span class="tok-cond"></span>`;
       host.appendChild(node);
     }
     // The token being dragged on THIS screen is not moved by incoming data: the drag is the truth
@@ -699,9 +699,18 @@ function paintTokens() {
       art.textContent = (t.name || "?").slice(0, 1).toUpperCase();
     }
     node.querySelector(".tok-name").textContent = t.name || "";
-    // NO hit points on the board, for anybody. Kayki's call: the scene is where figures stand, and hit
-    // points belong to whoever owns them — a player reads their own on their sheet, and the DM reads
-    // every one of them in the DM panel. A row of bars over the map turns a scene into a dashboard.
+    /* Hit points on the board are the DM's ONLY. A player reads their own on their sheet (or on their
+       figure, without one); a table of bars visible to everybody turns the scene into a dashboard and
+       tells the players exactly how close the fight is. But the DM runs the fight, and opening a panel
+       per goblin to see who is nearly down is slower than the fight is — so the DM gets the bar, with
+       the numbers, and nobody else sees anything. */
+    const hp = node.querySelector(".tok-hp");
+    if (tbl.role === "dm" && t.hpMax) {
+      const pct = Math.max(0, Math.min(100, Math.round((Number(t.hp) || 0) / t.hpMax * 100)));
+      const hurt = pct <= 25 ? " low" : pct <= 60 ? " half" : "";
+      hp.innerHTML = `<span class="tok-bar${hurt}"><span style="width:${pct}%"></span></span>` +
+        `<span class="tok-num">${esc(t.hp)}/${esc(t.hpMax)}</span>`;
+    } else if (hp.innerHTML) hp.innerHTML = "";
     // Conditions are different: they change what a figure can DO, so they stay visible to everyone.
     const cond = node.querySelector(".tok-cond");
     // Conditions, set by the DM, read by everybody — the second half of "what is going on with that

@@ -1185,6 +1185,15 @@ input.step-val { width: 3.4rem; }
 
 /* Conditions on a figure: two letters each, because a token is 40px wide on a phone and the full word
    would cover the board. The title attribute carries the real name. */
+/* The DM's own read on a fight: a bar and the numbers, over the figure. Nobody else is sent these. */
+.tok-hp { position: absolute; top: -0.35rem; display: flex; align-items: center; gap: 0.2rem; }
+.tok-bar { display: block; width: 2.6rem; height: 4px; border-radius: 999px; background: var(--panel-2);
+  border: 1px solid var(--border); overflow: hidden; }
+.tok-bar > span { display: block; height: 100%; background: var(--ok); }
+.tok-bar.half > span { background: var(--gold); }
+.tok-bar.low > span { background: var(--accent); }
+.tok-num { font-size: 0.78rem; color: var(--muted); background: rgba(11,11,10,0.72); padding: 0 0.2rem;
+  border-radius: 3px; }
 .tok-cond { position: absolute; top: -0.35rem; right: -0.35rem; display: flex; flex-wrap: wrap;
   gap: 0.1rem; max-width: 100%; justify-content: flex-end; }
 .tok-flag { font-size: 0.78rem; line-height: 1; padding: 0.1rem 0.2rem; border-radius: 3px;
