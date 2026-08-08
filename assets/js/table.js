@@ -321,20 +321,18 @@ function claimPanelHTML() {
 function tblOpen(code) {
   tbl = tblFresh(code, tblIsDm(code) ? "dm" : "player");
   renderTableShell();
-  // One stream per branch, not one for the whole table: the map image lives under scenes and can be
-  // half a megabyte, and it must not be re-sent every time a token moves one square.
-  const watch = (branch, apply) => tbl.offs.push(CocLive.watch(tblPath(branch), (val) => {
+  /* ONE stream for the whole table, not one per branch. This is not a preference — the database is
+     served over HTTP/1.1, and a browser allows about SIX connections per host. Seven open streams
+     (meta, scenes, tokens, log, presence, handouts, dm) used every one of them and left nothing for
+     writes: on the live site a player joined, and then their token write and their presence write
+     hung forever. Nothing on screen said so; they were simply invisible to the rest of the table.
+     One stream also sends LESS, because the database streams diffs — only the first event carries the
+     map image, and a token moving one square is a two-line patch either way. */
+  tbl.offs.push(CocLive.watch(tblPath(""), (all) => {
     if (!tbl) return;
-    tbl.data[branch] = val;
-    try { apply(); } catch (err) { tblFail(err); }
+    tbl.data = all || {};
+    try { paintEverything(); } catch (err) { tblFail(err); }
   }));
-  watch("meta", () => { paintHeader(); paintBoard(); paintTurnBar(); paintHandout(); });
-  watch("scenes", () => { paintBoard(); paintDmPanel(); });
-  watch("tokens", () => { paintTokens(); paintTurnBar(); });
-  watch("log", () => { paintLog(); });
-  watch("presence", () => { paintWho(); });
-  watch("handouts", () => { paintHandout(); paintDmPanel(); });
-  watch("dm", () => { paintDmPanel(); });
   tblAnnounce();
   tbl.beat = setInterval(tblAnnounce, 20000);
 }
@@ -442,6 +440,20 @@ function renderTableShell() {
   }
 }
 
+/* Everything the stream can have changed, in one pass. Repainting the lot on every event is affordable
+   because the expensive part — the tokens — is a diff, and the map is only touched when its source
+   actually changes. The alternative (working out which branch moved) was seven streams, and that cost
+   the app every connection the browser had. */
+function paintEverything() {
+  paintHeader();
+  paintBoard();      // paintTokens is called from here
+  paintTurnBar();
+  paintLog();
+  paintWho();
+  paintHandout();
+  paintDmPanel();
+}
+
 /* Header, who-is-here, error bar: small nodes, replaced whole. */
 function paintHeader() {
   const meta = tbl.data.meta || {};
@@ -482,11 +494,15 @@ function paintBoard() {
   world.style.width = w + "px";
   world.style.height = h + "px";
   grid.style.backgroundSize = `${cell}px ${cell}px`;
+  // Only when it has actually changed: re-assigning the same src re-decodes a half-megabyte data URI,
+  // and this now runs on every stream event.
   if (scene.image) {
-    img.src = scene.image;
+    if (img.getAttribute("src") !== scene.image) img.src = scene.image;
     img.classList.remove("hidden");
-  } else {
+  } else if (img.hasAttribute("src")) {
     img.removeAttribute("src");
+    img.classList.add("hidden");
+  } else {
     img.classList.add("hidden");
   }
   // Only fit once there is a REAL scene to fit to. The shell paints before any data has arrived, and
@@ -777,7 +793,14 @@ function paintSide() {
   else if (which === "sheet") { side.innerHTML = `<p class="muted">Opening your sheet…</p>`; paintSheetPanel(); }
 }
 /* Re-render the DM's panel only if it is the one open — the scenes stream fires for everyone. */
-function paintDmPanel() { if (tbl.ui.panel === "dm") paintSide(); }
+function paintDmPanel() {
+  if (tbl.ui.panel !== "dm") return;
+  // Never mid-sentence: this runs on every stream event now, and rebuilding the panel under a cursor
+  // would eat the DM's notes as they typed them.
+  const side = $("#vtt-side");
+  if (side && side.contains(document.activeElement)) return;
+  paintSide();
+}
 
 /* ---------------------------------------------------------------- maps and scenes (DM only) */
 
