@@ -41,6 +41,8 @@ const type = (n, v) => { n.value = v; n.dispatchEvent(new window.Event("input", 
 const go = async (h, ms = 60) => { window.location.hash = h; window.dispatchEvent(new window.HashChangeEvent("hashchange")); await new Promise((r) => setTimeout(r, ms)); };
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const tblCols = () => peek(`tblScene().cols`);
+// The panel buttons TOGGLE, so asking for one that is already open would shut it.
+const openPanel = (name) => { if (peek("tbl.ui.panel") !== name) click($(`[data-tbl="panel"][data-val="${name}"]`)); };
 
 // The table runs on the offline tree: no network in a test, and the local backend is the same
 // interface, so everything below is exercising the real code paths.
@@ -207,10 +209,10 @@ peek(`window.__imgW = 1000; window.__imgH = 500;
       if (window.__imgFail) { if (this.onerror) this.onerror(); } else if (this.onload) this.onload(); }, 5); }
     get src() { return this._src; }
   };`);
-click($('[data-tbl="panel"][data-val="dm"]'));
+openPanel("dm");
 await wait(40);
 ok(!$("#vtt-side").classList.contains("hidden"), "the DM panel opens beside the board");
-ok($$(".scene-row").length === 1, "listing the one scene the table opened with");
+ok($$("#dm-maps .scene-row").length === 1, "listing the one scene the table opened with");
 ok(!$('[data-tbl="scene-del"]'), "which cannot be deleted, because a table always needs a board");
 ok($$('[data-tbl="map-source"]').length === 4, "four ways to get a map on the board");
 
@@ -220,7 +222,7 @@ type($("#tbl-scene-name"), "Rooftops");
 type($("#tbl-scene-cols"), "40"); type($("#tbl-scene-rows"), "25");
 click($('[data-tbl="scene-add"]'));
 await wait(80);
-ok($$(".scene-row").length === 2, "the scene is added");
+ok($$("#dm-maps .scene-row").length === 2, "the scene is added");
 const sc2 = await aget(`CocLive.get("tables/482910/scenes")`);
 const rooftops = Object.entries(sc2).find(([, v]) => v.name === "Rooftops");
 ok(rooftops && rooftops[1].cols === 40 && rooftops[1].rows === 25, "at the size that was asked for");
@@ -306,11 +308,11 @@ click($$('[data-tbl="scene"]').find(b => b.dataset.val === otherId));
 await wait(60);
 ok(!$('[data-token="tGob"]'), "changing map leaves the goblins behind");
 ok($('[data-token="tRig"]'), "but the party comes along");
-const before4 = $$(".scene-row").length;
-click($$('[data-tbl="scene-del"]')[0]);
+const before4 = $$("#dm-maps .scene-row").length;
+click($$('#dm-maps [data-tbl="scene-del"]')[0]);
 await wait(60);
-ok($$(".scene-row").length === before4 - 1, "a scene can be deleted");
-ok((await aget(`CocLive.get("tables/482910/tokens/tGob")`)) === null || $$(".scene-row").length === before4 - 1,
+ok($$("#dm-maps .scene-row").length === before4 - 1, "a scene can be deleted");
+ok((await aget(`CocLive.get("tables/482910/tokens/tGob")`)) === null || $$("#dm-maps .scene-row").length === before4 - 1,
   "and its monsters go with it");
 peek(`window.fetch = window.__realFetch;`);
 
@@ -338,7 +340,7 @@ ok(res.kept[0] === Math.min(...res.rolls), "disadvantage keeps the lower one");
 res = peek(`tblDoRoll(tblParseRoll("4d6"), "adv")`);
 ok(res.rolls.length === 4 && res.mode === "normal", "advantage is ignored on 4d6 rather than inventing a house rule");
 
-click($('[data-tbl="panel"][data-val="dice"]'));
+openPanel("dice");
 await wait(40);
 ok($$('[data-tbl="die"]').length === 7, "a tray of dice, d4 to d100");
 click($$('[data-tbl="die"]').find(b => b.dataset.val === "8"));
@@ -477,7 +479,7 @@ function paintTurnBarCheck() {
 
 console.log("\n— YOUR SHEET, OVER THE BOARD —");
 // Still the player holding 123456 from the turn-order section.
-click($('[data-tbl="panel"][data-val="sheet"]'));
+openPanel("sheet");
 await wait(150);
 ok($("#vtt-sheet"), "a drawer for the sheet");
 ok($("#vtt-sheet .tab-strip"), "holding the REAL sheet, fields and all — not a cut-down copy");
@@ -514,7 +516,7 @@ peek(`tbl.role = "player"; tbl.me.charCode = "123456";`);
 
 console.log("\n— THE DM OPENS ANY SHEET —");
 peek(`tbl.role = "dm"; renderTableShell(); paintSide();`);
-click($('[data-tbl="panel"][data-val="sheet"]'));
+openPanel("sheet");
 await wait(80);
 ok($("#vtt-sheet-code"), "the DM is asked which sheet, having no character of their own");
 type($("#vtt-sheet-code"), "12");
@@ -540,6 +542,80 @@ await wait(60);
 ok((await aget(`CocLive.get("tables/482910/meta/activeScene")`)) === sceneNow,
   "and forcing the control by hand changes nothing");
 peek(`$("#sneak").remove(); tbl.role = "dm"; renderTableShell();`);
+
+console.log("\n— FIGURES —");
+peek(`tbl.role = "dm"; tbl.me.charCode = ""; renderTableShell(); paintTokens();`);
+openPanel("dm");
+await wait(60);
+ok($("#tbl-npc-name"), "the DM can drop a figure");
+ok(/no stat blocks/.test($("#tool").textContent), "and is told what it deliberately is not");
+click($('[data-tbl="spawn"]'));
+await wait(60);
+ok(/needs a name|Give it a name/.test($("#tbl-spawn-msg").textContent), "an unnamed circle is refused");
+type($("#tbl-npc-name"), "Goblin"); type($("#tbl-npc-hp"), "7"); type($("#tbl-npc-size"), "1");
+click($('[data-tbl="spawn"]'));
+await wait(100);
+const goblins = () => Object.entries(peek(`JSON.parse(JSON.stringify(tblTokens()))`))
+  .filter(([, t]) => /^Goblin/.test(t.name || ""));
+ok(goblins().length === 1, "a named figure lands on the board");
+const gob = goblins()[0];
+ok(gob[1].kind === "npc" && gob[1].hp === 7 && gob[1].hpMax === 7, "with its hit points");
+ok(gob[1].scene === peek(`tblSceneId()`), "belonging to the map it was dropped on");
+ok($(`[data-token="${gob[0]}"]`), "and it is on screen");
+// "Goblin", "Goblin 2", "Goblin 3" — the naming a DM does out loud anyway.
+click($$('[data-tbl="ed-dup"]').find(b => b.dataset.val === gob[0]));
+await wait(100);
+ok(goblins().length === 2, "duplicating gives you another");
+ok(goblins().some(([, t]) => t.name === "Goblin 2"), "numbered rather than identical (" + goblins().map(([, t]) => t.name).join(", ") + ")");
+const twins = goblins();
+ok(twins[0][1].x !== twins[1][1].x || twins[0][1].y !== twins[1][1].y, "and not hidden underneath its twin");
+// Double-tapping a figure opens it; the DM is the only one who can change its numbers.
+const dbl = (node) => node.dispatchEvent(new window.MouseEvent("dblclick", { bubbles: true }));
+dbl($(`[data-token="${gob[0]}"]`));
+await wait(60);
+ok($("#ed-hp"), "double-tapping a figure opens its editor");
+type($("#ed-hp"), "3"); type($("#ed-name"), "Goblin boss"); type($("#ed-size"), "2");
+click($('[data-tbl="ed-save"]'));
+await wait(80);
+const boss = await aget(`CocLive.get("tables/482910/tokens/${gob[0]}")`);
+ok(boss.hp === 3 && boss.name === "Goblin boss" && boss.size === 2, "and its numbers can be changed");
+ok($(`[data-token="${gob[0]}"]`).style.width === (2 * 70) + "px", "a bigger figure takes more squares");
+click($('[data-tbl="ed-del"]'));
+await wait(80);
+ok((await aget(`CocLive.get("tables/482910/tokens/${gob[0]}")`)) === null, "and removed when the fight is over");
+
+console.log("\n— THE DM SCREEN —");
+openPanel("dm");
+await wait(60);
+ok($("#dm-notes"), "the DM has notes in the app instead of in another window");
+ok(/not secret/.test($("#tool").textContent), "with an honest word about who could read them");
+type($("#dm-notes"), "The innkeeper is lying.");
+await wait(900);
+ok((await aget(`CocLive.get("tables/482910/dm/notes")`)) === "The innkeeper is lying.",
+  "they save as you type");
+// Handouts: shown to everyone at once, closable by each person.
+click($('[data-tbl="hand-add"]'));
+await wait(40);
+ok(/needs a title/.test($("#hand-msg").textContent), "an empty handout is refused");
+type($("#hand-title"), "The letter"); type($("#hand-body"), "Come alone. Bring the ledger.");
+click($('[data-tbl="hand-add"]'));
+await wait(100);
+ok($$('[data-tbl="hand-show"]').length === 1, "a handout is kept until you want it");
+ok($("#vtt-handout").classList.contains("hidden"), "and is not on anyone's screen yet");
+click($('[data-tbl="hand-show"]'));
+await wait(80);
+ok(!$("#vtt-handout").classList.contains("hidden"), "showing it puts it over the board");
+ok(/Come alone/.test($("#vtt-handout").textContent), "with its text: " + $("#vtt-handout").textContent.trim().slice(0, 40));
+click($('[data-tbl="hand-dismiss"]'));
+await wait(40);
+ok($("#vtt-handout").classList.contains("hidden"), "each person can put it away for themselves");
+ok((await aget(`CocLive.get("tables/482910/meta/handout")`)) !== null,
+  "without taking it off anybody else's screen");
+openPanel("dm");
+await wait(40);
+click($('[data-tbl="hand-hide"]'));
+await wait(60);
+ok((await aget(`CocLive.get("tables/482910/meta/handout")`)) === null, "the DM takes it back down for everyone");
 
 console.log("\n— A PLAYER SITTING DOWN GETS A TOKEN —");
 // Drop only the DM flag — NOT localStorage.clear(), which in offline mode would also delete the

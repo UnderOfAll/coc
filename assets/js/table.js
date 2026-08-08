@@ -97,7 +97,7 @@ function tblFresh(code, role) {
   return {
     code, role,
     me: tblMe(code),
-    data: { meta: null, scenes: null, tokens: null, log: null, presence: null },
+    data: { meta: null, scenes: null, tokens: null, log: null, presence: null, handouts: null, dm: null },
     view: { x: 0, y: 0, z: 1 },
     drag: null,
     offs: [],          // live subscriptions, closed on teardown
@@ -277,11 +277,13 @@ function tblOpen(code) {
     tbl.data[branch] = val;
     try { apply(); } catch (err) { tblFail(err); }
   }));
-  watch("meta", () => { paintHeader(); paintBoard(); paintTurnBar(); });
+  watch("meta", () => { paintHeader(); paintBoard(); paintTurnBar(); paintHandout(); });
   watch("scenes", () => { paintBoard(); paintDmPanel(); });
   watch("tokens", () => { paintTokens(); paintTurnBar(); });
   watch("log", () => { paintLog(); });
   watch("presence", () => { paintWho(); });
+  watch("handouts", () => { paintHandout(); paintDmPanel(); });
+  watch("dm", () => { paintDmPanel(); });
   tblAnnounce();
   tbl.beat = setInterval(tblAnnounce, 20000);
 }
@@ -359,6 +361,7 @@ function renderTableShell() {
       <p id="vtt-error" class="warn hidden"></p>
       <p id="vtt-lastroll" class="last-roll hidden"></p>
       <div id="vtt-turn" class="vtt-turn hidden"></div>
+      <div id="vtt-handout" class="vtt-handout hidden"></div>
       <div class="vtt-body">
         <div id="vtt-stage" class="vtt-stage">
           <div id="vtt-world" class="vtt-world">
@@ -697,6 +700,13 @@ const TBL_MAP_SOURCES = [
 let tblRepoMaps = null;   // cached listing of maps/index.json
 
 function dmPanelHTML() {
+  // An open figure comes first: it is what you just double-tapped, and hunting for it under the map
+  // list would be its own small insult.
+  const editing = tbl.ui.editToken && tblTokens()[tbl.ui.editToken] ? tokenEditorHTML(tbl.ui.editToken) : "";
+  return editing + dmMapsHTML() + dmFiguresHTML() + dmScreenHTML();
+}
+
+function dmMapsHTML() {
   const scenes = tbl.data.scenes || {};
   const activeId = tblSceneId();
   const src = tbl.ui.mapSource || "blank";
@@ -711,7 +721,7 @@ function dmPanelHTML() {
       ${ids.length > 1 ? `<button class="btn-quiet" data-tbl="scene-del" data-val="${esc(id)}">Delete</button>` : ""}
     </div>`;
   }).join("");
-  return `<section class="panel">
+  return `<section class="panel" id="dm-maps">
       <h2>Maps</h2>
       <p class="panel-sub">Scenes <span class="muted">— tap one to put it on everyone's screen</span></p>
       <div class="scene-list">${list}</div>
@@ -750,6 +760,43 @@ function dmPanelHTML() {
         <button class="btn-quiet" data-tbl="grid-rows" data-val="1">Taller</button>
       </div>
       <p class="muted">Nudge the grid until a square is a square. Five feet per square, as usual.</p>
+    </section>`;
+}
+
+/* Every figure on this scene, so the DM can reach one without finding it on the map first. */
+function dmFiguresHTML() {
+  const activeScene = tblSceneId();
+  const rows = Object.entries(tblTokens())
+    .filter(([, t]) => t && !(t.kind === "npc" && t.scene && t.scene !== activeScene))
+    .sort((a, b) => (a[1].kind === "pc" ? -1 : 1) - (b[1].kind === "pc" ? -1 : 1)
+      || String(a[1].name || "").localeCompare(String(b[1].name || "")))
+    .map(([id, t]) => `<div class="scene-row">
+      <button class="scene-pick" data-tbl="ed-open" data-val="${esc(id)}">
+        <strong>${esc(t.name || "Figure")}</strong>
+        <span class="muted">${t.hpMax ? esc(t.hp) + "/" + esc(t.hpMax) + " hp" : "no hp"}${
+          t.kind === "pc" ? " · player" : ""}</span>
+      </button>
+      <button class="btn-quiet" data-tbl="ed-dup" data-val="${esc(id)}">Copy</button>
+    </div>`).join("");
+  return `<section class="panel" id="dm-figures">
+      <p class="panel-sub">Figures on this map</p>
+      <div class="scene-list">${rows || `<p class="muted">Nothing on the board.</p>`}</div>
+      <p class="panel-sub">Drop a figure</p>
+      <div class="grid-row">
+        <label class="field"><span>Name</span>
+          <input id="tbl-npc-name" class="text" type="text" maxlength="40" placeholder="Goblin" /></label>
+        <label class="field"><span>Hit points</span>
+          <input id="tbl-npc-hp" class="num" type="number" min="0" value="7" /></label>
+        <label class="field"><span>Squares</span>
+          <input id="tbl-npc-size" class="num" type="number" min="1" max="4" value="1" /></label>
+      </div>
+      <label class="field"><span>Picture (URL, optional)</span>
+        <input id="tbl-npc-img" class="text" type="text" placeholder="https://… or maps/…" /></label>
+      <button class="btn" data-tbl="spawn">Drop it on the board</button>
+      <p id="tbl-spawn-msg" class="save-msg"></p>
+      <p class="muted">Names, hit points and a picture — no stat blocks. Enemies as real content, with
+        attacks and saves of their own, is the next thing being built; this is what runs a fight until
+        then.</p>
     </section>`;
 }
 
@@ -1263,11 +1310,215 @@ function tblSyncTokenFromSheet(code, ch) {
   }
 }
 
-function tblOpenToken() { /* checkpoint: token editor */ }
+/* ---------------------------------------------------------------- figures on the board */
+
+/* The BARE minimum, deliberately. Kayki's next project is enemies as real content — a bestiary with
+   stat blocks — so anything invented here would be thrown away or, worse, become the thing the real
+   version has to stay compatible with. A figure is therefore a name, hit points, a size and a
+   picture: enough to run a fight tonight, and a clean seam for a monster id to be added later. */
+async function tblSpawn() {
+  const msg = $("#tbl-spawn-msg");
+  const say = (t, bad) => { if (msg) { msg.textContent = t; msg.className = "save-msg" + (bad ? " bad" : ""); } };
+  const name = String(($("#tbl-npc-name") || {}).value || "").trim().slice(0, 40);
+  const hp = Math.max(0, Number(($("#tbl-npc-hp") || {}).value) || 0);
+  const size = Math.max(1, Math.min(4, Number(($("#tbl-npc-size") || {}).value) || 1));
+  const image = String(($("#tbl-npc-img") || {}).value || "").trim();
+  if (!name) return say("Give it a name — a board of unnamed circles is unreadable.", true);
+  await tblPlaceNpc({ name, hp, hpMax: hp, size, image });
+  say("Dropped " + name + " on the board.");
+}
+
+/* Placed in the middle of what the DM is currently looking at, not at a fixed corner: a monster that
+   appears off-screen has to be hunted for before it can be used. */
+function tblCentreSquare() {
+  const stage = $("#vtt-stage");
+  const scene = tblScene();
+  const cell = Number(scene.cell) || 70;
+  const box = stage ? stage.getBoundingClientRect() : { width: 0, height: 0 };
+  const cx = ((box.width / 2) - tbl.view.x) / tbl.view.z / cell;
+  const cy = ((box.height / 2) - tbl.view.y) / tbl.view.z / cell;
+  const cols = Number(scene.cols) || 30, rows = Number(scene.rows) || 20;
+  return {
+    x: Math.max(0, Math.min(cols - 1, Math.round(cx) || 1)),
+    y: Math.max(0, Math.min(rows - 1, Math.round(cy) || 1)),
+  };
+}
+
+async function tblPlaceNpc(fields) {
+  const at = tblCentreSquare();
+  // Nudged along until it lands on an empty square, so a duplicate never hides underneath its twin.
+  const taken = new Set(Object.values(tblTokens()).map((t) => `${Math.round(t.x)},${Math.round(t.y)}`));
+  let { x, y } = at;
+  for (let i = 0; i < 40 && taken.has(`${x},${y}`); i++) { x += 1; if (x > 40) { x = at.x; y += 1; } }
+  const id = CocLive.newId();
+  await CocLive.put(tblPath("tokens/" + id), Object.assign({
+    name: "Figure", hp: 0, hpMax: 0, size: 1, image: "", speed: 30, initMod: 0,
+  }, fields, {
+    kind: "npc",
+    scene: tblSceneId(),      // monsters belong to the map they were put on
+    x, y,
+  }));
+  return id;
+}
+
+/* "Goblin" then "Goblin 2", "Goblin 3" — the naming a DM does out loud anyway. */
+async function tblDuplicate(id) {
+  const t = tblTokens()[id];
+  if (!t) return;
+  const base = String(t.name || "Figure").replace(/\s+\d+$/, "");
+  const used = Object.values(tblTokens())
+    .filter((o) => o && String(o.name || "").replace(/\s+\d+$/, "") === base).length;
+  const copy = Object.assign({}, t, { name: (base + " " + (used + 1)).slice(0, 40), moved: 0, init: null });
+  delete copy.init;
+  await tblPlaceNpc(copy);
+}
+
+/* Double-tapping a figure opens it. For a player that is a look at their own numbers; for the DM it is
+   the editor, which is the only place a monster's hit points can be changed. */
+function tblOpenToken(id) {
+  const t = tblTokens()[id];
+  if (!t) return;
+  if (tbl.role !== "dm") {
+    if (t.charCode && t.charCode === tbl.me.charCode) { tbl.ui.panel = "sheet"; paintSide(); }
+    return;
+  }
+  tbl.ui.editToken = id;
+  tbl.ui.panel = "dm";
+  paintSide();
+}
+
+function tokenEditorHTML(id) {
+  const t = tblTokens()[id];
+  if (!t) return "";
+  return `<section class="panel">
+    <h2>${esc(t.name || "Figure")}</h2>
+    <div class="grid-row">
+      <label class="field"><span>Name</span>
+        <input id="ed-name" class="text" type="text" maxlength="40" value="${esc(t.name || "")}" /></label>
+    </div>
+    <div class="grid-row">
+      <label class="field"><span>Hit points</span>
+        <input id="ed-hp" class="num" type="number" min="0" value="${esc(Number(t.hp) || 0)}" /></label>
+      <label class="field"><span>Out of</span>
+        <input id="ed-hpmax" class="num" type="number" min="0" value="${esc(Number(t.hpMax) || 0)}" /></label>
+      <label class="field"><span>Squares</span>
+        <input id="ed-size" class="num" type="number" min="1" max="4" value="${esc(Number(t.size) || 1)}" /></label>
+    </div>
+    <div class="grid-row">
+      <label class="field"><span>Speed (ft)</span>
+        <input id="ed-speed" class="num" type="number" min="0" max="200" value="${esc(Number(t.speed) || 30)}" /></label>
+      <label class="field"><span>Initiative bonus</span>
+        <input id="ed-init" class="num" type="number" min="-5" max="20" value="${esc(Number(t.initMod) || 0)}" /></label>
+    </div>
+    <label class="field"><span>Picture (URL, or maps/… )</span>
+      <input id="ed-img" class="text" type="text" value="${esc(t.image || "")}" /></label>
+    <div class="hp-controls">
+      <button class="btn" data-tbl="ed-save" data-val="${esc(id)}">Save</button>
+      <button class="btn-quiet" data-tbl="ed-dup" data-val="${esc(id)}">Duplicate</button>
+      ${t.kind === "npc" ? `<button class="btn-quiet" data-tbl="ed-del" data-val="${esc(id)}">Remove</button>` : ""}
+      <button class="btn-quiet" data-tbl="ed-close">Close</button>
+    </div>
+    ${t.charCode ? `<p class="muted">This is a player's figure — its hit points follow their sheet, so
+      changing them here is a stopgap, not the record.</p>` : ""}
+  </section>`;
+}
+
+async function tblSaveToken(id) {
+  const patch = {
+    name: String(($("#ed-name") || {}).value || "Figure").slice(0, 40),
+    hp: Math.max(0, Number(($("#ed-hp") || {}).value) || 0),
+    hpMax: Math.max(0, Number(($("#ed-hpmax") || {}).value) || 0),
+    size: Math.max(1, Math.min(4, Number(($("#ed-size") || {}).value) || 1)),
+    speed: Math.max(0, Math.min(200, Number(($("#ed-speed") || {}).value) || 0)),
+    initMod: Math.max(-5, Math.min(20, Number(($("#ed-init") || {}).value) || 0)),
+    image: String(($("#ed-img") || {}).value || "").trim(),
+  };
+  await CocLive.patch(tblPath("tokens/" + id), patch);
+}
+
+/* ---------------------------------------------------------------- the DM's screen and handouts */
+
+/* Notes that survive a refresh and follow the DM to another device — which means they live in the
+   table, which means anyone holding the room code could read them if they went looking. Said out loud
+   rather than implied, because the alternative (keeping them in this browser only) loses them the
+   moment the DM picks up a different device mid-session. */
+function dmScreenHTML() {
+  const notes = (tbl.data.dm || {}).notes || "";
+  const handouts = tbl.data.handouts || {};
+  const showing = (tbl.data.meta || {}).handout || "";
+  const rows = Object.entries(handouts)
+    .sort((a, b) => (a[1].at || 0) - (b[1].at || 0))
+    .map(([id, h]) => `<div class="scene-row ${showing === id ? "on" : ""}">
+      <button class="scene-pick" data-tbl="hand-show" data-val="${esc(id)}">
+        <strong>${esc(h.title || "Handout")}</strong>
+        <span class="muted">${showing === id ? "on everyone's screen" : "show"}</span>
+      </button>
+      <button class="btn-quiet" data-tbl="hand-del" data-val="${esc(id)}">Delete</button>
+    </div>`).join("");
+  return `<section class="panel">
+      <h2>Your notes</h2>
+      <textarea id="dm-notes" class="text" rows="6" maxlength="4000"
+        placeholder="Whatever you would have had in the other window.">${esc(notes)}</textarea>
+      <p class="muted">Saved as you type, and they follow you to another device. They are not secret:
+        anyone with the room code could read them if they went looking.</p>
+    </section>
+    <section class="panel" id="dm-handouts">
+      <p class="panel-sub">Handouts</p>
+      <div class="scene-list">${rows || `<p class="muted">Nothing yet.</p>`}</div>
+      ${showing ? `<button class="btn-quiet" data-tbl="hand-hide">Take it off their screens</button>` : ""}
+      <p class="panel-sub">New handout</p>
+      <label class="field"><span>Title</span>
+        <input id="hand-title" class="text" type="text" maxlength="60" placeholder="The letter" /></label>
+      <label class="field"><span>Text</span>
+        <textarea id="hand-body" class="text" rows="3" maxlength="1200"></textarea></label>
+      <label class="field"><span>Picture (URL, optional)</span>
+        <input id="hand-img" class="text" type="text" placeholder="https://… or maps/…" /></label>
+      <button class="btn" data-tbl="hand-add">Add it</button>
+      <p id="hand-msg" class="save-msg"></p>
+    </section>`;
+}
+
+async function tblAddHandout() {
+  const msg = $("#hand-msg");
+  const say = (t, bad) => { if (msg) { msg.textContent = t; msg.className = "save-msg" + (bad ? " bad" : ""); } };
+  const title = String(($("#hand-title") || {}).value || "").trim().slice(0, 60);
+  const body = String(($("#hand-body") || {}).value || "").slice(0, 1200);
+  const image = String(($("#hand-img") || {}).value || "").trim();
+  if (!title && !body && !image) return say("A handout needs a title, some text or a picture.", true);
+  await CocLive.push(tblPath("handouts"), { title: title || "Handout", body, image, at: Date.now() });
+  say("Added. Tap it to put it on everyone's screen.");
+}
+
+/* Shown to everyone at once, and dismissible by each person for themselves — a handout you cannot put
+   away is a handout covering the map. */
+function paintHandout() {
+  const host = $("#vtt-handout");
+  if (!host) return;
+  const id = (tbl.data.meta || {}).handout || "";
+  const h = id ? (tbl.data.handouts || {})[id] : null;
+  if (!h || tbl.ui.dismissed === id) { host.classList.add("hidden"); host.innerHTML = ""; return; }
+  host.classList.remove("hidden");
+  host.innerHTML = `<div class="handout-card">
+    <div class="handout-head">
+      <strong>${esc(h.title || "Handout")}</strong>
+      <button class="btn-quiet" data-tbl="hand-dismiss" data-val="${esc(id)}">Close</button>
+    </div>
+    ${h.image ? `<img class="handout-img" src="${esc(h.image)}" alt="" />` : ""}
+    ${h.body ? `<p class="handout-body">${esc(h.body)}</p>` : ""}
+  </div>`;
+}
 
 /* ---------------------------------------------------------------- wiring */
 
 COC_ROUTES.table = routeTable;
+
+/* The DM's notes save as they are typed, coalesced so a paragraph is a handful of writes rather than
+   one per keystroke. */
+document.addEventListener("input", (e) => {
+  if (!tbl || tbl.role !== "dm") return;
+  if (e.target.id !== "dm-notes") return;
+  CocLive.throttled(tblPath("dm/notes"), String(e.target.value || "").slice(0, 4000), 600);
+});
 
 /* Rolling from a sheet. Listened for here rather than in creator.js because the dice belong to the
    table, and the sheet is the same sheet whether it is open at a table or on its own. */
@@ -1302,6 +1553,8 @@ document.addEventListener("click", (e) => {
   // for those two, and this is the only way in, so it sits above the DM-only guard below.
   else if (act === "turn") tblTurnStep(Number(val)).catch(tblFail);
   else if (act === "sheet-open") tblOpenSheetByCode();
+  // Dismissing a handout is each person's own business, so it is not a DM-only action.
+  else if (act === "hand-dismiss") { tbl.ui.dismissed = val; paintHandout(); }
   // Closing the drawer hands paint() back to the page. Leaving it pointed here would mean the next
   // sheet you opened anywhere painted into a node that no longer exists.
   else if (act === "sheet-close") { closeSheetPanel(); tbl.ui.panel = ""; paintSide(); }
@@ -1317,4 +1570,20 @@ document.addEventListener("click", (e) => {
   else if (act === "scene-add") tblAddScene().catch(tblFail);
   else if (act === "grid-cols") tblNudgeGrid("cols", Number(val)).catch(tblFail);
   else if (act === "grid-rows") tblNudgeGrid("rows", Number(val)).catch(tblFail);
+  else if (act === "spawn") tblSpawn().catch(tblFail);
+  else if (act === "ed-open") tblOpenToken(val);
+  else if (act === "ed-close") { tbl.ui.editToken = ""; paintSide(); }
+  else if (act === "ed-save") tblSaveToken(val).catch(tblFail);
+  else if (act === "ed-dup") tblDuplicate(val).catch(tblFail);
+  else if (act === "ed-del") {
+    CocLive.del(tblPath("tokens/" + val)).catch(tblFail);
+    tbl.ui.editToken = ""; paintSide();
+  }
+  else if (act === "hand-add") tblAddHandout().catch(tblFail);
+  else if (act === "hand-show") CocLive.put(tblPath("meta/handout"), val).catch(tblFail);
+  else if (act === "hand-hide") CocLive.put(tblPath("meta/handout"), null).catch(tblFail);
+  else if (act === "hand-del") {
+    CocLive.del(tblPath("handouts/" + val)).catch(tblFail);
+    if ((tbl.data.meta || {}).handout === val) CocLive.put(tblPath("meta/handout"), null).catch(tblFail);
+  }
 });
