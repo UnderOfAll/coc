@@ -12,6 +12,9 @@
 #                           expand a feature, damage yourself. Rendering a page proves nothing
 #                           about whether its controls work, and that gap is where every bug in
 #                           this tool has hidden so far.
+#   7. npm run test:board  — REAL Chromium on the table: a finger drags a token, two fingers pinch,
+#                           the wheel keeps the square under the cursor, and an upload is resized
+#                           through a canvas. None of that exists in jsdom.
 #   6. npm run test:mobile — REAL Chromium at 360px and 320px: assert nothing makes the document
 #                           wider than the screen. jsdom has no layout engine and cannot see this,
 #                           and it is the one class of bug that made the app unusable on a phone.
@@ -42,5 +45,8 @@ npm run test:ui
 
 echo "==> npm run test:mobile"
 npm run test:mobile
+
+echo "==> npm run test:board"
+npm run test:board
 
 echo "==> ALL CHECKS PASSED"

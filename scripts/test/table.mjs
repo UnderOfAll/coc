@@ -639,6 +639,25 @@ ok(mine.length === 1, "and exactly one token, reused rather than duplicated (" +
 ok(mine[0].name === "Rig", "named after the character");
 ok(mine[0].hpMax === 44, "with the hit points the sheet works out");
 
+console.log("\n— TAKING THE DM CHAIR ELSEWHERE —");
+// This browser is a player (it joined with a character code). The table is still the one opened with
+// DM key 771203 — which is the whole reason the key is stored: a new device must be able to claim it.
+ok(peek(`tbl.role`) === "player", "a device that joined as a player is a player");
+ok($('[data-tbl="panel"][data-val="claim"]'), "and is offered the DM chair, in case the table is theirs");
+openPanel("claim");
+await wait(40);
+type($("#claim-key"), "000000");
+click($('[data-tbl="claim"]'));
+await wait(120);
+ok(/not the DM key/.test($("#claim-msg").textContent), "a wrong key is refused: " + $("#claim-msg").textContent);
+ok(peek(`tbl.role`) === "player", "and changes nothing");
+type($("#claim-key"), "771203");
+click($('[data-tbl="claim"]'));
+await wait(250);
+ok(peek(`tbl.role`) === "dm", "the right key takes the chair");
+ok($('[data-tbl="panel"][data-val="dm"]'), "and the DM's tools appear");
+ok(peek(`localStorage.getItem("coc:table:dm:482910")`) === "1", "remembered on this device");
+
 console.log("\n— LEAVING —");
 const room = "482910";
 // Whose entry to look for: the fake second device is also a player holding 123456, so the check has

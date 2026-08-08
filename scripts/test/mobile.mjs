@@ -138,6 +138,32 @@ for (const width of [430, 412, 393, 360, 320]) {
   await tap('[data-act="combat"]');
   await tap('.tab[data-val="progress"]');
   await tap('[data-act="levelup"]');   await audit(page, "level-up panel");
+
+  // The table. Offline mode and a seeded room, so this stays a layout test and touches no network.
+  await page.evaluate(async () => {
+    CocLive.setMode("local");
+    localStorage.setItem("coc:live", "{}");
+    localStorage.setItem("coc:table:dm:482910", "1");
+    await CocLive.put("tables/482910", {
+      meta: { name: "A table with a fairly long name", createdAt: 1, dmHash: "fnv:x", activeScene: "s1" },
+      scenes: { s1: { name: "Blank", image: "", cols: 24, rows: 16, cell: 70, createdAt: 1 } },
+      tokens: { t1: { name: "Bartholomew Quicksilver", charCode: "123456", x: 3, y: 3, size: 1, kind: "pc", hp: 20, hpMax: 44, speed: 30 },
+                t2: { name: "Goblin 2", kind: "npc", scene: "s1", x: 9, y: 6, size: 2, hp: 7, hpMax: 7, speed: 30 } },
+      log: { l1: { t: 1, who: "DM", kind: "roll", text: "DM rolled Goblin 2 to hit: d20 + 4 → 17 = 21" } },
+    });
+  });
+  await go("#/table");                 await audit(page, "table: the front door");
+  await go("#/table/482910", 800);     await audit(page, "table: the board");
+  await tap('[data-tbl="panel"][data-val="dice"]');  await audit(page, "table: dice");
+  await tap('[data-tbl="panel"][data-val="dice"]');
+  await tap('[data-tbl="panel"][data-val="dm"]');    await audit(page, "table: the DM panel");
+  await tap('[data-tbl="map-source"][data-val="url"]'); await audit(page, "table: adding a map");
+  await tap('[data-tbl="init-roll"]');               await audit(page, "table: a turn running");
+  await tap('[data-tbl="hand-add"]');
+  await tap('[data-tbl="panel"][data-val="dm"]');
+  await tap('[data-tbl="panel"][data-val="sheet"]', true);
+  await new Promise((r) => setTimeout(r, 600));
+  await audit(page, "table: a sheet in the drawer");
   if (await tap('[data-act="sub-open"]', true)) await audit(page, "discipline card open");
   await page.close();
 }

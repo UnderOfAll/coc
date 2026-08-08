@@ -8,7 +8,8 @@
     "test:live": "node scripts/test/live.mjs",
     "test:table": "node scripts/test/table.mjs",
     "test:ui": "node scripts/test/ui_flows.mjs",
-    "test:mobile": "node scripts/test/mobile.mjs"
+    "test:mobile": "node scripts/test/mobile.mjs",
+    "test:board": "node scripts/test/board.mjs"
   },
   "devDependencies": {
     "jsdom": "^29.1.1",

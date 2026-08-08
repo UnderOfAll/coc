@@ -103,6 +103,7 @@ function tblFresh(code, role) {
     offs: [],          // live subscriptions, closed on teardown
     beat: null,        // presence heartbeat
     pointers: new Map(),
+    centredOnMe: false,   // the camera has been aimed at this player's own figure, once
     ui: { panel: "", error: "" },
   };
 }
@@ -265,6 +266,47 @@ async function tblJoin() {
   }
 }
 
+/* Taking the DM chair on a device that is not the one the table was made on — a new laptop, a phone,
+   a cleared browser. This is the only reason the key is stored at all: without it, losing your browser
+   would mean losing the ability to run your own table. */
+async function tblClaimDm(code, key) {
+  const meta = await CocLive.get("tables/" + code + "/meta");
+  if (!meta) throw new Error("No table is open under " + code + ".");
+  if (!(await tblKeyMatches(key, meta.dmHash))) throw new Error("That is not the DM key for this table.");
+  localStorage.setItem(tblDmKey(code), "1");
+  return true;
+}
+
+async function tblClaimFromPanel() {
+  const msg = $("#claim-msg");
+  const say = (t, bad) => { if (msg) { msg.textContent = t; msg.className = "save-msg" + (bad ? " bad" : ""); } };
+  const key = String(($("#claim-key") || {}).value || "").replace(/\D/g, "");
+  if (!CocStore.validCode(key)) return say("A DM key is six digits.", true);
+  try {
+    await tblClaimDm(tbl.code, key);
+    // Reopen rather than patch the role in place: the shell, the panels and every permission check
+    // read the role, and half of them are only rendered once.
+    const code = tbl.code;
+    tblTeardown();
+    tblOpen(code);
+  } catch (err) { say(err.message, true); }
+}
+
+function claimPanelHTML() {
+  return `<section class="panel">
+    <h2>Take the DM chair</h2>
+    <p class="muted">If this table is yours, type the DM key you chose when you opened it. It works on
+      any device — that is what it is for.</p>
+    <div class="join-row">
+      <label class="field"><span>DM key</span>
+        <input id="claim-key" class="text code-input" type="text" inputmode="numeric" maxlength="6"
+          placeholder="six digits" autocomplete="off" /></label>
+      <button class="btn" data-tbl="claim">Claim it</button>
+    </div>
+    <p id="claim-msg" class="save-msg"></p>
+  </section>`;
+}
+
 /* ---------------------------------------------------------------- opening a table */
 
 function tblOpen(code) {
@@ -355,7 +397,9 @@ function renderTableShell() {
         <span class="vtt-acts">
           <button class="btn-quiet" data-tbl="panel" data-val="dice">Dice</button>
           <button class="btn-quiet" data-tbl="panel" data-val="sheet">My sheet</button>
-          ${tbl.role === "dm" ? `<button class="btn-quiet" data-tbl="panel" data-val="dm">DM</button>` : ""}
+          ${tbl.role === "dm"
+            ? `<button class="btn-quiet" data-tbl="panel" data-val="dm">DM</button>`
+            : `<button class="btn-quiet" data-tbl="panel" data-val="claim">I'm the DM</button>`}
         </span>
       </div>
       <p id="vtt-error" class="warn hidden"></p>
@@ -430,7 +474,10 @@ function paintBoard() {
     img.removeAttribute("src");
     img.classList.add("hidden");
   }
-  if (!tbl.view.fitted) tblFit();
+  // Only fit once there is a REAL scene to fit to. The shell paints before any data has arrived, and
+  // fitting to the placeholder 30x20 then marking the view "fitted" left the camera pointed at the
+  // middle of a map that does not exist — on a phone, that put the whole board off-screen.
+  if (!tbl.view.fitted && tblSceneId()) tblFit();
   applyView();
   paintTokens();
 }
@@ -442,18 +489,39 @@ function applyView() {
   if (!world) return;
   world.style.transform = `translate(${tbl.view.x}px, ${tbl.view.y}px) scale(${tbl.view.z})`;
 }
+/* "Fit" does not mean "show the whole map at any cost". Fitting a 20x14 map into a 390px phone makes
+   a figure eleven pixels wide — unreadable, and impossible to hit with a finger. So the fit has a
+   FLOOR: a square never shrinks below something you can tap, and the map simply becomes pannable,
+   which is what every map on a phone is anyway. */
+const TBL_MIN_CELL_PX = 40;
 function tblFit() {
   const stage = $("#vtt-stage"), scene = tblScene();
   if (!stage) return;
   const cell = Number(scene.cell) || 70;
   const w = (Number(scene.cols) || 30) * cell, h = (Number(scene.rows) || 20) * cell;
   const box = stage.getBoundingClientRect();
+  // No layout yet (the stage has just been inserted): fitting to a zero-sized window would compute
+  // nonsense and, worse, latch it. Leave it unfitted and the next paint will do it properly.
+  if (box.width < 40 || box.height < 40) return;
   const pad = 16;
-  const z = Math.min((box.width - pad) / w, (box.height - pad) / h, 1.6) || 1;
-  tbl.view.z = Math.max(0.12, z);
-  tbl.view.x = Math.max(0, (box.width - w * tbl.view.z) / 2);
-  tbl.view.y = Math.max(0, (box.height - h * tbl.view.z) / 2);
+  const whole = Math.min((box.width - pad) / w, (box.height - pad) / h, 1.6) || 1;
+  const z = Math.max(0.12, whole, Math.min(1, TBL_MIN_CELL_PX / cell));
+  tbl.view.z = z;
+  // Centred on YOUR figure when you have one: opening a table should show you where you are, not the
+  // top-left corner of a map you then have to go looking through.
+  const mine = Object.values(tblTokens()).find((t) => t && t.charCode && t.charCode === tbl.me.charCode);
+  const focusX = mine ? (Number(mine.x) + 0.5) * cell : w / 2;
+  const focusY = mine ? (Number(mine.y) + 0.5) * cell : h / 2;
+  const clamp = (v, size, stageSize) => size * z <= stageSize
+    ? (stageSize - size * z) / 2                       // it all fits: centre it
+    : Math.max(stageSize - size * z, Math.min(0, v));  // it does not: keep the map covering the stage
+  tbl.view.x = clamp(box.width / 2 - focusX * z, w, box.width);
+  tbl.view.y = clamp(box.height / 2 - focusY * z, h, box.height);
   tbl.view.fitted = true;
+  // Whether the centring found your figure. Recorded on the SESSION, not on the camera: it is a fact
+  // about whether the once-only aim has happened, and anything that replaces the view object (a reset,
+  // a test, a future "reset camera" button) must not re-arm it.
+  if (mine) tbl.centredOnMe = true;
   applyView();
 }
 function tblZoomBy(factor, cx, cy) {
@@ -530,6 +598,13 @@ function paintTokens() {
   }
   for (const node of [...host.children]) {
     if (!seen.has(node.dataset.token)) node.remove();
+  }
+  // Your own figure arriving is the first moment the camera can be aimed at it. Once only, and only
+  // if the fit had nothing to aim at before — re-framing a board somebody has already panned would be
+  // its own kind of rude.
+  if (tbl.view.fitted && !tbl.centredOnMe && !tbl.drag
+      && Object.values(tokens).some((t) => t && t.charCode && t.charCode === tbl.me.charCode)) {
+    tblFit();
   }
   paintRuler();
 }
@@ -679,6 +754,7 @@ function paintSide() {
   if (!which) { side.innerHTML = ""; return; }
   if (which === "dm") side.innerHTML = dmPanelHTML();
   else if (which === "dice") side.innerHTML = dicePanelHTML();
+  else if (which === "claim") side.innerHTML = claimPanelHTML();
   else if (which === "sheet") { side.innerHTML = `<p class="muted">Opening your sheet…</p>`; paintSheetPanel(); }
 }
 /* Re-render the DM's panel only if it is the one open — the scenes stream fires for everyone. */
@@ -1553,6 +1629,7 @@ document.addEventListener("click", (e) => {
   // for those two, and this is the only way in, so it sits above the DM-only guard below.
   else if (act === "turn") tblTurnStep(Number(val)).catch(tblFail);
   else if (act === "sheet-open") tblOpenSheetByCode();
+  else if (act === "claim") tblClaimFromPanel();
   // Dismissing a handout is each person's own business, so it is not a DM-only action.
   else if (act === "hand-dismiss") { tbl.ui.dismissed = val; paintHandout(); }
   // Closing the drawer hands paint() back to the page. Leaving it pointed here would mean the next
