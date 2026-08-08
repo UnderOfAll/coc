@@ -97,7 +97,8 @@ function tblFresh(code, role) {
   return {
     code, role,
     me: tblMe(code),
-    data: { meta: null, scenes: null, tokens: null, log: null, presence: null, handouts: null, dm: null, notes: null },
+    data: { meta: null, scenes: null, tokens: null, log: null, presence: null, handouts: null, dm: null,
+            notes: null, draw: null },
     view: { x: 0, y: 0, z: 1 },
     drag: null,
     offs: [],          // live subscriptions, closed on teardown
@@ -480,6 +481,7 @@ function renderTableShell() {
         <span class="vtt-acts">
           <button class="btn-quiet" data-tbl="panel" data-val="dice">Dice</button>
           <button class="btn-quiet" data-tbl="panel" data-val="notes">Notes</button>
+          <button class="btn-quiet" data-tbl="panel" data-val="draw">Draw</button>
           ${tbl.role === "dm" || tbl.me.charCode
             ? `<button class="btn-quiet" data-tbl="panel" data-val="sheet">My sheet</button>`
             : `<button class="btn-quiet" data-tbl="panel" data-val="mine">My figure</button>`}
@@ -498,6 +500,7 @@ function renderTableShell() {
           <div id="vtt-world" class="vtt-world">
             <img id="vtt-map" class="vtt-map hidden" alt="" />
             <div id="vtt-grid" class="vtt-grid"></div>
+            <svg id="vtt-ink" class="vtt-ink" aria-hidden="true"></svg>
             <div id="vtt-tokens" class="vtt-tokens"></div>
             <svg id="vtt-ruler" class="vtt-ruler" aria-hidden="true"></svg>
           </div>
@@ -530,6 +533,7 @@ function paintEverything() {
   // explains nothing. (It is also why this cannot simply be ignored: the heartbeat would go on writing
   // presence into a deleted room and recreate it as a husk.)
   if (tbl.gotData && !(tbl.data && tbl.data.meta)) { tblTableGone(); return; }
+  paintDrawings();
   paintDock();
   paintHeader();
   paintBoard();      // paintTokens is called from here
@@ -882,6 +886,41 @@ function toSquares(sx, sy) {
   return { x: ((sx - tbl.view.x) / tbl.view.z) / cell, y: ((sy - tbl.view.y) / tbl.view.z) / cell };
 }
 
+/* Where a point on the stage falls on the PICTURE, as a fraction of it. */
+function tblInkPoint(p) {
+  const scene = tblScene();
+  const cell = Number(scene.cell) || 70;
+  const w = (Number(scene.cols) || 30) * cell, h = (Number(scene.rows) || 20) * cell;
+  const at = toSquares(p.sx, p.sy);
+  return { x: Math.max(0, Math.min(1, (at.x * cell) / w)), y: Math.max(0, Math.min(1, (at.y * cell) / h)) };
+}
+
+/* The eraser: whatever of MINE is under the point goes. The DM may rub out anybody's, which is the whole
+   difference between an eraser and a moderation tool. */
+function tblEraseAt(at) {
+  const sceneId = tblSceneId();
+  const mine = tblNoteOwner();
+  const near = 0.012;
+  for (const [id, k] of Object.entries(tbl.data.draw || {})) {
+    if (!k || k.scene !== sceneId) continue;
+    if (tbl.role !== "dm" && k.by !== mine) continue;
+    const pts = tblInkDecode(k.pts);
+    const hit = pts.some((p, i) => {
+      if (Math.hypot(p.x - at.x, p.y - at.y) < near) return true;
+      const q = pts[i + 1];
+      if (!q) return false;
+      // Distance from the point to this SEGMENT, so a long straight line can be rubbed out anywhere along
+      // it rather than only where it happened to be sampled.
+      const dx = q.x - p.x, dy = q.y - p.y;
+      const len = dx * dx + dy * dy;
+      if (!len) return false;
+      const t = Math.max(0, Math.min(1, ((at.x - p.x) * dx + (at.y - p.y) * dy) / len));
+      return Math.hypot(p.x + t * dx - at.x, p.y + t * dy - at.y) < near;
+    });
+    if (hit) CocLive.del(tblPath("draw/" + id)).catch(() => {});
+  }
+}
+
 /* Every finger is up and nothing is being dragged. Called whenever the browser tells us a gesture
    ended in a way we cannot track, so a lost event can never leave the board deaf. */
 function tblResetGestures() {
@@ -896,8 +935,10 @@ function tblResetGestures() {
     tblLandDrag(tbl.drag);
   }
   tbl.drag = null;
+  tbl.inking = null;
   paintTokens();
   paintRuler();
+  paintDrawings();
 }
 
 function onPointerDown(e) {
@@ -910,10 +951,21 @@ function onPointerDown(e) {
   tbl.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
   // Two fingers down: this is a pinch, and whatever the first finger had started is abandoned.
   if (tbl.pointers.size === 2) { tbl.drag = null; tbl.pinch = tblPinchState(); return; }
+  const p = stagePoint(e);
+  // Drawing takes the gesture entirely: while the pen is out, the board is a sheet of paper. That is also
+  // why figures cannot be dragged in this mode — you would smear ink every time you missed one.
+  if (tblInkState().on && tblCanDraw()) {
+    const at = tblInkPoint(p);
+    tbl.drag = null;
+    if (tblInkState().mode === "erase") { tblEraseAt(at); return; }
+    tbl.inking = { points: [at], color: tblInkState().color, width: tblInkState().width };
+    paintDrawings();
+    if (stage.setPointerCapture) { try { stage.setPointerCapture(e.pointerId); } catch { /* fine */ } }
+    return;
+  }
   const node = e.target.closest("[data-token]");
   const id = node && node.dataset.token;
   const token = id ? tblTokens()[id] : null;
-  const p = stagePoint(e);
   if (token && tblCanMove(token)) {
     const at = toSquares(p.sx, p.sy);
     tbl.drag = {
@@ -942,6 +994,21 @@ function onPointerMove(e) {
     const next = tblPinchState();
     tblZoomBy(next.dist / tbl.pinch.dist, next.cx, next.cy);
     tbl.pinch = next;
+    return;
+  }
+  if (tbl.inking) {
+    const at = tblInkPoint(stagePoint(e));
+    const last = tbl.inking.points[tbl.inking.points.length - 1];
+    // Only once the hand has actually moved: sampling every event would store hundreds of identical points
+    // and make the stroke expensive for everyone else to draw.
+    if (Math.hypot(at.x - last.x, at.y - last.y) > 0.002 && tbl.inking.points.length < TBL_INK_MAX_POINTS) {
+      tbl.inking.points.push(at);
+      paintDrawings();
+    }
+    return;
+  }
+  if (tblInkState().on && tblInkState().mode === "erase" && tbl.pointers.size === 1 && tblCanDraw()) {
+    tblEraseAt(tblInkPoint(stagePoint(e)));
     return;
   }
   const d = tbl.drag;
@@ -976,6 +1043,18 @@ function onPointerMove(e) {
 function onPointerUp(e) {
   if (!tbl) return;
   tbl.pointers.delete(e.pointerId);
+  if (tbl.inking) {
+    const stroke = tbl.inking;
+    tbl.inking = null;
+    if (stroke.points.length) {
+      CocLive.push(tblPath("draw"), {
+        by: tblNoteOwner(), scene: tblSceneId(), color: stroke.color, width: stroke.width,
+        pts: tblInkEncode(stroke.points), at: Date.now(),
+      }).catch(tblFail);
+    }
+    paintDrawings();
+    return;
+  }
   if (tbl.pointers.size < 2) tbl.pinch = null;
   // Lifting one finger of a pinch leaves the other one down. Hand it the map rather than ignoring it
   // until it lifts too — otherwise the board feels stuck for as long as that finger rests on it.
@@ -1104,6 +1183,7 @@ function paintSide() {
   else if (which === "claim") side.innerHTML = claimPanelHTML();
   else if (which === "figure") side.innerHTML = figureInfoHTML(tbl.ui.lookAt);
   else if (which === "notes") side.innerHTML = notesPanelHTML();
+  else if (which === "draw") side.innerHTML = drawPanelHTML();
   else if (which === "mine") side.innerHTML = figureInfoHTML(tblMyTokens()[0] || "");
   else if (which === "sheet") { side.innerHTML = `<p class="muted">Opening your sheet…</p>`; paintSheetPanel(); }
 }
@@ -1817,6 +1897,83 @@ function paintLog() {
   }
 }
 
+/* ---------------------------------------------------------------- drawing on the map
+ *
+ * Strokes are stored NORMALISED to the picture — every point a fraction of the world, 0 to 1 — not in
+ * squares. It matters: re-gridding a map (30 squares across to 60) changes how big a square is, and a
+ * drawing measured in squares would stretch away from the thing it was drawn around. Measured against the
+ * picture, an arrow keeps pointing at the door.
+ *
+ * A stroke belongs to whoever drew it, by the same key the notepad uses. You may rub out your own; the DM
+ * may rub out anybody's, and may turn drawing off for a scene entirely. */
+const TBL_INK_COLOURS = [
+  ["#c9a54e", "Gold"], ["#e07a5f", "Red"], ["#6ab04c", "Green"],
+  ["#4a90d9", "Blue"], ["#e9e4da", "White"], ["#1a1917", "Black"],
+];
+const TBL_INK_MAX_POINTS = 400;
+
+function tblInkState() {
+  if (!tbl.ui.ink) tbl.ui.ink = { mode: "pen", color: TBL_INK_COLOURS[0][0], width: 2, on: false };
+  return tbl.ui.ink;
+}
+/* May I draw here? The DM always may; a player may unless the DM has turned it off for this scene. */
+function tblCanDraw() {
+  if (tbl.role === "dm") return true;
+  return tblScene().drawLocked !== true;
+}
+function tblMyStrokes() {
+  const mine = tblNoteOwner();
+  const scene = tblSceneId();
+  return Object.entries(tbl.data.draw || {})
+    .filter(([, k]) => k && k.by === mine && k.scene === scene);
+}
+
+/* "0.1234,0.5678 …" — short enough to write on every stroke, precise enough at any zoom. */
+function tblInkEncode(points) {
+  return points.map((p) => `${p.x.toFixed(4)},${p.y.toFixed(4)}`).join(" ").slice(0, 4000);
+}
+function tblInkDecode(text) {
+  return String(text || "").split(" ").map((pair) => {
+    const [x, y] = pair.split(",").map(Number);
+    return { x, y };
+  }).filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y));
+}
+
+/* Every stroke on this scene, plus whatever is being drawn right now. Rebuilt whole — strokes are few —
+   with the one in progress as a separate path, so a repaint from somebody else's move cannot interrupt
+   the line under your finger. */
+function paintDrawings() {
+  const svg = $("#vtt-ink");
+  if (!svg) return;
+  const scene = tblScene();
+  const cell = Number(scene.cell) || 70;
+  const w = (Number(scene.cols) || 30) * cell, h = (Number(scene.rows) || 20) * cell;
+  const sceneId = tblSceneId();
+  const path = (k, id) => {
+    const pts = tblInkDecode(k.pts);
+    if (!pts.length) return "";
+    const width = Math.max(1, (Number(k.width) || 2) * cell / 24);
+    if (pts.length === 1) {
+      // A tap is a dot, not nothing — people mark spots.
+      return `<circle cx="${(pts[0].x * w).toFixed(1)}" cy="${(pts[0].y * h).toFixed(1)}"
+        r="${(width / 2).toFixed(1)}" fill="${esc(k.color || "#c9a54e")}" data-ink="${esc(id)}" />`;
+    }
+    const d = pts.map((p, i) => `${i ? "L" : "M"}${(p.x * w).toFixed(1)} ${(p.y * h).toFixed(1)}`).join(" ");
+    return `<path d="${d}" fill="none" stroke="${esc(k.color || "#c9a54e")}"
+      stroke-width="${width.toFixed(1)}" stroke-linecap="round" stroke-linejoin="round"
+      data-ink="${esc(id)}" />`;
+  };
+  const strokes = Object.entries(tbl.data.draw || {})
+    .filter(([, k]) => k && k.scene === sceneId)
+    .sort((a, b) => (a[1].at || 0) - (b[1].at || 0))
+    .map(([id, k]) => path(k, id)).join("");
+  const live = tbl.inking && tbl.inking.points.length
+    ? path({ pts: tblInkEncode(tbl.inking.points), color: tbl.inking.color, width: tbl.inking.width }, "live")
+    : "";
+  svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+  svg.innerHTML = strokes + live;
+}
+
 /* ---------------------------------------------------------------- distance, and the ruler */
 
 /* Five feet a square, and a diagonal costs the same as a straight line — the ordinary grid rule. It
@@ -2314,6 +2471,48 @@ function tblForgetTable(code) {
   localStorage.setItem(TBL_RECENT, JSON.stringify(tblRecent().filter((r) => r.code !== code)));
 }
 
+/* The pen tray. Everyone gets one; what differs is whose ink you may rub out and whether the DM has
+   allowed drawing on this scene at all. */
+function drawPanelHTML() {
+  const ink = tblInkState();
+  const scene = tblScene();
+  const locked = scene.drawLocked === true;
+  const mine = tblMyStrokes().length;
+  const all = Object.values(tbl.data.draw || {}).filter((k) => k && k.scene === tblSceneId()).length;
+  if (locked && tbl.role !== "dm") {
+    return `<section class="panel"><h2>Drawing</h2>
+      <p class="muted">The DM has turned drawing off for this scene.</p></section>`;
+  }
+  return `<section class="panel">
+      <h2>Drawing</h2>
+      <div class="chips">
+        <button class="chip ${ink.on && ink.mode === "pen" ? "on" : ""}" data-tbl="ink-pen">Pen</button>
+        <button class="chip ${ink.on && ink.mode === "erase" ? "on" : ""}" data-tbl="ink-erase">Eraser</button>
+        <button class="chip ${ink.on ? "" : "on"}" data-tbl="ink-off">Put it away</button>
+      </div>
+      ${ink.on ? `<p class="muted">${ink.mode === "erase"
+        ? (tbl.role === "dm" ? "Drag over anything to rub it out — as the DM you can rub out anyone's."
+          : "Drag over your own lines to rub them out. Other people's are theirs.")
+        : "Draw on the board with a finger or the mouse. While the pen is out, figures cannot be dragged."}</p>`
+        : `<p class="muted">The pen is away, so the board drags and pans as usual.</p>`}
+      <p class="panel-sub">Colour</p>
+      <div class="chips">${TBL_INK_COLOURS.map(([hex, name]) =>
+        `<button class="chip ${ink.color === hex ? "on" : ""}" data-tbl="ink-color" data-val="${esc(hex)}"
+          title="${esc(name)}"><span class="ink-dot" style="background:${esc(hex)}"></span>${esc(name)}</button>`).join("")}</div>
+      <p class="panel-sub">Thickness</p>
+      <div class="chips">${[[1, "Thin"], [2, "Medium"], [4, "Thick"]].map(([n, label]) =>
+        `<button class="chip ${ink.width === n ? "on" : ""}" data-tbl="ink-width" data-val="${n}">${esc(label)}</button>`).join("")}</div>
+      <div class="hp-controls">
+        <button class="btn-quiet" data-tbl="ink-clear-mine" ${mine ? "" : "disabled"}>Rub out mine (${esc(mine)})</button>
+        ${tbl.role === "dm" ? `<button class="btn-quiet" data-tbl="ink-clear-all" ${all ? "" : "disabled"}>Clear the scene (${esc(all)})</button>` : ""}
+      </div>
+      ${tbl.role === "dm" ? `<p class="panel-sub">For everyone else</p>
+        <div class="chips"><button class="chip ${locked ? "on" : ""}" data-tbl="ink-lock">${
+          locked ? "Drawing is off" : "Drawing is on"}</button></div>
+        <p class="muted">Turning it off leaves what is already drawn; only your own pen still works.</p>` : ""}
+    </section>`;
+}
+
 /* ---------------------------------------------------------------- notes
  *
  * A notepad in the app, so a session does not need a text editor open beside it. Several notes, each with
@@ -2580,6 +2779,17 @@ document.addEventListener("click", (e) => {
       CocLive.put(tblPath("scenes/" + id + "/" + field), next).catch(tblFail);
     }
   }
+  // DM only, from here down.
+  else if (act === "ink-clear-all") {
+    const sceneId = tblSceneId();
+    for (const [id, k] of Object.entries(tbl.data.draw || {})) {
+      if (k && k.scene === sceneId) CocLive.del(tblPath("draw/" + id)).catch(() => {});
+    }
+  }
+  else if (act === "ink-lock") {
+    const id = tblSceneId();
+    if (id) CocLive.put(tblPath("scenes/" + id + "/drawLocked"), tblScene().drawLocked !== true).catch(tblFail);
+  }
   else if (act === "spawn") tblSpawn().catch(tblFail);
   else if (act === "ed-open") tblOpenToken(val);
   else if (act === "ed-close") { tbl.ui.editToken = ""; paintSide(); }
@@ -2602,6 +2812,21 @@ document.addEventListener("click", (e) => {
   else if (act === "ed-del") {
     CocLive.del(tblPath("tokens/" + val)).catch(tblFail);
     tbl.ui.editToken = ""; paintSide();
+  }
+  else if (act === "ink-pen" || act === "ink-erase" || act === "ink-off") {
+    const ink = tblInkState();
+    ink.on = act !== "ink-off";
+    if (act === "ink-pen") ink.mode = "pen";
+    if (act === "ink-erase") ink.mode = "erase";
+    // The board's cursor says which tool is in your hand, since the pen changes what a drag does.
+    const stage = $("#vtt-stage");
+    if (stage) stage.classList.toggle("inking", ink.on);
+    paintSide();
+  }
+  else if (act === "ink-color") { tblInkState().color = val; paintSide(); }
+  else if (act === "ink-width") { tblInkState().width = Number(val); paintSide(); }
+  else if (act === "ink-clear-mine") {
+    for (const [id] of tblMyStrokes()) CocLive.del(tblPath("draw/" + id)).catch(() => {});
   }
   else if (act === "note-new") tblNewNote().catch(tblFail);
   else if (act === "note-open") { tbl.ui.note = tbl.ui.note === val ? "" : val; paintSide(); }

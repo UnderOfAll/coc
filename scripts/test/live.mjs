@@ -121,7 +121,9 @@ ok(peek(`window.__streamed[2].tokens.t1.y`) === 5, "a patch merges its keys");
 ok(peek(`window.__streamed[2].tokens.t1.x`) === 7, "and leaves everything it did not mention");
 // A deletion arrives as a put of null.
 peek(`window.__sources[0].emit("put", { path: "/tokens/t1", data: null });`);
-ok(peek(`window.__streamed[3].tokens.t1`) === undefined, "a null put removes the node");
+// And it takes the empty parent with it, which is what the database itself does: there is no such thing
+// as a node with no children. A mirror that kept `tokens: {}` would report a board that still exists.
+ok(peek(`window.__streamed[3].tokens`) === undefined, "a null put removes the node, and its empty parent");
 peek(`window.__offStream();`);
 ok(peek(`window.__sources[0].closed`) === true, "unsubscribing closes the stream");
 

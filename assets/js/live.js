@@ -58,10 +58,21 @@ const CocLive = (() => {
     }
     const last = keys[keys.length - 1];
     // Firebase has no concept of an empty container: writing null DELETES the key, and a node whose
-    // last child is removed stops existing. Matching that here is not pedantry — it is the only way
-    // local mode and cloud mode agree about what "gone" looks like.
-    if (value == null) delete node[last];
-    else node[last] = value;
+    // last child is removed stops existing TOO. Matching that here is not pedantry — it is the only way
+    // local mode and cloud mode agree about what "gone" looks like. Erasing the last drawing left
+    // `draw: {}` behind, which reads as "there is a drawings node" everywhere that checks.
+    if (value == null) {
+      delete node[last];
+      for (let depth = keys.length - 1; depth > 0; depth--) {
+        const parentPath = keys.slice(0, depth);
+        let parent = tree;
+        for (const key of parentPath.slice(0, -1)) parent = parent[key];
+        const name = parentPath[parentPath.length - 1];
+        if (parent[name] && typeof parent[name] === "object" && !Object.keys(parent[name]).length) {
+          delete parent[name];
+        } else break;
+      }
+    } else node[last] = value;
     return tree;
   }
 

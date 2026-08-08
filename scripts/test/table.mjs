@@ -181,6 +181,93 @@ ok(before !== after && peek(`tbl.view.x`) === 60, "dragging the map pans the cam
 ok((await peek(`CocLive.get("tables/482910/tokens/tRig/x")`)) === 6, "and moves no token");
 peek(`tbl.view = { x: 0, y: 0, z: 1, fitted: true }; applyView();`);
 
+console.log("\n— DRAWING ON THE MAP —");
+peek(`tbl.role = "dm"; tbl.me.charCode = ""; renderTableShell(); paintTokens();
+  tbl.view = { x: 0, y: 0, z: 1, fitted: true }; applyView();`);
+openPanel("draw");
+await wait(60);
+ok($('[data-tbl="ink-pen"]') && $('[data-tbl="ink-erase"]'), "everyone gets a pen and an eraser");
+ok($$('[data-tbl="ink-color"]').length === 6, "with colours to choose from");
+ok($("#vtt-ink"), "and a layer to draw on");
+// With the pen away the board behaves as it always did.
+const orcWas = await aget(`CocLive.get("tables/482910/tokens/tOrc/x")`);
+click($('[data-tbl="ink-pen"]'));
+await wait(40);
+ok(peek(`tblInkState().on`) === true, "taking out the pen turns drawing on");
+ok($("#vtt-stage").classList.contains("inking"), "and the board says so");
+// A stroke, drawn as a finger would.
+drag($("#vtt-stage"), 200, 200, 500, 400);
+await wait(120);
+const strokes = await aget(`Object.values(await CocLive.get("tables/482910/draw"))`);
+ok(strokes && strokes.length === 1, "a drag lays down one stroke");
+ok(strokes[0].by === "dm" && strokes[0].scene === peek(`tblSceneId()`), "belonging to whoever drew it, on this scene");
+ok(/^0\.\d+,0\.\d+ /.test(strokes[0].pts), "stored against the PICTURE, not the grid: " + strokes[0].pts.slice(0, 24));
+ok($$("#vtt-ink path").length === 1, "and it is on the board");
+// While the pen is out, figures are not draggable — otherwise you smear ink at every miss.
+ok((await aget(`CocLive.get("tables/482910/tokens/tOrc/x")`)) === orcWas, "and no figure moved while drawing");
+// Re-gridding must not drag the drawing away from what it was drawn around.
+const inkBefore = $$("#vtt-ink path")[0].getAttribute("d");
+await peek(`CocLive.patch("tables/482910/scenes/" + tblSceneId(), { cols: 60, rows: 40 })`);
+await wait(120);
+const inkAfter = $$("#vtt-ink path")[0].getAttribute("d");
+ok(inkBefore !== inkAfter, "re-gridding rescales the ink with the picture");
+ok($("#vtt-ink").getAttribute("viewBox") === "0 0 4200 2800", "the layer follows the world: " + $("#vtt-ink").getAttribute("viewBox"));
+await peek(`CocLive.patch("tables/482910/scenes/" + tblSceneId(), { cols: 30, rows: 20 })`);
+await wait(80);
+// The eraser.
+click($('[data-tbl="ink-erase"]'));
+await wait(40);
+pointer("pointerdown", $("#vtt-stage"), 200, 200, 1);
+pointer("pointerup", $("#vtt-stage"), 200, 200, 1);
+await wait(120);
+ok((await aget(`CocLive.get("tables/482910/draw")`)) === null, "the eraser rubs out what is under it");
+// Whose ink is whose.
+await peek(`CocLive.push("tables/482910/draw", { by: "pc:999999", scene: tblSceneId(), color: "#6ab04c",
+  width: 2, pts: "0.1000,0.1000 0.2000,0.2000", at: Date.now() })`);
+await wait(80);
+peek(`tbl.role = "player"; tbl.me.charCode = "123456"; renderTableShell(); tblInkState().on = true; tblInkState().mode = "erase";`);
+pointer("pointerdown", $("#vtt-stage"), 0.1 * 2100, 0.1 * 1400, 1);
+pointer("pointerup", $("#vtt-stage"), 0.1 * 2100, 0.1 * 1400, 1);
+await wait(120);
+ok((await aget(`Object.values(await CocLive.get("tables/482910/draw")).length`)) === 1,
+  "a player cannot rub out somebody else's line");
+peek(`tbl.role = "dm"; tbl.me.charCode = ""; renderTableShell(); tblInkState().on = true; tblInkState().mode = "erase";`);
+pointer("pointerdown", $("#vtt-stage"), 0.1 * 2100, 0.1 * 1400, 1);
+pointer("pointerup", $("#vtt-stage"), 0.1 * 2100, 0.1 * 1400, 1);
+await wait(120);
+ok((await aget(`CocLive.get("tables/482910/draw")`)) === null, "but the DM can rub out anyone's");
+// Clearing.
+await peek(`CocLive.push("tables/482910/draw", { by: "pc:999999", scene: tblSceneId(), color: "#fff", width: 2, pts: "0.5,0.5 0.6,0.6", at: 1 })`);
+await peek(`CocLive.push("tables/482910/draw", { by: "dm", scene: tblSceneId(), color: "#fff", width: 2, pts: "0.7,0.7 0.8,0.8", at: 2 })`);
+await wait(100);
+peek(`paintSide();`);
+await wait(60);
+click($('[data-tbl="ink-clear-mine"]'));
+await wait(120);
+ok((await aget(`Object.values(await CocLive.get("tables/482910/draw")).length`)) === 1,
+  "Rub out mine takes only your own");
+click($('[data-tbl="ink-clear-all"]'));
+await wait(120);
+ok((await aget(`CocLive.get("tables/482910/draw")`)) === null, "and the DM can clear the whole scene");
+// The DM can turn drawing off for everyone else.
+click($('[data-tbl="ink-lock"]'));
+await wait(120);
+ok((await aget(`tblScene().drawLocked`)) === true, "the DM can turn drawing off for the scene");
+peek(`tbl.role = "player"; tbl.me.charCode = "123456"; renderTableShell(); paintSide();`);
+ok(peek(`tblCanDraw()`) === false, "which stops a player drawing");
+openPanel("draw");
+await wait(60);
+ok(/turned drawing off/.test($("#vtt-side").textContent), "and says so rather than failing silently");
+peek(`tbl.role = "dm"; renderTableShell(); tbl.ui.panel = "draw"; paintSide();`);
+ok(peek(`tblCanDraw()`) === true, "while the DM's own pen still works");
+await wait(60);
+click($('[data-tbl="ink-lock"]'));
+await wait(100);
+peek(`paintSide();`);
+click($('[data-tbl="ink-off"]'));
+await wait(40);
+ok(peek(`tblInkState().on`) === false, "and the pen can be put away again");
+
 console.log("\n— TWO FIGURES CANNOT SHARE A SQUARE —");
 // Dropped onto somebody, a figure slides to the side rather than either vanishing into them or refusing
 // to move at all.

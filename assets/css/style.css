@@ -1250,3 +1250,13 @@ input.step-val { width: 3.4rem; }
 }
 /* The die face and its name, so a mixed handful reads as dice rather than as numbers. */
 .die b { font-weight: 600; }
+
+/* Ink on the map. Inside the world, so it pans and zooms with the picture it was drawn on; under the
+   figures, because it is an annotation of the ground rather than a thing standing on it. */
+.vtt-ink { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible;
+  pointer-events: none; }
+/* While the pen is out the board is a sheet of paper, and the cursor says so. */
+.vtt-stage.inking { cursor: crosshair; }
+.vtt-stage.inking .tok.movable { cursor: crosshair; }
+.ink-dot { display: inline-block; width: 0.7rem; height: 0.7rem; border-radius: 50%;
+  margin-right: 0.35rem; vertical-align: -1px; border: 1px solid var(--border); }
