@@ -352,6 +352,68 @@ await wait(40);
 ok(/Choose an image file/.test($("#tbl-scene-msg").textContent), "uploading nothing is refused");
 ok(/capped/.test($("#tbl-upload-msg").textContent), "and the cap is explained before you try");
 
+console.log("\n— A GRID YOU CAN LAY OVER A MAP —");
+// The case this exists for: a beautiful map with no grid printed on it. Ours goes on top, and is then
+// the DM's to shape.
+peek(`(async () => {
+  const id = CocLive.newId();
+  await CocLive.put("tables/482910/scenes/" + id, { name: "Gridless", image: "https://example.com/arena.jpg",
+    cols: 30, rows: 30, cell: 70, createdAt: 9 });
+  await CocLive.put("tables/482910/meta/activeScene", id);
+})()`);
+await wait(150);
+openPanel("dm");
+await wait(60);
+const gridEl = () => $("#vtt-grid");
+ok(gridEl().style.display !== "none", "a scene arrives with the grid on");
+ok(/rgba\(233/.test(gridEl().style.backgroundImage), "drawn in light lines by default");
+ok(gridEl().style.backgroundSize === "70px 70px", "at the scene's square size");
+click($('[data-tbl="grid-on"]'));
+await wait(80);
+ok(gridEl().style.display === "none", "and it can be turned off — for a map that came with one printed");
+ok((await aget(`tblScene().gridOn`)) === false, "which is remembered on the scene, for everyone");
+click($('[data-tbl="grid-on"]'));
+await wait(80);
+ok(gridEl().style.display !== "none", "and back on");
+// Light art needs dark lines.
+click($('[data-tbl="grid-dark"]'));
+await wait(80);
+ok(/rgba\(0, 0, 0/.test(gridEl().style.backgroundImage), "dark lines for a light map");
+click($('[data-tbl="grid-bold"]'));
+await wait(80);
+ok(/2px/.test(gridEl().style.backgroundImage), "and bold ones, which survive being zoomed out");
+// The presets: how many squares ACROSS, with down following the picture's shape.
+peek(`Object.defineProperty($("#vtt-map"), "naturalWidth", { value: 2000, configurable: true });
+  Object.defineProperty($("#vtt-map"), "naturalHeight", { value: 1000, configurable: true });`);
+click($('[data-tbl="grid-preset"][data-val="60"]'));
+await wait(120);
+ok((await aget(`tblScene().cols`)) === 60, "a preset sets the squares across");
+ok((await aget(`tblScene().rows`)) === 30, "and derives the ones down from a 2000x1000 picture, so a square stays square");
+click($('[data-tbl="grid-preset"][data-val="15"]'));
+await wait(120);
+ok((await aget(`tblScene().cols`)) === 15 && (await aget(`tblScene().rows`)) === 8, "15 across is 8 down on the same picture");
+// Forced apart on purpose, then squared up again.
+click($('[data-tbl="grid-rows"][data-val="1"]'));
+await wait(100);
+ok((await aget(`tblScene().rows`)) === 9, "the steppers still force them apart, for a map whose own grid is not square");
+click($('[data-tbl="grid-fit"]'));
+await wait(120);
+ok((await aget(`tblScene().rows`)) === 8, "and one button squares them up again");
+// Lining ours up with a grid already in the picture.
+ok($('[data-tbl="grid-off"][data-val="x|1"]'), "the grid can be nudged into line");
+click($('[data-tbl="grid-off"][data-val="x|1"]'));
+await wait(100);
+ok((await aget(`tblScene().gridOffX`)) === 1, "a tenth of a square at a time");
+ok(/7px/.test(gridEl().style.backgroundPosition), "which moves the lines: " + gridEl().style.backgroundPosition);
+for (let i = 0; i < 9; i++) { click($('[data-tbl="grid-off"][data-val="x|1"]')); await wait(40); }
+ok((await aget(`tblScene().gridOffX`)) === 0, "and ten tenths along is the same grid again, so it wraps");
+click($('[data-tbl="grid-off"][data-val="y|-1"]'));
+await wait(100);
+ok((await aget(`tblScene().gridOffY`)) === 9, "backwards works too");
+click($('[data-tbl="grid-off"][data-val="reset"]'));
+await wait(100);
+ok((await aget(`tblScene().gridOffY`)) === 0, "and Corner puts it back to the corner");
+
 // Switching, nudging, deleting.
 const firstId = Object.keys(await aget(`CocLive.get("tables/482910/scenes")`))[0];
 click($$('[data-tbl="scene"]').find(b => b.dataset.val === firstId));

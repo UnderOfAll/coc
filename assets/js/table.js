@@ -598,7 +598,22 @@ function paintBoard() {
   world.dataset.scene = tblSceneId();
   world.style.width = w + "px";
   world.style.height = h + "px";
+  /* The grid is drawn from the SCENE, not from a fixed stylesheet rule, because it is a tool now: a map
+     that came without one needs a grid laid over it, and a map that came with one printed needs ours
+     turned off rather than doubled. Light lines read on dark art, dark lines on parchment; bold survives
+     being zoomed out; the offset exists to line ours up with a grid already in the picture. */
+  const on = scene.gridOn !== false;
+  const wide = scene.gridBold ? 2 : 1;
+  const line = scene.gridDark ? "rgba(0,0,0,0.55)" : "rgba(233,228,218,0.30)";
+  grid.style.display = on ? "" : "none";
   grid.style.backgroundSize = `${cell}px ${cell}px`;
+  grid.style.backgroundImage =
+    `linear-gradient(to right, ${line} ${wide}px, transparent ${wide}px),` +
+    `linear-gradient(to bottom, ${line} ${wide}px, transparent ${wide}px)`;
+  // Tenths of a square, so a nudge is a nudge rather than a jump.
+  const offX = ((Number(scene.gridOffX) || 0) / 10) * cell;
+  const offY = ((Number(scene.gridOffY) || 0) / 10) * cell;
+  grid.style.backgroundPosition = `${offX}px ${offY}px`;
   // Only when it has actually changed: re-assigning the same src re-decodes a half-megabyte data URI,
   // and this now runs on every stream event.
   if (scene.image) {
@@ -1208,6 +1223,15 @@ function dmMapsHTML() {
       <p class="grid-now"><strong>${esc(active.cols || 30)}</strong> across
         <span class="sep">&times;</span> <strong>${esc(active.rows || 20)}</strong> down
         <span class="muted">= ${esc((active.cols || 30) * 5)} ft by ${esc((active.rows || 20) * 5)} ft</span></p>
+      <div class="chips">
+        <button class="chip ${active.gridOn !== false ? "on" : ""}" data-tbl="grid-on">${
+          active.gridOn !== false ? "Grid on" : "Grid off"}</button>
+        <button class="chip ${active.gridDark ? "on" : ""}" data-tbl="grid-dark">Dark lines</button>
+        <button class="chip ${active.gridBold ? "on" : ""}" data-tbl="grid-bold">Bold</button>
+      </div>
+      <p class="panel-sub">How many squares across</p>
+      <div class="chips">${[10, 15, 20, 24, 30, 40, 60].map((n) =>
+        `<button class="chip ${(active.cols || 30) === n ? "on" : ""}" data-tbl="grid-preset" data-val="${n}">${n}</button>`).join("")}</div>
       <div class="grid-row">
         <label class="field"><span>Across</span>
           <span class="stepper">
@@ -1222,10 +1246,34 @@ function dmMapsHTML() {
             <button class="step-btn" data-tbl="grid-rows" data-val="1">+</button>
           </span></label>
       </div>
-      <p class="muted">More squares across makes each one smaller: change it until the grid matches the
-        picture. Five feet a square, so ${esc(active.cols || 30)} across is a room
+      <p class="panel-sub">Line it up <span class="muted">— tenths of a square</span></p>
+      <div class="hp-controls">
+        <button class="btn-quiet" data-tbl="grid-off" data-val="x|-1">&larr;</button>
+        <button class="btn-quiet" data-tbl="grid-off" data-val="x|1">&rarr;</button>
+        <button class="btn-quiet" data-tbl="grid-off" data-val="y|-1">&uarr;</button>
+        <button class="btn-quiet" data-tbl="grid-off" data-val="y|1">&darr;</button>
+        <button class="btn-quiet" data-tbl="grid-off" data-val="reset">Corner</button>
+      </div>
+      ${active.image ? `<button class="btn-quiet" data-tbl="grid-fit">Make the squares square</button>` : ""}
+      <p class="muted">A preset sets how many squares fit ACROSS the picture; how many fit down follows
+        the picture's shape, so a square stays a square. Force them apart with the steppers if the map's
+        own grid is not square. Five feet a square, so ${esc(active.cols || 30)} across is
         ${esc((active.cols || 30) * 5)} feet wide.</p>
     </section>`;
+}
+
+/* Rows from the picture's own shape, for the number of columns now chosen — the button that undoes a
+   deliberate override, and what a preset does automatically. Uses the image AS LOADED, so it is the real
+   aspect ratio rather than anything remembered. */
+function tblSquareUpGrid(cols) {
+  const id = tblSceneId();
+  if (!id) return Promise.resolve();
+  const scene = tblScene();
+  const img = $("#vtt-map");
+  const nw = img && img.naturalWidth, nh = img && img.naturalHeight;
+  const across = Math.max(4, Math.min(120, Number(cols) || Number(scene.cols) || 30));
+  const rows = (nw && nh) ? tblRowsFor(across, nw, nh) : (Number(scene.rows) || 20);
+  return CocLive.patch(tblPath("scenes/" + id), { cols: across, rows });
 }
 
 /* Every figure on this scene, so the DM can reach one without finding it on the map first. */
@@ -2508,6 +2556,30 @@ document.addEventListener("click", (e) => {
   else if (act === "scene-add") tblAddScene().catch(tblFail);
   else if (act === "grid-cols") tblNudgeGrid("cols", Number(val)).catch(tblFail);
   else if (act === "grid-rows") tblNudgeGrid("rows", Number(val)).catch(tblFail);
+  else if (act === "grid-on" || act === "grid-dark" || act === "grid-bold") {
+    const id = tblSceneId();
+    const scene = tblScene();
+    const field = act === "grid-on" ? "gridOn" : act === "grid-dark" ? "gridDark" : "gridBold";
+    const now = field === "gridOn" ? scene.gridOn !== false : !!scene[field];
+    if (id) CocLive.put(tblPath("scenes/" + id + "/" + field), !now).catch(tblFail);
+  }
+  // A preset is "how many squares across"; how many down follows the picture, so squares stay square.
+  else if (act === "grid-preset") tblSquareUpGrid(Number(val)).catch(tblFail);
+  else if (act === "grid-fit") tblSquareUpGrid().catch(tblFail);
+  else if (act === "grid-off") {
+    const id = tblSceneId();
+    const scene = tblScene();
+    if (!id) return;
+    if (val === "reset") {
+      CocLive.patch(tblPath("scenes/" + id), { gridOffX: 0, gridOffY: 0 }).catch(tblFail);
+    } else {
+      const [axis, step] = String(val).split("|");
+      const field = axis === "x" ? "gridOffX" : "gridOffY";
+      // Wraps at a whole square, because ten tenths of a square along is the same grid again.
+      const next = (((Number(scene[field]) || 0) + Number(step)) % 10 + 10) % 10;
+      CocLive.put(tblPath("scenes/" + id + "/" + field), next).catch(tblFail);
+    }
+  }
   else if (act === "spawn") tblSpawn().catch(tblFail);
   else if (act === "ed-open") tblOpenToken(val);
   else if (act === "ed-close") { tbl.ui.editToken = ""; paintSide(); }
