@@ -162,6 +162,7 @@ for (const width of [430, 412, 393, 360, 320]) {
   await tap('[data-tbl="hand-add"]');
   await tap('[data-tbl="panel"][data-val="dm"]');
   await tap('[data-tbl="panel"][data-val="sheet"]', true);
+  await tap('[data-tbl="panel"][data-val="mine"]', true);
   await new Promise((r) => setTimeout(r, 600));
   await audit(page, "table: a sheet in the drawer");
   if (await tap('[data-act="sub-open"]', true)) await audit(page, "discipline card open");

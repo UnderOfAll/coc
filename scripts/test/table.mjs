@@ -57,9 +57,11 @@ peek(`window.__chars = { "123456": { v:1, name:"Rig", classId:"joker", subclassI
 
 console.log("\n— THE FRONT DOOR —");
 await go("#/table");
-ok($("#tbl-room") && $("#tbl-char"), "joining asks for a room code and a character code");
+ok($("#tbl-room") && $("#tbl-name-in"), "joining asks for a room code and a name");
+ok($("#tbl-char"), "and offers a character code");
+ok(/optional/i.test($("#tool").textContent), "which is optional, so any system can use the table");
 ok($("#tbl-newroom") && $("#tbl-dmkey"), "running a table asks for a room code and a DM key");
-ok(/six.digit/i.test($("#tool").textContent), "and says what shape those are");
+ok(/six-digit|six digits/i.test($("#tool").textContent), "and says what shape the codes are");
 ok(/locks the controls, not the data/i.test($("#tool").textContent), "the DM key's limits are stated on the page");
 // Refusals first: a table opened on a bad code is a table nobody can find again.
 type($("#tbl-newroom"), "12"); type($("#tbl-dmkey"), "999888");
@@ -682,6 +684,15 @@ type($("#tbl-room"), "482910"); type($("#tbl-char"), "999999");
 click($('[data-tbl="join"]'));
 await wait(80);
 ok(/No character is saved/.test($("#tbl-msg").textContent), "joining with an unknown character code is refused");
+type($("#tbl-char"), "12");
+click($('[data-tbl="join"]'));
+await wait(60);
+ok(/six digits, or leave it empty/.test($("#tbl-msg").textContent), "half a character code is a typo, not a guest");
+type($("#tbl-char"), "");
+click($('[data-tbl="join"]'));
+await wait(60);
+ok(/Type a name/.test($("#tbl-msg").textContent), "and joining anonymously with no name at all is refused");
+type($("#tbl-name-in"), "Rig");
 type($("#tbl-char"), "123456");
 click($('[data-tbl="join"]'));
 await wait(120);
@@ -694,6 +705,51 @@ const mine = await aget(`Object.values(await CocLive.get("tables/482910/tokens")
 ok(mine.length === 1, "and exactly one token, reused rather than duplicated (" + mine.length + ")");
 ok(mine[0].name === "Rig", "named after the character");
 ok(mine[0].hpMax === 44, "with the hit points the sheet works out");
+
+console.log("\n— PLAYING WITHOUT A SHEET (any system) —");
+// A table has to work for someone who has no Circus of Chaos character at all: a name, a figure, the
+// dice and the map. This is the same room the character player is sitting in.
+peek(`localStorage.removeItem("coc:table:me:482910"); localStorage.removeItem("coc:table:dm:482910");`);
+await go("#/table", 60);
+type($("#tbl-room"), "482910"); type($("#tbl-name-in"), "Guest Greta"); type($("#tbl-char"), "");
+click($('[data-tbl="join"]'));
+await wait(150);
+ok(peek(`location.hash`) === "#/table/482910", "a name and a room code are enough to get in");
+await go("#/table/482910", 300);
+await wait(300);
+ok(peek(`tbl.me.charCode`) === "", "with no character code");
+ok(peek(`tbl.me.name`) === "Guest Greta", "and the name you typed");
+const guestTokens = () => Object.entries(peek(`JSON.parse(JSON.stringify(tblTokens()))`))
+  .filter(([, t]) => t.name === "Guest Greta");
+ok(guestTokens().length === 1, "a figure is placed for you anyway (" + guestTokens().length + ")");
+const gid = guestTokens()[0][0];
+ok(guestTokens()[0][1].owner === peek(`tbl.me.clientId`), "owned by this browser, since there is no code to own it");
+ok(peek(`tblCanMove(tblTokens()[${JSON.stringify(gid)}])`) === true, "which you can move");
+ok(peek(`tblCanMove(tblTokens()["tOrc"])`) === false, "while the DM's monster stays the DM's");
+// No sheet exists, so the sheet button is replaced by the figure that stands in for one.
+ok(!$('[data-tbl="panel"][data-val="sheet"]'), "no sheet button, because there is no sheet");
+ok($('[data-tbl="panel"][data-val="mine"]'), "a figure of your own instead");
+openPanel("mine");
+await wait(60);
+ok($("#mine-hp") && $("#mine-name"), "which you keep your own name and hit points on");
+type($("#mine-name"), "Greta the Bold"); type($("#mine-hp"), "18"); type($("#mine-hpmax"), "22");
+click($('[data-tbl="mine-save"]'));
+await wait(100);
+const saved = await aget(`CocLive.get("tables/482910/tokens/${gid}")`);
+ok(saved.name === "Greta the Bold" && saved.hp === 18 && saved.hpMax === 22, "and they are saved to the board");
+ok(/18\/22/.test($(`[data-token="${gid}"]`).textContent), "so the whole table can read them");
+type($("#mine-amt"), "5");
+click($('[data-tbl="mine-hp"][data-val="' + gid + '|-1"]'));
+await wait(80);
+ok((await aget(`CocLive.get("tables/482910/tokens/${gid}/hp")`)) === 13, "damage is two taps, with no sheet involved");
+click($$('[data-tbl="mine-cond"]')[0]);
+await wait(80);
+const conds = await aget(`CocLive.get("tables/482910/tokens/${gid}/conditions")`);
+ok(Array.isArray(conds) && conds.length === 1, "and you can say what you are under");
+ok($(`[data-token="${gid}"] .tok-flag`), "which shows on your figure for everyone");
+// A guest must not be able to edit somebody else's figure.
+ok(peek(`(function(){ const t = tblTokens()["tOrc"]; return tblIsMine(t); })()`) === false,
+  "and none of that reaches a figure that is not yours");
 
 console.log("\n— TAKING THE DM CHAIR ELSEWHERE —");
 // This browser is a player (it joined with a character code). The table is still the one opened with
