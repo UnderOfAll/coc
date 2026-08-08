@@ -3,7 +3,11 @@
 #   1. build_manifest.py  — rebuild manifest + bundle, dup-id check, inline-formula lint
 #   2. validate.py        — JSON Schema validation + subclass-parent resolution
 #   3. lint_assets.py     — front-end hygiene: missing styles, dead functions, unread fields
-#   4. npm run test:dom   — render every page in jsdom (0 errors, 0 leaked tokens expected)
+#   4. npm run test:live   — CocLive: writes land, watchers fire, a drag collapses into few writes,
+#                           and the database's streaming events are applied to the mirror correctly
+#   5. npm run test:table  — DRIVE a live session: open a table, have a second device join, drag
+#                           tokens with pointer events, and prove a player cannot move someone else's
+#   6. npm run test:dom   — render every page in jsdom (0 errors, 0 leaked tokens expected)
 #   5. npm run test:ui    — DRIVE the creator and the sheet: click through a build, level up,
 #                           expand a feature, damage yourself. Rendering a page proves nothing
 #                           about whether its controls work, and that gap is where every bug in
@@ -23,6 +27,12 @@ python3 scripts/validate.py
 
 echo "==> lint_assets.py"
 python3 scripts/lint_assets.py
+
+echo "==> npm run test:live"
+npm run test:live
+
+echo "==> npm run test:table"
+npm run test:table
 
 echo "==> npm run test:dom"
 npm run test:dom

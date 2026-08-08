@@ -678,10 +678,50 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 .hp-fill.hurt { background: var(--accent-soft); } .hp-fill.down { background: var(--accent); }
 .hp-controls { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
 .warn { color: var(--accent-soft); font-size: 0.92rem; }
+/* Hit points beside the three defences: one row on a desktop, stacked on a phone. The HP block is
+   given the larger share because it carries a bar and five controls, not just a number. */
+.vital-row { display: grid; gap: 0.9rem; align-items: start;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); }
+.hp-block { min-width: 0; }
+/* The same .kn box the Status field uses, sized down: three of them share a half-width row here,
+   where a Status number gets a third of the full panel. */
+.vital-set { display: grid; gap: 0.5rem; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.vital-set .kn { padding: 0.5rem 0.4rem; }
+.vital-set .kn-v { font-size: 1.4rem; }
+
+/* The fields. One is open at a time; the strip that switches them scrolls sideways rather than
+   wrapping into two rows, so the sheet below it never shifts down as you move along it. */
+.tab-strip { display: flex; gap: 0.3rem; margin-bottom: 1rem; padding-bottom: 0.3rem;
+  scroll-margin-top: var(--topbar-h, 4rem);
+  overflow-x: auto; scrollbar-width: thin; -webkit-overflow-scrolling: touch;
+  border-bottom: 1px solid var(--border); }
+.tab { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 0.35rem;
+  padding: 0.55rem 0.9rem; background: none; border: 1px solid transparent; border-radius: var(--radius);
+  color: var(--muted); font: inherit; font-family: var(--serif); font-size: 0.95rem; cursor: pointer;
+  white-space: nowrap; }
+.tab:hover { color: var(--text); }
+.tab.on { color: var(--gold); background: var(--panel); border-color: var(--border); border-bottom-color: var(--gold); }
+.tab-n { font-family: var(--sans); font-size: 0.78rem; color: var(--muted);
+  background: var(--panel-2); border-radius: 999px; padding: 0.05rem 0.4rem; }
+.tab.on .tab-n { color: var(--gold); }
+.panes, .pane { min-width: 0; }
+.pane[hidden] { display: none; }
+
+/* Inventory: a name, a count, and a way to get rid of it. Nothing in this system gives an item
+   mechanical weight yet, so the sheet stores what you typed and counts it. */
+.inv-list { display: flex; flex-direction: column; }
+.inv-row { display: flex; gap: 0.6rem; align-items: center; padding: 0.45rem 0;
+  border-top: 1px solid var(--border); }
+.inv-list > .inv-row:first-child { border-top: none; }
+.inv-name { flex: 1; min-width: 0; overflow-wrap: break-word; }
+.inv-add { display: flex; gap: 0.4rem; align-items: center; margin-top: 0.7rem; }
+.inv-add .text { flex: 1; min-width: 0; }
+.coin-total { font-family: var(--serif); font-size: 1.4rem; color: var(--gold); margin-right: 0.3rem; }
+
 /* Key numbers: the value is what you read, so it leads — big, centred, gold — with the label under
    it and the working-out under that. The old layout put a small grey label on top of a smaller
    number and read like a spreadsheet. */
-.kn-grid { display: grid; gap: 0.55rem; grid-template-columns: repeat(auto-fit, minmax(min(8.5rem, 100%), 1fr)); }
+.kn-grid { display: grid; gap: 0.55rem; grid-template-columns: repeat(auto-fill, minmax(min(8.5rem, 100%), 1fr)); }
 .kn { min-width: 0; background: var(--panel-2); border: 1px solid var(--border);
   border-left: 3px solid var(--gold); border-radius: var(--radius);
   padding: 0.6rem 0.7rem; text-align: center; overflow-wrap: break-word; }
@@ -767,6 +807,9 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 .step-save { border-color: var(--gold); }
 .vitals .hp-controls { margin-top: 0.2rem; }
 .engine-panel .muted { font-size: 0.87rem; line-height: 1.5; }
+/* The engine out of combat: part of the one line that says the fight has not started, because
+   everything it would otherwise show is disabled. */
+.engine-idle strong, .engine-idle span { font-family: var(--serif); color: var(--gold); font-weight: 600; }
 .trick-list-sheet > .trick-row:first-child { border-top: none; }
 .recent { display: flex; flex-direction: column; }
 
@@ -795,7 +838,7 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
   .tool-view { padding: 0 0.9rem 3rem; }
   .step, .panel { padding: 0.9rem 0.85rem; }
   .pick-grid { grid-template-columns: 1fr; }
-  .kn-grid { grid-template-columns: repeat(auto-fit, minmax(min(9rem, 100%), 1fr)); }
+  .kn-grid { grid-template-columns: repeat(auto-fill, minmax(min(9rem, 100%), 1fr)); }
   .kn-v { font-size: 1.1rem; }
   /* Touch targets: 44px is the smallest comfortable tap area. */
   .chip, .btn, .btn-quiet, .toggle-btn { min-height: 2.75rem; padding-inline: 0.9rem; }
@@ -806,13 +849,29 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
   .combat-bar, .prompt-bar { flex-direction: column; align-items: stretch; }
   .prompt-acts .btn, .prompt-acts .btn-quiet { flex: 1; }
   .triggers .trigger { width: 100%; }
-  .sheet-id { width: 100%; }
+  /* The header is not the sheet — it is the label on it. Wrapping put the portrait, the name, the
+     level box and the combat button on four separate rows, which cost most of a phone screen before
+     a single number appeared and pushed the fields below the fold. One row, three columns. */
+  .sheet-id { width: 100%; display: grid; gap: 0.6rem; align-items: center;
+    grid-template-columns: auto minmax(0, 1fr) auto; }
+  .sheet-id .portrait { width: 52px; height: 52px; }
+  .sheet-id h1 { font-size: 1.35rem; }
+  .sheet-class { font-size: 0.95rem; }
+  .sheet-level { min-width: 3.2rem; padding: 0.2rem 0.45rem; }
+  .lv-v { font-size: 1.4rem; }
   .sheet-head .btn { width: 100%; }
   .save-row { flex-direction: column; align-items: stretch; }
   .code-input { width: 100%; }
   .uses { width: 100%; justify-content: flex-end; }
   .ab-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .lu-grid { grid-template-columns: 1fr; }
+  /* Hit points above the defences, not beside them — two columns leave the HP bar too short to
+     read as a bar and squeeze the three defence boxes into unreadable slivers. */
+  .vital-row { grid-template-columns: 1fr; }
+  .tab { min-height: 2.75rem; }
+  .inv-add { flex-wrap: wrap; }
+  .inv-add .text { flex: 1 1 100%; }
+  .inv-add .btn-quiet { flex: 1; }
   .data-table { font-size: 0.87rem; }
   .data-table th, .data-table td { padding: 0.35rem 0.4rem; }
 }
@@ -896,3 +955,93 @@ input.step-val { width: 3.4rem; }
 .danger h2 { color: var(--accent-soft); }
 .danger-row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
 .danger-row .text { width: 11rem; letter-spacing: 2px; text-align: center; }
+
+/* ============================================================
+   The table — a live session: map, grid, tokens, and the panels
+   that slide in beside them. Everything here is inside #tool.
+   ============================================================ */
+
+/* A labelled control. The creator grew its own one-off markup for this; the table's forms ask for
+   several codes at once, so they wrap in a row instead of stacking. */
+.field { display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; }
+.field > span { font-size: 0.83rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+.join-row { display: flex; flex-wrap: wrap; gap: 0.8rem; align-items: flex-end; }
+
+.vtt { display: flex; flex-direction: column; gap: 0.6rem; }
+.vtt-bar { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; }
+.vtt-exit { margin: 0; }
+.vtt-title { display: flex; flex-wrap: wrap; gap: 0.45rem; align-items: baseline; min-width: 0; }
+.vtt-title strong { font-family: var(--serif); font-size: 1.15rem; color: var(--gold); }
+.vtt-who { display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; }
+.who { font-size: 0.80rem; padding: 0.15rem 0.5rem; border-radius: 999px;
+  background: var(--panel-2); border: 1px solid var(--border); color: var(--muted); }
+.who-dm { border-color: var(--gold); color: var(--gold); }
+.vtt-acts { margin-left: auto; display: flex; gap: 0.35rem; flex-wrap: wrap; }
+.vtt-body { display: flex; gap: 0.7rem; align-items: stretch; min-width: 0; }
+
+/* The stage is the window; the world inside it is the map, and the camera is one transform on that
+   world. touch-action: none is not optional — without it the browser scrolls and zooms the PAGE
+   while you are trying to drag a token, and the board becomes unusable on a phone. */
+.vtt-stage { position: relative; flex: 1; min-width: 0; height: 68dvh; min-height: 320px;
+  overflow: hidden; touch-action: none; overscroll-behavior: contain; cursor: grab;
+  background: #0b0b0a; border: 1px solid var(--border); border-radius: var(--radius); }
+.vtt-stage:active { cursor: grabbing; }
+.vtt-world { position: absolute; top: 0; left: 0; transform-origin: 0 0; will-change: transform; }
+.vtt-map { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill;
+  user-select: none; -webkit-user-drag: none; }
+/* The grid is two gradients rather than an image or a canvas: it costs nothing, stays crisp at any
+   zoom, and its square size is set inline from the scene. */
+.vtt-grid { position: absolute; inset: 0; pointer-events: none;
+  background-image: linear-gradient(to right, rgba(233,228,218,0.13) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(233,228,218,0.13) 1px, transparent 1px); }
+.vtt-tokens { position: absolute; inset: 0; }
+.vtt-ruler { position: absolute; inset: 0; overflow: visible; pointer-events: none; }
+
+/* One node per token, positioned in world pixels. The art is a circle so a square portrait still
+   reads as a figure on a board rather than a photo lying on the floor. */
+.tok { position: absolute; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; cursor: default; user-select: none; }
+.tok.movable { cursor: grab; }
+.tok.dragging { z-index: 5; filter: drop-shadow(0 6px 12px rgba(0,0,0,0.6)); }
+.tok-art { width: 84%; height: 84%; border-radius: 50%; background: var(--panel-2);
+  background-size: cover; background-position: center; border: 2px solid var(--border);
+  display: grid; place-items: center; font-family: var(--serif); font-size: 1.3rem; color: var(--muted); }
+.tok.mine .tok-art { border-color: var(--gold); }
+.tok.npc .tok-art { border-color: var(--accent); }
+.tok.turn .tok-art { box-shadow: 0 0 0 3px var(--gold), 0 0 14px rgba(201,165,78,0.55); }
+/* 0.78rem is the project's floor for anything readable, and a name plate is no exception — it also
+   scales with the camera, so zooming in makes it bigger rather than needing to start bigger. */
+.tok-name { position: absolute; bottom: -0.15rem; max-width: 130%; padding: 0 0.25rem;
+  font-size: 0.78rem; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  background: rgba(11,11,10,0.72); border-radius: 3px; }
+.tok-hp { position: absolute; top: -0.35rem; display: flex; align-items: center; gap: 0.2rem; }
+.tok-bar { display: block; width: 2.6rem; height: 4px; border-radius: 999px; background: var(--panel-2);
+  border: 1px solid var(--border); overflow: hidden; }
+.tok-bar > span { display: block; height: 100%; background: var(--ok); }
+.tok-num { font-size: 0.78rem; color: var(--muted); background: rgba(11,11,10,0.72); padding: 0 0.2rem;
+  border-radius: 3px; }
+
+.vtt-zoom { position: absolute; right: 0.5rem; bottom: 0.5rem; display: flex; gap: 0.25rem;
+  background: rgba(11,11,10,0.7); padding: 0.25rem; border-radius: var(--radius); }
+
+/* The side panel: dice, your sheet, the DM's tools. A column beside the board on a desktop, and a
+   sheet over it on a phone, because 320px cannot spare a column. */
+.vtt-side { width: min(360px, 40vw); flex-shrink: 0; max-height: 68dvh; overflow-y: auto;
+  background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 0.8rem; }
+.vtt-side .panel { background: none; border: none; padding: 0; margin: 0 0 0.9rem; }
+.vtt-turn { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center;
+  background: rgba(201,165,78,0.1); border: 1px solid var(--gold); border-radius: var(--radius);
+  padding: 0.5rem 0.7rem; }
+
+@media (max-width: 760px) {
+  .vtt-stage { height: 56dvh; min-height: 260px; }
+  .vtt-acts { margin-left: 0; width: 100%; }
+  .vtt-acts .btn-quiet { flex: 1; }
+  .join-row { flex-direction: column; align-items: stretch; }
+  .join-row .code-input { width: 100%; }
+  .join-row .btn { width: 100%; }
+  /* The panel stops being a column and becomes the lower half of the screen. */
+  .vtt-body { flex-direction: column; }
+  .vtt-side { width: 100%; max-height: 44dvh; }
+}

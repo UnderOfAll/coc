@@ -5,6 +5,8 @@
   "scripts": {
     "build": "python3 scripts/build_manifest.py",
     "test:dom": "node scripts/test/dom_smoke.mjs",
+    "test:live": "node scripts/test/live.mjs",
+    "test:table": "node scripts/test/table.mjs",
     "test:ui": "node scripts/test/ui_flows.mjs",
     "test:mobile": "node scripts/test/mobile.mjs"
   },

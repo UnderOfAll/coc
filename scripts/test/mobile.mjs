@@ -36,11 +36,13 @@ async function audit(page, label) {
     const de = document.documentElement, vw = de.clientWidth;
     const seen = new Set(), offenders = [];
     // A horizontally scrollable strip (the mobile category bar) is SUPPOSED to hold content wider
-    // than itself — that is what makes it swipeable. Only content that escapes the page counts.
+    // than itself — that is what makes it swipeable. So is the table's board: it is a window onto a
+    // map deliberately bigger than the screen, clipped by overflow:hidden. Neither can push the PAGE
+    // wider, which is the only thing being tested, so both are skipped.
     const inScroller = (el) => {
       for (let n = el.parentElement; n && n !== document.body; n = n.parentElement) {
         const ox = getComputedStyle(n).overflowX;
-        if (ox === "auto" || ox === "scroll") return true;
+        if (ox === "auto" || ox === "scroll" || ox === "hidden" || ox === "clip") return true;
       }
       return false;
     };
@@ -116,8 +118,25 @@ for (const width of [430, 412, 393, 360, 320]) {
   await go("#/roster", 700);           await audit(page, "recovery roster");
   await go("#/sheet/123456", 800);     await audit(page, "character sheet");
   await tap('[data-act="combat"]');    await audit(page, "sheet in combat");
+  // The strip of fields must scroll sideways rather than wrap onto a second row: wrapping moves the
+  // whole sheet down as you tab along it, and the audit above only proves it does not escape the page.
+  const strip = await page.evaluate(() => {
+    const n = document.querySelector(".tab-strip");
+    if (!n) return null;
+    return { rows: n.scrollHeight > n.clientHeight + 2, swipeable: n.scrollWidth > n.clientWidth,
+             tabs: n.querySelectorAll(".tab").length };
+  });
+  if (!strip || strip.rows) { fails++; console.log("  FAIL the field strip wrapped onto two rows"); }
+  else console.log(`  ok   ${strip.tabs} fields on one ${strip.swipeable ? "swipeable" : "fitting"} row`);
+  // Each field has to be audited while it is the one on screen: a hidden pane is display:none and
+  // measures zero, so auditing the sheet once only ever checked whichever field happened to be open.
+  for (const field of ["attacks", "tricks", "features", "gear", "inventory", "progress", "status"]) {
+    if (await tap(`.tab[data-val="${field}"]`, true)) await audit(page, `field: ${field}`);
+  }
+  await tap('.tab[data-val="features"]');
   await tap('[data-act="open-opts"]'); await audit(page, "feature options open");
   await tap('[data-act="combat"]');
+  await tap('.tab[data-val="progress"]');
   await tap('[data-act="levelup"]');   await audit(page, "level-up panel");
   if (await tap('[data-act="sub-open"]', true)) await audit(page, "discipline card open");
   await page.close();

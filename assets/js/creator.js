@@ -266,6 +266,8 @@ let sheet = null;      // { code, ch } while a sheet is open
 const ui = {
   openSubs: new Set(), openOpts: new Set(),
   hpAmt: 1, levelUp: null, deleteArmed: false, deleteText: "", sheetScroll: 0, scrollTop: false,
+  tab: "status",   // which field of the sheet is open; interface state, never part of the character
+  scrollToFields: false,
 };
 
 function toolEl() { return $("#tool"); }
@@ -349,6 +351,9 @@ function blankDraft() {
     v: 1, name: "", classId: "", subclassId: "", level: 1, levelText: "1", size: "",
     method: "array", scores: {}, origin: {},
     skills: [], armorId: "", shieldId: "", weapons: [], photo: "", notes: "",
+    // Filled in from the sheet, not the form: a bag starts empty and what goes in it is a table
+    // decision, not a creation one.
+    items: [], coins: 0,
   };
 }
 
@@ -951,6 +956,7 @@ function routeSheet(code) {
   }
   ui.openSubs.clear(); ui.openOpts.clear();
   ui.levelUp = null; ui.hpAmt = 1; ui.deleteArmed = false; ui.deleteText = ""; ui.sheetScroll = 0;
+  ui.tab = "status";
   paint(`<div class="tool-head"><a class="back" href="#/manage">&larr; My characters</a><h1>Loading…</h1></div>`);
   CocStore.load(code).then((ch) => {
     if (!ch) { paint(`<div class="tool-head"><a class="back" href="#/manage">&larr; My characters</a>
@@ -1000,19 +1006,42 @@ function renderSheet() {
       <button class="btn ${p.inCombat ? "btn-hot" : ""}" data-act="combat">${p.inCombat ? "End combat" : "Start combat"}</button>
     </div>
     ${ui.levelUp ? levelUpPanel(d) : ""}
-    ${p.prompt ? promptBar(p.prompt) : ""}
-    ${p.inCombat ? combatBar(d, p) :  `<p class="muted out-of-combat">Out of combat. ${esc(d.engine ? d.engine.name + " sits at 0 until a fight starts — it is built during one and lost when it ends." : "Cooldowns and once-per-combat uses are clear.")}</p>`}
     ${vitals(d, p)}
-    ${keyNumbers(d)}
-    ${attacksPanel(d)}
-    ${d.engine ? enginePanel(d, p) : ""}
-    ${d.tricks.length ? tricksPanel(d, p) : ""}
-    ${featuresPanel(d, p)}
-    ${statePanel(d, p)}
-    ${gearPanel(d, ch)}
-    ${ui.levelUp ? "" : progressPanel(d)}
-    ${ui.levelUp ? "" : dangerPanel()}
+    ${p.inCombat ? combatBar(d, p) : idleLine(d)}
+    ${p.prompt ? promptBar(p.prompt) : ""}
+    ${p.inCombat && d.engine ? enginePanel(d, p) : ""}
+    ${sheetFields(d, p, ch)}
   `));
+}
+
+/* The sheet is a stack of fields, one open at a time, because a phone cannot show a Joker's twelve
+   tricks, nine features, six abilities and his gear at once without becoming a mile of scroll where
+   nothing is findable. What stays OUTSIDE the fields is what you need no matter which one is open:
+   who you are, your hit points and defences, whether a fight is running, and your engine — the
+   resource every field spends. Everything else is a field.
+   Every field is rendered and the inactive ones are hidden rather than dropped, so browser find,
+   focus and the whole-sheet read all still work; switching is a repaint away either way. */
+function sheetFields(d, p, ch) {
+  const items = invItems(ch);
+  const fields = [
+    ["status", "Status", "", statusPanel(d) + statePanel(d, p)],
+    ["attacks", "Attacks", d.carried.length, attacksPanel(d)],
+    ...(d.tricks.length ? [["tricks", "Tricks", d.tricks.length, tricksPanel(d, p)]] : []),
+    ["features", "Features", d.features.length, featuresPanel(d, p)],
+    ["gear", "Gear", "", gearPanel(d, ch)],
+    ["inventory", "Inventory", items.length || "", inventoryPanel(ch, items)],
+    // Levelling and deleting are not play: they are things you do between sessions, and a level-up
+    // button under the trick you are about to cast is a mis-tap with permanent consequences.
+    ["progress", "Progress", "", ui.levelUp ? "" : progressPanel(d) + dangerPanel()],
+  ];
+  // A Juggler has no Tricks field at all, so a sheet reopened on one must not land on nothing.
+  if (!fields.some(([id]) => id === ui.tab)) ui.tab = "status";
+  const tabs = fields.map(([id, label, count]) => `<button class="tab ${ui.tab === id ? "on" : ""}"
+      data-act="tab" data-val="${esc(id)}" role="tab" aria-selected="${ui.tab === id}">${esc(label)}${
+      count ? ` <span class="tab-n">${esc(count)}</span>` : ""}</button>`).join("");
+  const panes = fields.map(([id, , , html]) =>
+    `<div class="pane" data-pane="${esc(id)}" role="tabpanel"${ui.tab === id ? "" : " hidden"}>${html}</div>`).join("");
+  return `<div class="tab-strip" role="tablist">${tabs}</div><div class="panes">${panes}</div>`;
 }
 
 /* After a cast that forces a save, ask the one question the app cannot answer for itself. */
@@ -1034,35 +1063,55 @@ function combatBar(d, p) {
   </div>`;
 }
 
+/* One number in a box: the value leads, the label sits under it, the working-out is one tap away.
+   A defence at the top of the sheet and a class DC inside the Status field are the same object, so
+   they are the same markup — the vitals bar only sizes them down through its own container. */
+function numBox(label, value, note, tip) {
+  return `<div class="kn"><span class="kn-v">${esc(value)}</span>
+    <span class="kn-l">${tip ? plainTermHTML(label, tip) : esc(label)}</span>
+    ${note ? `<span class="kn-n">${esc(note)}</span>` : ""}</div>`;
+}
+
+/* Hit points and the three numbers that answer "did that hit me, and what do I do about it" — they
+   live above the fields because they are needed whichever field is open, and they are the numbers
+   you are asked for most often at the table. */
 function vitals(d, p) {
   const pct = Math.max(0, Math.min(100, Math.round((p.hp / d.hpMax) * 100)));
   const state = p.hp <= 0 ? "down" : p.hp <= d.hpMax / 4 ? "hurt" : "";
   return `<section class="panel vitals">
-    <div class="hp-head"><h2>Hit points</h2>
-      <div class="hp-num ${state}"><strong>${esc(p.hp)}</strong><span>/ ${esc(d.hpMax)}</span>
-        ${p.tempHp ? `<em>+${esc(p.tempHp)} temp</em>` : ""}</div></div>
-    <div class="hp-bar"><div class="hp-fill ${state}" style="width:${pct}%"></div></div>
-    <div class="hp-controls">
-      <input id="hp-amt" class="num" type="number" min="1" value="${esc(ui.hpAmt)}" />
-      <button class="btn-quiet" data-act="dmg">Damage</button>
-      <button class="btn-quiet" data-act="heal">Heal</button>
-      <button class="btn-quiet" data-act="temp">Temp HP</button>
-      <button class="btn-quiet" data-act="full">Full</button>
+    <div class="vital-row">
+      <div class="hp-block">
+        <div class="hp-head"><h2>Hit points</h2>
+          <div class="hp-num ${state}"><strong>${esc(p.hp)}</strong><span>/ ${esc(d.hpMax)}</span>
+            ${p.tempHp ? `<em>+${esc(p.tempHp)} temp</em>` : ""}</div></div>
+        <div class="hp-bar"><div class="hp-fill ${state}" style="width:${pct}%"></div></div>
+        <div class="hp-controls">
+          <input id="hp-amt" class="num" type="number" min="1" value="${esc(ui.hpAmt)}" />
+          <button class="btn-quiet" data-act="dmg">Damage</button>
+          <button class="btn-quiet" data-act="heal">Heal</button>
+          <button class="btn-quiet" data-act="temp">Temp HP</button>
+          <button class="btn-quiet" data-act="full">Full</button>
+        </div>
+      </div>
+      <div class="vital-set">
+        ${numBox("Armour Class", d.ac, d.acNote, "An attack roll must equal or beat this to hit you. Only a hit can then be Parried.")}
+        ${numBox("Parry DC", d.parryDC, "roll a flat d20", "When a hit lands, spend your reaction and roll a flat d20 — no modifiers. Above this DC: no damage. Equal: half. Below: half again on top. Lower is better, and it never scales with level.")}
+        ${numBox("Initiative", sign(d.mods.Dexterity), "d20 + this", "Roll d20 and add this at the start of a fight to see who goes when.")}
+      </div>
     </div>
     ${p.hp <= 0 ? `<p class="warn">Down. In this system that is the DM's call — the sheet just stops counting.</p>` : ""}
   </section>`;
 }
 
-/* The numbers you look up mid-turn, each with the working-out one tap away. The trick numbers are
-   labelled as trick numbers: they come off the class's primary ability, which for half the roster
-   is NOT the stat they swing a weapon with — those live in Attacks, per weapon. */
-function keyNumbers(d) {
+/* Status: who this character IS as a set of numbers — the DCs their own class names, their six
+   abilities and saves, and the skills they are trained in. Defences moved up to the vitals bar, so
+   what is left here is everything you are asked to roll or that others roll against.
+   The trick numbers are labelled as trick numbers: they come off the class's primary ability, which
+   for half the roster is NOT the stat they swing a weapon with — those live in Attacks, per weapon. */
+function statusPanel(d) {
   // plainTermHTML, not tipTermHTML: these tooltips are written here, not authored in a content file,
   // so they must never be run through the formula resolver.
-  const n = (label, value, note, tip) =>
-    `<div class="kn"><span class="kn-v">${esc(value)}</span>
-      <span class="kn-l">${tip ? plainTermHTML(label, tip) : esc(label)}</span>
-      ${note ? `<span class="kn-n">${esc(note)}</span>` : ""}</div>`;
+  const n = numBox;
   const abils = ABILITIES.map((a) => {
     const isProf = d.saves.includes(a);
     const save = d.mods[a] + (isProf ? d.prof : 0);
@@ -1072,23 +1121,33 @@ function keyNumbers(d) {
       <span class="ab-score">score ${esc(sheet.ch.scores[a] == null ? "—" : sheet.ch.scores[a] + ((sheet.ch.origin || {})[a] || 0))}</span>
       <span class="ab-save">save ${esc(sign(save))}</span></div>`;
   }).join("");
-  return `<section class="panel"><h2>Key numbers</h2><div class="kn-grid">
-    ${n("Armour Class", d.ac, d.acNote, "An attack roll must equal or beat this to hit you. Only a hit can then be Parried.")}
-    ${n("Parry DC", d.parryDC, "roll a flat d20", "When a hit lands, spend your reaction and roll a flat d20 — no modifiers. Above this DC: no damage. Equal: half. Below: half again on top. Lower is better, and it never scales with level.")}
-    ${n("Initiative", sign(d.mods.Dexterity), "d20 + this", "Roll d20 and add this at the start of a fight to see who goes when.")}
-
-    ${d.classStats.map((k) => n(k.label, k.hit.value, "", k.hit.explain + (k.note ? " — " + k.note : ""))).join("")}
-    ${d.tricks.length ? n("Trick attack", sign(d.attackBonus), "for tricks that roll", "Your proficiency bonus + your " + ABIL_SHORT[d.primary] + " modifier, for the tricks that make an attack roll instead of forcing a save. Weapon attacks are worked out per weapon under Attacks.") : ""}
-  </div>
+  const ch = sheet.ch;
+  const stats = d.classStats.map((k) => n(k.label, k.hit.value, "", k.hit.explain + (k.note ? " — " + k.note : ""))).join("")
+    + (d.tricks.length ? n("Trick attack", sign(d.attackBonus), "for tricks that roll", "Your proficiency bonus + your " + ABIL_SHORT[d.primary] + " modifier, for the tricks that make an attack roll instead of forcing a save. Weapon attacks are worked out per weapon under Attacks.") : "");
+  return `<section class="panel"><h2>Your numbers</h2>
+  ${stats ? `<div class="kn-grid">${stats}</div>` : ""}
   <p class="panel-sub">Abilities — the modifier is what you add; a gold box is a saving throw your class is proficient in${d.prof ? `, which already includes your ${plainTermHTML("proficiency bonus " + sign(d.prof), `Not an ability score: it comes from LEVEL alone and is the same for every class — +2 at levels 1-4, +3 at 5-8, +4 at 9-12, +5 at 13-16, +6 at 17+. You are level ${d.level}, so ${sign(d.prof)}. It is already added into every number on this sheet that needs it: your saving throws, your to-hit, your DC, and your skills below.`)}` : ""}</p>
-  <div class="ab-grid">${abils}</div></section>`;
+  <div class="ab-grid">${abils}</div>
+  ${ch.skills?.length ? `<p class="panel-sub">Skills you are trained in</p>
+    <div class="skill-row">${ch.skills.map((name) => {
+      const sk = idx.skillsByName.get(String(name).toLowerCase());
+      const ab = sk && sk.ability;
+      const bonus = (ab ? (d.mods[ab] || 0) : 0) + d.prof;
+      return `<span class="skill-chip"><strong>${esc(name)}</strong>
+        <em>${esc(sign(bonus))}</em>${ab ? `<span class="muted">${esc(ABIL_SHORT[ab])}</span>` : ""}</span>`;
+    }).join("")}</div>` : ""}
+  </section>`;
 }
 
 /* One row per weapon actually carried, with the to-hit and the damage already worked out — the
    sheet knows the proficiency bonus and the modifier, so the player should never be adding them up
    at the table. */
 function attacksPanel(d) {
-  if (!d.carried.length) return "";
+  if (!d.carried.length) {
+    return `<section class="panel"><h2>Attacks</h2>
+      <p class="muted">Nothing to swing. Pick up a weapon under Gear and its to-hit and damage appear here.</p>
+    </section>`;
+  }
   const rows = d.carried.map(({ w, ability, why, hit, mod }) => {
     const vers = (w.properties || []).includes("versatile") && w.versatileDamage
       ? ` <span class="muted">(${esc(w.versatileDamage)} ${esc(sign(mod))} two-handed)</span>` : "";
@@ -1108,6 +1167,17 @@ function attacksPanel(d) {
       <tbody>${rows}</tbody></table>
     <p class="muted">Roll d20 and add the to-hit against the target's AC. On a hit, roll the damage die and add the same modifier.</p>
   </section>`;
+}
+
+/* Out of combat there is nothing to operate: no round to end, the engine is forced to 0 with every
+   trigger disabled, and the only useful control is Start combat, directly above. So the whole strip
+   between the vitals and the fields collapses to the one sentence that says so — a full engine panel
+   here spent most of a phone screen saying that it could not be used. */
+function idleLine(d) {
+  const cap = d.engineCap ?? 0;
+  return `<p class="muted out-of-combat">Out of combat. Cooldowns and once-per-combat uses are clear.${
+    d.engine ? ` <span class="engine-panel engine-idle"><strong>${esc(d.engine.name)}</strong>
+      <span>0 / ${esc(cap)}</span> — built during a fight, never banked before one.</span>` : ""}</p>`;
 }
 
 function enginePanel(d, p) {
@@ -1132,7 +1202,6 @@ function enginePanel(d, p) {
       <button class="btn-quiet" data-act="engine" data-val="1">+1</button>
       <button class="btn-quiet" data-act="engine-set" data-val="0">Clear</button>
     </div>
-    ${!p.inCombat ? `<p class="muted">Out of combat this stays at 0 — it cannot be banked before a fight.</p>` : ""}
   </section>`;
 }
 
@@ -1286,15 +1355,45 @@ function gearPanel(d, ch) {
     <p class="panel-sub">Carrying <span class="muted">— your class is proficient with all of these</span></p>
     <div class="chips">${weps}</div>
     ${carried.length ? "" : `<p class="muted">Nothing chosen, so every weapon you are proficient with is listed under Attacks.</p>`}
-    ${ch.skills?.length ? `<p class="panel-sub">Skills you are trained in</p>
-      <div class="skill-row">${ch.skills.map((name) => {
-        const sk = idx.skillsByName.get(String(name).toLowerCase());
-        const ab = sk && sk.ability;
-        const bonus = (ab ? (d.mods[ab] || 0) : 0) + d.prof;
-        return `<span class="skill-chip"><strong>${esc(name)}</strong>
-          <em>${esc(sign(bonus))}</em>${ab ? `<span class="muted">${esc(ABIL_SHORT[ab])}</span>` : ""}</span>`;
-      }).join("")}</div>` : ""}
-    ${ch.notes ? `<p class="notes">${esc(ch.notes)}</p>` : ""}
+  </section>`;
+}
+
+/* Anything that is not a weapon, a suit of armour or a class feature. Firebase drops an empty array
+   entirely, so an absent list and an empty one have to mean the same thing here. */
+function invItems(ch) {
+  return Array.isArray(ch.items) ? ch.items.filter((it) => it && it.name) : [];
+}
+
+/* The bag: free text with a count beside it, because no item in this system has mechanical weight
+   yet — there is nothing to look an entry up against, and pretending otherwise would mean inventing
+   an item list the rules do not have. Coins are one number for the same reason: denominations are
+   the economy's business, and the economy is not designed yet. */
+function inventoryPanel(ch, items) {
+  const rows = items.map((it, i) => `<div class="inv-row">
+      <span class="inv-name">${esc(it.name)}</span>
+      <span class="stepper">
+        <button class="step-btn" data-act="inv-qty" data-val="${i}|-1">&minus;</button>
+        <span class="step-val">${esc(it.qty || 1)}</span>
+        <button class="step-btn" data-act="inv-qty" data-val="${i}|1">+</button>
+      </span>
+      <button class="btn-quiet" data-act="inv-del" data-val="${i}">Drop</button>
+    </div>`).join("");
+  return `<section class="panel"><h2>Inventory</h2>
+    ${rows ? `<div class="inv-list">${rows}</div>`
+      : `<p class="muted">Empty. Whatever the DM hands you goes in here — rope, a lantern, someone's stolen ledger.</p>`}
+    <div class="inv-add">
+      <input id="inv-new" class="text" type="text" maxlength="60" autocomplete="off"
+        placeholder="Rope, 50 ft" value="" />
+      <button class="btn-quiet" data-act="inv-add">Add</button>
+    </div>
+    <p class="panel-sub">Coins</p>
+    <div class="hp-controls">
+      <span class="coin-total">${esc(Number(ch.coins) || 0)}</span>
+      <input id="coin-amt" class="num" type="number" min="1" value="1" />
+      <button class="btn-quiet" data-act="coin" data-val="1">Gain</button>
+      <button class="btn-quiet" data-act="coin" data-val="-1">Spend</button>
+    </div>
+    ${ch.notes ? `<p class="panel-sub">Notes</p><p class="notes">${esc(ch.notes)}</p>` : ""}
   </section>`;
 }
 
@@ -1483,7 +1582,7 @@ async function deleteCharacter() {
 /* Actions that only move the interface around — expanding a feature, opening the level-up preview
    — must not write to storage. Listed here so the difference is declared rather than remembered. */
 const UI_ONLY_ACTS = new Set(["levelup", "lu-cancel", "lu-sub", "open-opts",
-                              "sub-open", "lu-asi", "delete-arm", "delete-cancel"]);
+                              "sub-open", "lu-asi", "delete-arm", "delete-cancel", "tab"]);
 
 function sheetAction(e) {
   const b = e.target.closest("[data-act]");
@@ -1561,6 +1660,31 @@ function sheetAction(e) {
     const have = Array.isArray(ch.weapons) ? ch.weapons : [];
     ch.weapons = have.includes(val) ? have.filter((w) => w !== val) : have.concat(val);
   }
+  // Opening a field takes you to the top OF THAT FIELD, not to the top of the page: on a phone the
+  // vitals fill the first screen, so leaving the scroll alone means tapping Tricks shows you your
+  // hit points and scrolling to 0 shows you them from further away.
+  else if (act === "tab") { ui.tab = val; ui.scrollToFields = true; }
+  else if (act === "inv-add") {
+    // Read at the click, not on every keystroke: the sheet repaints on any change, and a field whose
+    // value came from state would lose the caret on every letter typed.
+    const box = $("#inv-new");
+    const name = String(box ? box.value : "").trim();
+    if (!name) return;
+    ch.items = invItems(ch).concat({ name, qty: 1 });
+  } else if (act === "inv-qty") {
+    const [i, delta] = String(val).split("|");
+    const list = invItems(ch);
+    const it = list[Number(i)];
+    if (!it) return;
+    it.qty = Math.max(1, (Number(it.qty) || 1) + Number(delta));
+    ch.items = list;
+  } else if (act === "inv-del") {
+    ch.items = invItems(ch).filter((_, i) => i !== Number(val));
+  } else if (act === "coin") {
+    const box = $("#coin-amt");
+    const n = Math.max(1, Number(box ? box.value : 1) || 1);
+    ch.coins = Math.max(0, (Number(ch.coins) || 0) + n * Number(val));
+  }
   else if (act === "levelup") {
     ui.levelUp = { to: Math.min(20, d.level + 1), subclassId: "", asi: {} };
     ui.scrollTop = true;   // the panel opens above the fold; take the reader to it
@@ -1611,6 +1735,12 @@ function sheetAction(e) {
     ui.scrollTop = false;
     if (window.scrollTo) window.scrollTo({ top: 0, behavior: "smooth" });
     else pageScroller().scrollTop = 0;
+  }
+  if (ui.scrollToFields) {
+    ui.scrollToFields = false;
+    const strip = $(".tab-strip");
+    // scroll-margin-top on .tab-strip keeps the sticky top bar from covering it.
+    if (strip && strip.scrollIntoView) strip.scrollIntoView({ block: "start", behavior: "smooth" });
   }
   if (!UI_ONLY_ACTS.has(act)) persist();
 }

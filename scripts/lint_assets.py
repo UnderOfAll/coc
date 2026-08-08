@@ -48,7 +48,8 @@ for m in re.finditer(r'class="([^"]+)"', HTML):
 # visible to any static scan, so the few that exist are declared here rather than chased with an
 # ever-greedier regex (a wider one starts reading data-act values as class names).
 used.update(["on", "blocked", "btn-hot", "down", "hurt", "primary", "spent", "warn", "good", "bad",
-             "hidden", "active", "empty", "over", "prof", "resolved", "inplay-tip", "wide", "caption"])
+             "hidden", "active", "empty", "over", "prof", "resolved", "inplay-tip", "wide", "caption",
+             "who-dm", "mine", "movable", "npc", "turn", "dragging"])
 # dynamic families the linter cannot resolve statically
 DYNAMIC = ("tier-", "badge-")
 used.update(c for c in re.findall(r'\.([a-z][a-z0-9-]+)', CSS) if c.startswith(DYNAMIC))

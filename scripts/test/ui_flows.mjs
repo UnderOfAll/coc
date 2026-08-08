@@ -169,7 +169,8 @@ ok(/overflow-x:\s*clip/.test(bodyRule),"and nothing can push the page wider than
 // every landing card must be reachable, since one of them is the only way into the compendium
 await go("#/");
 const menuCards=$$("#menu-view .menu-card").map(a=>a.getAttribute("href"));
-ok(menuCards.length===3&&menuCards.includes("#/classes"),"all three landing cards are present, including the compendium");
+ok(menuCards.length===4&&menuCards.includes("#/classes")&&menuCards.includes("#/table"),
+  "all four landing cards are present, including the compendium and the table");
 await go("#/classes");
 ok(!$("#compendium-view").classList.contains("hidden"),"and it opens");
 
@@ -445,6 +446,74 @@ console.log("\n— STATES —");
 mk("illusionist",5,"nightmare");
 ok($$('[data-act="flag"]').length>=8,"universal conditions plus the class's own");
 ok($$('.chip-tip .info-dot').length>=8,"each one explains itself through its own tap target");
+
+console.log("\n— FIELDS —");
+mk("joker",5,"anarchist");
+const tabIds=()=>$$(".tab-strip .tab").map(b=>b.dataset.val);
+ok(tabIds().join(",")==="status,attacks,tricks,features,gear,inventory,progress",
+  "the sheet is divided into fields ("+tabIds().join(", ")+")");
+ok(peek("ui.tab")==="status","Status is the one open on arrival");
+const visible=()=>$$(".pane").filter(n=>!n.hasAttribute("hidden")).map(n=>n.dataset.pane);
+ok(visible().length===1&&visible()[0]==="status","exactly one field is open at a time");
+// What is needed whichever field is open stays OUTSIDE the fields.
+const outside=sel=>{const n=$(sel); return !!n && !n.closest(".pane");};
+ok(outside(".vitals"),"hit points sit above the fields");
+ok(outside(".engine-panel"),"and so does the engine, which every field spends");
+ok(outside(".sheet-head"),"and the name, class and level");
+const vitLabels=$$(".vital-set .kn").map(k=>{const t=k.querySelector(".kn-l .tip-term");
+  return (t?t.firstChild.textContent:k.querySelector(".kn-l").textContent).trim();});
+ok(vitLabels.join(",")==="Armour Class,Parry DC,Initiative","AC, Parry DC and Initiative are up there with them");
+ok($$(".vital-set .kn").every(k=>!k.closest(".pane")),"none of the three hides inside a field");
+// The panels themselves each belong to exactly one field.
+const paneOf=sel=>{const n=$(sel); const p=n&&n.closest(".pane"); return p?p.dataset.pane:null;};
+ok(paneOf(".ab-grid")==="status","abilities are Status");
+ok(paneOf(".skill-chip")==="status","and so are the trained skills, which used to be filed under Gear");
+ok(paneOf(".attack-table")==="attacks","weapons attacks are their own field");
+ok(paneOf(".trick-list-sheet")==="tricks","tricks are their own field");
+ok(paneOf(".feat-grid")==="features","features are their own field");
+ok(paneOf(".chips")==="status","the states chips are Status");
+ok(paneOf('[data-act="carry"]')==="gear","what you are holding is Gear");
+ok(paneOf('[data-act="levelup"]')==="progress","levelling up is filed away from play");
+ok(paneOf('[data-act="delete-arm"]')==="progress","and so is deleting");
+click($$('.tab').find(b=>b.dataset.val==="inventory"));
+ok(visible()[0]==="inventory","tapping a tab opens that field");
+ok($$(".tab.on").length===1&&$(".tab.on").dataset.val==="inventory","and only that tab reads as open");
+// A class with no tricks must not be offered an empty Tricks field — and a sheet left open on
+// Tricks must not open a non-caster on a field that does not exist.
+click($$('.tab').find(b=>b.dataset.val==="tricks"));
+mk("juggler",5,"impalement");
+ok(!tabIds().includes("tricks"),"a Juggler gets no Tricks field at all ("+tabIds().join(", ")+")");
+ok(peek("ui.tab")==="status","and a field that class does not have falls back to Status");
+
+console.log("\n— INVENTORY —");
+mk("joker",5);
+click($$('.tab').find(b=>b.dataset.val==="inventory"));
+ok($("#inv-new"),"a box to name something you picked up");
+ok(/Empty/.test($(".pane[data-pane='inventory']").textContent),"the bag starts empty");
+click($('[data-act="inv-add"]'));
+ok(peek("(sheet.ch.items||[]).length")===0,"adding nothing adds nothing");
+type($("#inv-new"),"Rope, 50 ft");
+click($('[data-act="inv-add"]'));
+ok(peek("sheet.ch.items.length")===1&&peek("sheet.ch.items[0].name")==="Rope, 50 ft","a named item goes in");
+ok($("#inv-new").value==="","and the box clears itself for the next one");
+type($("#inv-new"),"Torch"); click($('[data-act="inv-add"]'));
+ok($$(".inv-row").length===2,"a second item lists below the first");
+click($$('[data-act="inv-qty"]').find(b=>b.dataset.val==="1|1"));
+ok(peek("sheet.ch.items[1].qty")===2,"the count steps up");
+click($$('[data-act="inv-qty"]').find(b=>b.dataset.val==="1|-1"));
+click($$('[data-act="inv-qty"]').find(b=>b.dataset.val==="1|-1"));
+ok(peek("sheet.ch.items[1].qty")===1,"and never below one — dropping it is what Drop is for");
+click($$('[data-act="inv-del"]').find(b=>b.dataset.val==="0"));
+ok(peek("sheet.ch.items.length")===1&&peek("sheet.ch.items[0].name")==="Torch","Drop removes that row, not another");
+type($("#coin-amt"),"25");
+click($$('[data-act="coin"]').find(b=>b.dataset.val==="1"));
+ok(peek("sheet.ch.coins")===25,"coins go up by the amount in the box");
+type($("#coin-amt"),"40");
+click($$('[data-act="coin"]').find(b=>b.dataset.val==="-1"));
+ok(peek("sheet.ch.coins")===0,"and cannot be spent past nothing");
+// Firebase omits empty arrays, so a bag that came back as undefined must not throw.
+peek(`delete sheet.ch.items; renderSheet();`);
+ok($$(".inv-row").length===0&&errs.length===0,"a character saved with no bag at all still renders");
 
 console.log("\njsdom errors: "+errs.length); errs.slice(0,6).forEach(e=>console.log("  "+e));
 console.log(fails||errs.length ? "\nFAILURES: "+fails : "\nALL GREEN");
