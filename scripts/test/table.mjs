@@ -757,6 +757,9 @@ ok((await aget(`CocLive.get("tables/482910/meta/activeScene")`)) === sceneNow,
 peek(`$("#sneak").remove(); tbl.role = "dm"; renderTableShell();`);
 
 console.log("\n— FIGURES —");
+// The maps section leaves a "Goblin" of its own on another scene, and whether it survives depends on
+// which scene the delete test removed — so this section starts from a known board rather than assuming.
+await peek(`CocLive.del("tables/482910/tokens/tGob")`);
 peek(`tbl.role = "dm"; tbl.me.charCode = ""; renderTableShell(); paintTokens();`);
 openPanel("dm");
 await wait(60);
