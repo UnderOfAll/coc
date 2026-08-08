@@ -1,5 +1,13 @@
-// TWO REAL DEVICES against the LIVE site and the LIVE database. Not part of the gate: it needs the
-// network and it writes to the real project (cleaned up at the end).
+// TWO REAL DEVICES against the LIVE site and the LIVE DATABASE. Run: npm run test:2dev
+//
+// NOT part of scripts/check.sh, on purpose: it needs the network, it needs the site to be deployed,
+// and it writes to the real Firebase project (a throwaway room and character, both deleted at the
+// end). Run it after a push when the live half matters.
+//
+// It exists because it found something no local test could: seven EventSource streams took every
+// connection a browser will open to one host over HTTP/1.1, so a player joined and their token and
+// presence writes hung forever with nothing on screen to say so. Local mode has no connection limit,
+// which is exactly why it could not see it.
 import puppeteer from "puppeteer";
 const SITE = "https://underofall.github.io/coc/index.html";
 const DB = "https://circus-of-chaos-78122-default-rtdb.europe-west1.firebasedatabase.app";
@@ -60,13 +68,7 @@ await pl.page.evaluate((r, c) => {
 }, ROOM, CHAR);
 await wait(3500);
 ok(await pl.page.evaluate(() => !!(typeof tbl !== "undefined" && tbl && tbl.role === "player")), "the phone is in as a player");
-console.log("       [diag] player errs: " + JSON.stringify(pl.errs));
-console.log("       [diag] player state: " + JSON.stringify(await pl.page.evaluate(() => ({
-  hash: location.hash, role: tbl && tbl.role, me: tbl && tbl.me, beat: !!(tbl && tbl.beat),
-  err: (document.querySelector("#vtt-error") || {}).textContent,
-  msg: (document.querySelector("#tbl-msg") || {}).textContent,
-  tokens: tbl && tbl.data.tokens, mode: CocLive.mode,
-}))));
+if (pl.errs.length) console.log("       [player errors] " + pl.errs.join(" | "));
 const tokens = await db(`tables/${ROOM}/tokens`, "GET");
 const mine = Object.entries(tokens || {}).find(([, t]) => t.charCode === CHAR);
 ok(!!mine, "their figure is on the board in the database");
