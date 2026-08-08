@@ -163,9 +163,15 @@ if (typeof window !== "undefined") {
   // same event as far as the camera is concerned: the window is a different shape, so fit again.
   let refitTimer = null;
   window.addEventListener("resize", () => {
-    if (!tbl || tbl.cameraIsYours) return;
+    if (!tbl) return;
     clearTimeout(refitTimer);
-    refitTimer = setTimeout(() => { if (tbl && !tbl.cameraIsYours) tblFit(); }, 120);
+    refitTimer = setTimeout(() => {
+      if (!tbl) return;
+      // Crossing the width where the dice change homes has to move them, or they end up in neither.
+      paintDock();
+      if (tbl.ui.panel === "dice" && tblWide()) { tbl.ui.panel = ""; paintSide(); }
+      if (!tbl.cameraIsYours) tblFit();
+    }, 120);
   });
   window.addEventListener("hashchange", () => {
     if (!tbl) return;
@@ -434,14 +440,14 @@ async function tblEnsureToken() {
     const id = CocLive.newId();
     // Dropped on the first free square of the top row, so two players joining at once do not land
     // on top of each other.
-    const taken = new Set(Object.values(tokens).map((t) => `${Math.round(t.x)},${Math.round(t.y)}`));
-    let x = 1; while (taken.has(`${x},1`) && x < 20) x++;
+    const spot = tblFreeSquare("", 1, 1, 1, 1, 1);
+    const x = spot.x, y0 = spot.y;
     await CocLive.put(tblPath("tokens/" + id), {
       name: ((ch && ch.name) || tbl.me.name || "Someone").slice(0, 40),
       charCode: tbl.me.charCode || "",
       owner: tbl.me.clientId,        // what proves a guest's figure is theirs, having no character code
       image: (ch && ch.photo) || "",
-      x, y: 1, size: 1,
+      x, y: y0, size: 1,
       kind: "pc",
       shape: "square",
       initMod: d ? (d.mods.Dexterity || 0) : 0,
@@ -487,6 +493,7 @@ function renderTableShell() {
       <div id="vtt-turn" class="vtt-turn hidden"></div>
       <div id="vtt-handout" class="vtt-handout hidden"></div>
       <div class="vtt-body">
+        <aside id="vtt-dock" class="vtt-dock hidden"></aside>
         <div id="vtt-stage" class="vtt-stage">
           <div id="vtt-world" class="vtt-world">
             <img id="vtt-map" class="vtt-map hidden" alt="" />
@@ -518,6 +525,12 @@ function renderTableShell() {
    actually changes. The alternative (working out which branch moved) was seven streams, and that cost
    the app every connection the browser had. */
 function paintEverything() {
+  // The DM closed the room while people were in it — or somebody opened a code from their list that no
+  // longer exists. Either way there is no table, and showing an empty board is the one answer that
+  // explains nothing. (It is also why this cannot simply be ignored: the heartbeat would go on writing
+  // presence into a deleted room and recreate it as a husk.)
+  if (tbl.gotData && !(tbl.data && tbl.data.meta)) { tblTableGone(); return; }
+  paintDock();
   paintHeader();
   paintBoard();      // paintTokens is called from here
   paintTurnBar();
@@ -525,6 +538,25 @@ function paintEverything() {
   paintWho();
   paintHandout();
   paintDmPanel();
+}
+
+/* Nothing here any more. Say so, take it off this device's list, and stop talking to it. */
+function tblTableGone() {
+  const code = tbl.code;
+  const wasDm = tbl.role === "dm";
+  tblTeardown();
+  tblForgetTable(code);
+  localStorage.removeItem(tblDmKey(code));
+  localStorage.removeItem(tblMeKey(code));
+  paint(`<div class="tool-head">
+      <a class="back" href="#/table">&larr; Tables</a>
+      <h1>This table is closed</h1>
+      <p class="muted">Room ${esc(code)} no longer exists${wasDm ? "" : " — the DM closed it"}. It has been
+        taken off this device's list; the code is free for anyone to reuse.</p>
+    </div>
+    <section class="panel"><p class="muted">If you were in the middle of a session, ask your DM for the
+      new room code. Your character is untouched — a table holds no part of it.</p>
+      <a class="btn" href="#/table">Find a table</a></section>`);
 }
 
 /* Header, who-is-here, error bar: small nodes, replaced whole. */
@@ -684,6 +716,20 @@ function tblZoomBy(factor, cx, cy) {
   tbl.view.z = z1;
   tblClampView();
   applyView();
+  /* Zooming WHILE dragging used to break the drag: the grab offset was worked out in the old view, and
+     the clamp then moved the camera under the finger, so the figure leapt away and followed at an
+     offset that never came back — Kayki's "hold to drag and zoom out at the same time". Re-anchoring to
+     the finger's current position keeps whatever is being held exactly where it is. */
+  if (tbl.drag && tbl.lastPoint) {
+    const at = toSquares(tbl.lastPoint.sx, tbl.lastPoint.sy);
+    if (tbl.drag.pan) {
+      tbl.drag.sx = tbl.lastPoint.sx; tbl.drag.sy = tbl.lastPoint.sy;
+      tbl.drag.ox = tbl.view.x; tbl.drag.oy = tbl.view.y;
+    } else {
+      tbl.drag.grabX = at.x - tbl.drag.x;
+      tbl.drag.grabY = at.y - tbl.drag.y;
+    }
+  }
 }
 
 /* Tokens are DIFFED, never rebuilt: rebuilding drops the one under your finger and restarts every
@@ -808,6 +854,8 @@ function bindStage() {
 
 function stagePoint(e) {
   const stage = $("#vtt-stage").getBoundingClientRect();
+  // Remembered so a zoom in the middle of a drag can re-anchor to where the finger actually is.
+  if (tbl) tbl.lastPoint = { sx: e.clientX - stage.left, sy: e.clientY - stage.top };
   return {
     // World coordinates in squares: undo the camera, then divide by the cell size.
     sx: e.clientX - stage.left, sy: e.clientY - stage.top,
@@ -933,24 +981,91 @@ function onPointerUp(e) {
   paintRuler();
 }
 
+/* Does a figure of this size, at this square, land on top of another one? Rectangles, not centres,
+   because a four-square creature occupies four squares and standing "inside" it is the thing being
+   prevented.
+   Scenery does not block: a figure with no hit points at all is a marker — a pit, a rune, a zone — and
+   standing in one is usually the whole point of it. (The Illusionist's areas will be these.) */
+function tblBlocks(t) {
+  return !(t.kind === "npc" && !(Number(t.hpMax) > 0));
+}
+function tblSquareTaken(id, x, y, size) {
+  const activeScene = tblSceneId();
+  for (const [other, t] of Object.entries(tblTokens())) {
+    if (!t || other === id || !tblBlocks(t)) continue;
+    if (t.kind === "npc" && t.scene && t.scene !== activeScene) continue;
+    const os = Math.max(1, Number(t.size) || 1);
+    const ox = Math.round(Number(t.x) || 0), oy = Math.round(Number(t.y) || 0);
+    if (x < ox + os && ox < x + size && y < oy + os && oy < y + size) return true;
+  }
+  return false;
+}
+/* The square asked for if it is free, else the nearest one that is — so a figure dropped on a goblin
+   slides to its side rather than either vanishing into it or refusing to move at all. */
+function tblFreeSquare(id, x, y, size, fallbackX, fallbackY) {
+  const scene = tblScene();
+  const maxX = (Number(scene.cols) || 30) - size, maxY = (Number(scene.rows) || 20) - size;
+  const fit = (v, max) => Math.max(0, Math.min(Math.max(0, max), v));
+  if (!tblSquareTaken(id, fit(x, maxX), fit(y, maxY), size)) return { x: fit(x, maxX), y: fit(y, maxY) };
+  for (let r = 1; r <= 5; r++) {
+    for (let dy = -r; dy <= r; dy++) {
+      for (let dx = -r; dx <= r; dx++) {
+        if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;   // this ring only
+        const nx = fit(x + dx, maxX), ny = fit(y + dy, maxY);
+        if (!tblSquareTaken(id, nx, ny, size)) return { x: nx, y: ny };
+      }
+    }
+  }
+  // Boxed in entirely: stay where you were rather than land on somebody.
+  return { x: fit(Math.round(fallbackX), maxX), y: fit(Math.round(fallbackY), maxY) };
+}
+
 /* Where a dragged figure comes to rest. Squares are integers — a figure between two of them is the thing
    that makes a board unreadable — so this rounds, clamps to the map and charges the distance. Shared by
    a normal release and by a gesture that was interrupted. */
 function tblLandDrag(d) {
-  const scene = tblScene();
-  const x = Math.max(0, Math.min((Number(scene.cols) || 30) - 1, Math.round(d.x)));
-  const y = Math.max(0, Math.min((Number(scene.rows) || 20) - 1, Math.round(d.y)));
-  CocLive.put(tblPath("tokens/" + d.id + "/x"), x).catch(tblFail);
-  CocLive.put(tblPath("tokens/" + d.id + "/y"), y).catch(tblFail);
-  tblCountMove(d, x, y);
+  const size = Math.max(1, Number(d.token.size) || 1);
+  const spot = tblFreeSquare(d.id, Math.round(d.x), Math.round(d.y), size, d.fromX, d.fromY);
+  CocLive.put(tblPath("tokens/" + d.id + "/x"), spot.x).catch(tblFail);
+  CocLive.put(tblPath("tokens/" + d.id + "/y"), spot.y).catch(tblFail);
+  tblCountMove(d, spot.x, spot.y);
 }
 
 /* ---------------------------------------------------------------- the side panel */
+
+/* Is there room for a column of its own? The dice live in a dock on the LEFT of the board on a desktop,
+   where the roll history can simply stay open; on a phone there is no such room, so they use the same
+   slide-over panel as everything else. This is the only place the two layouts differ in BEHAVIOUR. */
+function tblWide() {
+  return typeof matchMedia === "function" ? matchMedia("(min-width: 761px)").matches : true;
+}
+function paintDock() {
+  const dock = $("#vtt-dock");
+  if (!dock) return;
+  const show = tblWide() && tbl.ui.dock !== false;
+  dock.classList.toggle("hidden", !show);
+  if (!show) { dock.innerHTML = ""; return; }
+  dock.innerHTML = dicePanelHTML();   // the tray AND the history: two #vtt-log would be one too many
+  paintLog();
+}
+/* Wherever the dice currently live. */
+function paintDice() {
+  if (tblWide()) paintDock(); else paintSide();
+}
 
 /* One column beside the board on a desktop, the lower half of the screen on a phone. It holds the
    things you dip into rather than watch: the dice, your own sheet, the DM's tools. Rendered whole
    each time, which is safe because nothing in it is mid-drag. */
 function tblPanel(which) {
+  // On a desktop the dice are a dock of their own, so the Dice button opens and closes THAT rather than
+  // taking over the panel the sheet and the DM's tools use.
+  if (which === "dice" && tblWide()) {
+    tbl.ui.dock = tbl.ui.dock === false;
+    paintDock();
+    document.querySelectorAll("[data-tbl='panel']").forEach((b) =>
+      b.classList.toggle("on", b.dataset.val === "dice" ? tbl.ui.dock !== false : b.dataset.val === tbl.ui.panel));
+    return;
+  }
   const wasSheet = tbl.ui.panel === "sheet";
   tbl.ui.panel = tbl.ui.panel === which ? "" : which;
   if (wasSheet && tbl.ui.panel !== "sheet") closeSheetPanel();
@@ -1318,14 +1433,41 @@ async function tblNudgeGrid(which, delta) {
  * roll appear instantly rather than after a round trip. */
 
 /* "2d6+3", "d20", "1d20-1" — the shape people already write. */
+/* "2d6+1d8+d4+3" — one roll made of several KINDS of die, which is how half the game's damage works: a
+   smite is a d8 weapon plus 2d8 radiant plus a d4 if it is on fire, and rolling those separately then
+   adding them up by hand is exactly the sort of arithmetic this app exists to remove.
+   Returns a list of TERMS plus a flat modifier; a single-die roll is just a list of one. */
 function tblParseRoll(spec) {
-  const m = /^\s*(\d*)d(\d+)\s*([+-]\s*\d+)?\s*$/i.exec(String(spec || ""));
-  if (!m) return null;
-  return {
-    count: Math.max(1, Math.min(40, Number(m[1] || 1))),
-    sides: Math.max(2, Math.min(1000, Number(m[2]))),
-    mod: m[3] ? Number(String(m[3]).replace(/\s+/g, "")) : 0,
-  };
+  const text = String(spec || "").replace(/\s+/g, "");
+  if (!text || !/d\d/i.test(text)) return null;
+  const terms = [];
+  let mod = 0, seen = 0;
+  const re = /([+-]?)(\d*)d(\d+)|([+-]?\d+)/gi;
+  let m;
+  while ((m = re.exec(text))) {
+    seen += m[0].length;
+    if (m[3]) {
+      const sign = m[1] === "-" ? -1 : 1;          // "-1d4" is a real thing (a bane, a penalty die)
+      terms.push({
+        count: Math.max(1, Math.min(40, Number(m[2] || 1))),
+        sides: Math.max(2, Math.min(1000, Number(m[3]))),
+        sign,
+      });
+    } else {
+      mod += Number(m[4]);
+    }
+  }
+  // Every character has to belong to a term or a modifier, or this was not an expression at all.
+  if (!terms.length || seen !== text.length) return null;
+  return { terms, mod };
+}
+
+/* Old callers and old log entries speak in { count, sides, mod }; everything inside speaks in terms. */
+function tblNormaliseSpec(spec) {
+  if (!spec) return null;
+  if (Array.isArray(spec.terms)) return spec;
+  if (spec.sides) return { terms: [{ count: spec.count || 1, sides: spec.sides, sign: 1 }], mod: spec.mod || 0 };
+  return null;
 }
 
 function d(sides) { return 1 + Math.floor(Math.random() * sides); }
@@ -1333,37 +1475,66 @@ function d(sides) { return 1 + Math.floor(Math.random() * sides); }
 /* Advantage and disadvantage are a property of the ROLL, not of the die: two d20s, keep one. Applying
    them to "4d6" would be a house rule nobody asked for, so they are ignored unless a single die is
    being thrown. */
+/* Every die of the roll, in order, each carrying the size it came off so a mixed handful can be read:
+   [{s:8,v:5},{s:6,v:3},{s:6,v:1}]. Advantage still means two dice and keep one, and still only applies
+   to a roll that IS one die — applying it to a fistful would be a house rule nobody asked for. */
 function tblDoRoll(spec, mode) {
-  const twin = (mode === "adv" || mode === "dis") && spec.count === 1;
-  const rolls = [];
-  const n = twin ? 2 : spec.count;
-  for (let i = 0; i < n; i++) rolls.push(d(spec.sides));
+  const norm = tblNormaliseSpec(spec);
+  if (!norm) return null;
+  const single = norm.terms.length === 1 && norm.terms[0].count === 1 && norm.terms[0].sign === 1;
+  const twin = (mode === "adv" || mode === "dis") && single;
+  const dice = [];
+  if (twin) {
+    const sides = norm.terms[0].sides;
+    dice.push({ s: sides, v: d(sides) }, { s: sides, v: d(sides) });
+  } else {
+    for (const t of norm.terms) {
+      for (let i = 0; i < t.count; i++) dice.push({ s: t.sides, v: d(t.sides), sign: t.sign });
+    }
+  }
   // WHICH die was kept, not just its value: with two 14s the value cannot tell you, and every screen
   // has to dim the same one.
-  const keptIdx = twin ? rolls.indexOf(mode === "adv" ? Math.max(...rolls) : Math.min(...rolls)) : -1;
-  const kept = twin ? [rolls[keptIdx]] : rolls.slice();
-  const sum = kept.reduce((a, b) => a + b, 0);
+  const keptIdx = twin
+    ? (mode === "adv" ? (dice[0].v >= dice[1].v ? 0 : 1) : (dice[0].v <= dice[1].v ? 0 : 1))
+    : -1;
+  const sum = twin ? dice[keptIdx].v
+    : dice.reduce((n, x) => n + x.v * (x.sign === -1 ? -1 : 1), 0);
   return {
-    rolls, kept, keptIdx, mode: twin ? mode : "normal", spec,
-    total: sum + spec.mod,
-    natural: spec.sides === 20 && kept.length === 1 ? kept[0] : 0,
+    dice, keptIdx, mode: twin ? mode : "normal", spec: norm,
+    total: sum + norm.mod,
+    natural: single && dice[twin ? keptIdx : 0].s === 20 ? dice[twin ? keptIdx : 0].v : 0,
   };
+}
+
+/* How a roll is written out: "2d6 + 1d8 + 3". Used on the button, in the overlay and in the log, so all
+   three agree about what was thrown. */
+function tblSpecText(spec) {
+  const norm = tblNormaliseSpec(spec);
+  if (!norm) return "";
+  const parts = norm.terms.map((t, i) => {
+    const die = `${t.count === 1 ? "" : t.count}d${t.sides}`;
+    if (i === 0) return (t.sign === -1 ? "−" : "") + die;
+    return (t.sign === -1 ? " − " : " + ") + die;
+  });
+  if (norm.mod) parts.push((norm.mod > 0 ? " + " : " − ") + Math.abs(norm.mod));
+  return parts.join("");
 }
 
 /* One line, readable at a glance from across a table, with the working shown because "18" on its own
    is exactly the number people query. */
 function tblRollLine(who, label, res) {
-  const s = res.spec;
   who = esc(who || "Someone");
   label = label ? esc(label) : "";
-  const dice = `${s.count === 1 ? "" : s.count}d${s.sides}`;
-  const shown = res.rolls.length > 1 || res.mode !== "normal"
-    ? `[${res.rolls.join(", ")}]${res.mode === "adv" ? " keep high" : res.mode === "dis" ? " keep low" : ""}`
-    : String(res.kept[0]);
-  const modText = s.mod ? ` ${s.mod > 0 ? "+" : "−"} ${Math.abs(s.mod)}` : "";
+  const faces = res.dice.map((x) => x.v);
+  const many = res.dice.length > 1;
+  const shown = many
+    ? `[${faces.join(", ")}]${res.mode === "adv" ? " keep high" : res.mode === "dis" ? " keep low" : ""}`
+    : String(faces[0]);
+  const spec = tblSpecText(res.spec);
   // Named rolls say what they were for; a bare handful of dice does not need "rolled 2d8: 2d8".
-  const head = label ? `${who} rolled ${label}: ${dice}${modText}` : `${who} rolled ${dice}${modText}`;
-  return `${head} → ${shown}${s.mod || res.rolls.length > 1 ? " = " + res.total : ""}`;
+  const head = label ? `${who} rolled ${label}: ${spec}` : `${who} rolled ${spec}`;
+  // A single straight die IS its own total: "d20 → 18 = 18" is how an app ends up printing "18 18".
+  return `${head} → ${shown}${many || res.spec.mod !== 0 ? " = " + res.total : ""}`;
 }
 
 /* Roll, and put it where the table can see it. Away from a table the same click still works — it just
@@ -1381,8 +1552,11 @@ function tblRollAndPost(spec, label, mode, whoOverride) {
     nat: res.natural === 20 ? 20 : res.natural === 1 ? 1 : 0,
     // The numbers, not just the sentence: every screen at the table renders the roll itself from these,
     // and a sentence cannot be animated or laid out.
-    label: label || "", sides: parsed.sides, count: parsed.count, mod: parsed.mod,
-    rolls: res.rolls, kept: res.kept, keptIdx: res.keptIdx, mode: res.mode, total: res.total,
+    label: label || "",
+    // `dice` is the roll: every die with the size it came off, so a mixed handful reads properly on every
+    // screen. `spec` is what was asked for, written out.
+    dice: res.dice, keptIdx: res.keptIdx, mod: res.spec.mod, mode: res.mode, total: res.total,
+    spec: tblSpecText(res.spec),
   };
   if (tbl) {
     // Shown here at once, and marked as seen so the stream's echo does not roll it a second time.
@@ -1418,39 +1592,44 @@ function tblShowRoll(entry) {
   const node = tblRollStage();
   for (const t of tblRollTimers) clearTimeout(t);
   tblRollTimers = [];
-  const sides = Number(entry.sides) || 20;
-  const kept = Array.isArray(entry.kept) ? entry.kept : [];
-  const rolls = Array.isArray(entry.rolls) ? entry.rolls : kept;
+  const dice = tblEntryDice(entry);
   const mod = Number(entry.mod) || 0;
   const nat = entry.nat === 20 ? "nat20" : entry.nat === 1 ? "nat1" : "";
-  // Each die gets a face that will tumble; the discarded one of an advantage pair stays visible and
-  // dimmed, because "which one did I keep" is the first question anyone asks.
+  // Each die gets a face that will tumble, and carries the size it came off — so a mixed handful reads
+  // as "d8 d6 d6" rather than as three anonymous numbers. The discarded one of an advantage pair stays
+  // visible and dimmed, because "which one did I keep" is the first question anyone asks.
   const keptIdx = entry.keptIdx == null ? -1 : Number(entry.keptIdx);
-  const faces = rolls.map((v, i) => {
+  const faces = dice.map((x, i) => {
     const dropped = keptIdx >= 0 && i !== keptIdx ? " dropped" : "";
-    return `<span class="die${dropped}" data-final="${esc(v)}">${esc(v)}<em>d${esc(sides)}</em></span>`;
+    return `<span class="die${dropped}" data-final="${esc(x.v)}" data-sides="${esc(x.s)}">` +
+      `<b>${esc(x.v)}</b><em>d${esc(x.s)}</em></span>`;
   }).join("");
+  const spec = entry.spec
+    || tblSpecText({ terms: dice.map((x) => ({ count: 1, sides: x.s, sign: 1 })), mod });
   node.className = "roll-stage on rolling " + nat;
   node.innerHTML = `<div class="roll-box">
     <p class="roll-head"><strong>${esc(entry.who || "Someone")}</strong>${
       entry.label ? ` &middot; ${esc(entry.label)}` : ""}</p>
     <div class="roll-dice">${faces}</div>
     <p class="roll-sum">
-      <span class="roll-spec">${esc(entry.count > 1 ? entry.count : "")}d${esc(sides)}${
-        mod ? (mod > 0 ? " + " + mod : " − " + Math.abs(mod)) : ""}${
+      <span class="roll-spec">${esc(spec)}${
         entry.mode === "adv" ? " · advantage" : entry.mode === "dis" ? " · disadvantage" : ""}</span>
-      <span class="roll-total">${esc(entry.total)}</span>
+      ${dice.length > 1 || mod ? `<span class="roll-total">${esc(entry.total)}</span>` : ""}
     </p>
   </div>`;
-  // The tumble: real dice do not fade in, they clatter. Faces change fast, then settle on the truth.
-  const dice = [...node.querySelectorAll(".die")];
+  // The tumble: real dice do not fade in, they clatter. Each settles within its OWN range, so a d4 in a
+  // mixed handful never flashes a 17 on its way to landing.
+  const shown = [...node.querySelectorAll(".die")];
   let ticks = 0;
   const spin = setInterval(() => {
     ticks += 1;
-    for (const die of dice) die.textContent = String(1 + Math.floor(Math.random() * sides));
+    for (const die of shown) {
+      const sides = Number(die.dataset.sides) || 20;
+      die.querySelector("b").textContent = String(1 + Math.floor(Math.random() * sides));
+    }
     if (ticks > 9) {
       clearInterval(spin);
-      for (const die of dice) die.textContent = die.dataset.final;
+      for (const die of shown) die.querySelector("b").textContent = die.dataset.final;
       node.classList.remove("rolling");
       node.classList.add("landed");
     }
@@ -1460,18 +1639,39 @@ function tblShowRoll(entry) {
 
 const TBL_DICE = [4, 6, 8, 10, 12, 20, 100];
 
+function tblDicePool() {
+  if (!tbl.ui.dice || !tbl.ui.dice.pool) tbl.ui.dice = { pool: { 20: 1 }, mod: 0, mode: "normal" };
+  return tbl.ui.dice;
+}
+/* The pool as a roll: biggest die first, which is how everyone writes damage. */
+function tblPoolSpec() {
+  const t = tblDicePool();
+  const terms = Object.keys(t.pool)
+    .map(Number)
+    .filter((sides) => t.pool[sides] > 0)
+    .sort((a, b) => b - a)
+    .map((sides) => ({ count: t.pool[sides], sides, sign: 1 }));
+  return { terms, mod: t.mod || 0 };
+}
+
 function dicePanelHTML() {
-  const t = tbl.ui.dice || (tbl.ui.dice = { sides: 20, count: 1, mod: 0, mode: "normal" });
-  const spec = `${t.count}d${t.sides}${t.mod ? (t.mod > 0 ? "+" : "") + t.mod : ""}`;
+  const t = tblDicePool();
+  const spec = tblPoolSpec();
+  const text = tblSpecText(spec);
+  const inPool = spec.terms.length;
+  const oneDie = inPool === 1 && spec.terms[0].count === 1;
   return `<section class="panel">
       <h2>Dice</h2>
-      <div class="chips">${TBL_DICE.map((s) =>
-        `<button class="chip ${t.sides === s ? "on" : ""}" data-tbl="die" data-val="${s}">d${s}</button>`).join("")}</div>
+      <div class="chips">${TBL_DICE.map((sides) =>
+        `<button class="chip ${t.pool[sides] ? "on" : ""}" data-tbl="die" data-val="${sides}">d${sides}</button>`).join("")}</div>
+      ${inPool ? `<p class="panel-sub">Throwing <span class="muted">— tap one to take it back out</span></p>
+        <div class="chips">${spec.terms.map((term) =>
+          `<button class="chip on" data-tbl="die-less" data-val="${term.sides}">${
+            term.count === 1 ? "" : term.count}d${term.sides} &minus;</button>`).join("")}
+          <button class="chip" data-tbl="dice-clear">Clear</button></div>`
+        : `<p class="muted">Tap the dice you want. Several kinds at once is the point: a smite is a d8 and
+           2d6 and a d4 if it is on fire, thrown together and added up for you.</p>`}
       <div class="dice-row">
-        <span class="stepper"><span class="ab-name">How many</span>
-          <button class="step-btn" data-tbl="dice-count" data-val="-1">&minus;</button>
-          <span class="step-val">${esc(t.count)}</span>
-          <button class="step-btn" data-tbl="dice-count" data-val="1">+</button></span>
         <span class="stepper"><span class="ab-name">Modifier</span>
           <button class="step-btn" data-tbl="dice-mod" data-val="-1">&minus;</button>
           <span class="step-val">${esc(t.mod > 0 ? "+" + t.mod : t.mod)}</span>
@@ -1480,9 +1680,9 @@ function dicePanelHTML() {
       <div class="chips">${[["normal", "Straight"], ["adv", "Advantage"], ["dis", "Disadvantage"]].map(([k, label]) =>
         `<button class="chip ${t.mode === k ? "on" : ""}" data-tbl="dice-mode" data-val="${k}">${esc(label)}</button>`).join("")}
       </div>
-      ${t.count > 1 && t.mode !== "normal" ? `<p class="muted">Advantage needs a single die — with
-        ${esc(t.count)} of them it is ignored.</p>` : ""}
-      <button class="btn" data-tbl="roll" data-val="${esc(spec)}">Roll ${esc(spec)}</button>
+      ${!oneDie && t.mode !== "normal" ? `<p class="muted">Advantage needs a single die — with a handful
+        it is ignored.</p>` : ""}
+      <button class="btn" data-tbl="roll-pool" ${inPool ? "" : "disabled"}>Roll ${esc(text || "…")}</button>
     </section>
     <section class="panel">
       <p class="panel-sub">Rolls at this table</p>
@@ -1490,16 +1690,33 @@ function dicePanelHTML() {
     </section>`;
 }
 
-/* The newest roll, in one line, for the bar that is visible whatever panel is open. */
-function lastRollHTML(e) {
-  if (e.kind !== "roll" || !Array.isArray(e.rolls)) return esc(e.text || "");
+/* Old entries carry `rolls: [11]` with a single `sides`; new ones carry `dice: [{s,v}]`. One shape from
+   here on, so no renderer has to know there were ever two. */
+function tblEntryDice(e) {
+  if (Array.isArray(e.dice)) return e.dice;
+  if (Array.isArray(e.rolls)) return e.rolls.map((v) => ({ s: Number(e.sides) || 20, v }));
+  return [];
+}
+/* A single straight die needs no dice-AND-total: printing both is how you get "DM 18 18". */
+function tblRollBits(e) {
+  const dice = tblEntryDice(e);
   const mod = Number(e.mod) || 0;
   const keptIdx = e.keptIdx == null ? -1 : Number(e.keptIdx);
-  const dice = e.rolls.map((v, i) =>
-    `<span class="pip-die${keptIdx >= 0 && i !== keptIdx ? " dropped" : ""}">${esc(v)}</span>`).join("");
-  return `<strong>${esc(e.who || "Someone")}</strong>${e.label ? " " + esc(e.label) : ""} ${dice}` +
-    `${mod ? `<span class="roll-card-mod">${mod > 0 ? "+" : "−"}${esc(Math.abs(mod))}</span>` : ""}` +
-    `<span class="roll-card-total">${esc(e.total)}</span>`;
+  const bare = dice.length === 1 && !mod && keptIdx < 0;
+  return {
+    pips: bare ? "" : dice.map((x, i) =>
+      `<span class="pip-die${keptIdx >= 0 && i !== keptIdx ? " dropped" : ""}">${esc(x.v)}</span>`).join(""),
+    mod: mod ? `<span class="roll-card-mod">${mod > 0 ? "+" : "−"}${esc(Math.abs(mod))}</span>` : "",
+    total: dice.length ? String(e.total) : "",
+  };
+}
+
+/* The newest roll, in one line, for the bar that is visible whatever panel is open. */
+function lastRollHTML(e) {
+  if (e.kind !== "roll" || !tblEntryDice(e).length) return esc(e.text || "");
+  const bits = tblRollBits(e);
+  return `<strong>${esc(e.who || "Someone")}</strong>${e.label ? " " + esc(e.label) : ""} ${bits.pips}` +
+    `${bits.mod}<span class="roll-card-total">${esc(bits.total)}</span>`;
 }
 
 /* One line of the log. Laid out rather than written as a sentence: who, what for, the dice as dice, and
@@ -1507,17 +1724,14 @@ function lastRollHTML(e) {
    system lines, still have their sentence and fall back to it. */
 function rollLineHTML(e) {
   const nat = e.nat === 20 ? " nat20" : e.nat === 1 ? " nat1" : "";
-  if (e.kind !== "roll" || !Array.isArray(e.rolls)) {
+  if (e.kind !== "roll" || !tblEntryDice(e).length) {
     return `<p class="roll-line${nat}">${esc(e.text || "")}</p>`;
   }
-  const mod = Number(e.mod) || 0;
-  const keptIdx = e.keptIdx == null ? -1 : Number(e.keptIdx);
-  const dice = e.rolls.map((v, i) =>
-    `<span class="pip-die${keptIdx >= 0 && i !== keptIdx ? " dropped" : ""}">${esc(v)}</span>`).join("");
+  const bits = tblRollBits(e);
   return `<div class="roll-line roll-card${nat}">
     <span class="roll-card-who">${esc(e.who || "Someone")}${e.label ? ` <span class="muted">${esc(e.label)}</span>` : ""}</span>
-    <span class="roll-card-dice">${dice}${mod ? `<span class="roll-card-mod">${mod > 0 ? "+" : "−"}${esc(Math.abs(mod))}</span>` : ""}</span>
-    <span class="roll-card-total">${esc(e.total)}</span>
+    <span class="roll-card-dice">${bits.pips}${bits.mod}</span>
+    <span class="roll-card-total">${esc(bits.total)}</span>
   </div>`;
 }
 
@@ -1813,9 +2027,9 @@ function tblCentreSquare() {
 async function tblPlaceNpc(fields) {
   const at = tblCentreSquare();
   // Nudged along until it lands on an empty square, so a duplicate never hides underneath its twin.
-  const taken = new Set(Object.values(tblTokens()).map((t) => `${Math.round(t.x)},${Math.round(t.y)}`));
-  let { x, y } = at;
-  for (let i = 0; i < 40 && taken.has(`${x},${y}`); i++) { x += 1; if (x > 40) { x = at.x; y += 1; } }
+  const size = Math.max(1, Number(fields && fields.size) || 1);
+  const spot = tblFreeSquare("", at.x, at.y, size, at.x, at.y);
+  const x = spot.x, y = spot.y;
   const id = CocLive.newId();
   await CocLive.put(tblPath("tokens/" + id), Object.assign({
     name: "Figure", hp: 0, hpMax: 0, size: 1, image: "", speed: 30, initMod: 0, shape: "square",
@@ -2227,15 +2441,27 @@ document.addEventListener("click", (e) => {
   if (act === "zoom") {
     if (val === "0") tblFit(); else tblZoomBy(val === "1" ? 1.25 : 1 / 1.25);
   } else if (act === "panel") tblPanel(val);
-  else if (act === "die") { tbl.ui.dice.sides = Number(val); paintSide(); }
-  else if (act === "dice-count") {
-    tbl.ui.dice.count = Math.max(1, Math.min(40, tbl.ui.dice.count + Number(val)));
-    paintSide();
-  } else if (act === "dice-mod") {
-    tbl.ui.dice.mod = Math.max(-20, Math.min(20, tbl.ui.dice.mod + Number(val)));
-    paintSide();
-  } else if (act === "dice-mode") { tbl.ui.dice.mode = val; paintSide(); }
-  else if (act === "roll") tblRollAndPost(val, btn.dataset.label || "", tbl.ui.dice ? tbl.ui.dice.mode : "normal");
+  else if (act === "die") {
+    const pool = tblDicePool().pool;
+    const sides = Number(val);
+    pool[sides] = Math.min(20, (pool[sides] || 0) + 1);
+    paintDice();
+  } else if (act === "die-less") {
+    const pool = tblDicePool().pool;
+    const sides = Number(val);
+    if (pool[sides] > 1) pool[sides] -= 1; else delete pool[sides];
+    paintDice();
+  } else if (act === "dice-clear") { tblDicePool().pool = {}; paintDice(); }
+  else if (act === "dice-mod") {
+    const t = tblDicePool();
+    t.mod = Math.max(-20, Math.min(20, t.mod + Number(val)));
+    paintDice();
+  } else if (act === "dice-mode") { tblDicePool().mode = val; paintDice(); }
+  else if (act === "roll-pool") {
+    const spec = tblPoolSpec();
+    if (spec.terms.length) tblRollAndPost(spec, "", tblDicePool().mode);
+  }
+  else if (act === "roll") tblRollAndPost(val, btn.dataset.label || "", "normal");
   // Stepping the turn is the DM's — or yours, on your own turn. paintTurnBar only renders the button
   // for those two, and this is the only way in, so it sits above the DM-only guard below.
   else if (act === "turn") tblTurnStep(Number(val)).catch(tblFail);

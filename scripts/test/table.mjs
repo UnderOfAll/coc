@@ -43,6 +43,13 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const tblCols = () => peek(`tblScene().cols`);
 // The panel buttons TOGGLE, so asking for one that is already open would shut it.
 const openPanel = (name) => { if (peek("tbl.ui.panel") !== name) click($(`[data-tbl="panel"][data-val="${name}"]`)); };
+/* The dice have two homes: a dock of their own where there is room for one (which is what a test
+   environment reports, having no matchMedia at all), and the slide-over panel where there is not. */
+const openDice = () => {
+  if (peek("tblWide()")) {
+    if (peek("tbl.ui.dock === false")) click($('[data-tbl="panel"][data-val="dice"]'));
+  } else openPanel("dice");
+};
 
 // The table runs on the offline tree: no network in a test, and the local backend is the same
 // interface, so everything below is exercising the real code paths.
@@ -173,6 +180,35 @@ const after = peek(`JSON.stringify([tbl.view.x, tbl.view.y])`);
 ok(before !== after && peek(`tbl.view.x`) === 60, "dragging the map pans the camera (" + before + " -> " + after + ")");
 ok((await peek(`CocLive.get("tables/482910/tokens/tRig/x")`)) === 6, "and moves no token");
 peek(`tbl.view = { x: 0, y: 0, z: 1, fitted: true }; applyView();`);
+
+console.log("\n— TWO FIGURES CANNOT SHARE A SQUARE —");
+// Dropped onto somebody, a figure slides to the side rather than either vanishing into them or refusing
+// to move at all.
+peek(`tbl.view = { x: 0, y: 0, z: 1, fitted: true }; applyView();`);
+await peek(`CocLive.put("tables/482910/tokens/tRig", { name: "Rig", charCode: "123456", x: 2, y: 2, size: 1, kind: "pc", hp: 30, hpMax: 44, speed: 30 })`);
+await peek(`CocLive.put("tables/482910/tokens/tOrc", { name: "Orc", kind: "npc", x: 5, y: 5, size: 1, hp: 15, hpMax: 15, speed: 30 })`);
+await wait(60);
+drag($('[data-token="tRig"]'), 2 * 70 + 35, 2 * 70 + 35, 5 * 70 + 35, 5 * 70 + 35);
+await wait(80);
+const landed = { x: await aget(`CocLive.get("tables/482910/tokens/tRig/x")`),
+                 y: await aget(`CocLive.get("tables/482910/tokens/tRig/y")`) };
+ok(!(landed.x === 5 && landed.y === 5), "dropping one figure onto another does not stack them");
+ok(Math.max(Math.abs(landed.x - 5), Math.abs(landed.y - 5)) === 1,
+  `it lands beside them instead (${landed.x},${landed.y})`);
+// A big figure occupies all of its squares, so you cannot stand INSIDE it either.
+await peek(`CocLive.put("tables/482910/tokens/tBig", { name: "Ogre", kind: "npc", x: 10, y: 10, size: 3, hp: 40, hpMax: 40, speed: 30 })`);
+await wait(60);
+ok(peek(`tblSquareTaken("tRig", 11, 11, 1)`) === true, "the middle of a three-square figure is occupied");
+ok(peek(`tblSquareTaken("tRig", 13, 10, 1)`) === false, "and the square past its edge is not");
+// Scenery is not a creature: a pit has no hit points, and standing in one is usually the point.
+await peek(`CocLive.put("tables/482910/tokens/tPit", { name: "Pit", kind: "npc", x: 20, y: 4, size: 2, hp: 0, hpMax: 0, shape: "triangle" })`);
+await wait(60);
+ok(peek(`tblSquareTaken("tRig", 20, 4, 1)`) === false, "a marker with no hit points blocks nobody");
+await peek(`CocLive.del("tables/482910/tokens/tBig")`);
+await peek(`CocLive.del("tables/482910/tokens/tPit")`);
+await peek(`CocLive.put("tables/482910/tokens/tRig/x", 6)`);
+await peek(`CocLive.put("tables/482910/tokens/tRig/y", 4)`);
+await wait(60);
 
 console.log("\n— A PLAYER MOVES ONLY THEIR OWN —");
 // Same table, but this browser is a player holding character 123456.
@@ -352,40 +388,63 @@ console.log("\n— DICE —");
 // the arithmetic and the wording rather than about luck.
 peek(`window.__seq = []; window.__realRandom = Math.random;
   Math.random = () => (window.__seq.length ? window.__seq.shift() : 0.5);`);
-ok(JSON.stringify(peek(`tblParseRoll("2d6+3")`)) === '{"count":2,"sides":6,"mod":3}', "2d6+3 parses");
-ok(peek(`tblParseRoll("d20").count`) === 1, "a bare d20 is one die");
+ok(peek(`tblParseRoll("2d6+3").terms[0].count`) === 2 && peek(`tblParseRoll("2d6+3").mod`) === 3, "2d6+3 parses");
+ok(peek(`tblParseRoll("d20").terms[0].count`) === 1, "a bare d20 is one die");
 ok(peek(`tblParseRoll("1d20-1").mod`) === -1, "a minus modifier parses");
 ok(peek(`tblParseRoll("bananas")`) === null, "nonsense does not");
-ok(peek(`tblParseRoll("400d6").count`) === 40, "and a silly number of dice is capped");
+ok(peek(`tblParseRoll("2d6+bananas")`) === null, "nor half an expression");
+ok(peek(`tblParseRoll("400d6").terms[0].count`) === 40, "and a silly number of dice is capped");
+// The thing a smite needs: several kinds of die in one throw, added up for you.
+const smite = peek(`tblParseRoll("1d8+2d6+1d4+3")`);
+ok(smite.terms.length === 3 && smite.mod === 3, "a mixed handful parses into its parts (" + JSON.stringify(smite.terms) + ")");
+ok(peek(`tblSpecText(tblParseRoll("1d8+2d6+1d4+3"))`) === "d8 + 2d6 + d4 + 3",
+  "and writes itself back out: " + peek(`tblSpecText(tblParseRoll("1d8+2d6+1d4+3"))`));
+peek(`window.__seq = [0.5, 0.5, 0.5, 0.5];`);
+const mixed = peek(`tblDoRoll(tblParseRoll("1d8+2d6+1d4"), "normal")`);
+ok(mixed.dice.length === 4, "four dice are thrown for 1d8+2d6+1d4");
+ok(mixed.dice.map(x => x.s).join(",") === "8,6,6,4", "each remembering which kind it is (" + mixed.dice.map(x => "d" + x.s).join(" ") + ")");
+ok(mixed.total === mixed.dice.reduce((n, x) => n + x.v, 0), "and the total is the lot added up");
+ok(peek(`tblDoRoll(tblParseRoll("1d8+2d6"), "adv").mode`) === "normal",
+  "advantage is ignored on a handful, as it is on 4d6");
 // 0.5 of a d20 is 11; +4 is 15.
+peek(`window.__seq = [];`);
 let res = peek(`tblDoRoll(tblParseRoll("1d20+4"), "normal")`);
 ok(res.total === 15, "1d20+4 on a middling roll totals 15 (got " + res.total + ")");
 peek(`window.__seq = [0.1, 0.9];`);
 res = peek(`tblDoRoll(tblParseRoll("1d20"), "adv")`);
-ok(res.rolls.length === 2 && res.kept.length === 1, "advantage throws two and keeps one");
-ok(res.kept[0] === Math.max(...res.rolls), "the higher one (" + res.rolls.join(",") + " -> " + res.kept[0] + ")");
+ok(res.dice.length === 2 && res.keptIdx >= 0, "advantage throws two and keeps one");
+ok(res.dice[res.keptIdx].v === Math.max(...res.dice.map(x => x.v)),
+  "the higher one (" + res.dice.map(x => x.v).join(",") + " -> " + res.dice[res.keptIdx].v + ")");
 peek(`window.__seq = [0.1, 0.9];`);
 res = peek(`tblDoRoll(tblParseRoll("1d20"), "dis")`);
-ok(res.kept[0] === Math.min(...res.rolls), "disadvantage keeps the lower one");
+ok(res.dice[res.keptIdx].v === Math.min(...res.dice.map(x => x.v)), "disadvantage keeps the lower one");
 // Advantage is a property of a single d20, not a licence to reroll a fistful of dice.
 res = peek(`tblDoRoll(tblParseRoll("4d6"), "adv")`);
-ok(res.rolls.length === 4 && res.mode === "normal", "advantage is ignored on 4d6 rather than inventing a house rule");
+ok(res.dice.length === 4 && res.mode === "normal", "advantage is ignored on 4d6 rather than inventing a house rule");
 
-openPanel("dice");
+openDice();
 await wait(40);
 ok($$('[data-tbl="die"]').length === 7, "a tray of dice, d4 to d100");
+// Build a handful the way you would for a real hit: two d8 and a +1.
+peek(`tbl.ui.dice = { pool: {}, mod: 0, mode: "normal" }; paintDice();`);
 click($$('[data-tbl="die"]').find(b => b.dataset.val === "8"));
-click($('[data-tbl="dice-count"][data-val="1"]'));
+click($$('[data-tbl="die"]').find(b => b.dataset.val === "8"));
 click($('[data-tbl="dice-mod"][data-val="1"]'));
 await wait(20);
-ok(/2d8\+1/.test($('[data-tbl="roll"]').textContent), "the button says exactly what it will throw: " + $('[data-tbl="roll"]').textContent);
+ok(/2d8 \+ 1/.test($('[data-tbl="roll-pool"]').textContent),
+  "the button says exactly what it will throw: " + $('[data-tbl="roll-pool"]').textContent);
+// A die can be taken back out of the handful.
+click($('[data-tbl="die-less"][data-val="8"]'));
+ok(/Roll d8 \+ 1/.test($('[data-tbl="roll-pool"]').textContent),
+  "tapping it in the pool takes one back out: " + $('[data-tbl="roll-pool"]').textContent);
+click($$('[data-tbl="die"]').find(b => b.dataset.val === "8"));
 peek(`window.__seq = [0.5, 0.5];`);
-click($('[data-tbl="roll"]'));
+click($('[data-tbl="roll-pool"]'));
 await wait(60);
 const log = await aget(`CocLive.get("tables/482910/log")`);
 const lines = Object.values(log || {});
 ok(lines.length === 1, "rolling writes one line to the table's log");
-ok(/2d8 \+ 1 → \[5, 5\] = 11/.test(lines[0].text), "with the dice shown, not just the total: " + lines[0].text);
+ok(lines[0] && /2d8 \+ 1 → \[5, 5\] = 11/.test(lines[0].text), "with the dice shown, not just the total: " + (lines[0] || {}).text);
 ok(/^DM rolled/.test(lines[0].text), "and who threw them");
 const lastBits = () => ({
   who: $("#vtt-lastroll").textContent,
@@ -395,18 +454,22 @@ const lastBits = () => ({
 ok(lastBits().total === "11" && lastBits().dice.join(",") === "5,5",
   "the newest roll is visible even with the panel shut (" + JSON.stringify(lastBits()) + ")");
 ok($$(".roll-line").length === 1, "and listed in the log");
-// Reopening the panel must show the rolls that already happened, not "nothing rolled yet".
-openPanel("dice"); openPanel("dice");
+// Reopening it must show the rolls that already happened, not "nothing rolled yet".
+click($('[data-tbl="panel"][data-val="dice"]')); click($('[data-tbl="panel"][data-val="dice"]'));
 await wait(40);
 ok($$(".roll-line").length === 1, "and the log is still there when the panel is reopened");
 // A natural 20 and a natural 1 are what a table reacts to, so they are marked.
 peek(`window.__seq = [0.999];`);
-peek(`tbl.ui.dice = { sides: 20, count: 1, mod: 0, mode: "normal" }; paintSide();`);
-click($('[data-tbl="roll"]'));
+peek(`tbl.ui.dice = { pool: { 20: 1 }, mod: 0, mode: "normal" }; paintDice();`);
+click($('[data-tbl="roll-pool"]'));
 await wait(60);
 ok($("#vtt-lastroll").classList.contains("nat20"), "a natural 20 marks itself");
+// A straight single die IS its own total — printing both is how you get "DM 18 18".
+ok($$("#vtt-lastroll .pip-die").length === 0, "and a straight single die prints once, not twice");
+ok($("#vtt-lastroll .roll-card-total").textContent === "20",
+  "as the total on its own: " + $("#vtt-lastroll").textContent.trim());
 peek(`window.__seq = [0.0];`);
-click($('[data-tbl="roll"]'));
+click($('[data-tbl="roll-pool"]'));
 await wait(60);
 ok($("#vtt-lastroll").classList.contains("nat1"), "and so does a natural 1");
 ok($$(".roll-line").length === 3, "the log keeps them, newest first");
@@ -414,7 +477,8 @@ ok($$(".roll-line").length === 3, "the log keeps them, newest first");
 const topLine = $$(".roll-line")[0];
 ok(/^1$/.test(topLine.querySelector(".roll-card-total").textContent.trim()),
   "newest at the top, and its total reads on its own: " + topLine.querySelector(".roll-card-total").textContent.trim());
-ok(topLine.querySelectorAll(".pip-die").length === 1, "with the die that produced it beside it");
+// A straight single die shows only its total, so there is no die beside it — that pair is "18 18".
+ok(topLine.querySelectorAll(".pip-die").length === 0, "and no die repeated beside it");
 
 // The other half of the brief: numbers ON THE SHEET are the roll buttons. The sheet drawer arrives in
 // a later checkpoint; what matters here is that a data-roll control anywhere posts to this table.
@@ -579,9 +643,9 @@ await wait(40);
 console.log("\n— A ROLL YOU CAN WATCH —");
 // The overlay is built on demand and lives on the body, because every page can roll.
 peek(`window.__seq = [0.95];`);
-openPanel("dice");
-peek(`tbl.ui.dice = { sides: 20, count: 1, mod: 2, mode: "normal" }; paintSide();`);
-click($('[data-tbl="roll"]'));
+openDice();
+peek(`tbl.ui.dice = { pool: { 20: 1 }, mod: 2, mode: "normal" }; paintDice();`);
+click($('[data-tbl="roll-pool"]'));
 await wait(60);
 const stage = doc.getElementById("roll-stage");
 ok(stage && stage.classList.contains("on"), "rolling puts the dice on screen");
@@ -592,12 +656,13 @@ ok(stage.querySelector(".roll-total").textContent.trim() === "22",
 ok(stage.classList.contains("nat20"), "a natural 20 is marked on the overlay too");
 await wait(700);
 ok(!stage.classList.contains("rolling") && stage.classList.contains("landed"), "then they settle");
-ok(stage.querySelector(".die").textContent === String(peek(`Object.values(tbl.data.log).sort((a,b)=>b.t-a.t)[0].rolls[0]`)),
+ok(stage.querySelector(".die b").textContent === String(peek(`Object.values(tbl.data.log).sort((a,b)=>b.t-a.t)[0].dice[0].v`)),
   "showing the number that was actually rolled, not a random face");
+ok(/d20/.test(stage.querySelector(".die em").textContent), "and which kind of die it was");
 // Advantage keeps both dice on screen, with the discarded one dimmed — "which did I keep" is the first
 // thing anyone asks.
-peek(`window.__seq = [0.1, 0.9]; tbl.ui.dice.mode = "adv"; paintSide();`);
-click($('[data-tbl="roll"]'));
+peek(`window.__seq = [0.1, 0.9]; tbl.ui.dice.mode = "adv"; tbl.ui.dice.mod = 0; paintDice();`);
+click($('[data-tbl="roll-pool"]'));
 await wait(700);
 const dice = [...doc.querySelectorAll("#roll-stage .die")];
 ok(dice.length === 2, "advantage shows both dice");
@@ -614,7 +679,7 @@ await wait(80);
 ok(peek(`tbl.lastRollAt`) > seenBefore, "a roll from another device is noticed");
 ok(/Sable/.test(doc.getElementById("roll-stage").textContent), "and rolled on this screen: " +
   doc.getElementById("roll-stage").querySelector(".roll-head").textContent.trim());
-peek(`tbl.ui.dice.mode = "normal";`);
+peek(`tbl.ui.dice.mode = "normal"; paintDice();`);
 
 console.log("\n— PLAYERS CANNOT REDECORATE —");
 peek(`tbl.role = "player"; tbl.me.charCode = "123456"; renderTableShell(); paintSide();`);
@@ -852,6 +917,25 @@ ok(peek(`location.hash`) === "#/table", "landing you back at the front door");
 ok(peek(`localStorage.getItem("coc:table:dm:482910")`) === null, "the DM key is forgotten with it");
 await go("#/table", 60);
 ok(!/482910/.test($("#tool").textContent), "and it is off this device's list of tables");
+
+console.log("\n— A PLAYER WHOSE TABLE WAS CLOSED —");
+// The DM closed the room. A player still holding the code must be TOLD, not shown an empty board — and
+// their heartbeat must stop, or it writes presence back into a deleted room and rebuilds it as a husk.
+await peek(`CocLive.put("tables/667788", { meta: { name: "Doomed", createdAt: 1 },
+  scenes: { s1: { name: "Ring", cols: 10, rows: 8, cell: 70, createdAt: 1 } } })`);
+peek(`localStorage.setItem("coc:table:me:667788", JSON.stringify({ clientId: "cx", name: "Rig", charCode: "123456" }));
+  localStorage.setItem("coc:table:recent", JSON.stringify([{ code: "667788", name: "Doomed" }]));`);
+await go("#/table/667788", 300);
+ok(peek(`tbl && tbl.code`) === "667788", "the player is in the room");
+// …and now it is deleted from somewhere else entirely.
+await peek(`CocLive.del("tables/667788")`);
+await wait(200);
+ok(peek(`tbl`) === null, "the session is let go of the moment the room stops existing");
+ok(/closed/i.test($("#tool").textContent), "the player is told, instead of being shown a blank map: " +
+  $("#tool h1").textContent);
+ok(/667788/.test($("#tool").textContent), "with the room code that is gone");
+ok(!/667788/.test(peek(`localStorage.getItem("coc:table:recent")`) || ""), "and it comes off their list");
+ok((await aget(`CocLive.get("tables/667788")`)) === null, "nothing is written back into it");
 
 console.log("\n— FORGETTING SOMEBODY ELSE'S TABLE —");
 // A player who is done with a table they do not own takes it off their own list only.

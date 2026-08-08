@@ -1233,3 +1233,19 @@ input.step-val { width: 3.4rem; }
 
 /* The notepad: a title, and a box big enough to actually write in. */
 .notes-body { min-height: 12rem; line-height: 1.55; font-family: var(--sans); }
+
+/* The dice dock: on a desktop the tray and the whole roll history stay open beside the board, because
+   there is room for them and a history you have to go and open is a history nobody reads. A phone has no
+   such room, so there the dice use the same slide-over panel as everything else — the one behavioural
+   difference between the two layouts. */
+.vtt-dock { display: none; }
+@media (min-width: 761px) {
+  .vtt-dock { display: block; width: min(330px, 26vw); flex-shrink: 0; max-height: 74dvh;
+    overflow-y: auto; background: var(--panel); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 0.8rem; }
+  .vtt-dock.hidden { display: none; }
+  .vtt-dock .panel { background: none; border: none; padding: 0; margin: 0 0 0.9rem; }
+  .vtt-dock .roll-log { max-height: 46dvh; }
+}
+/* The die face and its name, so a mixed handful reads as dice rather than as numbers. */
+.die b { font-weight: 600; }
