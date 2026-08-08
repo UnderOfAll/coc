@@ -186,6 +186,10 @@ if (typeof window !== "undefined") {
 function renderTableLanding() {
   const recent = tblRecent();
   const suggested = tblSuggestCode();
+  // Rooms on this list may have been closed by their DM since. Checked in the background rather than
+  // before the page appears, and the dead ones simply drop off — a list that offers you a door to
+  // nowhere is worse than a short list.
+  tblVerifyRecent(recent);
   paint(`
     <div class="tool-head">
       <a class="back" href="#/">&larr; Menu</a>
@@ -245,6 +249,24 @@ function renderTableLanding() {
       <p class="muted">Forget takes a table off this device's list. To delete a room for everybody, open
         it as the DM and close it there.</p></section>` : ""}
   `);
+}
+
+/* Which of the remembered tables still exist. Anything gone is taken off the list and the page is drawn
+   again; anything unreachable (no network) is LEFT ALONE, because "I cannot check" is not "it is gone". */
+async function tblVerifyRecent(recent) {
+  if (!recent.length) return;
+  let changed = false;
+  for (const row of recent) {
+    try {
+      if ((await CocLive.get("tables/" + row.code + "/meta")) == null) {
+        tblForgetTable(row.code);
+        localStorage.removeItem(tblDmKey(row.code));
+        changed = true;
+      }
+    } catch { /* unreachable: leave it on the list */ }
+  }
+  // Only if the page is still the one that asked, or this would paint over a table being opened.
+  if (changed && /^#\/table\/?$/.test(location.hash)) renderTableLanding();
 }
 
 async function tblCreate() {
@@ -422,6 +444,7 @@ function tblPruneMyTokens() {
    the code is what proves ownership later, so nobody else can drag them around. */
 async function tblEnsureToken() {
   if (!tbl || tbl.role === "dm") return;
+  if (tbl.me.left) return;          // you took your figure off on purpose; it does not come back by itself
   if (!tbl.me.charCode && !tbl.me.name) return;   // nothing to name a figure after yet
   // NEVER place before the table's data has arrived. Sitting down on a second device placed a second
   // figure, because at that moment this client believed the board was empty.
@@ -498,7 +521,7 @@ function renderTableShell() {
         <aside id="vtt-dock" class="vtt-dock hidden"></aside>
         <div id="vtt-stage" class="vtt-stage">
           <div id="vtt-world" class="vtt-world">
-            <img id="vtt-map" class="vtt-map hidden" alt="" />
+            <img id="vtt-map" class="vtt-map hidden" alt="" draggable="false" />
             <div id="vtt-grid" class="vtt-grid"></div>
             <svg id="vtt-ink" class="vtt-ink" aria-hidden="true"></svg>
             <div id="vtt-tokens" class="vtt-tokens"></div>
@@ -843,6 +866,9 @@ function bindStage() {
   const stage = $("#vtt-stage");
   if (!stage) return;
   stage.addEventListener("pointerdown", onPointerDown);
+  // Belt and braces for the same bug: if the browser tries to start a drag of the map or a figure anyway,
+  // refuse it. One line, and it costs nothing.
+  stage.addEventListener("dragstart", (e) => e.preventDefault());
   /* move / up / cancel are bound to the WINDOW, not to the board, and this is the whole of the
      "zoom, then dragging stops working until I leave the room" bug. A finger or a mouse released
      OUTSIDE the board — which is most of a phone screen, and is where a pinch usually ends — never
@@ -945,6 +971,15 @@ function onPointerDown(e) {
   if (!tbl) return;
   const stage = $("#vtt-stage");
   if (!stage || !stage.contains(e.target)) return;   // the window hears everything; the board owns only itself
+  /* THE bug behind five reports of "I can't drag until I double-click".
+     A pointerdown on an <img> or on text starts the BROWSER's own drag-and-drop — a native gesture that
+     swallows every pointermove that follows, so the board simply stops hearing the hand. It is
+     browser-dependent (`-webkit-user-drag: none` covers Blink and WebKit and does nothing in Firefox),
+     which is why it never reproduced in my Chromium tests, and a double-click "fixed" it only by putting
+     the browser into a different interaction state.
+     preventDefault on pointerdown stops the native drag AND the text selection that comes with it. It is
+     safe here because this listener is not passive and the board handles every gesture itself. */
+  if (e.cancelable) e.preventDefault();
   // A primary pointerdown is by definition the FIRST finger of a gesture, so anything still recorded
   // is a ghost from an event we never received. Self-healing beats hoping.
   if (e.isPrimary !== false && tbl.pointers.size) { tbl.pointers.clear(); tbl.pinch = null; tbl.drag = null; }
@@ -2280,6 +2315,16 @@ const TBL_CONDITION_NAMES = {
   bloodied: "Bloodied", down: "Down",
 };
 
+/* Opening a figure has to bring its details INTO VIEW. The panel is beside the board on a desktop and
+   below it on a phone, so "it opened" and "you can see that it opened" were two different things — Kayki
+   double-tapped a creature and the page stayed where it was. */
+function tblRevealPanel() {
+  const side = $("#vtt-side");
+  if (side && side.scrollIntoView) {
+    try { side.scrollIntoView({ block: "nearest", behavior: "smooth" }); } catch { side.scrollIntoView(); }
+  }
+}
+
 function tblOpenToken(id) {
   const t = tblTokens()[id];
   if (!t) return;
@@ -2287,14 +2332,16 @@ function tblOpenToken(id) {
     tbl.ui.editToken = id;
     tbl.ui.panel = "dm";
     paintSide();
+    tblRevealPanel();
     return;
   }
   // A player gets their own sheet for their own figure, and a read-only look at anything else. Being
   // told nothing at all about the thing about to eat you was the wrong answer.
-  if (t.charCode && t.charCode === tbl.me.charCode) { tbl.ui.panel = "sheet"; paintSide(); return; }
+  if (t.charCode && t.charCode === tbl.me.charCode) { tbl.ui.panel = "sheet"; paintSide(); tblRevealPanel(); return; }
   tbl.ui.lookAt = id;
   tbl.ui.panel = "figure";
   paintSide();
+  tblRevealPanel();
 }
 
 /* What a player can see about a figure: what it is, how hurt it is, what it is suffering from, and how
@@ -2308,6 +2355,18 @@ function figureInfoHTML(id) {
   // Your own figure, in a game with no Circus of Chaos sheet behind it: this IS your sheet, so it is
   // yours to change. Somebody else's is read-only.
   if (tblIsMine(t) && !tbl.me.charCode) return myFigureHTML(id, t);
+  // Your own figure, with a sheet behind it: the sheet is where its numbers live, so all this needs to
+  // offer is the thing that was missing — getting a character you are not playing off the board. A friend
+  // of Kayki's ended up with three of his characters standing on the map at once.
+  if (tblIsMine(t)) {
+    return `<section class="panel"><h2>${esc(t.name || "Your figure")}</h2>
+      <p class="muted">Your own figure. Its hit points and everything else live on your sheet — open
+        <strong>My sheet</strong> for those.</p>
+      <p class="panel-sub">Leaving</p>
+      <button class="btn-quiet" data-tbl="mine-remove" data-val="${esc(id)}">Take my figure off the table</button>
+      <p class="muted">Nothing about the character is touched; you can walk back in whenever.</p>
+    </section>`;
+  }
   const pct = t.hpMax ? Math.max(0, Math.min(100, Math.round((Number(t.hp) || 0) / t.hpMax * 100))) : 0;
   const showHp = tbl.role === "dm" || tblIsMine(t);
   const conds = Array.isArray(t.conditions) ? t.conditions : [];
@@ -2367,11 +2426,12 @@ function tokenEditorHTML(id) {
     <div class="hp-controls">
       <button class="btn" data-tbl="ed-save" data-val="${esc(id)}">Save</button>
       <button class="btn-quiet" data-tbl="ed-dup" data-val="${esc(id)}">Duplicate</button>
-      ${t.kind === "npc" ? `<button class="btn-quiet" data-tbl="ed-del" data-val="${esc(id)}">Remove</button>` : ""}
+      <button class="btn-quiet" data-tbl="ed-del" data-val="${esc(id)}">Remove</button>
       <button class="btn-quiet" data-tbl="ed-close">Close</button>
     </div>
-    ${t.charCode ? `<p class="muted">This is a player's figure — its hit points follow their sheet, so
-      changing them here is a stopgap, not the record.</p>` : ""}
+    ${t.charCode || t.owner ? `<p class="muted">This is a player's figure — its hit points follow their
+      sheet, so changing them here is a stopgap rather than the record. Removing it takes them off the
+      board; if they are still in the room they can walk back in.</p>` : ""}
   </section>`;
 }
 
@@ -2418,6 +2478,10 @@ function myFigureHTML(id, t) {
         data-val="${esc(id)}|${k}">${esc(label)}</button>`).join("")}</div>
     <p class="muted">Everyone at the table can read these, which is the point — the DM should not have
       to ask how you are doing.</p>
+    <p class="panel-sub">Leaving</p>
+    <button class="btn-quiet" data-tbl="mine-remove" data-val="${esc(id)}">Take my figure off the table</button>
+    <p class="muted">For a character you are not playing tonight. Nothing about the character itself is
+      touched, and you can walk back in whenever.</p>
   </section>`;
 }
 
@@ -2718,6 +2782,16 @@ document.addEventListener("click", (e) => {
   else if (act === "hand-dismiss") { tbl.ui.dismissed = val; paintHandout(); }
   // Your own figure: yours to keep, whether or not there is a sheet behind it. Guarded by ownership,
   // not by which buttons happen to be rendered.
+  else if (act === "mine-remove") {
+    const t = tblTokens()[val];
+    if (t && (tbl.role === "dm" || tblIsMine(t))) {
+      // Remembered, so the heartbeat does not helpfully put it straight back.
+      tbl.me.left = true;
+      CocLive.del(tblPath("tokens/" + val)).catch(tblFail);
+      tbl.ui.panel = "";
+      paintSide();
+    }
+  }
   else if (act === "mine-save" || act === "mine-hp" || act === "mine-cond") {
     const [id, arg] = String(val).split("|");
     const t = tblTokens()[id];

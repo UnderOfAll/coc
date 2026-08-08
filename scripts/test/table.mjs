@@ -1089,12 +1089,25 @@ ok(/667788/.test($("#tool").textContent), "with the room code that is gone");
 ok(!/667788/.test(peek(`localStorage.getItem("coc:table:recent")`) || ""), "and it comes off their list");
 ok((await aget(`CocLive.get("tables/667788")`)) === null, "nothing is written back into it");
 
+console.log("\n— A CLOSED TABLE DOES NOT LINGER ON THE LIST —");
+// The other half of the same complaint: being told the room is closed when you walk in is no good if the
+// list keeps offering you the door.
+peek(`localStorage.setItem("coc:table:recent", JSON.stringify([
+  { code: "667788", name: "Closed one" }, { code: "445566", name: "Still there" }]));`);
+await peek(`CocLive.put("tables/445566/meta", { name: "Still there", createdAt: 1 })`);
+await go("#/table", 300);
+await wait(250);
+ok(!/667788/.test($("#tool").textContent), "a room that no longer exists comes off the list by itself");
+ok(/445566/.test($("#tool").textContent), "while one that is still open stays");
+
 console.log("\n— FORGETTING SOMEBODY ELSE'S TABLE —");
 // A player who is done with a table they do not own takes it off their own list only.
-peek(`localStorage.setItem("coc:table:recent", JSON.stringify([{ code: "112233", name: "Someone else's" }]));`);
-await go("#/table", 60);
-ok(/112233/.test($("#tool").textContent), "a remembered table is listed");
+// The room has to EXIST for it to stay on the list — that is the check just above.
 await peek(`CocLive.put("tables/112233/meta", { name: "Someone else's", createdAt: 1 })`);
+peek(`localStorage.setItem("coc:table:recent", JSON.stringify([{ code: "112233", name: "Someone else's" }]));`);
+await go("#/table", 300);
+await wait(200);
+ok(/112233/.test($("#tool").textContent), "a remembered table is listed");
 click($('[data-tbl="forget"]'));
 await wait(60);
 ok(!/112233/.test($("#tool").textContent), "forgetting takes it off the list");
