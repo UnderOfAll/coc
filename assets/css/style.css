@@ -1059,3 +1059,29 @@ input.step-val { width: 3.4rem; }
 .grid-row { display: flex; flex-wrap: wrap; gap: 0.8rem; align-items: flex-end; margin: 0.6rem 0; }
 .vtt-side .field { margin-bottom: 0.5rem; }
 .vtt-side input[type="file"] { font-size: 0.85rem; max-width: 100%; }
+
+/* Dice: a tray, and the one line the whole table reads. */
+.dice-row { display: flex; flex-wrap: wrap; gap: 0.9rem; margin: 0.6rem 0; }
+.dice-row .stepper { gap: 0.4rem; }
+.last-roll { margin: 0; padding: 0.45rem 0.7rem; border-radius: var(--radius);
+  background: var(--panel-2); border: 1px solid var(--border); font-size: 0.94rem; }
+/* A natural 20 and a natural 1 are the two results a table reacts to, so they are the two the log
+   shows without being read. */
+.last-roll.nat20, .roll-line.nat20 { border-left: 3px solid var(--ok); color: var(--text); }
+.last-roll.nat1, .roll-line.nat1 { border-left: 3px solid var(--accent); color: var(--text); }
+.roll-log { display: flex; flex-direction: column; gap: 0.25rem; max-height: 40dvh; overflow-y: auto; }
+.roll-line { margin: 0; padding: 0.25rem 0.4rem; font-size: 0.87rem; color: var(--muted);
+  border-left: 3px solid transparent; }
+/* Rolling from a sheet that is not at a table: the answer has nowhere to go, so it says itself. */
+.roll-toast { position: fixed; left: 50%; bottom: 1.2rem; transform: translateX(-50%) translateY(1rem);
+  max-width: min(92vw, 30rem); padding: 0.6rem 0.9rem; border-radius: var(--radius);
+  background: var(--panel); border: 1px solid var(--gold); color: var(--text);
+  box-shadow: 0 10px 26px rgba(0,0,0,0.55); font-size: 0.94rem; z-index: 60;
+  opacity: 0; pointer-events: none; transition: opacity 0.18s ease, transform 0.18s ease; }
+.roll-toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
+/* Any number on a sheet you can actually throw dice for. It has to look like the number it replaced,
+   or the sheet turns into a wall of buttons — so it is the same type, with a hairline and a cursor. */
+.roll { background: none; border: none; padding: 0; margin: 0; font: inherit; color: inherit;
+  cursor: pointer; border-bottom: 1px dashed rgba(201,165,78,0.5); }
+.roll:hover { color: var(--gold); border-bottom-color: var(--gold); }
+.roll:disabled { cursor: default; border-bottom: none; }

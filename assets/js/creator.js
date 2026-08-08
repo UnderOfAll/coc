@@ -1065,11 +1065,27 @@ function combatBar(d, p) {
 
 /* One number in a box: the value leads, the label sits under it, the working-out is one tap away.
    A defence at the top of the sheet and a class DC inside the Status field are the same object, so
-   they are the same markup — the vitals bar only sizes them down through its own container. */
-function numBox(label, value, note, tip) {
+   they are the same markup — the vitals bar only sizes them down through its own container.
+
+   `roll` turns the NOTE into the button that throws the dice, rather than the value: a Parry DC of 11
+   is not a thing you roll, "roll a flat d20" is, and a number that silently rolls when tapped is a
+   number nobody trusts. At a table the result goes to the shared log; away from one it answers on
+   your own screen (see tblRollAndPost). */
+function numBox(label, value, note, tip, roll) {
+  const noteHTML = !note ? ""
+    : roll ? `<span class="kn-n">${rollBtn(roll.spec, roll.label, note)}</span>`
+    : `<span class="kn-n">${esc(note)}</span>`;
   return `<div class="kn"><span class="kn-v">${esc(value)}</span>
     <span class="kn-l">${tip ? plainTermHTML(label, tip) : esc(label)}</span>
-    ${note ? `<span class="kn-n">${esc(note)}</span>` : ""}</div>`;
+    ${noteHTML}</div>`;
+}
+
+/* Every rollable thing on the sheet is one of these, so there is exactly one place that knows what a
+   roll button looks like and what it carries. Shift-click for advantage, alt-click for disadvantage —
+   the dice tray has proper buttons for both; this is the shortcut for the common case. */
+function rollBtn(spec, label, text) {
+  return `<button class="roll" type="button" data-roll="${esc(spec)}" data-label="${esc(label)}"
+    title="Roll ${esc(spec)} — hold Shift for advantage, Alt for disadvantage">${esc(text == null ? spec : text)}</button>`;
 }
 
 /* Hit points and the three numbers that answer "did that hit me, and what do I do about it" — they
@@ -1095,8 +1111,8 @@ function vitals(d, p) {
       </div>
       <div class="vital-set">
         ${numBox("Armour Class", d.ac, d.acNote, "An attack roll must equal or beat this to hit you. Only a hit can then be Parried.")}
-        ${numBox("Parry DC", d.parryDC, "roll a flat d20", "When a hit lands, spend your reaction and roll a flat d20 — no modifiers. Above this DC: no damage. Equal: half. Below: half again on top. Lower is better, and it never scales with level.")}
-        ${numBox("Initiative", sign(d.mods.Dexterity), "d20 + this", "Roll d20 and add this at the start of a fight to see who goes when.")}
+        ${numBox("Parry DC", d.parryDC, "roll a flat d20", "When a hit lands, spend your reaction and roll a flat d20 — no modifiers. Above this DC: no damage. Equal: half. Below: half again on top. Lower is better, and it never scales with level.", { spec: "1d20", label: "Parry (needs over " + d.parryDC + ")" })}
+        ${numBox("Initiative", sign(d.mods.Dexterity), "roll initiative", "Roll d20 and add this at the start of a fight to see who goes when.", { spec: "1d20" + sign(d.mods.Dexterity), label: "Initiative" })}
       </div>
     </div>
     ${p.hp <= 0 ? `<p class="warn">Down. In this system that is the DM's call — the sheet just stops counting.</p>` : ""}
@@ -1115,15 +1131,17 @@ function statusPanel(d) {
   const abils = ABILITIES.map((a) => {
     const isProf = d.saves.includes(a);
     const save = d.mods[a] + (isProf ? d.prof : 0);
+    // Both numbers here ARE rolls — an ability check and a saving throw — so both are buttons. The
+    // score is not: nothing is ever rolled against your raw 16.
     return `<div class="ab-box ${isProf ? "prof" : ""}">
       <span class="ab-name">${esc(ABIL_SHORT[a])}</span>
-      <span class="ab-mod">${esc(sign(d.mods[a]))}</span>
+      <span class="ab-mod">${rollBtn("1d20" + sign(d.mods[a]), ABIL_SHORT[a] + " check", sign(d.mods[a]))}</span>
       <span class="ab-score">score ${esc(sheet.ch.scores[a] == null ? "—" : sheet.ch.scores[a] + ((sheet.ch.origin || {})[a] || 0))}</span>
-      <span class="ab-save">save ${esc(sign(save))}</span></div>`;
+      <span class="ab-save">save ${rollBtn("1d20" + sign(save), ABIL_SHORT[a] + " save", sign(save))}</span></div>`;
   }).join("");
   const ch = sheet.ch;
   const stats = d.classStats.map((k) => n(k.label, k.hit.value, "", k.hit.explain + (k.note ? " — " + k.note : ""))).join("")
-    + (d.tricks.length ? n("Trick attack", sign(d.attackBonus), "for tricks that roll", "Your proficiency bonus + your " + ABIL_SHORT[d.primary] + " modifier, for the tricks that make an attack roll instead of forcing a save. Weapon attacks are worked out per weapon under Attacks.") : "");
+    + (d.tricks.length ? n("Trick attack", sign(d.attackBonus), "roll a trick attack", "Your proficiency bonus + your " + ABIL_SHORT[d.primary] + " modifier, for the tricks that make an attack roll instead of forcing a save. Weapon attacks are worked out per weapon under Attacks.", { spec: "1d20" + sign(d.attackBonus), label: "Trick attack" }) : "");
   return `<section class="panel"><h2>Your numbers</h2>
   ${stats ? `<div class="kn-grid">${stats}</div>` : ""}
   <p class="panel-sub">Abilities — the modifier is what you add; a gold box is a saving throw your class is proficient in${d.prof ? `, which already includes your ${plainTermHTML("proficiency bonus " + sign(d.prof), `Not an ability score: it comes from LEVEL alone and is the same for every class — +2 at levels 1-4, +3 at 5-8, +4 at 9-12, +5 at 13-16, +6 at 17+. You are level ${d.level}, so ${sign(d.prof)}. It is already added into every number on this sheet that needs it: your saving throws, your to-hit, your DC, and your skills below.`)}` : ""}</p>
@@ -1134,7 +1152,7 @@ function statusPanel(d) {
       const ab = sk && sk.ability;
       const bonus = (ab ? (d.mods[ab] || 0) : 0) + d.prof;
       return `<span class="skill-chip"><strong>${esc(name)}</strong>
-        <em>${esc(sign(bonus))}</em>${ab ? `<span class="muted">${esc(ABIL_SHORT[ab])}</span>` : ""}</span>`;
+        <em>${rollBtn("1d20" + sign(bonus), name, sign(bonus))}</em>${ab ? `<span class="muted">${esc(ABIL_SHORT[ab])}</span>` : ""}</span>`;
     }).join("")}</div>` : ""}
   </section>`;
 }
@@ -1154,10 +1172,16 @@ function attacksPanel(d) {
     const rng = w.range ? `<span class="muted">${esc(w.range.normal)}/${esc(w.range.long)} ft</span>` : "";
     // data-label drives the stacked layout on a phone, where five columns cannot fit and a
     // horizontal scroller would clip the mastery tooltips.
+    // The to-hit and the damage are the two things you do with a weapon, so they are the two buttons.
+    // chipTip keeps the explanation on its own ⓘ rather than on the control — tapping a control on a
+    // phone must do the thing, not explain it.
+    const hitBtn = chipTip(rollBtn("1d20" + sign(hit), w.name + " to hit", sign(hit)),
+      `${why} Proficiency ${sign(d.prof)} + ${ability} ${sign(mod)}.`);
+    const dmgSpec = w.damage.die + (mod ? sign(mod) : "");
     return `<tr>
       <td data-label="Weapon"><strong>${esc(w.name)}</strong> ${rng}</td>
-      <td data-label="To hit" class="atk-hit">${plainTermHTML(sign(hit), `${why} Proficiency ${sign(d.prof)} + ${ability} ${sign(mod)}.`)}</td>
-      <td data-label="Damage" class="atk-dmg">${esc(w.damage.die)} ${esc(sign(mod))}${vers} <span class="muted">${esc(w.damage.type)}</span></td>
+      <td data-label="To hit" class="atk-hit">${hitBtn}</td>
+      <td data-label="Damage" class="atk-dmg">${rollBtn(dmgSpec, w.name + " damage", w.damage.die + " " + sign(mod))}${vers} <span class="muted">${esc(w.damage.type)}</span></td>
       <td data-label="Properties">${propsHTML(w.properties)}</td>
       <td data-label="Mastery">${masteryHTML(w.mastery)}</td></tr>`;
   }).join("");

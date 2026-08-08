@@ -355,6 +355,7 @@ function renderTableShell() {
         </span>
       </div>
       <p id="vtt-error" class="warn hidden"></p>
+      <p id="vtt-lastroll" class="last-roll hidden"></p>
       <div id="vtt-turn" class="vtt-turn hidden"></div>
       <div class="vtt-body">
         <div id="vtt-stage" class="vtt-stage">
@@ -885,13 +886,160 @@ async function tblNudgeGrid(which, delta) {
   await CocLive.put(tblPath("scenes/" + id + "/" + key), next);
 }
 
+/* ---------------------------------------------------------------- dice */
+
+/* The dice are deliberately not a chat product. Kayki's table talks out loud or on Discord; what it
+   needs from an app is the one line nobody can argue with — "Kayki rolled a d8 → 5" — in front of
+   everyone at the same moment. So: a roller, a shared log of results, and nothing else.
+ *
+ * The roller who clicks computes the numbers and posts the result. That trusts the client, which is
+ * the same trust the whole app runs on (a six-digit code IS the credential), and it is what makes a
+ * roll appear instantly rather than after a round trip. */
+
+/* "2d6+3", "d20", "1d20-1" — the shape people already write. */
+function tblParseRoll(spec) {
+  const m = /^\s*(\d*)d(\d+)\s*([+-]\s*\d+)?\s*$/i.exec(String(spec || ""));
+  if (!m) return null;
+  return {
+    count: Math.max(1, Math.min(40, Number(m[1] || 1))),
+    sides: Math.max(2, Math.min(1000, Number(m[2]))),
+    mod: m[3] ? Number(String(m[3]).replace(/\s+/g, "")) : 0,
+  };
+}
+
+function d(sides) { return 1 + Math.floor(Math.random() * sides); }
+
+/* Advantage and disadvantage are a property of the ROLL, not of the die: two d20s, keep one. Applying
+   them to "4d6" would be a house rule nobody asked for, so they are ignored unless a single die is
+   being thrown. */
+function tblDoRoll(spec, mode) {
+  const twin = (mode === "adv" || mode === "dis") && spec.count === 1;
+  const rolls = [];
+  const n = twin ? 2 : spec.count;
+  for (let i = 0; i < n; i++) rolls.push(d(spec.sides));
+  const kept = twin ? [mode === "adv" ? Math.max(...rolls) : Math.min(...rolls)] : rolls.slice();
+  const sum = kept.reduce((a, b) => a + b, 0);
+  return {
+    rolls, kept, mode: twin ? mode : "normal", spec,
+    total: sum + spec.mod,
+    natural: spec.sides === 20 && kept.length === 1 ? kept[0] : 0,
+  };
+}
+
+/* One line, readable at a glance from across a table, with the working shown because "18" on its own
+   is exactly the number people query. */
+function tblRollLine(who, label, res) {
+  const s = res.spec;
+  who = esc(who || "Someone");
+  label = label ? esc(label) : "";
+  const dice = `${s.count === 1 ? "" : s.count}d${s.sides}`;
+  const shown = res.rolls.length > 1 || res.mode !== "normal"
+    ? `[${res.rolls.join(", ")}]${res.mode === "adv" ? " keep high" : res.mode === "dis" ? " keep low" : ""}`
+    : String(res.kept[0]);
+  const modText = s.mod ? ` ${s.mod > 0 ? "+" : "−"} ${Math.abs(s.mod)}` : "";
+  // Named rolls say what they were for; a bare handful of dice does not need "rolled 2d8: 2d8".
+  const head = label ? `${who} rolled ${label}: ${dice}${modText}` : `${who} rolled ${dice}${modText}`;
+  return `${head} → ${shown}${s.mod || res.rolls.length > 1 ? " = " + res.total : ""}`;
+}
+
+/* Roll, and put it where the table can see it. Away from a table the same click still works — it just
+   answers on your own screen, because a sheet is useful on its own. */
+function tblRollAndPost(spec, label, mode) {
+  const parsed = typeof spec === "string" ? tblParseRoll(spec) : spec;
+  if (!parsed) return null;
+  const res = tblDoRoll(parsed, mode || "normal");
+  const who = tbl ? (tbl.me.name || (tbl.role === "dm" ? "DM" : "Player")) : "You";
+  const text = tblRollLine(who, label, res);
+  if (tbl) {
+    CocLive.push(tblPath("log"), {
+      t: Date.now(), who, kind: "roll", text,
+      nat: res.natural === 20 ? 20 : res.natural === 1 ? 1 : 0,
+    }).catch(() => {});
+  } else {
+    tblToast(text);
+  }
+  return res;
+}
+
+/* Away from a table a roll has nowhere to appear, so it says itself and fades. Built here rather
+   than in the markup because the sheet is not the only page that can roll. */
+let tblToastTimer = null;
+function tblToast(text) {
+  let node = document.getElementById("roll-toast");
+  if (!node) {
+    node = document.createElement("div");
+    node.id = "roll-toast";
+    node.className = "roll-toast";
+    document.body.appendChild(node);
+  }
+  node.textContent = text;
+  node.classList.add("on");
+  clearTimeout(tblToastTimer);
+  tblToastTimer = setTimeout(() => node.classList.remove("on"), 4000);
+}
+
+const TBL_DICE = [4, 6, 8, 10, 12, 20, 100];
+
+function dicePanelHTML() {
+  const t = tbl.ui.dice || (tbl.ui.dice = { sides: 20, count: 1, mod: 0, mode: "normal" });
+  const spec = `${t.count}d${t.sides}${t.mod ? (t.mod > 0 ? "+" : "") + t.mod : ""}`;
+  return `<section class="panel">
+      <h2>Dice</h2>
+      <div class="chips">${TBL_DICE.map((s) =>
+        `<button class="chip ${t.sides === s ? "on" : ""}" data-tbl="die" data-val="${s}">d${s}</button>`).join("")}</div>
+      <div class="dice-row">
+        <span class="stepper"><span class="ab-name">How many</span>
+          <button class="step-btn" data-tbl="dice-count" data-val="-1">&minus;</button>
+          <span class="step-val">${esc(t.count)}</span>
+          <button class="step-btn" data-tbl="dice-count" data-val="1">+</button></span>
+        <span class="stepper"><span class="ab-name">Modifier</span>
+          <button class="step-btn" data-tbl="dice-mod" data-val="-1">&minus;</button>
+          <span class="step-val">${esc(t.mod > 0 ? "+" + t.mod : t.mod)}</span>
+          <button class="step-btn" data-tbl="dice-mod" data-val="1">+</button></span>
+      </div>
+      <div class="chips">${[["normal", "Straight"], ["adv", "Advantage"], ["dis", "Disadvantage"]].map(([k, label]) =>
+        `<button class="chip ${t.mode === k ? "on" : ""}" data-tbl="dice-mode" data-val="${k}">${esc(label)}</button>`).join("")}
+      </div>
+      ${t.count > 1 && t.mode !== "normal" ? `<p class="muted">Advantage needs a single die — with
+        ${esc(t.count)} of them it is ignored.</p>` : ""}
+      <button class="btn" data-tbl="roll" data-val="${esc(spec)}">Roll ${esc(spec)}</button>
+    </section>
+    <section class="panel">
+      <p class="panel-sub">Rolls at this table</p>
+      <div id="vtt-log" class="roll-log"></div>
+    </section>`;
+}
+
+/* The log is newest-first: a side panel on a phone has no room to auto-scroll, and the roll you care
+   about is the one that just happened. */
+function paintLog() {
+  const last = $("#vtt-lastroll");
+  const entries = Object.entries(tbl.data.log || {}).sort((a, b) => (b[1].t || 0) - (a[1].t || 0));
+  if (last) {
+    const top = entries[0];
+    last.textContent = top ? top[1].text : "";
+    last.classList.toggle("hidden", !top);
+    last.classList.toggle("nat20", !!(top && top[1].nat === 20));
+    last.classList.toggle("nat1", !!(top && top[1].nat === 1));
+  }
+  const host = $("#vtt-log");
+  if (host) {
+    host.innerHTML = entries.slice(0, 60).map(([, e]) =>
+      `<p class="roll-line ${e.nat === 20 ? "nat20" : e.nat === 1 ? "nat1" : ""}">${esc(e.text || "")}</p>`).join("")
+      || `<p class="muted">Nothing rolled yet.</p>`;
+  }
+  // A log nobody prunes grows for as long as the table exists. The DM's browser does it, once it is
+  // clearly long, and only ever to the oldest entries.
+  if (tbl.role === "dm" && entries.length > 150) {
+    for (const [id] of entries.slice(120)) CocLive.del(tblPath("log/" + id)).catch(() => {});
+  }
+}
+
 /* ---------------------------------------------------------------- filled in by later checkpoints */
 
 function paintRuler() { /* checkpoint: ruler + movement budget */ }
 function tblCountMove() { /* checkpoint: ruler + movement budget */ }
 function paintTurnBar() { /* checkpoint: turn order */ }
-function paintLog() { /* checkpoint: dice + roll log */ }
-function dicePanelHTML() { return `<p class="muted">Dice, shortly.</p>`; }
 function paintSheetPanel() { /* checkpoint: the sheet drawer */ }
 function tblOpenToken() { /* checkpoint: token editor */ }
 
@@ -899,7 +1047,15 @@ function tblOpenToken() { /* checkpoint: token editor */ }
 
 COC_ROUTES.table = routeTable;
 
+/* Rolling from a sheet. Listened for here rather than in creator.js because the dice belong to the
+   table, and the sheet is the same sheet whether it is open at a table or on its own. */
 document.addEventListener("click", (e) => {
+  const roller = e.target.closest("[data-roll]");
+  if (roller && !roller.disabled) {
+    tblRollAndPost(roller.dataset.roll, roller.dataset.label || "",
+      e.shiftKey ? "adv" : (e.altKey ? "dis" : "normal"));
+    return;
+  }
   const btn = e.target.closest("[data-tbl]");
   if (!btn || btn.disabled) return;
   const { tbl: act, val } = btn.dataset;
@@ -909,6 +1065,15 @@ document.addEventListener("click", (e) => {
   if (act === "zoom") {
     if (val === "0") tblFit(); else tblZoomBy(val === "1" ? 1.25 : 1 / 1.25);
   } else if (act === "panel") tblPanel(val);
+  else if (act === "die") { tbl.ui.dice.sides = Number(val); paintSide(); }
+  else if (act === "dice-count") {
+    tbl.ui.dice.count = Math.max(1, Math.min(40, tbl.ui.dice.count + Number(val)));
+    paintSide();
+  } else if (act === "dice-mod") {
+    tbl.ui.dice.mod = Math.max(-20, Math.min(20, tbl.ui.dice.mod + Number(val)));
+    paintSide();
+  } else if (act === "dice-mode") { tbl.ui.dice.mode = val; paintSide(); }
+  else if (act === "roll") tblRollAndPost(val, btn.dataset.label || "", tbl.ui.dice ? tbl.ui.dice.mode : "normal");
   // Everything below changes the board itself, which is the DM's alone. The buttons are not rendered
   // for a player, and the check is here as well because a rendered-away control is not a locked one.
   else if (tbl.role !== "dm") return;

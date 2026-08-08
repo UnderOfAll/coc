@@ -314,6 +314,77 @@ ok((await aget(`CocLive.get("tables/482910/tokens/tGob")`)) === null || $$(".sce
   "and its monsters go with it");
 peek(`window.fetch = window.__realFetch;`);
 
+console.log("\n— DICE —");
+// Deterministic dice: a fixed sequence stands in for Math.random, so every assertion below is about
+// the arithmetic and the wording rather than about luck.
+peek(`window.__seq = []; window.__realRandom = Math.random;
+  Math.random = () => (window.__seq.length ? window.__seq.shift() : 0.5);`);
+ok(JSON.stringify(peek(`tblParseRoll("2d6+3")`)) === '{"count":2,"sides":6,"mod":3}', "2d6+3 parses");
+ok(peek(`tblParseRoll("d20").count`) === 1, "a bare d20 is one die");
+ok(peek(`tblParseRoll("1d20-1").mod`) === -1, "a minus modifier parses");
+ok(peek(`tblParseRoll("bananas")`) === null, "nonsense does not");
+ok(peek(`tblParseRoll("400d6").count`) === 40, "and a silly number of dice is capped");
+// 0.5 of a d20 is 11; +4 is 15.
+let res = peek(`tblDoRoll(tblParseRoll("1d20+4"), "normal")`);
+ok(res.total === 15, "1d20+4 on a middling roll totals 15 (got " + res.total + ")");
+peek(`window.__seq = [0.1, 0.9];`);
+res = peek(`tblDoRoll(tblParseRoll("1d20"), "adv")`);
+ok(res.rolls.length === 2 && res.kept.length === 1, "advantage throws two and keeps one");
+ok(res.kept[0] === Math.max(...res.rolls), "the higher one (" + res.rolls.join(",") + " -> " + res.kept[0] + ")");
+peek(`window.__seq = [0.1, 0.9];`);
+res = peek(`tblDoRoll(tblParseRoll("1d20"), "dis")`);
+ok(res.kept[0] === Math.min(...res.rolls), "disadvantage keeps the lower one");
+// Advantage is a property of a single d20, not a licence to reroll a fistful of dice.
+res = peek(`tblDoRoll(tblParseRoll("4d6"), "adv")`);
+ok(res.rolls.length === 4 && res.mode === "normal", "advantage is ignored on 4d6 rather than inventing a house rule");
+
+click($('[data-tbl="panel"][data-val="dice"]'));
+await wait(40);
+ok($$('[data-tbl="die"]').length === 7, "a tray of dice, d4 to d100");
+click($$('[data-tbl="die"]').find(b => b.dataset.val === "8"));
+click($('[data-tbl="dice-count"][data-val="1"]'));
+click($('[data-tbl="dice-mod"][data-val="1"]'));
+await wait(20);
+ok(/2d8\+1/.test($('[data-tbl="roll"]').textContent), "the button says exactly what it will throw: " + $('[data-tbl="roll"]').textContent);
+peek(`window.__seq = [0.5, 0.5];`);
+click($('[data-tbl="roll"]'));
+await wait(60);
+const log = await aget(`CocLive.get("tables/482910/log")`);
+const lines = Object.values(log || {});
+ok(lines.length === 1, "rolling writes one line to the table's log");
+ok(/2d8 \+ 1 → \[5, 5\] = 11/.test(lines[0].text), "with the dice shown, not just the total: " + lines[0].text);
+ok(/^DM rolled/.test(lines[0].text), "and who threw them");
+ok(/2d8 \+ 1/.test($("#vtt-lastroll").textContent), "the newest roll is visible even with the panel shut");
+ok($$(".roll-line").length === 1, "and listed in the log");
+// A natural 20 and a natural 1 are what a table reacts to, so they are marked.
+peek(`window.__seq = [0.999];`);
+peek(`tbl.ui.dice = { sides: 20, count: 1, mod: 0, mode: "normal" }; paintSide();`);
+click($('[data-tbl="roll"]'));
+await wait(60);
+ok($("#vtt-lastroll").classList.contains("nat20"), "a natural 20 marks itself");
+peek(`window.__seq = [0.0];`);
+click($('[data-tbl="roll"]'));
+await wait(60);
+ok($("#vtt-lastroll").classList.contains("nat1"), "and so does a natural 1");
+ok($$(".roll-line").length === 3, "the log keeps them, newest first");
+ok(/= 1$|→ 1$/.test($$(".roll-line")[0].textContent), "newest at the top: " + $$(".roll-line")[0].textContent);
+
+// The other half of the brief: numbers ON THE SHEET are the roll buttons. The sheet drawer arrives in
+// a later checkpoint; what matters here is that a data-roll control anywhere posts to this table.
+peek(`document.body.insertAdjacentHTML("beforeend",
+  '<button id="sheetroll" class="roll" data-roll="1d20+7" data-label="Dagger to hit"></button>');
+  window.__seq = [0.5];`);
+click($("#sheetroll"));
+await wait(60);
+ok(/Dagger to hit/.test($("#vtt-lastroll").textContent), "a sheet number posts to the table's log by name");
+ok(/= 18/.test($("#vtt-lastroll").textContent), "with your bonus already in it: " + $("#vtt-lastroll").textContent);
+// Shift and alt are the shortcut for advantage and disadvantage.
+peek(`window.__seq = [0.1, 0.9];`);
+$("#sheetroll").dispatchEvent(new window.MouseEvent("click", { bubbles: true, shiftKey: true }));
+await wait(60);
+ok(/keep high/.test($("#vtt-lastroll").textContent), "shift-click rolls with advantage: " + $("#vtt-lastroll").textContent);
+peek(`$("#sheetroll").remove();`);
+
 console.log("\n— PLAYERS CANNOT REDECORATE —");
 peek(`tbl.role = "player"; tbl.me.charCode = "123456"; renderTableShell(); paintSide();`);
 ok(!$('[data-tbl="panel"][data-val="dm"]'), "a player is offered no DM panel");
@@ -359,6 +430,8 @@ ok(peek(`tbl`) === null, "walking out closes the session");
 const gone = await aget(`CocLive.get("tables/${room}/presence")`);
 ok(gone && !gone[myClient], "and takes your name off the list");
 ok(gone && Object.keys(gone).length > 0, "while leaving everyone else on it");
+
+peek(`if (window.__realRandom) Math.random = window.__realRandom;`);
 
 console.log("\njsdom errors: " + errs.length); errs.slice(0, 8).forEach((e) => console.log("  " + e));
 console.log(fails || errs.length ? "\nFAILURES: " + fails : "\nALL GREEN");
