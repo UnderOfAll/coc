@@ -145,6 +145,7 @@ function tblTeardown() {
   // Announce the exit so the others do not stare at a ghost for a minute.
   if (tbl.me && tbl.me.clientId) CocLive.del(tblPath("presence/" + tbl.me.clientId)).catch(() => {});
   CocLive.flush();
+  if (typeof closeSheetPanel === "function" && tbl.ui && tbl.ui.panel === "sheet") closeSheetPanel();
   tbl = null;
 }
 if (typeof window !== "undefined") {
@@ -660,7 +661,9 @@ function onPointerUp(e) {
    things you dip into rather than watch: the dice, your own sheet, the DM's tools. Rendered whole
    each time, which is safe because nothing in it is mid-drag. */
 function tblPanel(which) {
+  const wasSheet = tbl.ui.panel === "sheet";
   tbl.ui.panel = tbl.ui.panel === which ? "" : which;
+  if (wasSheet && tbl.ui.panel !== "sheet") closeSheetPanel();
   paintSide();
 }
 function paintSide() {
@@ -946,11 +949,13 @@ function tblRollLine(who, label, res) {
 
 /* Roll, and put it where the table can see it. Away from a table the same click still works — it just
    answers on your own screen, because a sheet is useful on its own. */
-function tblRollAndPost(spec, label, mode) {
+function tblRollAndPost(spec, label, mode, whoOverride) {
   const parsed = typeof spec === "string" ? tblParseRoll(spec) : spec;
   if (!parsed) return null;
   const res = tblDoRoll(parsed, mode || "normal");
-  const who = tbl ? (tbl.me.name || (tbl.role === "dm" ? "DM" : "Player")) : "You";
+  // A roll thrown off an open sheet belongs to that CHARACTER, whoever is holding the device — which
+  // is what makes the log readable when the DM is running an NPC from a real sheet.
+  const who = whoOverride || (tbl ? (tbl.me.name || (tbl.role === "dm" ? "DM" : "Player")) : "You");
   const text = tblRollLine(who, label, res);
   if (tbl) {
     CocLive.push(tblPath("log"), {
@@ -1183,7 +1188,81 @@ function paintTurnBar() {
         <button class="btn-quiet" data-tbl="turn-end">End</button>` : ""}
     </span>`;
 }
-function paintSheetPanel() { /* checkpoint: the sheet drawer */ }
+/* ---------------------------------------------------------------- your sheet, over the board */
+
+/* The whole point of the exercise: the sheet you already have, in the same tab as the map, without
+   losing your place on either. It is the REAL sheet — same renderer, same buttons, same live saving —
+   rendered into the drawer instead of into the page (see openSheetIn in creator.js). Nothing here is
+   a cut-down copy, because a cut-down copy is the thing that sends people back to the other app. */
+function paintSheetPanel() {
+  const side = $("#vtt-side");
+  if (!side) return;
+  const code = tbl.me.charCode;
+  // The DM has no character of their own, but often wants one open — an NPC with a real sheet, or a
+  // player's, read out over their shoulder. So they get a box instead of a refusal.
+  if (!code || tbl.role === "dm") {
+    side.innerHTML = `<section class="panel">
+        <h2>Open a sheet</h2>
+        <p class="muted">${tbl.role === "dm"
+          ? "Any character, by code — an NPC you run from a real sheet, or a player's while you talk them through it."
+          : "You joined without a character code. Type one and it opens here, beside the board."}</p>
+        <div class="join-row">
+          <label class="field"><span>Character code</span>
+            <input id="vtt-sheet-code" class="text code-input" type="text" inputmode="numeric"
+              maxlength="6" placeholder="123456" autocomplete="off" /></label>
+          <button class="btn" data-tbl="sheet-open">Open</button>
+        </div>
+        <p id="vtt-sheet-msg" class="save-msg"></p>
+      </section>
+      <div id="vtt-sheet"></div>`;
+    return;
+  }
+  tblShowSheet(code);
+}
+
+function tblShowSheet(code) {
+  const side = $("#vtt-side");
+  side.innerHTML = `<div class="sheet-drawer-bar">
+      <span class="muted">Sheet</span>
+      <button class="btn-quiet" data-tbl="sheet-close">Close</button>
+    </div>
+    <div id="vtt-sheet"><p class="muted">Loading…</p></div>`;
+  openSheetIn("#vtt-sheet", code).catch((err) => {
+    const host = $("#vtt-sheet");
+    if (host) host.innerHTML = `<p class="warn">${esc(err.message)}</p>`;
+  });
+}
+
+async function tblOpenSheetByCode() {
+  const box = $("#vtt-sheet-code");
+  const msg = $("#vtt-sheet-msg");
+  const code = String(box ? box.value : "").replace(/\D/g, "");
+  if (!CocStore.validCode(code)) {
+    if (msg) { msg.textContent = "Six digits."; msg.className = "save-msg bad"; }
+    return;
+  }
+  tblShowSheet(code);
+}
+
+/* Hit points changed on a sheet, reflected under the figure on the board — for everyone. Called by
+   the sheet's own save path (creator.js), so it fires on damage, healing and a level-up alike, and
+   only ever touches the token that carries that character code. */
+function tblSyncTokenFromSheet(code, ch) {
+  if (!tbl || !code || !ch) return;
+  const d = (typeof derive === "function") ? derive(ch) : null;
+  const hp = ch.play && ch.play.hp != null ? Number(ch.play.hp) : null;
+  const hpMax = d ? d.hpMax : null;
+  for (const [id, t] of Object.entries(tblTokens())) {
+    if (!t || t.charCode !== code) continue;
+    const patch = {};
+    if (hp != null && Number(t.hp) !== hp) patch.hp = hp;
+    if (hpMax != null && Number(t.hpMax) !== hpMax) patch.hpMax = hpMax;
+    // A name or a portrait can change between sessions; the figure should not be the last one to know.
+    if (ch.name && t.name !== String(ch.name).slice(0, 40)) patch.name = String(ch.name).slice(0, 40);
+    if (Object.keys(patch).length) CocLive.patch(tblPath("tokens/" + id), patch).catch(() => {});
+  }
+}
+
 function tblOpenToken() { /* checkpoint: token editor */ }
 
 /* ---------------------------------------------------------------- wiring */
@@ -1195,8 +1274,10 @@ COC_ROUTES.table = routeTable;
 document.addEventListener("click", (e) => {
   const roller = e.target.closest("[data-roll]");
   if (roller && !roller.disabled) {
+    const onSheet = roller.closest("#vtt-sheet") && typeof sheet !== "undefined" && sheet && sheet.ch;
     tblRollAndPost(roller.dataset.roll, roller.dataset.label || "",
-      e.shiftKey ? "adv" : (e.altKey ? "dis" : "normal"));
+      e.shiftKey ? "adv" : (e.altKey ? "dis" : "normal"),
+      onSheet ? sheet.ch.name : null);
     return;
   }
   const btn = e.target.closest("[data-tbl]");
@@ -1220,6 +1301,10 @@ document.addEventListener("click", (e) => {
   // Stepping the turn is the DM's — or yours, on your own turn. paintTurnBar only renders the button
   // for those two, and this is the only way in, so it sits above the DM-only guard below.
   else if (act === "turn") tblTurnStep(Number(val)).catch(tblFail);
+  else if (act === "sheet-open") tblOpenSheetByCode();
+  // Closing the drawer hands paint() back to the page. Leaving it pointed here would mean the next
+  // sheet you opened anywhere painted into a node that no longer exists.
+  else if (act === "sheet-close") { closeSheetPanel(); tbl.ui.panel = ""; paintSide(); }
   // Everything below changes the board itself, which is the DM's alone. The buttons are not rendered
   // for a player, and the check is here as well because a rendered-away control is not a locked one.
   else if (tbl.role !== "dm") return;

@@ -1103,3 +1103,16 @@ input.step-val { width: 3.4rem; }
   .turn-acts { margin-left: 0; width: 100%; }
   .turn-acts .btn-quiet { flex: 1; }
 }
+
+/* The sheet inside the drawer. It is the same sheet, so it keeps its own panels — but the drawer is a
+   third of the width the page gives it, so the grids that assume room are told to stop assuming. */
+.sheet-drawer-bar { display: flex; align-items: center; justify-content: space-between;
+  gap: 0.5rem; margin-bottom: 0.5rem; }
+#vtt-sheet .tool-head { display: none; }
+#vtt-sheet .panel { background: var(--panel-2); border: 1px solid var(--border); padding: 0.6rem 0.7rem;
+  margin-bottom: 0.6rem; }
+#vtt-sheet .vital-row { grid-template-columns: 1fr; }
+#vtt-sheet .ab-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+#vtt-sheet .feat-grid, #vtt-sheet .kn-grid { grid-template-columns: 1fr; }
+#vtt-sheet .trick-row { flex-direction: column; }
+#vtt-sheet .tab-strip { margin-bottom: 0.6rem; }

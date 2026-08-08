@@ -475,6 +475,59 @@ function paintTurnBarCheck() {
   ok(!$('[data-tbl="turn"][data-val="1"]'), "and once it is somebody else's, you cannot touch the tracker");
 }
 
+console.log("\n— YOUR SHEET, OVER THE BOARD —");
+// Still the player holding 123456 from the turn-order section.
+click($('[data-tbl="panel"][data-val="sheet"]'));
+await wait(150);
+ok($("#vtt-sheet"), "a drawer for the sheet");
+ok($("#vtt-sheet .tab-strip"), "holding the REAL sheet, fields and all — not a cut-down copy");
+ok($$("#vtt-sheet .ab-box").length === 6, "with the six abilities");
+ok($("#vtt-sheet [data-act='dmg']"), "and its own controls, which is the point");
+ok(!$("#tool .vtt-stage").classList.contains("hidden"), "the board is still there behind it");
+// The sheet is live: damage taken here must reach the figure on the board, for everyone.
+const hpBefore = await aget(`CocLive.get("tables/482910/tokens/tRig/hp")`);
+type($("#vtt-sheet #hp-amt"), "7");
+click($("#vtt-sheet [data-act='dmg']"));
+await wait(120);
+ok(peek(`sheet.ch.play.hp`) === peek(`derive(sheet.ch).hpMax`) - 7, "damage lands on the character");
+ok((await aget(`CocLive.get("tables/482910/tokens/tRig/hp")`)) === peek(`sheet.ch.play.hp`),
+  "and the token's hit points follow it (" + hpBefore + " -> " + (await aget(`CocLive.get("tables/482910/tokens/tRig/hp")`)) + ")");
+ok(/\d+\/44/.test($('[data-token="tRig"]').textContent), "which the board shows under the figure");
+// Rolling from the drawer goes to the table's log, not to a toast nobody else sees.
+peek(`window.__seq = [0.5];`);
+const logLenBefore = Object.keys(await aget(`CocLive.get("tables/482910/log")`) || {}).length;
+click($$("#vtt-sheet .roll")[0]);
+await wait(80);
+const logLenAfter = Object.keys(await aget(`CocLive.get("tables/482910/log")`) || {}).length;
+ok(logLenAfter === logLenBefore + 1, "a number rolled off the drawer reaches the shared log");
+ok(/Rig rolled/.test($("#vtt-lastroll").textContent), "under your character's name: " + $("#vtt-lastroll").textContent);
+// Closing it hands the page back — otherwise the next sheet opened anywhere paints into nothing.
+click($('[data-tbl="sheet-close"]'));
+await wait(60);
+ok(peek(`paintTarget`) === null, "closing the drawer gives paint() back to the page");
+ok(peek(`sheet`) === null, "and lets go of the character");
+await go("#/sheet/123456", 200);
+ok($("#tool .sheet-head"), "so the sheet page itself still works afterwards");
+ok(!$("#tool .vtt"), "and it is the page, not the table");
+await go("#/table/482910", 250);
+peek(`tbl.role = "player"; tbl.me.charCode = "123456";`);
+
+console.log("\n— THE DM OPENS ANY SHEET —");
+peek(`tbl.role = "dm"; renderTableShell(); paintSide();`);
+click($('[data-tbl="panel"][data-val="sheet"]'));
+await wait(80);
+ok($("#vtt-sheet-code"), "the DM is asked which sheet, having no character of their own");
+type($("#vtt-sheet-code"), "12");
+click($('[data-tbl="sheet-open"]'));
+await wait(60);
+ok(/Six digits/.test($("#vtt-sheet-msg").textContent), "a short code is refused");
+type($("#vtt-sheet-code"), "123456");
+click($('[data-tbl="sheet-open"]'));
+await wait(200);
+ok($$("#vtt-sheet .ab-box").length === 6, "a real code opens that character beside the board");
+click($('[data-tbl="sheet-close"]'));
+await wait(40);
+
 console.log("\n— PLAYERS CANNOT REDECORATE —");
 peek(`tbl.role = "player"; tbl.me.charCode = "123456"; renderTableShell(); paintSide();`);
 ok(!$('[data-tbl="panel"][data-val="dm"]'), "a player is offered no DM panel");

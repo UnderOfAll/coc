@@ -272,12 +272,21 @@ const ui = {
 
 function toolEl() { return $("#tool"); }
 
+/* Where the next paint() lands. Normally the tool view; while the sheet is open inside a table it is
+   the drawer beside the board. A SELECTOR rather than a node, because the table re-renders its shell
+   and a held node would go stale — a sheet painting into a detached element is a sheet that silently
+   stops updating. */
+let paintTarget = null;
+function paintHost() {
+  return (paintTarget && document.querySelector(paintTarget)) || toolEl();
+}
+
 /* Repaint the tool view, keeping the things a full innerHTML swap would throw away: where the page
    was scrolled, which field had focus, and where the caret was inside it. Without this, typing a
    digit into any field that re-derives the sheet bounced you to the top of the page and dropped
    focus after every keystroke — which is exactly why the level box could not be cleared. */
 function paint(html) {
-  const host = toolEl();
+  const host = paintHost();
   const page = pageScroller();
   const top = page.scrollTop;
   const active = document.activeElement;
@@ -976,6 +985,9 @@ function persist() {
   clearTimeout(saveTimer);
   const badge = $("#save-state");
   if (badge) badge.textContent = "saving…";
+  // A player who takes damage on their sheet expects the bar under their figure to drop, for
+  // everyone. The table owns that; the sheet just says what happened.
+  if (typeof tblSyncTokenFromSheet === "function") tblSyncTokenFromSheet(sheet.code, sheet.ch);
   saveTimer = setTimeout(async () => {
     try {
       await CocStore.save(sheet.code, sheet.ch);
@@ -1419,6 +1431,28 @@ function inventoryPanel(ch, items) {
     </div>
     ${ch.notes ? `<p class="panel-sub">Notes</p><p class="notes">${esc(ch.notes)}</p>` : ""}
   </section>`;
+}
+
+/* Open a character's live sheet INSIDE something else — the table's drawer. Everything the sheet can
+   do it can still do here, because it is the same renderer and the same handlers: this only changes
+   where the markup is written. Returns a promise so the caller can report a bad code. */
+async function openSheetIn(selector, code) {
+  if (!CocStore.validCode(code)) throw new Error("A character code is six digits.");
+  const ch = await CocStore.load(code);
+  if (!ch) throw new Error("No character is saved under " + code + ".");
+  ch.play = normalisePlay(ch);
+  sheet = { code, ch };
+  ui.openSubs.clear(); ui.openOpts.clear();
+  ui.levelUp = null; ui.deleteArmed = false; ui.deleteText = "";
+  paintTarget = selector;
+  renderSheet();
+  return ch;
+}
+/* Handing the page back. The sheet itself is dropped as well: leaving it loaded would mean a stray
+   data-act click on another page acting on a character nobody has open. */
+function closeSheetPanel() {
+  paintTarget = null;
+  sheet = null;
 }
 
 /* ---------------------------------------------------------------- levelling up */
