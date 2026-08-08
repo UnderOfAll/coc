@@ -40,6 +40,13 @@ const click = (n) => { if (!n) { fails++; console.log("  FAIL click(null)"); ret
 const type = (n, v) => { n.value = v; n.dispatchEvent(new window.Event("input", { bubbles: true })); };
 const go = async (h, ms = 60) => { window.location.hash = h; window.dispatchEvent(new window.HashChangeEvent("hashchange")); await new Promise((r) => setTimeout(r, ms)); };
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+/* Wait for a condition rather than for a guessed number of milliseconds. A fixed wait after a write is a
+   flake generator: it passes on a quiet machine and fails on a busy one. */
+const until = async (fn, ms = 800) => {
+  const stop = Date.now() + ms;
+  while (Date.now() < stop) { if (fn()) return true; await wait(20); }
+  return false;
+};
 const tblCols = () => peek(`tblScene().cols`);
 // The panel buttons TOGGLE, so asking for one that is already open would shut it.
 const openPanel = (name) => { if (peek("tbl.ui.panel") !== name) click($(`[data-tbl="panel"][data-val="${name}"]`)); };
@@ -758,7 +765,7 @@ ok(peek(`tblTokens().tRig.hp`) === peek(`sheet.ch.play.hp`), "which the DM's fig
 peek(`window.__seq = [0.5];`);
 const logLenBefore = Object.keys(await aget(`CocLive.get("tables/482910/log")`) || {}).length;
 click($$("#vtt-sheet .roll")[0]);
-await wait(80);
+await until(() => /^Rig/.test($("#vtt-lastroll").textContent.trim()));
 const logLenAfter = Object.keys(await aget(`CocLive.get("tables/482910/log")`) || {}).length;
 ok(logLenAfter === logLenBefore + 1, "a number rolled off the drawer reaches the shared log");
 ok(/^Rig/.test($("#vtt-lastroll").textContent.trim()), "under your character's name: " + $("#vtt-lastroll").textContent.trim());

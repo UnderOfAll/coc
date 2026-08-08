@@ -1422,7 +1422,8 @@ function dmFiguresHTML() {
       <div class="chips">${TBL_SHAPES.map(([k, label]) =>
         `<button class="chip ${(tbl.ui.npcShape || "square") === k ? "on" : ""}" data-tbl="npc-shape"
           data-val="${k}"><span class="shape-dot shape-${k}"></span>${esc(label)}</button>`).join("")}</div>
-      <label class="field"><span>Picture (URL, optional)</span>
+      <label class="field"><span>Picture <span class="muted">a link, or maps/… — a photo can be added
+        once it is on the board</span></span>
         <input id="tbl-npc-img" class="text" type="text" placeholder="https://… or maps/…" /></label>
       <button class="btn" data-tbl="spawn">Drop it on the board</button>
       <p id="tbl-spawn-msg" class="save-msg"></p>
@@ -1457,7 +1458,10 @@ async function tblLoadRepoMaps() {
    belong there: shrink the longest side, then trade quality away, and give up rather than write
    something that the rules would reject anyway. */
 const TBL_IMAGE_CAP = 680000;
-function tblShrinkImage(file, done, fail) {
+/* A figure's picture is not a map: it is shown at forty pixels across, so it is shrunk far harder and
+   capped far lower — the database's own limit for a token image is a sixth of a map's. */
+const TBL_TOKEN_IMAGE = { sides: [256, 192, 128], cap: 110000 };
+function tblShrinkImage(file, done, fail, budget) {
   const reader = new FileReader();
   reader.onerror = () => fail("That file could not be read.");
   reader.onload = () => {
@@ -1466,7 +1470,9 @@ function tblShrinkImage(file, done, fail) {
     img.onload = () => {
       const canvas = document.createElement("canvas");
       if (!canvas.getContext) return fail("This browser cannot resize images.");
-      for (const maxSide of [1600, 1200, 900, 700]) {
+      const sides = (budget && budget.sides) || [1600, 1200, 900, 700];
+      const cap = (budget && budget.cap) || TBL_IMAGE_CAP;
+      for (const maxSide of sides) {
         const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
         canvas.width = Math.max(1, Math.round(img.width * scale));
         canvas.height = Math.max(1, Math.round(img.height * scale));
@@ -1474,7 +1480,7 @@ function tblShrinkImage(file, done, fail) {
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         for (const q of [0.72, 0.6, 0.48, 0.38]) {
           const out = canvas.toDataURL("image/jpeg", q);
-          if (out.length <= TBL_IMAGE_CAP) return done(out, img.width, img.height);
+          if (out.length <= cap) return done(out, img.width, img.height);
         }
       }
       fail("Even shrunk, that image is too big to store. Commit it into maps/ instead.");
@@ -2411,8 +2417,7 @@ function tokenEditorHTML(id) {
       <label class="field"><span>Initiative bonus</span>
         <input id="ed-init" class="num" type="number" min="-5" max="20" value="${esc(Number(t.initMod) || 0)}" /></label>
     </div>
-    <label class="field"><span>Picture (URL, or maps/… )</span>
-      <input id="ed-img" class="text" type="text" value="${esc(t.image || "")}" /></label>
+    ${tokenImageHTML("ed", t.image)}
     ${t.kind === "npc" ? `<p class="panel-sub">Shape</p>
       <div class="chips">${TBL_SHAPES.map(([k, label]) =>
         `<button class="chip ${tblShapeOf(t) === k ? "on" : ""}" data-tbl="ed-shape"
@@ -2464,8 +2469,7 @@ function myFigureHTML(id, t) {
       <label class="field"><span>Speed (ft)</span>
         <input id="mine-speed" class="num" type="number" min="0" max="200" value="${esc(Number(t.speed) || 30)}" /></label>
     </div>
-    <label class="field"><span>Picture (URL, optional)</span>
-      <input id="mine-img" class="text" type="text" value="${esc(t.image || "")}" /></label>
+    ${tokenImageHTML("mine", t.image)}
     <div class="hp-controls">
       <button class="btn" data-tbl="mine-save" data-val="${esc(id)}">Save</button>
       <input id="mine-amt" class="num" type="number" min="1" value="1" />
@@ -2642,6 +2646,46 @@ function tblMigrateDmNotes() {
     .catch(() => {});
 }
 
+/* Getting a picture onto a FIGURE. Three ways for the same reason the maps have four: Kayki's players
+   could only paste a direct link, and half the links people find are not direct — they are a page with an
+   image on it, or a host that refuses to be hotlinked. A photo off the phone always works.
+   `who` is the field id prefix, so the DM's editor and a player's own figure share all of this. */
+function tokenImageHTML(who, current) {
+  const repo = tblRepoMaps;
+  if (repo === null) tblLoadRepoMaps();
+  return `<p class="panel-sub">Picture</p>
+    ${current ? `<img class="figure-art figure-thumb" src="${esc(current)}" alt="" />` : ""}
+    <label class="field"><span>From this device</span>
+      <input id="${who}-file" class="text" type="file" accept="image/*" /></label>
+    <p id="${who}-imgmsg" class="save-msg"></p>
+    ${repo && repo.length ? `<p class="panel-sub">Or from the repo</p>
+      <div class="chips">${repo.map((f) =>
+        `<button class="chip" data-tbl="${who}-repo" data-val="${esc(f)}">${esc(f)}</button>`).join("")}</div>` : ""}
+    <label class="field"><span>Or a link</span>
+      <input id="${who}-img" class="text" type="text" value="${esc(current || "")}" /></label>`;
+}
+
+/* One place that writes a figure's picture, whoever asked. */
+function tblSetTokenImage(id, image) {
+  const t = tblTokens()[id];
+  if (!t) return;
+  if (tbl.role !== "dm" && !tblIsMine(t)) return;
+  CocLive.put(tblPath("tokens/" + id + "/image"), image || "").catch(tblFail);
+}
+
+/* A photo off the phone, shrunk to something a token can carry. */
+function tblUploadTokenImage(id, input, msgId) {
+  const msg = document.getElementById(msgId);
+  const say = (t, bad) => { if (msg) { msg.textContent = t; msg.className = "save-msg" + (bad ? " bad" : ""); } };
+  const file = input && input.files && input.files[0];
+  if (!file) return;
+  say("Shrinking it…");
+  tblShrinkImage(file, (data) => {
+    tblSetTokenImage(id, data);
+    say("Done.");
+  }, (why) => say(why, true), TBL_TOKEN_IMAGE);
+}
+
 /* ---------------------------------------------------------------- the DM's screen and handouts */
 
 /* Notes that survive a refresh and follow the DM to another device — which means they live in the
@@ -2712,6 +2756,16 @@ COC_ROUTES.table = routeTable;
 
 /* The DM's notes save as they are typed, coalesced so a paragraph is a handful of writes rather than
    one per keystroke. */
+/* Choosing a file is a `change`, not a click: the picture is applied the moment it is picked, because a
+   two-step "choose then save" is one more thing to forget. */
+document.addEventListener("change", (e) => {
+  if (!tbl) return;
+  if (e.target.id === "ed-file") tblUploadTokenImage(tbl.ui.editToken, e.target, "ed-imgmsg");
+  else if (e.target.id === "mine-file") {
+    tblUploadTokenImage(tblMyTokens()[0] || tbl.ui.lookAt, e.target, "mine-imgmsg");
+  }
+});
+
 document.addEventListener("input", (e) => {
   if (!tbl) return;
   if (e.target.id === "close-confirm") {
@@ -2782,6 +2836,10 @@ document.addEventListener("click", (e) => {
   else if (act === "hand-dismiss") { tbl.ui.dismissed = val; paintHandout(); }
   // Your own figure: yours to keep, whether or not there is a sheet behind it. Guarded by ownership,
   // not by which buttons happen to be rendered.
+  else if (act === "ed-repo" || act === "mine-repo") {
+    const id = act === "ed-repo" ? tbl.ui.editToken : (tblMyTokens()[0] || tbl.ui.lookAt);
+    tblSetTokenImage(id, "maps/" + val);
+  }
   else if (act === "mine-remove") {
     const t = tblTokens()[val];
     if (t && (tbl.role === "dm" || tblIsMine(t))) {

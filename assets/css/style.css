@@ -1260,3 +1260,6 @@ input.step-val { width: 3.4rem; }
 .vtt-stage.inking .tok.movable { cursor: crosshair; }
 .ink-dot { display: inline-block; width: 0.7rem; height: 0.7rem; border-radius: 50%;
   margin-right: 0.35rem; vertical-align: -1px; border: 1px solid var(--border); }
+
+/* A figure's picture, while you are choosing it. */
+.figure-thumb { max-height: 8rem; }
