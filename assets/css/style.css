@@ -1134,8 +1134,9 @@ input.step-val { width: 3.4rem; }
 .roll-stage.nat1 .roll-total { color: var(--accent-soft); }
 /* A line of the log: who, the dice as dice, the total big enough to read from across the table. */
 .roll-card { display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.45rem; }
-.roll-card-who { flex: 1; min-width: 0; font-size: 0.85rem; color: var(--text);
-  overflow-wrap: break-word; }
+/* Wraps between words, never inside one: in a 330px dock "Bartholomew Smite" was coming out as
+   "Bartholome / w Smite". */
+.roll-card-who { flex: 1; min-width: 0; font-size: 0.85rem; color: var(--text); overflow-wrap: normal; }
 .roll-card-dice { display: flex; gap: 0.2rem; align-items: center; flex-shrink: 0; }
 .pip-die { display: grid; place-items: center; min-width: 1.5rem; height: 1.5rem; padding: 0 0.2rem;
   font-size: 0.85rem; color: var(--gold); background: var(--panel-2);
