@@ -103,7 +103,8 @@ function tblFresh(code, role) {
     offs: [],          // live subscriptions, closed on teardown
     beat: null,        // presence heartbeat
     pointers: new Map(),
-    centredOnMe: false,   // the camera has been aimed at this player's own figure, once
+    centredOnMe: false,     // the camera has been aimed at this player's own figure, once
+    cameraIsYours: false,   // …and after that, only you move it
     ui: { panel: "", error: "" },
   };
 }
@@ -150,6 +151,14 @@ function tblTeardown() {
   tbl = null;
 }
 if (typeof window !== "undefined") {
+  // A phone turning sideways, or a flex layout settling a frame after the markup is written, are the
+  // same event as far as the camera is concerned: the window is a different shape, so fit again.
+  let refitTimer = null;
+  window.addEventListener("resize", () => {
+    if (!tbl || tbl.cameraIsYours) return;
+    clearTimeout(refitTimer);
+    refitTimer = setTimeout(() => { if (tbl && !tbl.cameraIsYours) tblFit(); }, 120);
+  });
   window.addEventListener("hashchange", () => {
     if (!tbl) return;
     if (!/^#\/table\/\d{6}/.test(location.hash)) tblTeardown();
@@ -427,6 +436,10 @@ function renderTableShell() {
   paintHeader();
   paintBoard();
   bindStage();
+  // The stage takes its height from flex, which is not settled in the tick the markup is written in.
+  if (typeof requestAnimationFrame === "function") {
+    requestAnimationFrame(() => { if (tbl && !tbl.cameraIsYours) tblFit(); });
+  }
 }
 
 /* Header, who-is-here, error bar: small nodes, replaced whole. */
@@ -443,8 +456,10 @@ function paintWho() {
   const host = $("#vtt-who");
   if (!host) return;
   const now = Date.now();
+  // Everyone EXCEPT you: the badge beside the table's name already says who you are, and seeing your
+  // own name twice in a row of four chips is how a phone header runs out of room.
   const here = Object.entries(tbl.data.presence || {})
-    .filter(([, p]) => p && now - (p.at || 0) < 60000)
+    .filter(([id, p]) => p && id !== tbl.me.clientId && now - (p.at || 0) < 60000)
     .sort((a, b) => (a[1].role === "dm" ? -1 : 1));
   host.innerHTML = here.map(([, p]) =>
     `<span class="who ${p.role === "dm" ? "who-dm" : ""}">${esc(p.name || "Player")}</span>`).join("")
@@ -524,7 +539,10 @@ function tblFit() {
   if (mine) tbl.centredOnMe = true;
   applyView();
 }
+/* Once you have moved the camera it is YOURS: nothing re-frames it after that, which is the difference
+   between a helpful auto-fit and an app that keeps snatching the map back. */
 function tblZoomBy(factor, cx, cy) {
+  tbl.cameraIsYours = true;
   const stage = $("#vtt-stage");
   const box = stage.getBoundingClientRect();
   const px = (cx == null ? box.width / 2 : cx - box.left);
@@ -689,6 +707,7 @@ function onPointerMove(e) {
   if (!d) return;
   const p = stagePoint(e);
   if (d.pan) {
+    tbl.cameraIsYours = true;
     tbl.view.x = d.ox + (p.sx - d.sx);
     tbl.view.y = d.oy + (p.sy - d.sy);
     applyView();

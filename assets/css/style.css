@@ -992,8 +992,8 @@ input.step-val { width: 3.4rem; }
 /* The grid is two gradients rather than an image or a canvas: it costs nothing, stays crisp at any
    zoom, and its square size is set inline from the scene. */
 .vtt-grid { position: absolute; inset: 0; pointer-events: none;
-  background-image: linear-gradient(to right, rgba(233,228,218,0.13) 1px, transparent 1px),
-                    linear-gradient(to bottom, rgba(233,228,218,0.13) 1px, transparent 1px); }
+  background-image: linear-gradient(to right, rgba(233,228,218,0.17) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(233,228,218,0.17) 1px, transparent 1px); }
 .vtt-tokens { position: absolute; inset: 0; }
 .vtt-ruler { position: absolute; inset: 0; overflow: visible; pointer-events: none; }
 
@@ -1035,7 +1035,17 @@ input.step-val { width: 3.4rem; }
   padding: 0.5rem 0.7rem; }
 
 @media (max-width: 760px) {
-  .vtt-stage { height: 56dvh; min-height: 260px; }
+  /* On a phone the board takes whatever is left rather than a fixed fraction of the screen: the bars
+     above it come and go (a roll, a turn running, a handout), and a fixed 56dvh either left dead space
+     below the board or pushed it past the bottom of the screen depending on which of them were up. */
+  .vtt { min-height: calc(100dvh - 5.5rem); }
+  .vtt-body { flex: 1; min-height: 0; }
+  .vtt-stage { height: auto; flex: 1; min-height: 240px; }
+  /* With the drawer open the two share the screen: enough board to see where you are, enough sheet to
+     use. */
+  .vtt-side:not(.hidden) ~ .vtt-stage, .vtt-body:has(.vtt-side:not(.hidden)) .vtt-stage {
+    flex: 0 0 34dvh; min-height: 34dvh; }
+  .vtt-side { width: 100%; max-height: 52dvh; }
   .vtt-acts { margin-left: 0; width: 100%; }
   .vtt-acts .btn-quiet { flex: 1; }
   .join-row { flex-direction: column; align-items: stretch; }

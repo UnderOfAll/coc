@@ -98,7 +98,10 @@ await wait(60);
 const presence = await aget(`CocLive.get("tables/482910/presence")`);
 ok(presence && Object.keys(presence).length === 1, "sitting down announces you");
 ok(Object.values(presence)[0].role === "dm", "with your role");
-ok(/DM/.test($("#vtt-who").textContent), "and the header lists you");
+// You are NOT in the who-list: the badge beside the table name already says who you are, and a phone
+// header cannot spare a chip to tell you that you are here.
+ok(!/DM/.test($("#vtt-who").textContent), "the list is everyone else, not you");
+ok(/DM/.test($("#vtt-title").textContent), "your own role is the badge beside the table's name");
 // A second device, arriving from somewhere else: a plain write, exactly as the other browser would.
 await peek(`CocLive.put("tables/482910/presence/other", { name: "Rig", role: "player", charCode: "123456", at: Date.now() })`);
 await wait(40);
