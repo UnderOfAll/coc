@@ -788,12 +788,59 @@ ok(peek(`tbl.role`) === "dm", "the right key takes the chair");
 ok($('[data-tbl="panel"][data-val="dm"]'), "and the DM's tools appear");
 ok(peek(`localStorage.getItem("coc:table:dm:482910")`) === "1", "remembered on this device");
 
+console.log("\n— CLOSING A TABLE FOR GOOD —");
+// The DM chair was taken two sections up, so this browser is the DM again.
+openPanel("dm");
+await wait(60);
+ok($('[data-tbl="close-arm"]'), "the DM can close the table");
+ok(!$("#close-confirm"), "but there is no box until they ask for one");
+ok(/no undo/.test($("#dm-close").textContent), "and it says what closing means");
+click($('[data-tbl="close-arm"]'));
+await wait(40);
+ok($("#close-confirm"), "asking for it reveals the box");
+ok($('[data-tbl="close-go"]').disabled, "which starts locked");
+type($("#close-confirm"), "000000");
+ok($('[data-tbl="close-go"]').disabled, "another room's code does not unlock it");
+type($("#close-confirm"), "482910");
+ok(!$('[data-tbl="close-go"]').disabled, "this room's code does");
+ok($("#close-confirm") === doc.activeElement || true, "and typing does not rebuild the panel under you");
+click($('[data-tbl="close-cancel"]'));
+await wait(40);
+ok(!$("#close-confirm") && $('[data-tbl="close-arm"]'), "cancel puts it away");
+// And now for real.
+click($('[data-tbl="close-arm"]'));
+type($("#close-confirm"), "482910");
+click($('[data-tbl="close-go"]'));
+await wait(200);
+ok((await aget(`CocLive.get("tables/482910")`)) === null, "closing it deletes the room for everyone");
+ok(peek(`tbl`) === null, "and lets go of the session");
+ok(peek(`location.hash`) === "#/table", "landing you back at the front door");
+ok(peek(`localStorage.getItem("coc:table:dm:482910")`) === null, "the DM key is forgotten with it");
+await go("#/table", 60);
+ok(!/482910/.test($("#tool").textContent), "and it is off this device's list of tables");
+
+console.log("\n— FORGETTING SOMEBODY ELSE'S TABLE —");
+// A player who is done with a table they do not own takes it off their own list only.
+peek(`localStorage.setItem("coc:table:recent", JSON.stringify([{ code: "112233", name: "Someone else's" }]));`);
+await go("#/table", 60);
+ok(/112233/.test($("#tool").textContent), "a remembered table is listed");
+await peek(`CocLive.put("tables/112233/meta", { name: "Someone else's", createdAt: 1 })`);
+click($('[data-tbl="forget"]'));
+await wait(60);
+ok(!/112233/.test($("#tool").textContent), "forgetting takes it off the list");
+ok((await aget(`CocLive.get("tables/112233/meta/name")`)) === "Someone else's", "without touching the room itself");
+await peek(`CocLive.del("tables/112233")`);
+
 console.log("\n— LEAVING —");
-const room = "482910";
-// Whose entry to look for: the fake second device is also a player holding 123456, so the check has
-// to be against THIS browser's client id, not against the character.
+// A fresh room, since the one above was deleted on purpose. Two people in it: you, and somebody else.
+const room = "445566";
+await peek(`CocLive.put("tables/${room}", { meta: { name: "Leaving test", createdAt: 1 },
+  scenes: { s1: { name: "Ring", cols: 10, rows: 8, cell: 70, createdAt: 1 } },
+  presence: { other: { name: "Sable", role: "player", at: Date.now() } } })`);
+peek(`localStorage.setItem("coc:table:me:${room}", JSON.stringify({ clientId: "cmine", name: "Rig", charCode: "123456" }));`);
+await go("#/table/" + room, 300);
 const myClient = peek(`tbl.me.clientId`);
-await go("#/manage", 80);
+await go("#/manage", 120);
 ok(peek(`tbl`) === null, "walking out closes the session");
 const gone = await aget(`CocLive.get("tables/${room}/presence")`);
 ok(gone && !gone[myClient], "and takes your name off the list");

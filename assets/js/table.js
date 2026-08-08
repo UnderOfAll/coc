@@ -232,7 +232,11 @@ function renderTableLanding() {
           <strong>${esc(r.code)}</strong>
           <span class="muted">${esc(r.name || "unnamed table")}</span>
           ${tblIsDm(r.code) ? `<span class="role-badge">DM</span>` : ""}
-        </a></div>`).join("")}</div></section>` : ""}
+        </a>
+        <button class="btn-quiet" data-tbl="forget" data-val="${esc(r.code)}">Forget</button>
+        </div>`).join("")}</div>
+      <p class="muted">Forget takes a table off this device's list. To delete a room for everybody, open
+        it as the DM and close it there.</p></section>` : ""}
   `);
 }
 
@@ -572,8 +576,14 @@ function paintBoard() {
 
 /* Camera. Everything is one CSS transform on the world, so panning and zooming never touch a token:
    the browser composites the whole board, which is why this stays smooth on a phone. */
-/* The camera is kept over the map: panning it into empty space loses the board completely, which is
-   what "I try to move the map and the characters pop off the screen" was. Same rule the fit uses. */
+/* The only thing the camera must not do is lose the board. The first version of this was far stricter —
+   it pinned the map's edges to the window — and on a map smaller than the screen that left almost
+   nowhere to pan: it moved an inch and stopped dead, snapping back on release. So the rule is loose and
+   states only what matters: a quarter of the window always has map in it. Everything else is allowed.
+
+   Whole pixels, too. A camera sitting on x = -418.79 puts the grid's 1px lines between device pixels,
+   and the browser renders them unevenly — which is what "the grid isn't symmetrical" was. */
+const TBL_KEEP_ON_SCREEN = 0.25;
 function tblClampView() {
   const stage = $("#vtt-stage"), scene = tblScene();
   if (!stage) return;
@@ -582,13 +592,19 @@ function tblClampView() {
   const cell = Number(scene.cell) || 70;
   const w = (Number(scene.cols) || 30) * cell * tbl.view.z;
   const h = (Number(scene.rows) || 20) * cell * tbl.view.z;
-  // Smaller than the window: keep it fully visible, but WHERE the player left it — forcing it back to
-  // the centre would fight every zoom. Bigger: never uncover an edge.
-  const clamp = (v, size, stageSize) => size <= stageSize
-    ? Math.max(0, Math.min(stageSize - size, v))
-    : Math.max(stageSize - size, Math.min(0, v));
-  tbl.view.x = clamp(tbl.view.x, w, box.width);
-  tbl.view.y = clamp(tbl.view.y, h, box.height);
+  const bound = (v, size, stageSize) => Math.max(
+    stageSize * TBL_KEEP_ON_SCREEN - size,          // its right/bottom edge cannot come further in
+    Math.min(stageSize * (1 - TBL_KEEP_ON_SCREEN), v));  // nor can its left/top edge
+  tbl.view.x = Math.round(bound(tbl.view.x, w, box.width));
+  tbl.view.y = Math.round(bound(tbl.view.y, h, box.height));
+}
+
+/* A zoom where a square is 40.7 pixels wide draws some grid lines 1px and some 2px, and the squares stop
+   looking like squares. Snapping the zoom so a square is a whole number of pixels costs nothing and the
+   grid comes out even at every level. */
+function tblSnapZoom(z, cell) {
+  const px = Math.max(6, Math.round(cell * z));
+  return px / cell;
 }
 
 function applyView() {
@@ -612,7 +628,7 @@ function tblFit() {
   if (box.width < 40 || box.height < 40) return;
   const pad = 16;
   const whole = Math.min((box.width - pad) / w, (box.height - pad) / h, 1.6) || 1;
-  const z = Math.max(0.12, whole, Math.min(1, TBL_MIN_CELL_PX / cell));
+  const z = tblSnapZoom(Math.max(0.12, whole, Math.min(1, TBL_MIN_CELL_PX / cell)), cell);
   tbl.view.z = z;
   // Centred on YOUR figure when you have one: opening a table should show you where you are, not the
   // top-left corner of a map you then have to go looking through.
@@ -622,8 +638,8 @@ function tblFit() {
   const clamp = (v, size, stageSize) => size * z <= stageSize
     ? (stageSize - size * z) / 2                       // it all fits: centre it
     : Math.max(stageSize - size * z, Math.min(0, v));  // it does not: keep the map covering the stage
-  tbl.view.x = clamp(box.width / 2 - focusX * z, w, box.width);
-  tbl.view.y = clamp(box.height / 2 - focusY * z, h, box.height);
+  tbl.view.x = Math.round(clamp(box.width / 2 - focusX * z, w, box.width));
+  tbl.view.y = Math.round(clamp(box.height / 2 - focusY * z, h, box.height));
   tbl.view.fitted = true;
   // Whether the centring found your figure. Recorded on the SESSION, not on the camera: it is a fact
   // about whether the once-only aim has happened, and anything that replaces the view object (a reset,
@@ -640,7 +656,8 @@ function tblZoomBy(factor, cx, cy) {
   const px = (cx == null ? box.width / 2 : cx - box.left);
   const py = (cy == null ? box.height / 2 : cy - box.top);
   const z0 = tbl.view.z;
-  const z1 = Math.max(0.12, Math.min(4, z0 * factor));
+  const cell = Number(tblScene().cell) || 70;
+  const z1 = tblSnapZoom(Math.max(0.12, Math.min(4, z0 * factor)), cell);
   // Keep the point under the cursor still: that is what makes zooming feel like a camera rather
   // than a slider.
   tbl.view.x = px - ((px - tbl.view.x) / z0) * z1;
@@ -960,7 +977,7 @@ function dmPanelHTML() {
   // An open figure comes first: it is what you just double-tapped, and hunting for it under the map
   // list would be its own small insult.
   const editing = tbl.ui.editToken && tblTokens()[tbl.ui.editToken] ? tokenEditorHTML(tbl.ui.editToken) : "";
-  return editing + dmMapsHTML() + dmFiguresHTML() + dmScreenHTML();
+  return editing + dmMapsHTML() + dmFiguresHTML() + dmScreenHTML() + closeTableHTML();
 }
 
 function dmMapsHTML() {
@@ -1908,6 +1925,56 @@ function myFigureHTML(id, t) {
   </section>`;
 }
 
+/* Closing a table. A room is not a document somebody owns a copy of — it is the session everyone is
+   sitting in, so deleting it ends the game for every device at once and cannot be undone. Hence the
+   same shape as deleting a character: nothing happens on one tap, and the confirmation is the ROOM
+   CODE, typed out, because "which table am I closing" is the mistake worth preventing. */
+function closeTableHTML() {
+  if (!tbl.ui.closeArmed) {
+    return `<section class="panel danger" id="dm-close">
+      <h2>Close this table</h2>
+      <p class="muted">Deletes the room, its maps, its figures and its log — for everyone, on every
+        device, with no undo. The room code becomes free for reuse.</p>
+      <button class="btn-quiet" data-tbl="close-arm">Close the table…</button>
+    </section>`;
+  }
+  return `<section class="panel danger armed" id="dm-close">
+    <h2>Close this table</h2>
+    <p class="muted">Type the room code — <strong>${esc(tbl.code)}</strong> — to unlock it. Everyone
+      still in the room will be dropped out.</p>
+    <div class="danger-row">
+      <input id="close-confirm" class="text code-input" type="text" inputmode="numeric" maxlength="6"
+        autocomplete="off" value="${esc(tbl.ui.closeText || "")}" />
+      <button class="btn btn-hot" data-tbl="close-go" ${tbl.ui.closeText === tbl.code ? "" : "disabled"}>Close it</button>
+      <button class="btn-quiet" data-tbl="close-cancel">Cancel</button>
+    </div>
+    <p id="close-msg" class="save-msg"></p>
+  </section>`;
+}
+
+async function tblCloseTable() {
+  if (tbl.role !== "dm" || tbl.ui.closeText !== tbl.code) return;
+  const msg = $("#close-msg");
+  const code = tbl.code;
+  if (msg) { msg.textContent = "Closing…"; msg.className = "save-msg"; }
+  try {
+    await CocLive.del("tables/" + code);
+    localStorage.removeItem(tblDmKey(code));
+    localStorage.removeItem(tblMeKey(code));
+    tblForgetTable(code);
+    tblTeardown();
+    location.hash = "#/table";
+  } catch (err) {
+    if (msg) { msg.textContent = "Could not close it: " + err.message; msg.className = "save-msg bad"; }
+  }
+}
+
+/* Off this device's list, without touching the room itself — for a player who is done with a table
+   somebody else owns. */
+function tblForgetTable(code) {
+  localStorage.setItem(TBL_RECENT, JSON.stringify(tblRecent().filter((r) => r.code !== code)));
+}
+
 /* ---------------------------------------------------------------- the DM's screen and handouts */
 
 /* Notes that survive a refresh and follow the DM to another device — which means they live in the
@@ -1987,7 +2054,16 @@ COC_ROUTES.table = routeTable;
 /* The DM's notes save as they are typed, coalesced so a paragraph is a handful of writes rather than
    one per keystroke. */
 document.addEventListener("input", (e) => {
-  if (!tbl || tbl.role !== "dm") return;
+  if (!tbl) return;
+  if (e.target.id === "close-confirm") {
+    tbl.ui.closeText = String(e.target.value || "").replace(/\D/g, "").slice(0, 6);
+    // Only the button's state changes, so the panel is not rebuilt — that would take the focus out of
+    // the box you are typing in.
+    const go = $('[data-tbl="close-go"]');
+    if (go) go.disabled = tbl.ui.closeText !== tbl.code;
+    return;
+  }
+  if (tbl.role !== "dm") return;
   if (e.target.id !== "dm-notes") return;
   CocLive.throttled(tblPath("dm/notes"), String(e.target.value || "").slice(0, 4000), 600);
 });
@@ -2008,6 +2084,7 @@ document.addEventListener("click", (e) => {
   const { tbl: act, val } = btn.dataset;
   if (act === "create") return tblCreate();
   if (act === "join") return tblJoin();
+  if (act === "forget") { tblForgetTable(val); renderTableLanding(); return; }
   if (!tbl) return;
   if (act === "zoom") {
     if (val === "0") tblFit(); else tblZoomBy(val === "1" ? 1.25 : 1 / 1.25);
@@ -2090,6 +2167,9 @@ document.addEventListener("click", (e) => {
     CocLive.del(tblPath("tokens/" + val)).catch(tblFail);
     tbl.ui.editToken = ""; paintSide();
   }
+  else if (act === "close-arm") { tbl.ui.closeArmed = true; tbl.ui.closeText = ""; paintSide(); }
+  else if (act === "close-cancel") { tbl.ui.closeArmed = false; tbl.ui.closeText = ""; paintSide(); }
+  else if (act === "close-go") tblCloseTable();
   else if (act === "hand-add") tblAddHandout().catch(tblFail);
   else if (act === "hand-show") CocLive.put(tblPath("meta/handout"), val).catch(tblFail);
   else if (act === "hand-hide") CocLive.put(tblPath("meta/handout"), null).catch(tblFail);

@@ -47,7 +47,13 @@ const CocLive = (() => {
     if (!keys.length) return value == null ? {} : value;
     let node = tree;
     for (const key of keys.slice(0, -1)) {
-      if (node[key] == null || typeof node[key] !== "object") node[key] = {};
+      // Deleting must never CREATE the parents on its way down: removing a key from a node that is
+      // already gone left `{ presence: {} }` behind where the database would have left nothing, so a
+      // deleted table read back as an empty one.
+      if (node[key] == null || typeof node[key] !== "object") {
+        if (value == null) return tree;
+        node[key] = {};
+      }
       node = node[key];
     }
     const last = keys[keys.length - 1];

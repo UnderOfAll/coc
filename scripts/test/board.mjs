@@ -180,6 +180,33 @@ console.log("\n— 393px, as a player, by touch —");
   ok(drawer.below, "which on a phone is the lower half of the screen, not a squeezed column");
   ok(drawer.fits && drawer.scrolls === "auto", "it fits the width and scrolls on its own");
 
+  // Panning has to actually go somewhere. The first clamp pinned the map's edges to the window, and on a
+  // map smaller than the screen that left an inch of travel before it stopped dead.
+  await page.evaluate(() => { tbl.view.z = 0.6; tbl.cameraIsYours = true; tblClampView(); applyView(); });
+  const panFrom = await page.evaluate(() => tbl.view.x);
+  await touchDrag(page, { x: 60, y: 500 }, { x: 300, y: 500 });
+  const panTo = await page.evaluate(() => tbl.view.x);
+  ok(Math.abs(panTo - panFrom) > 150, `a 240px drag of the map moves it (${Math.round(panFrom)} -> ${Math.round(panTo)})`);
+  // …and it must stay where it was put, rather than snapping back the moment the finger lifts.
+  await new Promise((r) => setTimeout(r, 200));
+  ok((await page.evaluate(() => tbl.view.x)) === panTo, "and it stays there when you let go");
+  // Whole pixels, or the grid's 1px lines land between device pixels and come out uneven.
+  const whole = await page.evaluate(() => ({
+    x: tbl.view.x, y: tbl.view.y, cellPx: tblScene().cell * tbl.view.z,
+  }));
+  ok(Number.isInteger(whole.x) && Number.isInteger(whole.y), "the camera sits on whole pixels");
+  ok(Number.isInteger(whole.cellPx), `and a square is a whole number of them (${whole.cellPx}px)`);
+  // It still cannot be lost: shoved hard in one direction, there is map on screen.
+  for (let i = 0; i < 6; i++) await touchDrag(page, { x: 320, y: 300 }, { x: 60, y: 300 }, 3);
+  const stillThere = await page.evaluate(() => {
+    const s = document.querySelector("#vtt-stage").getBoundingClientRect();
+    const w = document.querySelector("#vtt-world").getBoundingClientRect();
+    const overlap = Math.min(s.right, w.right) - Math.max(s.left, w.left);
+    return overlap / s.width;
+  });
+  ok(stillThere >= 0.2, `and however hard you shove it, the board is still on screen (${Math.round(stillThere * 100)}% of the window)`);
+  await page.evaluate(() => { tblFit(); });
+
   const wide = await page.evaluate(() => {
     const de = document.documentElement;
     return { doc: de.scrollWidth, vw: de.clientWidth };
