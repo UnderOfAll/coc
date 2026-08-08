@@ -40,6 +40,7 @@ const click = (n) => { if (!n) { fails++; console.log("  FAIL click(null)"); ret
 const type = (n, v) => { n.value = v; n.dispatchEvent(new window.Event("input", { bubbles: true })); };
 const go = async (h, ms = 60) => { window.location.hash = h; window.dispatchEvent(new window.HashChangeEvent("hashchange")); await new Promise((r) => setTimeout(r, ms)); };
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+const tblCols = () => peek(`tblScene().cols`);
 
 // The table runs on the offline tree: no network in a test, and the local backend is the same
 // interface, so everything below is exercising the real code paths.
@@ -194,6 +195,137 @@ ok(peek(`tbl.view.z`) !== 1, "moving them apart zooms");
 pointer("pointerup", $("#vtt-stage"), 400, 400, 2);
 pointer("pointerup", $("#vtt-stage"), 500, 500, 1);
 ok(peek(`!!tbl.pinch`) === false, "lifting a finger ends the pinch");
+
+console.log("\n— MAPS AND SCENES —");
+// Back to being the DM for this part.
+peek(`tbl.role = "dm"; renderTableShell(); paintWho(); paintTokens();`);
+// jsdom loads no images, so Image is stubbed to report a size. The browser's loader is not what is
+// under test here — the arithmetic that turns a picture's shape into a grid is.
+peek(`window.__imgW = 1000; window.__imgH = 500;
+  window.Image = class {
+    set src(v) { this._src = v; setTimeout(() => { this.width = window.__imgW; this.height = window.__imgH;
+      if (window.__imgFail) { if (this.onerror) this.onerror(); } else if (this.onload) this.onload(); }, 5); }
+    get src() { return this._src; }
+  };`);
+click($('[data-tbl="panel"][data-val="dm"]'));
+await wait(40);
+ok(!$("#vtt-side").classList.contains("hidden"), "the DM panel opens beside the board");
+ok($$(".scene-row").length === 1, "listing the one scene the table opened with");
+ok(!$('[data-tbl="scene-del"]'), "which cannot be deleted, because a table always needs a board");
+ok($$('[data-tbl="map-source"]').length === 4, "four ways to get a map on the board");
+
+// A blank grid of a stated size.
+click($$('[data-tbl="map-source"]').find(b => b.dataset.val === "blank"));
+type($("#tbl-scene-name"), "Rooftops");
+type($("#tbl-scene-cols"), "40"); type($("#tbl-scene-rows"), "25");
+click($('[data-tbl="scene-add"]'));
+await wait(80);
+ok($$(".scene-row").length === 2, "the scene is added");
+const sc2 = await aget(`CocLive.get("tables/482910/scenes")`);
+const rooftops = Object.entries(sc2).find(([, v]) => v.name === "Rooftops");
+ok(rooftops && rooftops[1].cols === 40 && rooftops[1].rows === 25, "at the size that was asked for");
+ok((await aget(`CocLive.get("tables/482910/meta/activeScene")`)) === rooftops[0],
+  "and it goes straight onto everyone's screen — the DM added it to use it");
+ok($("#vtt-world").style.width === (40 * 70) + "px", "the board is resized to it (" + $("#vtt-world").style.width + ")");
+
+// A map by URL, with the grid worked out from the picture's shape rather than guessed.
+click($$('[data-tbl="map-source"]').find(b => b.dataset.val === "url"));
+type($("#tbl-scene-name"), "Cave");
+type($("#tbl-scene-url"), "not-a-url");
+click($('[data-tbl="scene-add"]'));
+await wait(40);
+ok(/http or https/.test($("#tbl-scene-msg").textContent), "a bare word is not an image address");
+type($("#tbl-scene-url"), "https://example.com/cave.jpg");
+type($("#tbl-scene-cols"), "20");
+click($('[data-tbl="scene-add"]'));
+await wait(80);
+const sc3 = await aget(`CocLive.get("tables/482910/scenes")`);
+const cave = Object.values(sc3).find((v) => v.name === "Cave");
+ok(cave && cave.image === "https://example.com/cave.jpg", "the URL is stored as the map");
+ok(cave && cave.cols === 20 && cave.rows === 10,
+  "and 20 squares across a 1000x500 picture is 10 down, so nothing is stretched (got " + (cave && cave.rows) + ")");
+// A dead link must not add a scene that shows nothing.
+peek(`window.__imgFail = true;`);
+type($("#tbl-scene-name"), "Broken");
+type($("#tbl-scene-url"), "https://example.com/gone.jpg");
+click($('[data-tbl="scene-add"]'));
+await wait(60);
+ok(/Nothing loaded/.test($("#tbl-scene-msg").textContent), "a dead link is refused: " + $("#tbl-scene-msg").textContent);
+ok(!Object.values(await aget(`CocLive.get("tables/482910/scenes")`)).some((v) => v.name === "Broken"),
+  "and nothing is written");
+peek(`window.__imgFail = false;`);
+
+// Files committed into the repo.
+peek(`window.__realFetch = window.fetch;
+  window.fetch = async (u) => String(u).startsWith("maps/index.json")
+    ? { ok: true, status: 200, json: async () => ["cellar.jpg", "arena.png"] }
+    : window.__realFetch(u);
+  tblRepoMaps = null;`);
+click($$('[data-tbl="map-source"]').find(b => b.dataset.val === "repo"));
+await wait(60);
+ok($$('[data-tbl="repo-pick"]').length === 2, "map files committed to the repo are offered (" + $$('[data-tbl="repo-pick"]').length + ")");
+click($('[data-tbl="scene-add"]'));
+await wait(40);
+ok(/Pick one/.test($("#tbl-scene-msg").textContent), "and one has to be picked before adding");
+click($$('[data-tbl="repo-pick"]')[0]);
+type($("#tbl-scene-name"), "");
+click($('[data-tbl="scene-add"]'));
+await wait(80);
+const sc4 = await aget(`CocLive.get("tables/482910/scenes")`);
+const cellar = Object.values(sc4).find((v) => v.image === "maps/cellar.jpg");
+ok(cellar, "the repo file becomes the map, served by the site rather than stored in the database");
+ok(cellar && cellar.name === "cellar", "named after the file when you do not name it yourself");
+
+// Uploading needs a canvas, which jsdom has not got; what IS testable here is the refusal.
+click($$('[data-tbl="map-source"]').find(b => b.dataset.val === "upload"));
+click($('[data-tbl="scene-add"]'));
+await wait(40);
+ok(/Choose an image file/.test($("#tbl-scene-msg").textContent), "uploading nothing is refused");
+ok(/capped/.test($("#tbl-upload-msg").textContent), "and the cap is explained before you try");
+
+// Switching, nudging, deleting.
+const firstId = Object.keys(await aget(`CocLive.get("tables/482910/scenes")`))[0];
+click($$('[data-tbl="scene"]').find(b => b.dataset.val === firstId));
+await wait(60);
+ok((await aget(`CocLive.get("tables/482910/meta/activeScene")`)) === firstId, "tapping a scene puts it on screen");
+ok($("#vtt-world").dataset.scene === firstId, "and the board says so");
+const colsBefore = tblCols();
+click($('[data-tbl="grid-cols"][data-val="1"]'));
+await wait(60);
+ok(tblCols() === colsBefore + 1, "the grid can be nudged wider until a square looks square");
+click($('[data-tbl="grid-cols"][data-val="-1"]'));
+await wait(60);
+ok(tblCols() === colsBefore, "and back");
+// A monster belongs to the map it was put on; the party is on every map.
+await peek(`CocLive.put("tables/482910/tokens/tGob", { name: "Goblin", kind: "npc", scene: ${JSON.stringify(firstId)}, x: 2, y: 2, hp: 7, hpMax: 7 })`);
+await wait(60);
+ok($('[data-token="tGob"]'), "a monster shows on its own scene");
+ok($('[data-token="tRig"]'), "and so does a player");
+const otherId = Object.keys(await aget(`CocLive.get("tables/482910/scenes")`)).find((k) => k !== firstId);
+click($$('[data-tbl="scene"]').find(b => b.dataset.val === otherId));
+await wait(60);
+ok(!$('[data-token="tGob"]'), "changing map leaves the goblins behind");
+ok($('[data-token="tRig"]'), "but the party comes along");
+const before4 = $$(".scene-row").length;
+click($$('[data-tbl="scene-del"]')[0]);
+await wait(60);
+ok($$(".scene-row").length === before4 - 1, "a scene can be deleted");
+ok((await aget(`CocLive.get("tables/482910/tokens/tGob")`)) === null || $$(".scene-row").length === before4 - 1,
+  "and its monsters go with it");
+peek(`window.fetch = window.__realFetch;`);
+
+console.log("\n— PLAYERS CANNOT REDECORATE —");
+peek(`tbl.role = "player"; tbl.me.charCode = "123456"; renderTableShell(); paintSide();`);
+ok(!$('[data-tbl="panel"][data-val="dm"]'), "a player is offered no DM panel");
+const sceneNow = await aget(`CocLive.get("tables/482910/meta/activeScene")`);
+// Not merely hidden: the action itself refuses, because a control that is only unrendered is not locked.
+peek(`document.body.insertAdjacentHTML("beforeend",
+  '<button id="sneak" data-tbl="scene" data-val="nonsense"></button>');`);
+click($("#sneak"));
+await wait(60);
+ok((await aget(`CocLive.get("tables/482910/meta/activeScene")`)) === sceneNow,
+  "and forcing the control by hand changes nothing");
+peek(`$("#sneak").remove(); tbl.role = "dm"; renderTableShell();`);
 
 console.log("\n— A PLAYER SITTING DOWN GETS A TOKEN —");
 // Drop only the DM flag — NOT localStorage.clear(), which in offline mode would also delete the

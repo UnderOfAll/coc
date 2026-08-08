@@ -1045,3 +1045,17 @@ input.step-val { width: 3.4rem; }
   .vtt-body { flex-direction: column; }
   .vtt-side { width: 100%; max-height: 44dvh; }
 }
+
+/* The DM's map list: one row per scene, the one on everyone's screen marked. */
+.scene-list { display: flex; flex-direction: column; }
+.scene-row { display: flex; gap: 0.4rem; align-items: center; padding: 0.35rem 0;
+  border-top: 1px solid var(--border); }
+.scene-list > .scene-row:first-child { border-top: none; }
+.scene-row.on .scene-pick strong { color: var(--gold); }
+.scene-pick { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; gap: 0.2rem 0.5rem;
+  align-items: baseline; text-align: left; background: none; border: none; color: inherit;
+  font: inherit; cursor: pointer; padding: 0.2rem 0; }
+.scene-pick:hover strong { color: var(--gold); }
+.grid-row { display: flex; flex-wrap: wrap; gap: 0.8rem; align-items: flex-end; margin: 0.6rem 0; }
+.vtt-side .field { margin-bottom: 0.5rem; }
+.vtt-side input[type="file"] { font-size: 0.85rem; max-width: 100%; }

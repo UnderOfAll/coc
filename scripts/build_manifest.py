@@ -206,6 +206,21 @@ def lint_inline_formulas(obj, rel):
     return out
 
 
+def build_map_index():
+    """List the map images committed into maps/ so the table's DM panel can offer them.
+
+    A map served from the repo costs nothing to host and never touches the database, which is why it
+    is one of the four ways to get a map onto the board. The app cannot list a directory over HTTP,
+    so the build writes the listing out for it.
+    """
+    folder = ROOT / "maps"
+    folder.mkdir(exist_ok=True)
+    exts = {".jpg", ".jpeg", ".png", ".webp", ".avif"}
+    files = sorted(f.name for f in folder.iterdir() if f.suffix.lower() in exts)
+    (folder / "index.json").write_text(json.dumps(files, indent=2) + "\n", encoding="utf-8")
+    return files
+
+
 def stamp_assets():
     """Stamp a short content hash onto each versioned asset's link in index.html.
 
@@ -272,6 +287,9 @@ def main():
         json.dumps(bundle, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
     stamped = stamp_assets()
+    maps = build_map_index()
+
+    print(f"maps/index.json written — {len(maps)} map image(s) committed to the repo")
 
     total = sum(len(v) for v in manifest.values())
     print(f"manifest.json + bundle.json written — {total} files across {len(CATEGORIES)} categories")

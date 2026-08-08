@@ -472,9 +472,14 @@ function paintTokens() {
   const scene = tblScene();
   const cell = Number(scene.cell) || 70;
   const tokens = tblTokens();
+  const activeScene = tblSceneId();
   const seen = new Set();
   for (const [id, t] of Object.entries(tokens)) {
     if (!t) continue;
+    // The party is on every map; a monster belongs to the map it was put on. That is how a table
+    // actually plays — the DM changes scene and the players are simply there, while the goblins of
+    // the last room do not follow them into the next one.
+    if (t.kind === "npc" && t.scene && t.scene !== activeScene) continue;
     seen.add(id);
     let node = host.querySelector(`[data-token="${id}"]`);
     if (!node) {
@@ -646,13 +651,248 @@ function onPointerUp(e) {
   paintRuler();
 }
 
+/* ---------------------------------------------------------------- the side panel */
+
+/* One column beside the board on a desktop, the lower half of the screen on a phone. It holds the
+   things you dip into rather than watch: the dice, your own sheet, the DM's tools. Rendered whole
+   each time, which is safe because nothing in it is mid-drag. */
+function tblPanel(which) {
+  tbl.ui.panel = tbl.ui.panel === which ? "" : which;
+  paintSide();
+}
+function paintSide() {
+  const side = $("#vtt-side");
+  if (!side) return;
+  const which = tbl.ui.panel;
+  side.classList.toggle("hidden", !which);
+  document.querySelectorAll("[data-tbl='panel']").forEach((b) =>
+    b.classList.toggle("on", b.dataset.val === which));
+  if (!which) { side.innerHTML = ""; return; }
+  if (which === "dm") side.innerHTML = dmPanelHTML();
+  else if (which === "dice") side.innerHTML = dicePanelHTML();
+  else if (which === "sheet") { side.innerHTML = `<p class="muted">Opening your sheet…</p>`; paintSheetPanel(); }
+}
+/* Re-render the DM's panel only if it is the one open — the scenes stream fires for everyone. */
+function paintDmPanel() { if (tbl.ui.panel === "dm") paintSide(); }
+
+/* ---------------------------------------------------------------- maps and scenes (DM only) */
+
+/* Four ways to get a map onto the board, because they fail in different directions: a URL costs
+   nothing but breaks if the host goes away; an upload always works but is stored in the database, so
+   it is downscaled and capped; a file committed to maps/ is free and permanent but needs a push; and
+   a blank grid needs nothing at all, which is what you want for a fight in an unmapped room. */
+const TBL_MAP_SOURCES = [
+  ["blank", "Blank grid", "squares and nothing else"],
+  ["repo", "From the repo", "files committed to maps/"],
+  ["url", "Image URL", "hosted anywhere"],
+  ["upload", "Upload", "stored in the database, downscaled"],
+];
+
+let tblRepoMaps = null;   // cached listing of maps/index.json
+
+function dmPanelHTML() {
+  const scenes = tbl.data.scenes || {};
+  const activeId = tblSceneId();
+  const src = tbl.ui.mapSource || "blank";
+  const ids = Object.keys(scenes).sort((a, b) => (scenes[a].createdAt || 0) - (scenes[b].createdAt || 0));
+  const list = ids.map((id) => {
+    const s = scenes[id];
+    return `<div class="scene-row ${id === activeId ? "on" : ""}">
+      <button class="scene-pick" data-tbl="scene" data-val="${esc(id)}">
+        <strong>${esc(s.name || "Scene")}</strong>
+        <span class="muted">${esc(s.cols || 30)}&times;${esc(s.rows || 20)}${s.image ? "" : " · blank"}</span>
+      </button>
+      ${ids.length > 1 ? `<button class="btn-quiet" data-tbl="scene-del" data-val="${esc(id)}">Delete</button>` : ""}
+    </div>`;
+  }).join("");
+  return `<section class="panel">
+      <h2>Maps</h2>
+      <p class="panel-sub">Scenes <span class="muted">— tap one to put it on everyone's screen</span></p>
+      <div class="scene-list">${list}</div>
+    </section>
+    <section class="panel">
+      <p class="panel-sub">Add a scene</p>
+      <div class="chips">${TBL_MAP_SOURCES.map(([k, label, note]) => chipTip(
+        `<button class="chip ${src === k ? "on" : ""}" data-tbl="map-source" data-val="${k}">${esc(label)}</button>`,
+        esc(note))).join("")}</div>
+      <label class="field"><span>Name</span>
+        <input id="tbl-scene-name" class="text" type="text" maxlength="60" placeholder="The big top" /></label>
+      ${src === "url" ? `<label class="field"><span>Image URL</span>
+        <input id="tbl-scene-url" class="text" type="url" placeholder="https://…" /></label>` : ""}
+      ${src === "upload" ? `<label class="field"><span>Image file</span>
+        <input id="tbl-scene-file" class="text" type="file" accept="image/*" /></label>
+        <p class="muted" id="tbl-upload-msg">Anything large is shrunk to fit the database — a map is
+          stored as data, so it is capped at about half a megabyte.</p>` : ""}
+      ${src === "repo" ? repoMapsHTML() : ""}
+      <div class="grid-row">
+        <label class="field"><span>Squares across</span>
+          <input id="tbl-scene-cols" class="num" type="number" min="4" max="120" value="30" /></label>
+        ${src === "blank" ? `<label class="field"><span>Squares down</span>
+          <input id="tbl-scene-rows" class="num" type="number" min="4" max="120" value="20" /></label>`
+          : `<p class="muted">How many squares down is worked out from the image's shape, so nothing
+            gets stretched.</p>`}
+      </div>
+      <button class="btn" data-tbl="scene-add">Add the scene</button>
+      <p id="tbl-scene-msg" class="save-msg"></p>
+    </section>
+    <section class="panel">
+      <p class="panel-sub">This scene</p>
+      <div class="hp-controls">
+        <button class="btn-quiet" data-tbl="grid-cols" data-val="-1">Narrower</button>
+        <button class="btn-quiet" data-tbl="grid-cols" data-val="1">Wider</button>
+        <button class="btn-quiet" data-tbl="grid-rows" data-val="-1">Shorter</button>
+        <button class="btn-quiet" data-tbl="grid-rows" data-val="1">Taller</button>
+      </div>
+      <p class="muted">Nudge the grid until a square is a square. Five feet per square, as usual.</p>
+    </section>`;
+}
+
+function repoMapsHTML() {
+  if (tblRepoMaps === null) {
+    tblLoadRepoMaps();
+    return `<p class="muted">Looking in maps/…</p>`;
+  }
+  if (!tblRepoMaps.length) {
+    return `<p class="muted">Nothing in <strong>maps/</strong> yet. Commit image files into that
+      folder, push, and they appear here for every device — free to host and nothing stored in the
+      database.</p>`;
+  }
+  return `<div class="chips">${tblRepoMaps.map((f) =>
+    `<button class="chip ${tbl.ui.repoPick === f ? "on" : ""}" data-tbl="repo-pick" data-val="${esc(f)}">${esc(f)}</button>`).join("")}</div>`;
+}
+async function tblLoadRepoMaps() {
+  try {
+    const res = await fetch("maps/index.json?cb=" + Date.now());
+    tblRepoMaps = res.ok ? (await res.json()) : [];
+  } catch { tblRepoMaps = []; }
+  if (tbl) paintDmPanel();
+}
+
+/* An uploaded map is stored in the database as a data URI, so it has to be made small enough to
+   belong there: shrink the longest side, then trade quality away, and give up rather than write
+   something that the rules would reject anyway. */
+const TBL_IMAGE_CAP = 680000;
+function tblShrinkImage(file, done, fail) {
+  const reader = new FileReader();
+  reader.onerror = () => fail("That file could not be read.");
+  reader.onload = () => {
+    const img = new Image();
+    img.onerror = () => fail("That does not look like an image.");
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      if (!canvas.getContext) return fail("This browser cannot resize images.");
+      for (const maxSide of [1600, 1200, 900, 700]) {
+        const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+        canvas.width = Math.max(1, Math.round(img.width * scale));
+        canvas.height = Math.max(1, Math.round(img.height * scale));
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        for (const q of [0.72, 0.6, 0.48, 0.38]) {
+          const out = canvas.toDataURL("image/jpeg", q);
+          if (out.length <= TBL_IMAGE_CAP) return done(out, img.width, img.height);
+        }
+      }
+      fail("Even shrunk, that image is too big to store. Commit it into maps/ instead.");
+    };
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+/* Rows from the image's own shape: a map stretched to a grid it does not match is worse than no grid,
+   and asking the DM to work the number out by hand is the kind of arithmetic this app exists to do. */
+function tblRowsFor(cols, w, h) {
+  if (!w || !h) return Math.max(4, Math.round(cols * 0.66));
+  return Math.max(4, Math.min(120, Math.round(cols * (h / w))));
+}
+
+async function tblAddScene() {
+  const msg = $("#tbl-scene-msg");
+  const say = (t, bad) => { if (msg) { msg.textContent = t; msg.className = "save-msg" + (bad ? " bad" : ""); } };
+  const src = tbl.ui.mapSource || "blank";
+  const name = String(($("#tbl-scene-name") || {}).value || "").slice(0, 60);
+  const cols = Math.max(4, Math.min(120, Number(($("#tbl-scene-cols") || {}).value) || 30));
+  const write = async (image, w, h, label) => {
+    const rows = src === "blank"
+      ? Math.max(4, Math.min(120, Number(($("#tbl-scene-rows") || {}).value) || 20))
+      : tblRowsFor(cols, w, h);
+    const id = CocLive.newId();
+    await CocLive.put(tblPath("scenes/" + id), {
+      name: name || label, image: image || "", cols, rows, cell: 70, createdAt: Date.now(),
+    });
+    // A new scene becomes the one on screen: the DM added it to use it.
+    await CocLive.put(tblPath("meta/activeScene"), id);
+    tbl.view.fitted = false;
+    say("Added.");
+  };
+  try {
+    if (src === "blank") return void await write("", 0, 0, "Blank grid");
+    if (src === "url") {
+      const url = String(($("#tbl-scene-url") || {}).value || "").trim();
+      if (!/^https?:\/\//i.test(url)) return say("That needs to be an http or https image address.", true);
+      // Measured, not assumed: the grid has to match the picture's shape.
+      const img = new Image();
+      img.onload = () => write(url, img.width, img.height, "Map").catch((e) => say(e.message, true));
+      img.onerror = () => say("Nothing loaded from that address. Is it a direct link to an image?", true);
+      img.src = url;
+      return;
+    }
+    if (src === "repo") {
+      const file = tbl.ui.repoPick;
+      if (!file) return say("Pick one of the files in maps/ first.", true);
+      const url = "maps/" + file;
+      const img = new Image();
+      img.onload = () => write(url, img.width, img.height, file.replace(/\.[a-z]+$/i, ""))
+        .catch((e) => say(e.message, true));
+      img.onerror = () => say("That file did not load. Has it been pushed?", true);
+      img.src = url;
+      return;
+    }
+    if (src === "upload") {
+      const input = $("#tbl-scene-file");
+      const file = input && input.files && input.files[0];
+      if (!file) return say("Choose an image file first.", true);
+      say("Shrinking it to fit…");
+      tblShrinkImage(file, (data, w, h) => {
+        write(data, w, h, file.name.replace(/\.[a-z]+$/i, "")).catch((e) => say(e.message, true));
+      }, (why) => say(why, true));
+    }
+  } catch (err) { say(err.message, true); }
+}
+
+async function tblDeleteScene(id) {
+  const scenes = tbl.data.scenes || {};
+  if (Object.keys(scenes).length <= 1) return;   // a table always has a board
+  await CocLive.del(tblPath("scenes/" + id));
+  if (tblSceneId() === id || (tbl.data.meta || {}).activeScene === id) {
+    const next = Object.keys(scenes).find((k) => k !== id);
+    if (next) await CocLive.put(tblPath("meta/activeScene"), next);
+  }
+  // Monsters belong to the map they were put on; the party does not.
+  for (const [tid, t] of Object.entries(tblTokens())) {
+    if (t && t.kind === "npc" && t.scene === id) CocLive.del(tblPath("tokens/" + tid)).catch(() => {});
+  }
+}
+
+/* Nudging the grid. Kept as buttons rather than a number box because it is a "does that look square
+   yet" adjustment, made while looking at the map, not a value anybody knows in advance. */
+async function tblNudgeGrid(which, delta) {
+  const id = tblSceneId();
+  if (!id) return;
+  const scene = tblScene();
+  const key = which === "cols" ? "cols" : "rows";
+  const next = Math.max(4, Math.min(120, (Number(scene[key]) || (key === "cols" ? 30 : 20)) + delta));
+  await CocLive.put(tblPath("scenes/" + id + "/" + key), next);
+}
+
 /* ---------------------------------------------------------------- filled in by later checkpoints */
 
 function paintRuler() { /* checkpoint: ruler + movement budget */ }
 function tblCountMove() { /* checkpoint: ruler + movement budget */ }
 function paintTurnBar() { /* checkpoint: turn order */ }
 function paintLog() { /* checkpoint: dice + roll log */ }
-function paintDmPanel() { /* checkpoint: maps and the DM screen */ }
+function dicePanelHTML() { return `<p class="muted">Dice, shortly.</p>`; }
+function paintSheetPanel() { /* checkpoint: the sheet drawer */ }
 function tblOpenToken() { /* checkpoint: token editor */ }
 
 /* ---------------------------------------------------------------- wiring */
@@ -668,5 +908,15 @@ document.addEventListener("click", (e) => {
   if (!tbl) return;
   if (act === "zoom") {
     if (val === "0") tblFit(); else tblZoomBy(val === "1" ? 1.25 : 1 / 1.25);
-  }
+  } else if (act === "panel") tblPanel(val);
+  // Everything below changes the board itself, which is the DM's alone. The buttons are not rendered
+  // for a player, and the check is here as well because a rendered-away control is not a locked one.
+  else if (tbl.role !== "dm") return;
+  else if (act === "map-source") { tbl.ui.mapSource = val; paintSide(); }
+  else if (act === "repo-pick") { tbl.ui.repoPick = val; paintSide(); }
+  else if (act === "scene") { CocLive.put(tblPath("meta/activeScene"), val).catch(tblFail); tbl.view.fitted = false; }
+  else if (act === "scene-del") tblDeleteScene(val).catch(tblFail);
+  else if (act === "scene-add") tblAddScene().catch(tblFail);
+  else if (act === "grid-cols") tblNudgeGrid("cols", Number(val)).catch(tblFail);
+  else if (act === "grid-rows") tblNudgeGrid("rows", Number(val)).catch(tblFail);
 });
