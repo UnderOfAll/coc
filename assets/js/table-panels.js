@@ -89,6 +89,7 @@ function dmMapsHTML() {
         <button class="chip ${active.gridDark ? "on" : ""}" data-tbl="grid-dark">Dark lines</button>
         <button class="chip ${active.gridBold ? "on" : ""}" data-tbl="grid-bold">Bold</button>
       </div>
+      ${tblGridSuggestHTML(active)}
       <p class="panel-sub">How many squares across</p>
       <div class="chips">${[10, 15, 20, 24, 30, 40, 60].map((n) =>
         `<button class="chip ${(active.cols || 30) === n ? "on" : ""}" data-tbl="grid-preset" data-val="${n}">${n}</button>`).join("")}</div>
@@ -137,6 +138,33 @@ function tblSquareUpGrid(cols) {
 }
 
 /* Every figure on this scene, so the DM can reach one without finding it on the map first. */
+/* What the picture itself can tell you about its grid.
+ *
+ * Kayki had to look up his map's pixel size in a file browser and work the arithmetic out by hand before the
+ * grid would line up. The app is already holding the image: it knows how many pixels across it is, and battle
+ * maps are drawn at a handful of standard squares — 70px is the common one, 100 and 140 for larger prints.
+ * So it says the size and offers the counts, and each one is a button. */
+function tblGridSuggestHTML(scene) {
+  if (!scene.image) return "";
+  const img = $("#vtt-map");
+  const nw = img && img.naturalWidth, nh = img && img.naturalHeight;
+  if (!nw || !nh) return "";
+  const guesses = [70, 100, 140, 50].map((px) => ({
+    px,
+    cols: Math.round(nw / px),
+    rows: Math.round(nh / px),
+  })).filter((g) => g.cols >= 4 && g.cols <= 120 && g.rows >= 4);
+  if (!guesses.length) return "";
+  return `<p class="panel-sub">What the picture says</p>
+    <p class="muted">This one is <strong>${esc(nw)}&times;${esc(nh)}</strong> pixels. Most battle maps are
+      drawn at 70 pixels a square, so if yours came with a grid printed on it, one of these should line up
+      exactly:</p>
+    <div class="chips">${guesses.map((g) =>
+      `<button class="chip ${(scene.cols || 0) === g.cols && (scene.rows || 0) === g.rows ? "on" : ""}"
+        data-tbl="grid-guess" data-val="${g.cols}|${g.rows}">${g.cols}&times;${g.rows}
+        <span class="muted">${g.px}px</span></button>`).join("")}</div>`;
+}
+
 function dmFiguresHTML() {
   const activeScene = tblSceneId();
   const rows = Object.entries(tblTokens())

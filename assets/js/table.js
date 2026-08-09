@@ -561,6 +561,7 @@ function renderTableShell() {
             <svg id="vtt-ruler" class="vtt-ruler" aria-hidden="true"></svg>
           </div>
           <div id="vtt-measure" class="vtt-measure hidden"></div>
+          <div id="vtt-peek" class="vtt-peek hidden"></div>
           <div class="vtt-zoom">
             <button class="btn-quiet" data-tbl="zoom" data-val="-1">&minus;</button>
             <button class="btn-quiet" data-tbl="zoom" data-val="0">Fit</button>
@@ -599,6 +600,7 @@ function paintEverything() {
   paintHeader();
   paintBoard();      // paintTokens is called from here
   paintTurnBar();
+  paintPeek();
   paintLog();
   paintWho();
   paintHandout();
@@ -1005,6 +1007,8 @@ document.addEventListener("click", (e) => {
   else if (act === "ink-shape") { tblInkState().shape = val; paintSide(); }
   else if (act === "ink-fill") { tblInkState().fill = !tblInkState().fill; paintSide(); }
   else if (act === "ink-undo") tblUndoInk().catch(tblFail);
+  else if (act === "peek-close") { tbl.ui.peek = ""; paintPeek(); }
+  else if (act === "peek-edit") { tbl.ui.peek = ""; paintPeek(); tblOpenToken(val); }
   else if (act === "ink-color") { tblInkState().color = val; paintSide(); }
   else if (act === "ink-width") { tblInkState().width = Number(val); paintSide(); }
   else if (act === "ink-clear-mine") {
@@ -1045,6 +1049,11 @@ document.addEventListener("click", (e) => {
     if (id) CocLive.put(tblPath("scenes/" + id + "/" + field), !now).catch(tblFail);
   }
   // A preset is "how many squares across"; how many down follows the picture, so squares stay square.
+  else if (act === "grid-guess") {
+    const [cols, rows] = String(val).split("|").map(Number);
+    const id = tblSceneId();
+    if (id) CocLive.patch(tblPath("scenes/" + id), { cols, rows }).catch(tblFail);
+  }
   else if (act === "grid-preset") tblSquareUpGrid(Number(val)).catch(tblFail);
   else if (act === "grid-fit") tblSquareUpGrid().catch(tblFail);
   else if (act === "grid-off") {

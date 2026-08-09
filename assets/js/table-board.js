@@ -58,6 +58,7 @@ function paintBoard() {
   if (!tbl.view.fitted && tblSceneId()) tblFit();
   applyView();
   paintTokens();
+  paintPeek();
 }
 
 /* Camera. Everything is one CSS transform on the world, so panning and zooming never touch a token:
@@ -159,6 +160,7 @@ function tblZoomBy(factor, cx, cy) {
   tbl.view.z = z1;
   tblClampView();
   applyView();
+  paintPeek();
   /* Zooming WHILE dragging used to break the drag: the grab offset was worked out in the old view, and
      the clamp then moved the camera under the finger, so the figure leapt away and followed at an
      offset that never came back — Kayki's "hold to drag and zoom out at the same time". Re-anchoring to
@@ -297,6 +299,16 @@ function bindStage() {
     const node = evTarget(e).closest("[data-token]");
     if (node) tblOpenToken(node.dataset.token);
   });
+  /* A single tap on a figure opens its card beside it — what the double tap was being used for, without the
+     guesswork. A tap on the board itself puts the card away. `click` rather than pointerup, so a drag that
+     happens to end on a figure does not open anything. */
+  stage.addEventListener("click", (e) => {
+    if (!tbl || (tbl.ui.ink && tbl.ui.ink.on)) return;    // the pen owns the board while it is out
+    const node = evTarget(e).closest("[data-token]");
+    const id = node && node.dataset.token;
+    tbl.ui.peek = id && tbl.ui.peek !== id ? id : "";
+    paintPeek();
+  });
 }
 
 function stagePoint(e) {
@@ -312,6 +324,50 @@ function toSquares(sx, sy) {
   const scene = tblScene();
   const cell = Number(scene.cell) || 70;
   return { x: ((sx - tbl.view.x) / tbl.view.z) / cell, y: ((sy - tbl.view.y) / tbl.view.z) / cell };
+}
+
+/* Tapping a figure opens it WHERE IT IS.
+ *
+ * The details used to open in the side panel — beside the board on a desktop, below it on a phone — so
+ * "it opened" and "you can see that it opened" were two different things, and Kayki tapped a creature and
+ * watched nothing happen. This is a small card pinned next to the figure itself: what it is, how hurt it is
+ * if you are allowed to know, what it is suffering from, how far it moves. The DM gets one more tap to the
+ * full editor; everyone else gets what they are entitled to and nothing more.
+ *
+ * It lives in the STAGE rather than in the world, so it stays a readable size at any zoom. */
+function paintPeek() {
+  const host = $("#vtt-peek");
+  if (!host) return;
+  const id = tbl.ui.peek;
+  const t = id ? tblTokens()[id] : null;
+  if (!t) { host.classList.add("hidden"); host.innerHTML = ""; return; }
+  const scene = tblScene();
+  const cell = Number(scene.cell) || 70;
+  const size = Math.max(1, Number(t.size) || 1);
+  // Anchored to the figure's own top-right corner, in stage coordinates.
+  const sx = tbl.view.x + ((Number(t.x) || 0) + size) * cell * tbl.view.z;
+  const sy = tbl.view.y + (Number(t.y) || 0) * cell * tbl.view.z;
+  const showHp = tbl.role === "dm" || tblIsMine(t);
+  const conds = Array.isArray(t.conditions) ? t.conditions : [];
+  const pct = t.hpMax ? Math.max(0, Math.min(100, Math.round((Number(t.hp) || 0) / t.hpMax * 100))) : 0;
+  host.classList.remove("hidden");
+  host.style.left = Math.round(sx + 8) + "px";
+  host.style.top = Math.round(Math.max(0, sy)) + "px";
+  host.innerHTML = `<div class="peek-head">
+      <strong>${esc(t.name || "Figure")}</strong>
+      <button class="btn-quiet" data-tbl="peek-close">&times;</button>
+    </div>
+    ${showHp && t.hpMax ? `<div class="peek-hp">
+        <span class="tok-bar ${pct <= 25 ? "low" : pct <= 60 ? "half" : ""}"><span style="width:${pct}%"></span></span>
+        <span>${esc(t.hp)}/${esc(t.hpMax)}</span></div>`
+      : t.hpMax ? `<p class="muted">How hurt it is, is the DM's to know.</p>` : ""}
+    ${conds.length ? `<div class="chips">${conds.map((c) =>
+      `<span class="chip on">${esc(TBL_CONDITION_NAMES[c] || c)}</span>`).join("")}</div>`
+      : `<p class="muted">Nothing wrong with it.</p>`}
+    <p class="peek-foot">${esc(Number(t.speed) || 30)} ft${size > 1 ? ` &middot; ${esc(size)} squares` : ""}</p>
+    ${tbl.role === "dm"
+      ? `<button class="btn-quiet" data-tbl="peek-edit" data-val="${esc(id)}">Edit this figure</button>`
+      : tblIsMine(t) ? `<button class="btn-quiet" data-tbl="panel" data-val="${tbl.me.charCode ? "sheet" : "mine"}">Open ${tbl.me.charCode ? "my sheet" : "my character"}</button>` : ""}`;
 }
 
 /* Where a point on the stage falls on the PICTURE, as a fraction of it. */

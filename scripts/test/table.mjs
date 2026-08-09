@@ -669,6 +669,21 @@ ok(/2px/.test(gridEl().style.backgroundImage), "and bold ones, which survive bei
 // The presets: how many squares ACROSS, with down following the picture's shape.
 peek(`Object.defineProperty($("#vtt-map"), "naturalWidth", { value: 2000, configurable: true });
   Object.defineProperty($("#vtt-map"), "naturalHeight", { value: 1000, configurable: true });`);
+peek(`paintSide();`);
+await wait(60);
+// What the picture can tell you, so nobody has to look the file's size up by hand.
+ok(/What the picture says/.test($("#dm-grid").textContent), "the panel reads the picture's own size");
+ok(/2000×1000|2000&times;1000/.test($("#dm-grid").innerHTML), "and says what it is: " +
+  ($("#dm-grid").textContent.match(/is\s+\d+×\d+/) || ["?"])[0]);
+const guess70 = $$('[data-tbl="grid-guess"]').find((b) => b.dataset.val === "29|14");
+ok($$('[data-tbl="grid-guess"]').length >= 2, "with a count offered per standard square size");
+const anyGuess = $$('[data-tbl="grid-guess"]')[0];
+click(anyGuess);
+await wait(150);
+const [gc, gr] = anyGuess.dataset.val.split("|").map(Number);
+ok((await aget(`tblScene().cols`)) === gc && (await aget(`tblScene().rows`)) === gr,
+  "and one tap applies it (" + gc + "x" + gr + ")");
+
 click($('[data-tbl="grid-preset"][data-val="60"]'));
 await wait(120);
 ok((await aget(`tblScene().cols`)) === 60, "a preset sets the squares across");
