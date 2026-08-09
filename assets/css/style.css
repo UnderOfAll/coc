@@ -1286,6 +1286,20 @@ body:has(.vtt) { height: 100dvh; overflow: hidden; }
   font-size: 0.78rem; color: var(--muted); z-index: 1; }
 .die.dropped .die-face polygon { stroke: var(--border); }
 .die.dropped { opacity: 0.4; color: var(--muted); }
+/* The same in the result box, where the dice are bigger and it is worth a beat of its own. One pulse as
+   the box arrives, and only on the die that earned it — the whole-box moment is still reserved for a
+   roll that IS one die, where the crit is the answer rather than a detail of it. */
+.die.nat20 { color: var(--ok); }
+.die.nat20 .die-face polygon { stroke: var(--ok); }
+.die.nat1 { color: var(--accent-soft); }
+.die.nat1 .die-face polygon { stroke: var(--accent); }
+.roll-stage.with-3d .die.nat20, .roll-stage.with-3d .die.nat1 {
+  animation: die-nat 900ms cubic-bezier(0.16, 1, 0.3, 1) 180ms both; }
+@keyframes die-nat {
+  0%   { transform: scale(1); text-shadow: none; }
+  35%  { transform: scale(1.32); text-shadow: 0 0 22px currentColor; }
+  100% { transform: scale(1); text-shadow: 0 0 10px color-mix(in srgb, currentColor 45%, transparent); }
+}
 .roll-stage.rolling .die { animation: die-tumble 0.34s linear infinite; }
 /* Exponential ease-out. The overshoot curve this used to carry reads as a toy: real dice settle, they
    do not spring back up. */
@@ -1396,6 +1410,13 @@ body:has(.vtt) { height: 100dvh; overflow: hidden; }
   font-size: 0.85rem; color: var(--gold); background: var(--panel-2);
   border: 1px solid var(--border); border-radius: 4px; }
 .pip-die.dropped { opacity: 0.4; color: var(--muted); }
+/* A 20 or a 1 ON A D20 marks itself, wherever that die is shown — in the result box, in the bar, and in
+   every line of the log. Twenty dice with a 20 among them still has a 20 among them, and it was going by
+   in the same gold as the nineteen others. */
+.pip-die.nat20 { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 55%, var(--border));
+  background: color-mix(in srgb, var(--ok) 14%, var(--panel-2)); font-weight: 600; }
+.pip-die.nat1 { color: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  background: color-mix(in srgb, var(--accent) 14%, var(--panel-2)); font-weight: 600; }
 .roll-card-mod { font-size: 0.85rem; color: var(--muted); margin-left: 0.15rem; }
 .roll-card-total { font-family: var(--serif); font-size: 1.3rem; color: var(--text); min-width: 2rem;
   text-align: right; flex-shrink: 0; }
@@ -1409,6 +1430,7 @@ body:has(.vtt) { height: 100dvh; overflow: hidden; }
   .roll-stage.crit-high .roll-box::after, .roll-stage.crit-low .roll-box::after { animation: none; opacity: 0; }
   .roll-stage.crit-high .roll-box, .roll-stage.crit-low .roll-box,
   .roll-stage.crit-high .roll-total, .roll-stage.crit-low .roll-total { animation: none; filter: none; }
+  .roll-stage.with-3d .die.nat20, .roll-stage.with-3d .die.nat1 { animation: none; }
 }
 /* Any number on a sheet you can actually throw dice for. It has to look like the number it replaced,
    or the sheet turns into a wall of buttons — so it is the same type, with a hairline and a cursor. */

@@ -53,6 +53,49 @@ const until = async (fn, ms = 3000) => {
   while (Date.now() < stop) { if (fn()) return true; await wait(20); }
   return false;
 };
+/* Seed a roll and wait for it to be on screen.
+ *
+ * Every intermittent failure in this file has been the same thing: `Math.random` is mocked for the whole
+ * page, and CocLive mints the id of a pushed log entry from it as well — so a write still in flight from
+ * the previous roll silently eats the faces this one was seeded with, and the dice come up as something
+ * else. Draining first, seeding at the last possible moment, and waiting for the result rather than
+ * sleeping through it makes it deterministic.
+ * `faces` are the randoms, in order. `count` is how many dice should end up in the box. */
+async function rollFaces(faces, count) {
+  /* Wait for the PREVIOUS roll's tumble to stop first. That animation draws a fresh random for every die
+     on every tick for half a second — so seeding while one is running hands this roll's faces to the
+     last one's animation, and the dice come up as something else entirely. This, not the database, was
+     what made these tests flap. */
+  await until(() => !$("#roll-stage") || !$("#roll-stage").classList.contains("rolling"));
+  await wait(120);                                    // and let any write in flight mint its id
+  /* Anchored to THIS roll. Waiting for "the box holds N dice" cannot tell a new roll from the last one
+     still on screen — if the previous roll also had N, the wait returned immediately and every assertion
+     below read the old one. `tbl.lastRollAt` is stamped the moment a roll is made. */
+  const was = peek(`tbl.lastRollAt || 0`);
+  peek(`window.__seq = ${JSON.stringify(faces)};`);
+  armed(() => click($('[data-tbl="roll-pool"]')));
+  await until(() => peek(`tbl.lastRollAt || 0`) !== was);
+  await until(() => $$("#roll-stage .die").length === count);
+  // the faces turn over at the end of the tumble, and the crit lands with them
+  await until(() => !$("#roll-stage").classList.contains("rolling"));
+  // …and if this roll earned a moment, wait for it too. It is added as the tumble ends, and an assertion
+  // that reads the class in the same breath is racing an animation frame for no reason.
+  const nat = peek(`(() => { const l = Object.values(tbl.data.log || {}).sort((a, b) => (b.t||0)-(a.t||0));
+    return (l[0] || {}).nat || 0; })()`);
+  if (nat) await until(() => /crit-(high|low)/.test($("#roll-stage").className));
+}
+/* Run something with the seeded faces live. Everything that makes a roll goes through here. */
+function armed(fn) {
+  peek(`window.__armed = true;`);
+  try { return fn(); } finally { peek(`window.__armed = false;`); }
+}
+/* The same, held open across an AWAIT. Rolling initiative rolls one die per figure and writes each one
+   to the database between them, so the second die is thrown a tick after the click that started it —
+   outside a window that closes when the click returns. */
+async function armedFor(fn, ms) {
+  peek(`window.__armed = true;`);
+  try { fn(); await wait(ms); } finally { peek(`window.__armed = false;`); }
+}
 const tblCols = () => peek(`tblScene().cols`);
 const tblInkDecodeLen = (pts) => String(pts || "").split(" ").filter(Boolean).length;
 // The panel buttons TOGGLE, so asking for one that is already open would shut it.
@@ -800,8 +843,16 @@ peek(`window.fetch = window.__realFetch;`);
 console.log("\n— DICE —");
 // Deterministic dice: a fixed sequence stands in for Math.random, so every assertion below is about
 // the arithmetic and the wording rather than about luck.
-peek(`window.__seq = []; window.__realRandom = Math.random;
-  Math.random = () => (window.__seq.length ? window.__seq.shift() : 0.5);`);
+/* The seeded faces are served ONLY while a roll is actually being made.
+ *
+ * `Math.random` is mocked for the whole page, and plenty else on it draws from the same well — every id
+ * CocLive mints for a pushed log entry, for one. Leaving the queue permanently live meant any of them
+ * could take the number this roll had been seeded with, and the dice came up as something else. Which
+ * is what made this file flap for a dozen runs.
+ * A roll is computed synchronously inside the click (or the direct call) that starts it, so arming for
+ * exactly that window is airtight: nothing else can run in it. `armed()` wraps whatever triggers one. */
+peek(`window.__seq = []; window.__armed = false; window.__realRandom = Math.random;
+  Math.random = () => (window.__armed && window.__seq.length ? window.__seq.shift() : 0.5);`);
 ok(peek(`tblParseRoll("2d6+3").terms[0].count`) === 2 && peek(`tblParseRoll("2d6+3").mod`) === 3, "2d6+3 parses");
 ok(peek(`tblParseRoll("d20").terms[0].count`) === 1, "a bare d20 is one die");
 ok(peek(`tblParseRoll("1d20-1").mod`) === -1, "a minus modifier parses");
@@ -814,7 +865,7 @@ ok(smite.terms.length === 3 && smite.mod === 3, "a mixed handful parses into its
 ok(peek(`tblSpecText(tblParseRoll("1d8+2d6+1d4+3"))`) === "d8 + 2d6 + d4 + 3",
   "and writes itself back out: " + peek(`tblSpecText(tblParseRoll("1d8+2d6+1d4+3"))`));
 peek(`window.__seq = [0.5, 0.5, 0.5, 0.5];`);
-const mixed = peek(`tblDoRoll(tblParseRoll("1d8+2d6+1d4"), "normal")`);
+const mixed = armed(() => peek(`tblDoRoll(tblParseRoll("1d8+2d6+1d4"), "normal")`));
 ok(mixed.dice.length === 4, "four dice are thrown for 1d8+2d6+1d4");
 ok(mixed.dice.map(x => x.s).join(",") === "8,6,6,4", "each remembering which kind it is (" + mixed.dice.map(x => "d" + x.s).join(" ") + ")");
 ok(mixed.total === mixed.dice.reduce((n, x) => n + x.v, 0), "and the total is the lot added up");
@@ -825,12 +876,12 @@ peek(`window.__seq = [];`);
 let res = peek(`tblDoRoll(tblParseRoll("1d20+4"), "normal")`);
 ok(res.total === 15, "1d20+4 on a middling roll totals 15 (got " + res.total + ")");
 peek(`window.__seq = [0.1, 0.9];`);
-res = peek(`tblDoRoll(tblParseRoll("1d20"), "adv")`);
+res = armed(() => peek(`tblDoRoll(tblParseRoll("1d20"), "adv")`));
 ok(res.dice.length === 2 && res.keptIdx >= 0, "advantage throws two and keeps one");
 ok(res.dice[res.keptIdx].v === Math.max(...res.dice.map(x => x.v)),
   "the higher one (" + res.dice.map(x => x.v).join(",") + " -> " + res.dice[res.keptIdx].v + ")");
 peek(`window.__seq = [0.1, 0.9];`);
-res = peek(`tblDoRoll(tblParseRoll("1d20"), "dis")`);
+res = armed(() => peek(`tblDoRoll(tblParseRoll("1d20"), "dis")`));
 ok(res.dice[res.keptIdx].v === Math.min(...res.dice.map(x => x.v)), "disadvantage keeps the lower one");
 // Advantage is a property of a single d20, not a licence to reroll a fistful of dice.
 res = peek(`tblDoRoll(tblParseRoll("4d6"), "adv")`);
@@ -853,7 +904,7 @@ ok(/Roll d8 \+ 1/.test($('[data-tbl="roll-pool"]').textContent),
   "tapping it in the pool takes one back out: " + $('[data-tbl="roll-pool"]').textContent);
 click($$('[data-tbl="die"]').find(b => b.dataset.val === "8"));
 peek(`window.__seq = [0.5, 0.5];`);
-click($('[data-tbl="roll-pool"]'));
+armed(() => click($('[data-tbl="roll-pool"]')));
 await wait(60);
 const log = await aget(`CocLive.get("tables/482910/log")`);
 const lines = Object.values(log || {});
@@ -879,7 +930,7 @@ ok($$(".roll-line").length === 1, "and the log is still there when the panel is 
 // A natural 20 and a natural 1 are what a table reacts to, so they are marked.
 peek(`window.__seq = [0.999];`);
 peek(`tbl.ui.dice = { pool: { 20: 1 }, mod: 0, mode: "normal" }; paintDice();`);
-click($('[data-tbl="roll-pool"]'));
+armed(() => click($('[data-tbl="roll-pool"]')));
 await wait(60);
 ok($("#vtt-lastroll").classList.contains("nat20"), "a natural 20 marks itself");
 // A straight single die IS its own total — printing both is how you get "DM 18 18".
@@ -887,7 +938,7 @@ ok($$("#vtt-lastroll .pip-die").length === 0, "and a straight single die prints 
 ok($("#vtt-lastroll .roll-card-total").textContent === "20",
   "as the total on its own: " + $("#vtt-lastroll").textContent.trim());
 peek(`window.__seq = [0.0];`);
-click($('[data-tbl="roll-pool"]'));
+armed(() => click($('[data-tbl="roll-pool"]')));
 await wait(60);
 ok($("#vtt-lastroll").classList.contains("nat1"), "and so does a natural 1");
 
@@ -918,26 +969,53 @@ ok(topLine.querySelectorAll(".pip-die").length === 0, "and no die repeated besid
 /* A NAT IS A NAT. The die's face decides it, never the total: a 20 with a modifier on it is still a
    natural 20, and a total that happens to reach 20 off a lower die is not one. */
 peek(`tbl.ui.dice = { pool: { 20: 1 }, mod: 7, mode: "normal" }; paintDice();`);
-peek(`window.__seq = [0.999];`);
-click($('[data-tbl="roll-pool"]'));
-await wait(750);
+await rollFaces([0.999], 1);
 ok($("#roll-stage").classList.contains("nat20"), "a 20 with a +7 on it is still a natural 20");
 ok($("#roll-stage").classList.contains("crit-high"), "and it gets the moment");
 ok($("#vtt-lastroll .roll-card-total").textContent === "27", "with the total still counting the modifier");
 // A 13 that adds up to 20 is not a crit.
 peek(`tbl.ui.dice = { pool: { 20: 1 }, mod: 7, mode: "normal" }; paintDice();`);
-peek(`window.__seq = [0.62];`);
-click($('[data-tbl="roll-pool"]'));
-await wait(750);
+await rollFaces([0.62], 1);
 ok(!$("#roll-stage").classList.contains("nat20"), "a total of 20 off a lower die is not");
 ok(!$("#roll-stage").classList.contains("crit-high"), "and gets no moment");
 // A natural 1 with a modifier is still a natural 1, and gets the other half of the gesture.
 peek(`tbl.ui.dice = { pool: { 20: 1 }, mod: 5, mode: "normal" }; paintDice();`);
-peek(`window.__seq = [0.0];`);
-click($('[data-tbl="roll-pool"]'));
-await wait(750);
+await rollFaces([0.0], 1);
 ok($("#roll-stage").classList.contains("crit-low"), "a natural 1 with a +5 on it still flinches");
 ok(!$("#roll-stage").classList.contains("crit-high"), "and is not the other one");
+/* A HANDFUL. The roll's own `nat` has no meaning across twenty dice — "did this crit" has no answer
+   when twenty are on the table — but a 20 on a d20 is still a 20, and it was going by in the same gold
+   as the nineteen beside it. Every die says for itself now, in the box and in the log. */
+peek(`tbl.ui.dice = { pool: { 20: 4 }, mod: 0, mode: "normal" }; paintDice();`);
+// Settled first: a database write still in flight mints its id from the same mocked Math.random and eats
+// the faces this roll was seeded with.
+await rollFaces([0.999, 0.5, 0.0, 0.3], 4);   // 20, 11, 1, 7
+const handful = $$("#roll-stage .die");
+ok(handful.length === 4, "four dice in the box");
+ok(handful[0].classList.contains("nat20"), "the 20 among them is marked");
+ok(handful[2].classList.contains("nat1"), "and so is the 1");
+ok(!handful[1].classList.contains("nat20") && !handful[1].classList.contains("nat1"),
+  "the ordinary ones are not");
+// And a 20 among them IS a natural 20 — `1d4 + 1d8 + 1d12 + 1d20` coming up 20 on the d20 is one too.
+ok($("#roll-stage").classList.contains("nat20"), "and the roll counts as a natural 20");
+ok($("#roll-stage").classList.contains("crit-high"), "so it gets the moment as well");
+// And the same marks reach the log and the bar.
+ok($$("#vtt-lastroll .pip-die.nat20").length === 1, "the bar marks it too");
+ok($$("#vtt-lastroll .pip-die.nat1").length === 1, "and the 1");
+ok($$(".roll-line")[0].querySelectorAll(".pip-die.nat20").length === 1, "so does the log");
+// A 6 on a d6 is a good roll, not a crit.
+peek(`tbl.ui.dice = { pool: { 6: 2 }, mod: 0, mode: "normal" }; paintDice();`);
+await rollFaces([0.999, 0.0], 2);
+ok($$("#roll-stage .die.nat20").length === 0 && $$("#roll-stage .die.nat1").length === 0,
+  "a 6 on a d6 is a good roll, not a natural anything");
+ok(!$("#roll-stage").classList.contains("nat20"), "and no natural on the roll either");
+// A mixed handful with a d20 in it: the d20 is the one that can be natural.
+peek(`tbl.ui.dice = { pool: { 4: 1, 8: 1, 12: 1, 20: 1 }, mod: 0, mode: "normal" }; paintDice();`);
+await rollFaces([0.999, 0.5, 0.5, 0.5], 4);   // biggest die first: the d20 rolls 20
+ok($("#roll-stage").classList.contains("nat20"),
+  "1d4 + 1d8 + 1d12 + 1d20 coming up 20 on the d20 is a natural 20");
+ok($$("#roll-stage .die.nat20").length === 1, "and exactly the d20 is marked for it");
+
 // Back to a plain roll, and the overlay taken down: it covers the whole screen while it is up, and the
 // next section clicks a button underneath it.
 peek(`tbl.ui.dice = { pool: { 20: 1 }, mod: 0, mode: "normal" }; paintDice();
@@ -951,7 +1029,7 @@ await wait(60);
 peek(`document.body.insertAdjacentHTML("beforeend",
   '<button id="sheetroll" class="roll" data-roll="1d20+7" data-label="Dagger to hit"></button>');
   window.__seq = [0.5];`);
-click($("#sheetroll"));
+armed(() => click($("#sheetroll")));
 // Waited for: the roll is posted to the log and the bar is painted from it, and 60ms is a coin toss
 // once anything else is still settling.
 await until(() => /Dagger to hit/.test($("#vtt-lastroll").textContent));
@@ -982,8 +1060,7 @@ ok(/No turn order/.test($("#vtt-turn").textContent), "the DM is offered a turn o
 ok($('[data-tbl="init-roll"]'), "with a button to roll it");
 // Orc rolls high, Rig rolls low: the order must follow the dice, not the list.
 peek(`window.__seq = [0.05, 0.95];`);   // Rig 2+3 = 5, Orc 20+1 = 21
-click($('[data-tbl="init-roll"]'));
-await wait(120);
+await armedFor(() => click($('[data-tbl="init-roll"]')), 200);
 const turn = await aget(`CocLive.get("tables/482910/meta/turn")`);
 ok(turn && turn.order.length === 2, "everyone on the scene is in the order");
 ok(turn.order[0] === "tOrc" && turn.order[1] === "tRig", "highest first (" + turn.order.join(" then ") + ")");
@@ -1078,11 +1155,12 @@ ok(peek(`tblTokens().tRig.hp`) === peek(`sheet.ch.play.hp`), "which the DM's fig
 // Rolling from the drawer goes to the table's log, not to a toast nobody else sees.
 peek(`window.__seq = [0.5];`);
 const logLenBefore = Object.keys(await aget(`CocLive.get("tables/482910/log")`) || {}).length;
-click($$("#vtt-sheet .roll")[0]);
-await until(() => /^Rig/.test($("#vtt-lastroll").textContent.trim()));
+await until(() => $$("#vtt-sheet .roll").length > 0);
+armed(() => click($$("#vtt-sheet .roll")[0]));
+await until(() => /^Rig/.test($("#vtt-lastroll").textContent.trim()), 5000);
 const logLenAfter = Object.keys(await aget(`CocLive.get("tables/482910/log")`) || {}).length;
 ok(logLenAfter === logLenBefore + 1, "a number rolled off the drawer reaches the shared log");
-await until(() => /^Rig/.test($("#vtt-lastroll").textContent.trim()));
+await until(() => /^Rig/.test($("#vtt-lastroll").textContent.trim()), 5000);
 ok(/^Rig/.test($("#vtt-lastroll").textContent.trim()), "under your character's name: " + $("#vtt-lastroll").textContent.trim());
 // Closing it hands the page back — otherwise the next sheet opened anywhere paints into nothing.
 click($('[data-tbl="sheet-close"]'));
@@ -1119,7 +1197,7 @@ peek(`tbl.ui.dice = { pool: { 20: 1 }, mod: 2, mode: "normal" }; paintDice();`);
    for a pushed log entry draws from it too — so a write still in flight from an earlier step will eat the
    number this roll was supposed to get, and the die lands on something else entirely. */
 peek(`window.__seq = [0.95];`);
-click($('[data-tbl="roll-pool"]'));
+armed(() => click($('[data-tbl="roll-pool"]')));
 await wait(60);
 const stage = doc.getElementById("roll-stage");
 ok(stage && stage.classList.contains("on"), "rolling puts the dice on screen");
@@ -1149,7 +1227,7 @@ ok(shapes[1] === 5, "a d12 is a pentagon");
 // thing anyone asks.
 peek(`tbl.ui.dice.mode = "adv"; tbl.ui.dice.mod = 0; paintDice();`);
 peek(`window.__seq = [0.1, 0.9];`);   // last, for the reason above
-click($('[data-tbl="roll-pool"]'));
+armed(() => click($('[data-tbl="roll-pool"]')));
 await wait(700);
 const dice = [...doc.querySelectorAll("#roll-stage .die")];
 ok(dice.length === 2, "advantage shows both dice");
@@ -1159,7 +1237,7 @@ ok(dice.findIndex((d) => !d.classList.contains("dropped")) ===
   "and it is the die the roll actually kept, which two equal dice could not tell you");
 // Somebody ELSE's roll is rolled on your screen too — that is the point of everyone being in the room.
 const seenBefore = peek(`tbl.lastRollAt`);
-await peek(`CocLive.push("tables/482910/log", { t: Date.now() + 5000, who: "Sable", kind: "roll",
+await peek(`CocLive.push("tables/482910/log", { t: Date.now() + 200, who: "Sable", kind: "roll",
   label: "Longbow", sides: 20, count: 1, mod: 5, rolls: [11], kept: [11], mode: "normal", total: 16,
   text: "Sable rolled Longbow: d20 + 5 → 11 = 16" })`);
 await wait(80);

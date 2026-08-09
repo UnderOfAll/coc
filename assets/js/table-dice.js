@@ -60,6 +60,20 @@ function tblNormaliseSpec(spec) {
 
 function d(sides) { return 1 + Math.floor(Math.random() * sides); }
 
+/* The natural of a whole roll: 20 if any d20 in it shows a 20, 1 if any shows a 1, otherwise nothing.
+   `only` narrows it to a single index, which is how advantage is handled — the die that was dropped did
+   not happen, so its 20 is not one. */
+function tblNatural(dice, only) {
+  const looking = only >= 0 ? [dice[only]] : dice;
+  let low = 0;
+  for (const x of looking) {
+    if (!x || Number(x.s) !== 20) continue;
+    if (Number(x.v) === 20) return 20;
+    if (Number(x.v) === 1) low = 1;
+  }
+  return low;
+}
+
 /* Advantage and disadvantage are a property of the ROLL, not of the die: two d20s, keep one. Applying
    them to "4d6" would be a house rule nobody asked for, so they are ignored unless a single die is
    being thrown. */
@@ -90,10 +104,13 @@ function tblDoRoll(spec, mode) {
   return {
     dice, keptIdx, mode: twin ? mode : "normal", spec: norm,
     total: sum + norm.mod,
-    /* A NAT IS A NAT. This reads the face the die is showing, never the total — a 20 with a +7 on it is
-       still a natural 20, and a 13 that adds up to 20 is not one. It follows the die that COUNTED, so
-       under advantage it is the kept one. */
-    natural: single && dice[twin ? keptIdx : 0].s === 20 ? dice[twin ? keptIdx : 0].v : 0,
+    /* A NAT IS A NAT. It reads the FACE a die is showing, never the total — a 20 with a +7 on it is
+       still a natural 20, and a 13 that adds up to 20 is not one.
+       And it is any d20 in the hand, not only a lone one: `1d4 + 1d8 + 1d12 + 1d20` that comes up 20 on
+       the d20 is a natural 20, and so is one 20 among twenty of them. Under advantage it is the die that
+       COUNTED — the dropped one did not happen. A 20 beats a 1 when both are on the table, because the
+       good news is the news. */
+    natural: tblNatural(dice, twin ? keptIdx : -1),
   };
 }
 
@@ -532,7 +549,7 @@ function tblShowRoll(entry) {
   const keptIdx = entry.keptIdx == null ? -1 : Number(entry.keptIdx);
   const faces = dice.map((x, i) => {
     const dropped = keptIdx >= 0 && i !== keptIdx ? " dropped" : "";
-    return `<span class="die${dropped}" data-final="${esc(x.v)}" data-sides="${esc(x.s)}">` +
+    return `<span class="die${dropped}${tblNatOf(x)}" data-final="${esc(x.v)}" data-sides="${esc(x.s)}">` +
       `${tblDieFace(x.s)}<b>${esc(x.v)}</b><em>d${esc(x.s)}</em></span>`;
   }).join("");
   const spec = entry.spec
@@ -561,9 +578,14 @@ function tblShowRoll(entry) {
   let ticks = 0;
   const spin = tblRollSpin = setInterval(() => {
     ticks += 1;
-    for (const die of shown) {
+    for (let i = 0; i < shown.length; i++) {
+      const die = shown[i];
       const sides = Number(asEl(die).dataset.sides) || 20;
-      die.querySelector("b").textContent = String(1 + Math.floor(Math.random() * sides));
+      /* A DETERMINISTIC shuffle, not real randomness. The job here is "digits changing too fast to
+         read"; drawing from the generator for that spends entropy on decoration, and — the reason it
+         changed — it made the animation indistinguishable from the roll. A test that seeds a roll while
+         the previous one is still tumbling was handing its faces to the animation. */
+      die.querySelector("b").textContent = String(1 + ((ticks * 7 + i * 3) % sides));
     }
     if (ticks > 9) {
       clearInterval(spin);
@@ -694,6 +716,18 @@ function tblEntryDice(e) {
   if (Array.isArray(e.rolls)) return e.rolls.map((v) => ({ s: Number(e.sides) || 20, v }));
   return [];
 }
+/* A 20 ON A D20 IS A 20, however many dice were in the hand.
+ *
+ * The roll's own `nat` only applies to a single die, because "did this attack crit" has no answer when
+ * twenty of them are on the table. But twenty d20s with a 20 among them still has a 20 among them, and
+ * it was going by unmarked — so every die says for itself, in the box and in the log. Only a d20 has a
+ * natural: a 6 on a d6 is a good roll, not a crit. */
+function tblNatOf(die) {
+  if (Number(die.s) !== 20) return "";
+  const v = Number(die.v);
+  return v === 20 ? " nat20" : v === 1 ? " nat1" : "";
+}
+
 /* A single straight die needs no dice-AND-total: printing both is how you get "DM 18 18". */
 function tblRollBits(e) {
   const dice = tblEntryDice(e);
@@ -702,7 +736,7 @@ function tblRollBits(e) {
   const bare = dice.length === 1 && !mod && keptIdx < 0;
   return {
     pips: bare ? "" : dice.map((x, i) =>
-      `<span class="pip-die${keptIdx >= 0 && i !== keptIdx ? " dropped" : ""}">${esc(x.v)}</span>`).join(""),
+      `<span class="pip-die${keptIdx >= 0 && i !== keptIdx ? " dropped" : ""}${tblNatOf(x)}">${esc(x.v)}</span>`).join(""),
     mod: mod ? `<span class="roll-card-mod">${mod > 0 ? "+" : "−"}${esc(Math.abs(mod))}</span>` : "",
     total: dice.length ? String(e.total) : "",
   };
