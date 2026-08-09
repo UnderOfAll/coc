@@ -759,12 +759,19 @@ function tblCritMoment(node, entry) {
    page itself grew a scrollbar — and a page scroll on top of the panel's own is two scrolls fighting
    over one finger. Every roll is still kept, in the Dice panel, for anyone who wants to look again. */
 let tblFlashTimer = null;
+/* Which roll the bar is currently showing. Your own roll goes up the instant you make it — before it has
+   been written to the log — so a repaint triggered by anything else in that window (somebody moving a
+   figure, a map changing) rebuilt the bar from a log that did not have it yet and flipped it back to the
+   PREVIOUS roll. It only lasted until the write landed, which is why it read as a flicker rather than as
+   a bug, and it is why the tests around it were flapping. */
+let tblBarAt = 0;
 function tblFlashRoll(entry) {
   const bar = document.getElementById("vtt-lastroll");
   if (!bar || !entry) return;
   // Written here rather than by the log's repaint, because YOUR OWN roll is on screen before it has
   // reached the log at all — the roller shows it and posts it, in that order, so that a roll appears the
   // instant it is made instead of after a round trip.
+  tblBarAt = entry.t || 0;
   bar.innerHTML = lastRollHTML(entry);
   bar.classList.toggle("nat20", entry.nat === 20);
   bar.classList.toggle("nat1", entry.nat === 1);
@@ -829,7 +836,9 @@ function paintLog() {
      else's the moment it arrives. All this has to do is keep what is already on screen current, which
      is what turns "rolling…" into the number when the dice land. A repaint for any other reason —
      somebody moving a figure, a map changing — must not put a spent roll back on the board. */
-  if (last && newest && !fresh && !last.classList.contains("hidden")) tblFlashRoll(newest);
+  // Never BACKWARDS: a refresh may only ever show the same roll or a newer one.
+  if (last && newest && !fresh && !last.classList.contains("hidden")
+    && (newest.t || 0) >= tblBarAt) tblFlashRoll(newest);
   const host = $("#vtt-log");
   if (host) {
     host.innerHTML = entries.slice(0, 60).map(([, e]) => rollLineHTML(e)).join("")

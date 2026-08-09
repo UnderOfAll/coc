@@ -809,6 +809,9 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
   background: var(--panel-2); border-radius: 999px; padding: 0.05rem 0.4rem; }
 .tab.on .tab-n { color: var(--gold); }
 .panes, .pane { min-width: 0; }
+/* A pane whose panel leads with content rather than a heading — Attacks, Tricks, Features, whose names
+   are already on the tab above — should not open with the space a heading would have occupied. */
+.pane > .panel > :first-child { margin-top: 0; }
 .pane[hidden] { display: none; }
 
 /* Inventory: a name, a count, and a way to get rid of it. Nothing in this system gives an item

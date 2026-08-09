@@ -1071,11 +1071,16 @@ function sheetFields(d, p, ch) {
   ];
   // A Juggler has no Tricks field at all, so a sheet reopened on one must not land on nothing.
   if (!fields.some(([id]) => id === ui.tab)) ui.tab = "status";
+  /* The tab NAMES its pane. The panels used to open with a heading saying what the tab already said, so
+     the headings went — and took the only thing naming those regions to a screen reader with them. The
+     tab was always the right label; it just was not wired to the panel. */
   const tabs = fields.map(([id, label, count]) => `<button class="tab ${ui.tab === id ? "on" : ""}"
+      id="tab-${esc(id)}" aria-controls="pane-${esc(id)}"
       data-act="tab" data-val="${esc(id)}" role="tab" aria-selected="${ui.tab === id}">${esc(label)}${
       count ? ` <span class="tab-n">${esc(count)}</span>` : ""}</button>`).join("");
   const panes = fields.map(([id, , , html]) =>
-    `<div class="pane" data-pane="${esc(id)}" role="tabpanel"${ui.tab === id ? "" : " hidden"}>${html}</div>`).join("");
+    `<div class="pane" id="pane-${esc(id)}" data-pane="${esc(id)}" role="tabpanel"
+      aria-labelledby="tab-${esc(id)}"${ui.tab === id ? "" : " hidden"}>${html}</div>`).join("");
   return `<div class="tab-strip" role="tablist">${tabs}</div><div class="panes">${panes}</div>`;
 }
 
@@ -1179,9 +1184,17 @@ function statusPanel(d) {
     + (d.tricks.length ? n("Trick attack", sign(d.attackBonus), "roll a trick attack", "Your proficiency bonus + your " + ABIL_SHORT[d.primary] + " modifier, for the tricks that make an attack roll instead of forcing a save. Weapon attacks are worked out per weapon under Attacks.", { spec: "1d20" + sign(d.attackBonus), label: "Trick attack" }) : "");
   return `<section class="panel"><h2>Your numbers</h2>
   ${stats ? `<div class="kn-grid">${stats}</div>` : ""}
-  <p class="panel-sub">Abilities — the modifier is what you add; a gold box is a saving throw your class is proficient in${d.prof ? `, which already includes your ${plainTermHTML("proficiency bonus " + sign(d.prof), `Not an ability score: it comes from LEVEL alone and is the same for every class — +2 at levels 1-4, +3 at 5-8, +4 at 9-12, +5 at 13-16, +6 at 17+. You are level ${d.level}, so ${sign(d.prof)}. It is already added into every number on this sheet that needs it: your saving throws, your to-hit, your DC, and your skills below.`)}` : ""}</p>
+  ${/* Short label, short tooltip. This was a hundred-and-eighty-character sentence set in capitals as a
+        section label — two lines on a desktop and FIVE on a phone. But hiding ALL of it behind the dot
+        was the other mistake: what the big gold number IS, and what the gold ring means, are the two
+        things a reader needs on the glass. Only the proficiency arithmetic is worth a tooltip, and it
+        has to be short enough to fit on a phone — 467 characters ran off the bottom of the screen. */""}
+  <p class="panel-sub">Abilities <span class="muted">— the modifier is what you add; a gold box is a
+    save you are proficient in</span>${d.prof ? ` ${plainTermHTML(sign(d.prof) + " proficiency",
+      "From your LEVEL alone, not from any ability: +2 at levels 1-4, +3 at 5-8, +4 at 9-12, +5 at 13-16, "
+      + "+6 at 17+. Already included in every number here that needs it.")}` : ""}</p>
   <div class="ab-grid">${abils}</div>
-  ${ch.skills?.length ? `<p class="panel-sub">Skills you are trained in</p>
+  ${ch.skills?.length ? `<p class="panel-sub">Trained skills</p>
     <div class="skill-row">${ch.skills.map((name) => {
       const sk = idx.skillsByName.get(String(name).toLowerCase());
       const ab = sk && sk.ability;
@@ -1197,7 +1210,7 @@ function statusPanel(d) {
    at the table. */
 function attacksPanel(d) {
   if (!d.carried.length) {
-    return `<section class="panel"><h2>Attacks</h2>
+    return `<section class="panel">
       <p class="muted">Nothing to swing. Pick up a weapon under Gear and its to-hit and damage appear here.</p>
     </section>`;
   }
@@ -1220,7 +1233,7 @@ function attacksPanel(d) {
       <td data-label="Properties">${propsHTML(w.properties)}</td>
       <td data-label="Mastery">${masteryHTML(w.mastery)}</td></tr>`;
   }).join("");
-  return `<section class="panel"><h2>Attacks</h2>
+  return `<section class="panel">
     <table class="data-table attack-table">
       <thead><tr><th>Weapon</th><th>To hit</th><th>Damage</th><th>Properties</th><th>Mastery</th></tr></thead>
       <tbody>${rows}</tbody></table>
@@ -1293,7 +1306,8 @@ function tricksPanel(d, p) {
       </div>
     </div>`;
   }).join("");
-  return `<section class="panel"><h2>Tricks</h2><div class="trick-list-sheet">${rows}</div></section>`;
+  // No heading: the tab immediately above this says "Tricks". Same for Attacks and Features.
+  return `<section class="panel"><div class="trick-list-sheet">${rows}</div></section>`;
 }
 
 /* The same at-a-glance chips a feature gets, built from a trick's own fields. Cost folds the action
@@ -1360,7 +1374,7 @@ function featuresPanel(d, p) {
       ${ctl}
     </div>`;
   }).join("");
-  return `<section class="panel"><h2>Features</h2><div class="feat-grid">${cards}</div></section>`;
+  return `<section class="panel"><div class="feat-grid">${cards}</div></section>`;
 }
 
 /* A feature whose menu is eight rows long buries the sentence that says what the feature IS. The
@@ -1409,11 +1423,13 @@ function gearPanel(d, ch) {
   const weps = d.weapons.map((w) => chipTip(
     `<button class="chip ${carried.includes(w.name) ? "on" : ""}" data-act="carry" data-val="${esc(w.name)}">${esc(w.name)}</button>`,
     weaponTipHTML(w, d))).join("");
-  return `<section class="panel"><h2>Gear</h2>
+  return `<section class="panel">
     <p class="gear-line"><strong>${esc(d.armor ? d.armor.name : "No armour")}</strong>
       ${d.armor ? `<span class="muted">AC ${esc(d.armor.baseAC)}</span> ${d.armor.trait ? armorTraitHTML(d.armor.trait) : ""}` : ""}
       ${d.shield ? `<strong>${esc(d.shield.name)}</strong> <span class="muted">+${esc(d.shield.acBonus)}</span>` : ""}</p>
-    <p class="panel-sub">Carrying <span class="muted">— your class is proficient with all of these</span></p>
+    <p class="panel-sub">${plainTermHTML("Carrying",
+      "Everything your class is proficient with — the to-hit and the damage below already include that "
+      + "proficiency, so there is nothing to add on.")}</p>
     <div class="chips">${weps}</div>
     ${carried.length ? "" : `<p class="muted">Nothing chosen, so every weapon you are proficient with is listed under Attacks.</p>`}
   </section>`;
@@ -1439,7 +1455,7 @@ function inventoryPanel(ch, items) {
       </span>
       <button class="btn-quiet" data-act="inv-del" data-val="${i}">Drop</button>
     </div>`).join("");
-  return `<section class="panel"><h2>Inventory</h2>
+  return `<section class="panel">
     ${rows ? `<div class="inv-list">${rows}</div>`
       : `<p class="muted">Empty. Whatever the DM hands you goes in here — rope, a lantern, someone's stolen ledger.</p>`}
     <div class="inv-add">
@@ -1494,7 +1510,7 @@ function asiSpent(asi) { return Object.values(asi || {}).reduce((n, v) => n + v,
 function progressPanel(d) {
   const nextLv = d.level + 1;
   const atMax = d.level >= 20;
-  return `<section class="panel"><h2>Progress</h2>
+  return `<section class="panel">
     <p class="muted">Level ${esc(d.level)} · proficiency ${esc(sign(d.prof))} ·
       ${esc(d.features.length)} feature${d.features.length === 1 ? "" : "s"}${d.tricks.length ? ` · ${esc(d.tricks.length)} tricks` : ""}.
       ${atMax ? "This is the ceiling." : `Level ${esc(nextLv)} is next${ASI_LEVELS.includes(nextLv) ? " — and it carries an ability score increase" : ""}.`}</p>

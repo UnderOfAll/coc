@@ -1104,10 +1104,17 @@ function trackerHTML() {
         ${num("trk-init", "Initiative", sheet.init)}
         ${num("trk-speed", "Speed (ft)", sheet.speed)}
       </div>
-      ${myToken && tbl.me.charCode ? `<p class="panel-sub">Your picture</p>
+      ${/* ANY figure you are holding, with or without a Circus of Chaos code behind it. This panel IS
+            the sheet for a character the app does not know — a level 4 blood hunter from somebody
+            else's system — and gating its picture on having one of OUR codes meant the people who need
+            this panel most were the only ones who could not use it. That was the whole bug, five
+            reports long: the control was there for players with a code, and this panel is for players
+            without one. */""}
+      ${myToken ? `<p class="panel-sub">Your picture</p>
         ${tokenImageHTML("mine", (tblTokens()[myToken] || {}).image)}
-        <p class="muted">It goes on your character, so it is on your figure here and on your sheet
-          everywhere else. Yours alone — nobody else can change it.</p>` : ""}
+        <p class="muted">${tbl.me.charCode
+          ? "It goes on your character, so it is on your figure here and on your sheet everywhere else."
+          : "It goes on your figure at this table."} Yours alone — nobody else can change it.</p>` : ""}
       ${myToken ? `<div class="hp-controls">
         <input id="trk-amt" class="num" type="number" min="1" value="1" />
         <button class="btn-quiet" data-tbl="trk-hp" data-val="-1">Damage</button>

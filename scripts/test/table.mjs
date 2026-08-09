@@ -50,7 +50,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
    nothing to be patient here: the loop stops the moment the condition is true. */
 const until = async (fn, ms = 3000) => {
   const stop = Date.now() + ms;
-  while (Date.now() < stop) { if (fn()) return true; await wait(20); }
+  while (Date.now() < stop) { if (await fn()) return true; await wait(20); }
   return false;
 };
 /* Seed a roll and wait for it to be on screen.
@@ -72,30 +72,47 @@ async function rollFaces(faces, count) {
      still on screen — if the previous roll also had N, the wait returned immediately and every assertion
      below read the old one. `tbl.lastRollAt` is stamped the moment a roll is made. */
   const was = peek(`tbl.lastRollAt || 0`);
+  const before = Object.keys(await aget(`CocLive.get("tables/482910/log")`) || {}).length;
   peek(`window.__seq = ${JSON.stringify(faces)};`);
   armed(() => click($('[data-tbl="roll-pool"]')));
   await until(() => peek(`tbl.lastRollAt || 0`) !== was);
+  // …and wait for it to REACH THE LOG. `lastRollAt` is stamped before the write, so a caller reading
+  // the log the moment it changes can still be handed the roll BEFORE this one.
+  await until(async () =>
+    Object.keys(await aget(`CocLive.get("tables/482910/log")`) || {}).length > before);
   await until(() => $$("#roll-stage .die").length === count);
   // the faces turn over at the end of the tumble, and the crit lands with them
   await until(() => !$("#roll-stage").classList.contains("rolling"));
   // …and if this roll earned a moment, wait for it too. It is added as the tumble ends, and an assertion
   // that reads the class in the same breath is racing an animation frame for no reason.
-  const nat = peek(`(() => { const l = Object.values(tbl.data.log || {}).sort((a, b) => (b.t||0)-(a.t||0));
-    return (l[0] || {}).nat || 0; })()`);
-  if (nat) await until(() => /crit-(high|low)/.test($("#roll-stage").className));
+  const entry = await lastRoll();
+  // A generous budget: this is a poll, so it costs nothing when the moment lands promptly, and the
+  // tumble it waits behind runs on a timer that a loaded machine can stretch.
+  if (entry.nat) await until(() => /crit-(high|low)/.test($("#roll-stage").className), 8000);
+  // Handed back, so an assertion reads THE ROLL THIS MADE rather than whatever is newest by the time it
+  // gets around to looking.
+  return entry;
 }
 /* Run something with the seeded faces live. Everything that makes a roll goes through here. */
 function armed(fn) {
   peek(`window.__armed = true;`);
-  try { return fn(); } finally { peek(`window.__armed = false;`); }
+  // Emptied afterwards as well as disarmed: a value seeded for a roll that did not consume it would
+  // otherwise sit in the queue and be taken by the NEXT roll, which is the same theft one step later.
+  try { return fn(); } finally { peek(`window.__armed = false; window.__seq = [];`); }
 }
 /* The same, held open across an AWAIT. Rolling initiative rolls one die per figure and writes each one
    to the database between them, so the second die is thrown a tick after the click that started it —
    outside a window that closes when the click returns. */
 async function armedFor(fn, ms) {
   peek(`window.__armed = true;`);
-  try { fn(); await wait(ms); } finally { peek(`window.__armed = false;`); }
+  try { fn(); await wait(ms); } finally { peek(`window.__armed = false; window.__seq = [];`); }
 }
+/* The newest roll, as the table recorded it. The nat rule is a property of the ROLL — assert it here
+   rather than on a stage element whose classes are mid-animation, or the test measures the animation. */
+const lastRoll = async () => {
+  const log = Object.values(await aget(`CocLive.get("tables/482910/log")`) || {});
+  return log.sort((a, b) => (b.t || 0) - (a.t || 0))[0] || {};
+};
 const tblCols = () => peek(`tblScene().cols`);
 const tblInkDecodeLen = (pts) => String(pts || "").split(" ").filter(Boolean).length;
 // The panel buttons TOGGLE, so asking for one that is already open would shut it.
@@ -614,6 +631,25 @@ await wait(150);
 ok((await aget(`CocLive.get("tables/482910/tokens/tOrc/image")`)) === orcArt,
   "and cannot put one on a creature, or on anybody else");
 
+/* THE ONE THAT TOOK FIVE REPORTS. A player holding a figure for a character this app does NOT know — no
+   Circus of Chaos code, "level 4 blood hunter" from somebody else's system — opens the Character panel,
+   which IS their sheet. The picture control was gated on having one of our codes, so the people this
+   panel exists for were the only ones who could not use it. */
+peek(`tbl.me.charCode = ""; tbl.ui.panel = "mine"; paintSide();`);
+await wait(80);
+ok(/Your character/.test($("#vtt-side").textContent), "a player with no character code gets the tracker");
+ok(!!$("#mine-file"), "and it offers a picture for their figure");
+ok(/Your picture/.test($("#vtt-side").textContent), "labelled, so it can be found");
+ok(/It goes on your figure at this table/.test($("#vtt-side").textContent),
+  "and says what it does when there is no sheet behind it");
+// and it still works the other way, for somebody who does have a code
+peek(`tbl.me.charCode = "123456"; paintSide();`);
+await wait(80);
+ok(!!$("#mine-file"), "somebody WITH a code gets it too");
+ok(/on your sheet everywhere else/.test($("#vtt-side").textContent),
+  "and is told it follows the character, not just the figure");
+peek(`tbl.ui.panel = ""; paintSide();`);
+
 console.log("\n— ZOOM —");
 const z0 = peek(`tbl.view.z`);
 click($$('[data-tbl="zoom"]').find((b) => b.dataset.val === "1"));
@@ -883,6 +919,37 @@ ok(res.dice[res.keptIdx].v === Math.max(...res.dice.map(x => x.v)),
 peek(`window.__seq = [0.1, 0.9];`);
 res = armed(() => peek(`tblDoRoll(tblParseRoll("1d20"), "dis")`));
 ok(res.dice[res.keptIdx].v === Math.min(...res.dice.map(x => x.v)), "disadvantage keeps the lower one");
+
+/* A NAT IS A NAT — as arithmetic, not as animation.
+   This used to be asserted by rolling in the page and reading classes off the overlay, which meant the
+   test was really measuring a tumble on a timer and flapped about one run in four. The rule is a pure
+   function of the dice; assert it there and it is exact every time. The overlay's own reaction is still
+   covered below, once. */
+const natOf = (spec, seq, mode) => {
+  peek(`window.__seq = ${JSON.stringify(seq)};`);
+  const r = armed(() => peek(`tblDoRoll(tblParseRoll(${JSON.stringify(spec)}), ${JSON.stringify(mode || "normal")})`));
+  return { nat: r.natural, dice: r.dice.map((d) => d.v), total: r.total };
+};
+{
+  const a = natOf("1d20+7", [0.999]);
+  ok(a.nat === 20 && a.total === 27, `a 20 with a +7 on it is a natural 20, and still totals 27 (${a.total})`);
+  const b = natOf("1d20+7", [0.62]);
+  ok(b.nat === 0 && b.total === 20, `a 13 that adds up to 20 is not one (rolled ${b.dice}, total ${b.total})`);
+  const c = natOf("1d20+5", [0.0]);
+  ok(c.nat === 1, "a natural 1 with a +5 on it is still a natural 1");
+  // His example, exactly: d4 1, d8 5, d12 3, d20 20.
+  const d = natOf("1d20+1d12+1d8+1d4", [0.999, 0.2, 0.55, 0.15]);
+  ok(d.nat === 20, `1d4 + 1d8 + 1d12 + 1d20 coming up 20 on the d20 is a natural 20 (${d.dice})`);
+  const e = natOf("20d20", [0.5, 0.5, 0.5, 0.999].concat(Array(16).fill(0.5)));
+  ok(e.nat === 20, "and one 20 among twenty of them is one too");
+  const f = natOf("2d6", [0.999, 0.999]);
+  ok(f.nat === 0, "a 6 on a d6 is a good roll, not a natural anything");
+  // Advantage follows the die that COUNTED; the dropped one did not happen.
+  const g = natOf("1d20", [0.999, 0.0], "dis");
+  ok(g.nat === 1, "under disadvantage the KEPT die decides — a dropped 20 is not a natural 20");
+  const h = natOf("1d20", [0.999, 0.0], "adv");
+  ok(h.nat === 20, "and under advantage the kept 20 is");
+}
 // Advantage is a property of a single d20, not a licence to reroll a fistful of dice.
 res = peek(`tblDoRoll(tblParseRoll("4d6"), "adv")`);
 ok(res.dice.length === 4 && res.mode === "normal", "advantage is ignored on 4d6 rather than inventing a house rule");
@@ -966,55 +1033,54 @@ ok(/^1$/.test(topLine.querySelector(".roll-card-total").textContent.trim()),
   "newest at the top, and its total reads on its own: " + topLine.querySelector(".roll-card-total").textContent.trim());
 // A straight single die shows only its total, so there is no die beside it — that pair is "18 18".
 ok(topLine.querySelectorAll(".pip-die").length === 0, "and no die repeated beside it");
-/* A NAT IS A NAT. The die's face decides it, never the total: a 20 with a modifier on it is still a
-   natural 20, and a total that happens to reach 20 off a lower die is not one. */
-peek(`tbl.ui.dice = { pool: { 20: 1 }, mod: 7, mode: "normal" }; paintDice();`);
-await rollFaces([0.999], 1);
-ok($("#roll-stage").classList.contains("nat20"), "a 20 with a +7 on it is still a natural 20");
-ok($("#roll-stage").classList.contains("crit-high"), "and it gets the moment");
-ok($("#vtt-lastroll .roll-card-total").textContent === "27", "with the total still counting the modifier");
-// A 13 that adds up to 20 is not a crit.
-peek(`tbl.ui.dice = { pool: { 20: 1 }, mod: 7, mode: "normal" }; paintDice();`);
-await rollFaces([0.62], 1);
-ok(!$("#roll-stage").classList.contains("nat20"), "a total of 20 off a lower die is not");
-ok(!$("#roll-stage").classList.contains("crit-high"), "and gets no moment");
-// A natural 1 with a modifier is still a natural 1, and gets the other half of the gesture.
-peek(`tbl.ui.dice = { pool: { 20: 1 }, mod: 5, mode: "normal" }; paintDice();`);
-await rollFaces([0.0], 1);
-ok($("#roll-stage").classList.contains("crit-low"), "a natural 1 with a +5 on it still flinches");
-ok(!$("#roll-stage").classList.contains("crit-high"), "and is not the other one");
-/* A HANDFUL. The roll's own `nat` has no meaning across twenty dice — "did this crit" has no answer
-   when twenty are on the table — but a 20 on a d20 is still a 20, and it was going by in the same gold
-   as the nineteen beside it. Every die says for itself now, in the box and in the log. */
-peek(`tbl.ui.dice = { pool: { 20: 4 }, mod: 0, mode: "normal" }; paintDice();`);
-// Settled first: a database write still in flight mints its id from the same mocked Math.random and eats
-// the faces this roll was seeded with.
-await rollFaces([0.999, 0.5, 0.0, 0.3], 4);   // 20, 11, 1, 7
-const handful = $$("#roll-stage .die");
-ok(handful.length === 4, "four dice in the box");
-ok(handful[0].classList.contains("nat20"), "the 20 among them is marked");
-ok(handful[2].classList.contains("nat1"), "and so is the 1");
-ok(!handful[1].classList.contains("nat20") && !handful[1].classList.contains("nat1"),
+/* And the overlay reacts to it. Driven with a CONSTRUCTED roll rather than a seeded random one: the
+   rule itself is proved as arithmetic above, and what is left to check here is only that an entry
+   carrying `nat` reaches the screen. Seeding a value through the UI and reading it back was the last
+   thing in this file still flapping — `Math.random` is mocked page-wide and something under load keeps
+   taking the number before the dice do. There is nothing random about what this needs to assert. */
+peek(`tblShowRoll({ who: "DM", label: "", spec: "d20 + 7", mod: 7, mode: "normal", keptIdx: -1,
+  total: 27, nat: 20, dice: [{ s: 20, v: 20 }], t: Date.now() + 20000 });`);
+await until(() => /crit-high/.test($("#roll-stage").className), 8000);
+ok($("#roll-stage").classList.contains("nat20"), "a natural 20 reaches the overlay");
+ok($("#roll-stage").classList.contains("crit-high"), "and gets its moment");
+ok($$("#roll-stage .die.nat20").length === 1, "with the die itself marked");
+ok($("#roll-stage .roll-total").textContent.trim() === "27", "and the modifier still counted");
+
+peek(`tblShowRoll({ who: "DM", label: "", spec: "d20 + 5", mod: 5, mode: "normal", keptIdx: -1,
+  total: 6, nat: 1, dice: [{ s: 20, v: 1 }], t: Date.now() + 21000 });`);
+await until(() => /crit-low/.test($("#roll-stage").className), 8000);
+ok($("#roll-stage").classList.contains("crit-low"), "a natural 1 gets the other half of the gesture");
+ok(!$("#roll-stage").classList.contains("crit-high"), "and not the first half");
+
+// A handful marks the die that earned it, wherever that die is shown.
+peek(`tblShowRoll({ who: "DM", label: "", spec: "4d20", mod: 0, mode: "normal", keptIdx: -1,
+  total: 40, nat: 20, dice: [{ s: 20, v: 20 }, { s: 20, v: 11 }, { s: 20, v: 1 }, { s: 20, v: 8 }],
+  t: Date.now() + 22000 });`);
+await wait(120);
+const handful2 = $$("#roll-stage .die");
+ok(handful2.length === 4, "four dice in the box");
+ok(handful2[0].classList.contains("nat20"), "the 20 among them is marked");
+ok(handful2[2].classList.contains("nat1"), "and so is the 1");
+ok(!handful2[1].classList.contains("nat20") && !handful2[1].classList.contains("nat1"),
   "the ordinary ones are not");
-// And a 20 among them IS a natural 20 — `1d4 + 1d8 + 1d12 + 1d20` coming up 20 on the d20 is one too.
-ok($("#roll-stage").classList.contains("nat20"), "and the roll counts as a natural 20");
-ok($("#roll-stage").classList.contains("crit-high"), "so it gets the moment as well");
-// And the same marks reach the log and the bar.
-ok($$("#vtt-lastroll .pip-die.nat20").length === 1, "the bar marks it too");
-ok($$("#vtt-lastroll .pip-die.nat1").length === 1, "and the 1");
-ok($$(".roll-line")[0].querySelectorAll(".pip-die.nat20").length === 1, "so does the log");
-// A 6 on a d6 is a good roll, not a crit.
-peek(`tbl.ui.dice = { pool: { 6: 2 }, mod: 0, mode: "normal" }; paintDice();`);
-await rollFaces([0.999, 0.0], 2);
-ok($$("#roll-stage .die.nat20").length === 0 && $$("#roll-stage .die.nat1").length === 0,
-  "a 6 on a d6 is a good roll, not a natural anything");
-ok(!$("#roll-stage").classList.contains("nat20"), "and no natural on the roll either");
-// A mixed handful with a d20 in it: the d20 is the one that can be natural.
-peek(`tbl.ui.dice = { pool: { 4: 1, 8: 1, 12: 1, 20: 1 }, mod: 0, mode: "normal" }; paintDice();`);
-await rollFaces([0.999, 0.5, 0.5, 0.5], 4);   // biggest die first: the d20 rolls 20
-ok($("#roll-stage").classList.contains("nat20"),
-  "1d4 + 1d8 + 1d12 + 1d20 coming up 20 on the d20 is a natural 20");
-ok($$("#roll-stage .die.nat20").length === 1, "and exactly the d20 is marked for it");
+// The bar and the log build their pips from the same function, so it is asserted AS a function — the
+// bar itself is a five-second notification and reading it is a race with its own timer.
+{
+  const line = peek(`lastRollHTML({ who: "DM", kind: "roll", label: "", spec: "4d20", mod: 0,
+    mode: "normal", keptIdx: -1, total: 40,
+    dice: [{ s: 20, v: 20 }, { s: 20, v: 11 }, { s: 20, v: 1 }, { s: 20, v: 8 }], t: 1 })`);
+  ok((line.match(/pip-die nat20/g) || []).length === 1, "the bar and the log mark the 20 too");
+  ok((line.match(/pip-die nat1\b/g) || []).length === 1, "and the 1");
+  const plain = peek(`lastRollHTML({ who: "DM", kind: "roll", label: "", spec: "2d6", mod: 0,
+    mode: "normal", keptIdx: -1, total: 12, dice: [{ s: 6, v: 6 }, { s: 6, v: 6 }], t: 1 })`);
+  ok(!/pip-die nat/.test(plain), "and leave a 6 on a d6 alone");
+}
+// A 6 on a d6 is a good roll, not a natural anything.
+peek(`tblShowRoll({ who: "DM", label: "", spec: "2d6", mod: 0, mode: "normal", keptIdx: -1,
+  total: 12, nat: 0, dice: [{ s: 6, v: 6 }, { s: 6, v: 6 }], t: Date.now() + 23000 });`);
+await wait(120);
+ok($$("#roll-stage .die.nat20").length === 0, "a 6 on a d6 is not marked");
+ok(!/crit-high/.test($("#roll-stage").className), "and gets no moment");
 
 // Back to a plain roll, and the overlay taken down: it covers the whole screen while it is up, and the
 // next section clicks a button underneath it.
@@ -1030,11 +1096,13 @@ peek(`document.body.insertAdjacentHTML("beforeend",
   '<button id="sheetroll" class="roll" data-roll="1d20+7" data-label="Dagger to hit"></button>');
   window.__seq = [0.5];`);
 armed(() => click($("#sheetroll")));
-// Waited for: the roll is posted to the log and the bar is painted from it, and 60ms is a coin toss
-// once anything else is still settling.
-await until(() => /Dagger to hit/.test($("#vtt-lastroll").textContent));
-ok(/Dagger to hit/.test($("#vtt-lastroll").textContent), "a sheet number posts to the table's log by name");
-ok(lastBits().total === "18", "with your bonus already in it: " + JSON.stringify(lastBits()));
+/* Asserted on the LOG, which is the durable fact — the bar is a five-second notification and the point
+   of the test is that a data-roll control anywhere reaches the table, by name. */
+await until(async () => /Dagger to hit/.test((await lastRoll()).label || ""));
+ok(/Dagger to hit/.test((await lastRoll()).label || ""),
+  "a sheet number posts to the table's log by name");
+ok((await lastRoll()).total === 18,
+  "with your bonus already in it: " + JSON.stringify((await lastRoll()).total));
 // Shift and alt are the shortcut for advantage and disadvantage.
 peek(`window.__seq = [0.1, 0.9];`);
 $("#sheetroll").dispatchEvent(new window.MouseEvent("click", { bubbles: true, shiftKey: true }));
@@ -1157,11 +1225,19 @@ peek(`window.__seq = [0.5];`);
 const logLenBefore = Object.keys(await aget(`CocLive.get("tables/482910/log")`) || {}).length;
 await until(() => $$("#vtt-sheet .roll").length > 0);
 armed(() => click($$("#vtt-sheet .roll")[0]));
-await until(() => /^Rig/.test($("#vtt-lastroll").textContent.trim()), 5000);
+/* Asserted against the LOG, not the bar. The bar is a five-second notification on the board now, and a
+   test that waits on a thing designed to disappear is a test that fails for reasons that are not bugs.
+   What actually matters is that the roll reached the table, under the CHARACTER's name rather than the
+   device's — which is what makes the log readable when the DM runs an NPC from a real sheet. */
+const newest = async () => {
+  const log = Object.values(await aget(`CocLive.get("tables/482910/log")`) || {});
+  return log.sort((a, b) => (b.t || 0) - (a.t || 0))[0] || {};
+};
+await until(async () => /^Rig/.test((await newest()).who || ""), 5000);
 const logLenAfter = Object.keys(await aget(`CocLive.get("tables/482910/log")`) || {}).length;
 ok(logLenAfter === logLenBefore + 1, "a number rolled off the drawer reaches the shared log");
-await until(() => /^Rig/.test($("#vtt-lastroll").textContent.trim()), 5000);
-ok(/^Rig/.test($("#vtt-lastroll").textContent.trim()), "under your character's name: " + $("#vtt-lastroll").textContent.trim());
+ok(/^Rig/.test((await newest()).who || ""),
+  "under your character's name, not the device's: " + JSON.stringify((await newest()).who));
 // Closing it hands the page back — otherwise the next sheet opened anywhere paints into nothing.
 click($('[data-tbl="sheet-close"]'));
 await wait(60);
