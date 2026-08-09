@@ -162,13 +162,13 @@ ok(has3d, "there is a switch for them, per device");
 await dm.page.evaluate(() => document.querySelector('[data-tbl="roll-pool"]').click());
 await wait(7000);   // the library is most of a megabyte; this one stays flat while it arrives
 await dm.page.evaluate(() => document.querySelector('[data-tbl="roll-pool"]').click());
-await wait(7000);
+// Read them while they are ON THE TABLE. They settle after a couple of seconds and are swept a couple
+// of seconds after that, and the library forgets the throw the moment its scene is emptied.
+await wait(3500);
 // Not "did a canvas appear" — that is true of a box that never throws. Read the faces the physics
 // actually settled on, out of the library itself, and hold them against the roll in the shared log.
 const solid = await dm.page.evaluate(() => {
-  const box = typeof dice3dBox !== "undefined" ? dice3dBox : null;
-  const res = box && box.getDiceResults ? box.getDiceResults() : null;
-  const faces = ((res && res.sets) || []).flatMap((s) => s.rolls.map((r) => Number(r.value)));
+  const faces = (typeof dice3dLanded !== "undefined" ? dice3dLanded : []).slice();
   const log = Object.values(tbl.data.log || {}).sort((a, b) => (a.t || 0) - (b.t || 0));
   const last = log[log.length - 1] || {};
   return {

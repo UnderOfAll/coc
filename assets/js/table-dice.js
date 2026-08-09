@@ -184,6 +184,10 @@ let dice3dBox = null;      // the loaded box, once
 let dice3dLoading = null;  // the load in flight, so two quick rolls load it once
 let dice3dOff = false;     // it failed, or it is not wanted: stop asking
 let dice3dThrow = 0;       // which throw is the current one, so a stale one cannot un-hide the board
+/* The faces the physics last settled on, kept after the scene has been emptied. The library forgets a
+   throw the moment its world is cleared, and this is the record of what was actually on the table —
+   which is the only thing that can be held against the roll in the log and show they agreed. */
+let dice3dLanded = [];
 
 /* Turned off per device, and remembered. A phone that finds them heavy, or a player who wants the roll
    over with, says so once. Kept in memory as well as in storage, so the switch still works in a browser
@@ -283,6 +287,7 @@ async function dice3dShow(dice) {
     }
   } catch { faces = []; }
   if (mine !== dice3dThrow) return "stale";
+  dice3dLanded = faces;
   const truthful = faces.length === want.length && faces.every((v, i) => v === want[i]);
   // A settled die is READABLE, so a wrong one has to leave immediately — no fade, no frame of it sitting
   // there being wrong. The fade is for dice that told the truth and are simply done.
