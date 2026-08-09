@@ -12,6 +12,12 @@ const COC_CONFIG = {
   // Paste the database URL you are given, e.g. "https://my-circus-default-rtdb.firebaseio.com"
   firebaseUrl: "https://circus-of-chaos-78122-default-rtdb.europe-west1.firebasedatabase.app",
 
+  /* The diagnostics overlay is Kayki's, not a feature. Visiting #/debug/<phrase> once on a device turns it
+     on for that browser forever; nothing appears in the interface for anyone who has not. Only the HASH of
+     the phrase is here, so reading this file does not hand it over — and it is a "do not bother anybody
+     else with it" switch rather than a security boundary, which is all it needs to be. */
+  debugHash: "sha256:469afc5e555c62c69610ca20354eda414571c1acdd1f9d7a684a13746f7b04b0",
+
   // --- Option B: Supabase (if you would rather use it) ---
   supabaseUrl: "",
   supabaseAnonKey: "",

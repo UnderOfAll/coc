@@ -34,8 +34,10 @@ function tblSuggestCode() {
    table's data. The algorithm is written into the stored value ("sha256:...") so a browser that
    verifies later computes the same one the creator used — otherwise a device without WebCrypto would
    compute a different hash and lock the real DM out of their own table. */
-async function tblHashKey(key) {
-  const text = "coc-dm:" + String(key);
+async function tblHashKey(key, literal) {
+  // `literal` lets the same hashing serve a different purpose (the diagnostics phrase) without a DM key and
+  // a debug phrase ever colliding.
+  const text = literal || ("coc-dm:" + String(key));
   const subtle = (typeof crypto !== "undefined" && crypto.subtle) ? crypto.subtle : null;
   if (subtle) {
     const bytes = new TextEncoder().encode(text);
@@ -528,6 +530,7 @@ function renderTableShell() {
             ? `<button class="btn-quiet on" data-tbl="panel" data-val="seat">Choose a character</button>` : ""}
           <button class="btn-quiet" data-tbl="panel" data-val="notes">Notes</button>
           <button class="btn-quiet" data-tbl="panel" data-val="draw">Draw</button>
+          ${tblDebugOn() ? `<button class="btn-quiet" data-tbl="panel" data-val="debug">Debug</button>` : ""}
           ${tbl.role === "dm" || tbl.me.charCode
             ? `<button class="btn-quiet" data-tbl="panel" data-val="sheet">My sheet</button>` : ""}
           <button class="btn-quiet" data-tbl="panel" data-val="mine">Tracker</button>
@@ -785,6 +788,7 @@ function tblFit() {
 /* Once you have moved the camera it is YOURS: nothing re-frames it after that, which is the difference
    between a helpful auto-fit and an app that keeps snatching the map back. */
 function tblZoomBy(factor, cx, cy) {
+  tblTrace("zoom", factor.toFixed(2) + (tbl.drag ? " during a drag" : ""));
   tbl.cameraIsYours = true;
   const stage = $("#vtt-stage");
   const box = stage.getBoundingClientRect();
@@ -993,6 +997,7 @@ function tblEraseAt(at) {
    ended in a way we cannot track, so a lost event can never leave the board deaf. */
 function tblResetGestures() {
   if (!tbl) return;
+  tblTrace("gestures reset", (tbl.drag ? "was dragging" : "") + " ptrs=" + tbl.pointers.size);
   tbl.pointers.clear();
   tbl.pinch = null;
   if (tbl.drag && !tbl.drag.pan) {
@@ -1024,7 +1029,10 @@ function onPointerDown(e) {
   if (e.cancelable) e.preventDefault();
   // A primary pointerdown is by definition the FIRST finger of a gesture, so anything still recorded
   // is a ghost from an event we never received. Self-healing beats hoping.
-  if (e.isPrimary !== false && tbl.pointers.size) { tbl.pointers.clear(); tbl.pinch = null; tbl.drag = null; }
+  if (e.isPrimary !== false && tbl.pointers.size) {
+    tblTrace("cleared ghost pointers", [...tbl.pointers.keys()].join(","));
+    tbl.pointers.clear(); tbl.pinch = null; tbl.drag = null;
+  }
   tbl.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
   // Two fingers down: this is a pinch, and whatever the first finger had started is abandoned.
   if (tbl.pointers.size === 2) { tbl.drag = null; tbl.pinch = tblPinchState(); return; }
@@ -1035,6 +1043,7 @@ function onPointerDown(e) {
     const at = tblInkPoint(p);
     tbl.drag = null;
     if (tblInkState().mode === "erase") { tblEraseAt(at); return; }
+    tblTrace("ink start");
     tbl.inking = { points: [at], color: tblInkState().color, width: tblInkState().width };
     paintDrawings();
     if (stage.setPointerCapture) { try { stage.setPointerCapture(e.pointerId); } catch { /* fine */ } }
@@ -1052,7 +1061,9 @@ function onPointerDown(e) {
       x: token.x, y: token.y,
     };
     node.classList.add("dragging");
+    tblTrace("drag start", id);
   } else {
+    tblTrace("pan start");
     tbl.drag = { pan: true, sx: p.sx, sy: p.sy, ox: tbl.view.x, oy: tbl.view.y };
   }
   if (stage.setPointerCapture) { try { stage.setPointerCapture(e.pointerId); } catch { /* fine */ } }
@@ -1195,6 +1206,7 @@ function tblFreeSquare(id, x, y, size, fallbackX, fallbackY) {
    that makes a board unreadable — so this rounds, clamps to the map and charges the distance. Shared by
    a normal release and by a gesture that was interrupted. */
 function tblLandDrag(d) {
+  tblTrace("figure landed", d.id);
   const size = Math.max(1, Number(d.token.size) || 1);
   const spot = tblFreeSquare(d.id, Math.round(d.x), Math.round(d.y), size, d.fromX, d.fromY);
   CocLive.put(tblPath("tokens/" + d.id + "/x"), spot.x).catch(tblFail);
@@ -1263,6 +1275,7 @@ function paintSide() {
   else if (which === "draw") side.innerHTML = drawPanelHTML();
   else if (which === "mine") side.innerHTML = trackerHTML();
   else if (which === "seat") side.innerHTML = seatPanelHTML();
+  else if (which === "debug") side.innerHTML = tblDebugOn() ? debugPanelHTML() : "";
 
   else if (which === "sheet") { side.innerHTML = `<p class="muted">Opening your sheet…</p>`; paintSheetPanel(); }
 }
@@ -3027,6 +3040,7 @@ function paintHandout() {
 /* ---------------------------------------------------------------- wiring */
 
 COC_ROUTES.table = routeTable;
+COC_ROUTES.debug = routeDebug;
 
 /* The DM's notes save as they are typed, coalesced so a paragraph is a handful of writes rather than
    one per keystroke. */
@@ -3149,6 +3163,7 @@ document.addEventListener("click", (e) => {
     const id = act === "ed-repo" ? tbl.ui.editToken : (tblMyTokens()[0] || tbl.ui.lookAt);
     tblSetTokenImage(id, "maps/" + val);
   }
+  else if (act === "dbg-copy") tblCopyDiagnostics();
   else if (act === "seat-take") tblTakeSeat(val).catch(tblFail);
   else if (act === "seat-new") tblNewSeat().catch(tblFail);
   else if (act === "trk-add") {
@@ -3318,3 +3333,138 @@ document.addEventListener("click", (e) => {
     if ((tbl.data.meta || {}).handout === val) CocLive.put(tblPath("meta/handout"), null).catch(tblFail);
   }
 });
+
+/* ---------------------------------------------------------------- diagnostics (Kayki's only)
+ *
+ * Five rounds went into one drag bug because I was guessing at what a browser I cannot run was doing. This
+ * is the fix for that: a HUD that says what the board thinks is happening, and a button that copies the
+ * whole picture — browser, gestures, camera, live data, recent events — so a report becomes evidence.
+ *
+ * Reachable only by visiting #/debug/<phrase> once per device (see config.js). Nothing about it appears for
+ * anyone else, which is the point: it is a tool for the person building the thing, not a feature.
+ */
+const TBL_DEBUG_KEY = "coc:debug";
+function tblDebugOn() { return localStorage.getItem(TBL_DEBUG_KEY) === "1"; }
+
+/* A ring of the last few things that happened, which is what turns "it stopped working" into a sequence. */
+const TBL_TRACE = [];
+function tblTrace(what, detail) {
+  if (!tblDebugOn()) return;
+  TBL_TRACE.push({ t: Date.now(), what, detail: detail == null ? "" : String(detail).slice(0, 120) });
+  if (TBL_TRACE.length > 60) TBL_TRACE.shift();
+}
+
+async function routeDebug(arg) {
+  const phrase = String(arg || "");
+  const cfg = (typeof COC_CONFIG !== "undefined") ? COC_CONFIG : {};
+  if (phrase === "off") {
+    localStorage.removeItem(TBL_DEBUG_KEY);
+    paint(`<div class="tool-head"><a class="back" href="#/">&larr; Menu</a><h1>Diagnostics off</h1>
+      <p class="muted">This device is back to normal.</p></div>`);
+    return;
+  }
+  const ok = cfg.debugHash && (await tblHashKey("", "coc-debug:" + phrase)) === cfg.debugHash;
+  if (!ok) {
+    // Deliberately the same answer as any other unknown route: no hint that there was something to find.
+    location.hash = "#/";
+    return;
+  }
+  localStorage.setItem(TBL_DEBUG_KEY, "1");
+  paint(`<div class="tool-head"><a class="back" href="#/">&larr; Menu</a><h1>Diagnostics on</h1>
+    <p class="muted">This browser will show the diagnostics panel at a table, and only this one.
+      <strong>#/debug/off</strong> turns it off again.</p></div>
+    <section class="panel"><p class="muted">At a table you get a <strong>Debug</strong> button. It shows what
+      the board believes about your gestures and the camera, and <strong>Copy diagnostics</strong> puts the
+      lot on the clipboard — browser and all — so a bug report can be evidence rather than a description.</p>
+    </section>`);
+}
+
+/* What the board thinks is going on, right now. */
+function tblDiagnostics() {
+  const scene = tbl ? tblScene() : {};
+  const nav = typeof navigator !== "undefined" ? navigator : {};
+  return {
+    when: new Date().toISOString(),
+    browser: {
+      ua: String(nav.userAgent || "").slice(0, 200),
+      brands: (nav.userAgentData && nav.userAgentData.brands || []).map((b) => b.brand + " " + b.version).join(", "),
+      touch: typeof matchMedia === "function" ? matchMedia("(pointer: coarse)").matches : null,
+      dpr: typeof devicePixelRatio === "number" ? devicePixelRatio : null,
+      screen: typeof innerWidth === "number" ? innerWidth + "x" + innerHeight : "",
+    },
+    live: { mode: CocLive.mode, code: tbl ? tbl.code : "", role: tbl ? tbl.role : "" },
+    me: tbl ? { id: tbl.me.clientId, name: tbl.me.name, char: tbl.me.charCode, token: tbl.me.tokenId || "" } : null,
+    gesture: tbl ? {
+      pointers: [...tbl.pointers.keys()],
+      drag: tbl.drag ? (tbl.drag.pan ? "panning" : "figure " + tbl.drag.id) : null,
+      pinch: !!tbl.pinch,
+      inking: !!tbl.inking,
+      pen: tbl.ui.ink ? tbl.ui.ink.on + "/" + tbl.ui.ink.mode : "away",
+    } : null,
+    camera: tbl ? { x: tbl.view.x, y: tbl.view.y, z: Number(tbl.view.z.toFixed(3)), yours: !!tbl.cameraIsYours } : null,
+    scene: { id: tbl ? tblSceneId() : "", cols: scene.cols, rows: scene.rows, cell: scene.cell,
+             image: scene.image ? (scene.image.slice(0, 12) + "…" + scene.image.length + " chars") : "none",
+             grid: scene.gridOn !== false, locked: !!scene.drawLocked },
+    counts: tbl ? {
+      figures: Object.keys(tblTokens()).length,
+      strokes: Object.keys(tbl.data.draw || {}).length,
+      rolls: Object.keys(tbl.data.log || {}).length,
+      here: Object.keys(tbl.data.presence || {}).length,
+    } : null,
+    trace: TBL_TRACE.slice(-25),
+  };
+}
+
+function debugPanelHTML() {
+  const d = tblDiagnostics();
+  const row = (k, v) => `<div class="dbg-row"><span>${esc(k)}</span><code>${esc(v)}</code></div>`;
+  const g = d.gesture || {};
+  return `<section class="panel">
+      <h2>Diagnostics</h2>
+      <p class="muted">Yours alone. If something misbehaves, press Copy and paste it to me — it beats
+        describing it.</p>
+      <button class="btn" data-tbl="dbg-copy">Copy diagnostics</button>
+      <p id="dbg-msg" class="save-msg"></p>
+    </section>
+    <section class="panel">
+      <p class="panel-sub">Gestures</p>
+      ${row("pointers down", (g.pointers || []).join(", ") || "none")}
+      ${row("dragging", g.drag || "no")}
+      ${row("pinching", g.pinch ? "yes" : "no")}
+      ${row("pen", g.pen)}
+      <p class="panel-sub">Camera</p>
+      ${row("x, y, zoom", d.camera ? `${d.camera.x}, ${d.camera.y}, ${d.camera.z}` : "")}
+      ${row("yours", d.camera && d.camera.yours ? "yes" : "no (auto-fits)")}
+      <p class="panel-sub">Scene</p>
+      ${row("grid", `${d.scene.cols}x${d.scene.rows} @ ${d.scene.cell}px${d.scene.grid ? "" : " (off)"}`)}
+      ${row("map", d.scene.image)}
+      <p class="panel-sub">This table</p>
+      ${row("figures / strokes / rolls / here",
+        d.counts ? `${d.counts.figures} / ${d.counts.strokes} / ${d.counts.rolls} / ${d.counts.here}` : "")}
+      ${row("live", `${d.live.mode} as ${d.live.role || "?"}`)}
+      <p class="panel-sub">Browser</p>
+      ${row("engine", d.browser.brands || d.browser.ua.slice(0, 60))}
+      ${row("screen", `${d.browser.screen} @${d.browser.dpr}${d.browser.touch ? " touch" : ""}`)}
+    </section>
+    <section class="panel">
+      <p class="panel-sub">Last events</p>
+      <div class="dbg-trace">${(d.trace || []).slice().reverse().map((e) =>
+        `<code>${esc(new Date(e.t).toLocaleTimeString())} ${esc(e.what)} ${esc(e.detail)}</code>`).join("")
+        || `<span class="muted">nothing yet</span>`}</div>
+    </section>`;
+}
+
+async function tblCopyDiagnostics() {
+  const msg = $("#dbg-msg");
+  const text = JSON.stringify(tblDiagnostics(), null, 1);
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) await navigator.clipboard.writeText(text);
+    else throw new Error("no clipboard");
+    if (msg) { msg.textContent = "Copied — paste it to me."; msg.className = "save-msg good"; }
+  } catch {
+    // No clipboard permission (or an http page): show it instead, so it can still be selected by hand.
+    const host = $("#vtt-side");
+    if (host) host.insertAdjacentHTML("afterbegin", `<textarea class="text" rows="12">${esc(text)}</textarea>`);
+    if (msg) { msg.textContent = "Could not reach the clipboard — copy it out of the box above."; msg.className = "save-msg"; }
+  }
+}

@@ -1287,3 +1287,10 @@ input.step-val { width: 3.4rem; }
 .trk-read { font-size: 0.85rem; padding: 0.15rem 0.45rem; border-radius: var(--radius);
   background: var(--panel-2); border: 1px solid var(--border); }
 .trk-read em { font-style: normal; color: var(--muted); margin-right: 0.25rem; }
+
+/* Diagnostics: a table of facts, not a design. Only ever seen by whoever turned it on. */
+.dbg-row { display: flex; justify-content: space-between; gap: 0.6rem; padding: 0.15rem 0;
+  font-size: 0.85rem; border-bottom: 1px solid var(--border); }
+.dbg-row span { color: var(--muted); }
+.dbg-row code, .dbg-trace code { font-size: 0.8rem; color: var(--text); }
+.dbg-trace { display: flex; flex-direction: column; gap: 0.1rem; max-height: 30dvh; overflow-y: auto; }

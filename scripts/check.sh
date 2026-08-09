@@ -12,6 +12,9 @@
 #                           expand a feature, damage yourself. Rendering a page proves nothing
 #                           about whether its controls work, and that gap is where every bug in
 #                           this tool has hidden so far.
+#   8. npm run test:cross  — the SAME board in every engine this machine can run: real Firefox, real
+#                           WebKit (Safari) and real Chromium, plus a Pixel and an iPhone. This is the step
+#                           that would have caught the native-drag bug that took five reports.
 #   7. npm run test:board  — REAL Chromium on the table: a finger drags a token, two fingers pinch,
 #                           the wheel keeps the square under the cursor, and an upload is resized
 #                           through a canvas. None of that exists in jsdom.
@@ -48,5 +51,8 @@ npm run test:mobile
 
 echo "==> npm run test:board"
 npm run test:board
+
+echo "==> npm run test:cross"
+npm run test:cross
 
 echo "==> ALL CHECKS PASSED"
