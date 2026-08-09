@@ -19,7 +19,9 @@ window.fetch = async (u) => {
   return { ok: true, status: 200, json: async () => JSON.parse(t), text: async () => t };
 };
 for (const f of ["assets/js/config.js", "assets/js/storage.js", "assets/js/live.js",
-                 "assets/js/app.js", "assets/js/creator.js", "assets/js/table.js"]) {
+                 "assets/js/app.js", "assets/js/creator.js",
+                 "assets/js/table-board.js", "assets/js/table-dice.js", "assets/js/table-panels.js",
+                 "assets/js/table.js"]) {
   const s = doc.createElement("script");
   s.textContent = fs.readFileSync(path.join(REPO, f), "utf8");
   doc.body.appendChild(s);

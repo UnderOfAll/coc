@@ -21,3 +21,4 @@ Stop Grimoire.bat
 prints/
 node_modules/
 package-lock.json
+backups/
