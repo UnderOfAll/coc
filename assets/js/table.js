@@ -925,6 +925,13 @@ document.addEventListener("click", (e) => {
     paintDice();
   } else if (act === "dice-clear") { tblDicePool().pool = {}; paintDice(); }
   else if (act === "dice-3d") { dice3dToggle(); paintDice(); }
+  // Every one of these rebuilds the dice world, which is why they all go through the same door.
+  else if (act === "dice-sound") { dice3dRelook({ quiet: !dice3dLook().quiet }); paintDice(); }
+  else if (act === "dice-colour") { dice3dRelook({ colour: val }); paintDice(); }
+  else if (act === "dice-label") { dice3dRelook({ label: val }); paintDice(); }
+  else if (act === "dice-design") { dice3dRelook({ design: val }); paintDice(); }
+  else if (act === "dice-finish") { dice3dRelook({ finish: val }); paintDice(); }
+  else if (act === "dice-clack") { dice3dRelook({ sound: val }); paintDice(); }
   else if (act === "dice-mod") {
     const t = tblDicePool();
     t.mod = Math.max(-20, Math.min(20, t.mod + Number(val)));

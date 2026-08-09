@@ -1117,6 +1117,11 @@ input.step-val { width: 3.4rem; }
 .roll-stage.with-3d .roll-kept.only-3d { display: block; }
 .roll-stage.with-3d .roll-total.only-3d { display: inline; }
 .roll-kept { margin: 0 0 0.5rem; color: var(--muted); font-size: 0.9rem; }
+/* Still in the air. The numbers are held back until the dice stop, here and in the bar at the top of the
+   table, so that watching them land is the moment it is supposed to be rather than a wait for a total
+   that was already printed. */
+.roll-stage.waiting .roll-total, .roll-stage.waiting .roll-kept { visibility: hidden; }
+.roll-waiting { color: var(--muted); font-style: italic; margin-left: 0.5rem; }
 .roll-box { min-width: min(20rem, 88vw); padding: 1rem 1.2rem; text-align: center;
   background: var(--panel); border: 1px solid var(--gold); border-radius: var(--radius);
   box-shadow: 0 18px 50px rgba(0,0,0,0.65); }

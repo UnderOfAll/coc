@@ -178,8 +178,11 @@ function tblRollAndPost(spec, label, mode, whoOverride) {
  * Fetched from the CDN the first time somebody rolls, never as part of loading the page: it is most of a
  * megabyte of physics engine, and a device that never throws a die never pays for it. */
 const DICE3D_SRC = "https://cdn.jsdelivr.net/npm/@3d-dice/dice-box-threejs@0.0.12/dist/dice-box-threejs.es.js";
-const DICE3D_SIDES = [6, 8, 10, 12, 20];   // the ones that can be told where to land
-const DICE3D_MOST = 12;                    // beyond a dozen they are specks, and the physics gets slow
+/* The textures, the surfaces and the sounds live in the library's own repository rather than its npm
+   package, pinned to a commit so nothing under us can change. */
+const DICE3D_ASSETS = "https://cdn.jsdelivr.net/gh/3d-dice/dice-box-threejs@6945e0068eae27f22acd26debdb70f6ef2fd6063/public/";
+const DICE3D_SIDES = [4, 6, 8, 10, 12, 20, 100];
+const DICE3D_MOST = 30;   // thirty land and settle in a couple of seconds; past that it is a pile of specks
 let dice3dBox = null;      // the loaded box, once
 let dice3dLoading = null;  // the load in flight, so two quick rolls load it once
 let dice3dOff = false;     // it failed, or it is not wanted: stop asking
@@ -188,6 +191,89 @@ let dice3dThrow = 0;       // which throw is the current one, so a stale one can
    throw the moment its world is cleared, and this is the record of what was actually on the table —
    which is the only thing that can be held against the roll in the log and show they agreed. */
 let dice3dLanded = [];
+/* Which roll is being watched, by its timestamp, while its dice are still in the air. Nothing shows its
+   NUMBERS until they stop — otherwise the total is sitting there before the throw has begun and the
+   animation is decoration rather than the moment. It holds on this device only: everyone else at the
+   table is watching their own dice, or none. */
+let dice3dHolding = 0;
+function dice3dHeld(entry) {
+  return !!(dice3dHolding && entry && entry.t === dice3dHolding);
+}
+/* Let the numbers out. Every way a roll can END has to come through here — landing, being tapped away,
+   timing out, the library throwing — because a hold that is never released is a table whose rolls have
+   stopped showing what they were. */
+function dice3dRelease() {
+  if (!dice3dHolding) return;
+  dice3dHolding = 0;
+  const node = document.getElementById("roll-stage");
+  if (node) node.classList.remove("waiting");
+  if (typeof tbl !== "undefined" && tbl && typeof paintLog === "function") {
+    try { paintLog(); } catch { /* left the table mid-roll */ }
+  }
+}
+
+/* ---------------------------------------------------------------- what they look like
+
+   Your dice, on your device — nobody else sees them, so nobody else has to agree. The colours are the
+   pen's nine, deliberately: one set of colours for the whole table rather than two vocabularies.
+
+   The DESIGNS are the library's own, drawn onto the faces from images in its repository. They cost one
+   small file each, fetched once, and they are the reason to have 3D dice at all — a dragon-scaled d20 is
+   the thing people put on the table in front of them. */
+const DICE3D_DESIGNS = [
+  ["", "Plain"], ["dragon", "Dragon"], ["skulls", "Skulls"], ["fire", "Fire"], ["ice", "Ice"],
+  ["marble", "Marble"], ["stars", "Stars"], ["astral", "Astral"], ["stainedglass", "Stained glass"],
+  ["water", "Water"], ["wood", "Woodgrain"], ["speckles", "Speckled"], ["glitter", "Glitter"],
+  ["lizard", "Lizard"], ["cloudy", "Cloudy"], ["paper", "Paper"],
+];
+const DICE3D_FINISHES = [["metal", "Metal"], ["none", "Plastic"], ["glass", "Glass"], ["wood", "Wood"],
+  ["perfectmetal", "Mirror"]];
+/* What the dice are struck on and what they sound like. The material here is about the SOUND, which is
+   why it is separate from the finish above — glass dice on a felt table is a real combination. */
+const DICE3D_SOUNDS = [["plastic", "Plastic"], ["metal", "Metal"], ["wood", "Wood"], ["coin", "Coin"]];
+
+const DICE3D_DEFAULT = {
+  colour: "#c9a54e", label: "#10100f", design: "", finish: "metal", sound: "plastic", loud: 55, quiet: false,
+};
+let dice3dSeen = null;   // the chosen look, once read
+function dice3dLook() {
+  if (!dice3dSeen) {
+    let saved = null;
+    try { saved = JSON.parse(localStorage.getItem("coc:dice-look") || "null"); } catch { saved = null; }
+    dice3dSeen = Object.assign({}, DICE3D_DEFAULT, saved && typeof saved === "object" ? saved : {});
+  }
+  return dice3dSeen;
+}
+/* Turned into the shape the library wants. A custom colourset carries the design and the finish with it,
+   which is why there is one object rather than three settings. */
+function dice3dTheme() {
+  const look = dice3dLook();
+  return {
+    theme_customColorset: {
+      background: look.colour, foreground: look.label,
+      texture: look.design || "none", material: look.finish || "none",
+    },
+    sounds: !look.quiet,
+    volume: Number(look.loud) || 0,
+    sound_dieMaterial: look.sound || "plastic",
+  };
+}
+/* Changing the look rebuilds the box: every one of these is read once, when the world is made. The
+   module itself is already in the browser's cache, so the second build is quick. */
+function dice3dRelook(change) {
+  Object.assign(dice3dLook(), change);
+  try { localStorage.setItem("coc:dice-look", JSON.stringify(dice3dSeen)); } catch { /* no storage */ }
+  dice3dClear(true);
+  dice3dBox = null;
+  dice3dLoading = null;
+  dice3dOff = false;
+  const node = document.getElementById("roll-3d");
+  if (node) node.innerHTML = "";
+  // Built again NOW, not on the next roll. Choosing a colour is the moment you are willing to wait a
+  // second; pressing Roll is not, and a world takes a few seconds to make — longer while the previous
+  // one is still settling, which is exactly when you are changing it.
+  if (dice3dWanted()) dice3dReady();
+}
 
 /* Turned off per device, and remembered. A phone that finds them heavy, or a player who wants the roll
    over with, says so once. Kept in memory as well as in storage, so the switch still works in a browser
@@ -218,11 +304,42 @@ function dice3dWanted() {
 }
 
 /* A handful this library can be trusted with: all one kind of die, a kind it can be turned to, and few
-   enough to see. Everything else keeps the overlay that has always been there. */
+   enough to see. Mixed handfuls are the remaining exception — the notation parser reads only the first
+   group of them, so `1d20@7+2d6@3,4` silently throws the d20 alone. */
 function dice3dCanShow(dice) {
   if (!dice.length || dice.length > DICE3D_MOST) return false;
   const sides = Number(dice[0].s);
   return DICE3D_SIDES.includes(sides) && dice.every((d) => Number(d.s) === sides);
+}
+
+/* What to throw, and what every die must be showing afterwards.
+ *
+ * A percentile roll is the interesting one. This library has no hundred-sided die and never did — what
+ * it calls a d100 is the TENS die of a real percentile pair, its faces reading 10, 20 … 90, 00. So a 73
+ * is thrown the way it is thrown on a table: the tens die on 70 beside a units die on 3. A 7 is the
+ * tens die on 00 beside a 7, and a 100 is 00 beside 0, which is exactly the convention everyone already
+ * reads. `want` is in the order the dice end up in, tens first, because that is the order they are
+ * checked against afterwards. */
+function dice3dPlan(dice) {
+  const sides = Number(dice[0].s);
+  if (sides !== 100) {
+    const want = dice.map((d) => Number(d.v));
+    return { notation: dice.length + "d" + sides + "@" + want.join(","), extra: "", want };
+  }
+  const tens = [], units = [];
+  for (const d of dice) {
+    const v = Number(d.v);
+    const ones = v % 10;
+    const ten = Math.floor(v / 10) % 10;
+    // The face labelled "00" is worth 100 to the library, and the units face labelled "0" is worth 10.
+    tens.push(ten === 0 ? 100 : ten * 10);
+    units.push(ones === 0 ? 10 : ones);
+  }
+  return {
+    notation: dice.length + "d100@" + tens.join(","),
+    extra: dice.length + "d10@" + units.join(","),
+    want: tens.concat(units),
+  };
 }
 
 function dice3dStage() {
@@ -243,20 +360,30 @@ function dice3dReady() {
   if (dice3dLoading) return dice3dLoading;
   dice3dStage();
   const url = DICE3D_SRC;
-  dice3dLoading = (async () => {
-    const mod = await import(/* the CDN, at runtime */ url);
+  /* A deadline, for the same reason the transport has one: the failure that leaves you with no dice for
+     the rest of the session is not the one that throws, it is the one that never answers. Building a
+     world while the previous one is still animating can do exactly that. Twenty seconds, then the flat
+     dice — and the NEXT roll is free to try again rather than being told no forever. */
+  const patience = new Promise((_, no) => setTimeout(() => no(new Error("took too long")), 20000));
+  dice3dLoading = Promise.race([patience, (async () => {
+    let mod;
+    // The library itself being unreachable is different from a world that would not build: no amount of
+    // rolling will fetch a blocked CDN, so that one is asked once and then left alone.
+    try { mod = await import(/* the CDN, at runtime */ url); }
+    catch (err) { dice3dOff = true; throw err; }
     const DiceBox = mod.default;
-    const box = new DiceBox("#roll-3d", {
-      // Gold on the table's own near-black, so they look like this game's dice rather than a demo's.
-      theme_customColorset: { background: "#c9a54e", foreground: "#10100f", texture: "none", material: "metal" },
-      light_intensity: 1.1, gravity_multiplier: 500, baseScale: 110, strength: 2.2, sounds: false, shadows: true,
-    });
+    const box = new DiceBox("#roll-3d", Object.assign({
+      assetPath: DICE3D_ASSETS,
+      light_intensity: 1.1, gravity_multiplier: 500, baseScale: 110, strength: 2.2, shadows: true,
+    }, dice3dTheme()));
     await box.initialize();
     dice3dBox = box;
     return box;
-  })().catch((err) => {
-    dice3dOff = true;
-    try { console.warn("dice: the 3D dice could not be loaded, using the flat ones —", err && err.message); }
+  })()]).catch((err) => {
+    // Not latched off: a world that would not build once — most often because the last one was still
+    // animating when it was replaced — is worth one more attempt on the next roll.
+    dice3dLoading = null;
+    try { console.warn("dice: the 3D dice are not ready, using the flat ones —", err && err.message); }
     catch { /* no console */ }
     return null;
   });
@@ -273,18 +400,20 @@ async function dice3dShow(dice) {
   const box = await dice3dReady();
   if (!box) return "flat";
   if (mine !== dice3dThrow) return "stale";
-  const want = dice.map((d) => Number(d.v));
-  const notation = dice.length + "d" + Number(dice[0].s) + "@" + want.join(",");
+  const plan = dice3dPlan(dice);
+  const want = plan.want;
   const stage = dice3dStage();
   stage.classList.add("on");
   let faces = [];
   try {
-    const landed = await box.roll(notation);
-    // Read defensively: this is the check the whole feature rests on, and a library that answered in an
-    // unexpected shape must fail to "flat" rather than throw past the comparison altogether.
-    for (const set of (landed && landed.sets) || []) {
-      for (const die of (set && set.rolls) || []) faces.push(Number(die.value));
-    }
+    await box.roll(plan.notation);
+    if (plan.extra) await box.add(plan.extra);
+    /* Read the faces THEMSELVES, off the dice standing on the table, rather than the summary the library
+       hands back. They are not always the same thing: a d4 is turned correctly and then reported as
+       whatever the physics had rolled before the turn, which is why d4s used to be refused. `getFaceValue`
+       works out which face is up (down, for a d4) from the geometry — it is what is actually on screen,
+       and what is on screen is the only thing worth checking. */
+    for (const die of box.diceList || []) faces.push(Number(die.getFaceValue().value));
   } catch { faces = []; }
   if (mine !== dice3dThrow) return "stale";
   dice3dLanded = faces;
@@ -324,7 +453,9 @@ function tblRollStage() {
     node.className = "roll-stage";
     // Tapping it away has to take the DICE with it. It did not, once: the box went and a screenful of
     // settled dice stayed behind it, unclickable because they ignore the pointer, until the next roll.
-    node.addEventListener("click", () => { node.classList.remove("on"); dice3dClear(true); });
+    node.addEventListener("click", () => {
+      node.classList.remove("on"); dice3dRelease(); dice3dClear(true);
+    });
     document.body.appendChild(node);
   }
   return node;
@@ -386,7 +517,7 @@ function tblShowRoll(entry) {
       node.classList.add("landed");
     }
   }, 55);
-  const away = () => { node.classList.remove("on"); dice3dClear(); };
+  const away = () => { node.classList.remove("on"); dice3dRelease(); dice3dClear(); };
   tblRollTimers.push(setTimeout(away, 3200));
 
   if (!solid) { dice3dClear(); return; }
@@ -397,10 +528,15 @@ function tblShowRoll(entry) {
 
   // Real dice from here: the flat row is not drawn at all, the total shows at once exactly as it always
   // has, and the dice land underneath it a couple of seconds later.
-  node.classList.add("with-3d");
+  // The numbers go away until the dice stop. This is the point of throwing them at all: a total that is
+  // already on screen makes the animation something to sit through rather than something to watch.
+  node.classList.add("with-3d", "waiting");
+  dice3dHolding = entry.t || 0;
+  if (tbl && typeof paintLog === "function") { try { paintLog(); } catch { /* not at a table */ } }
   for (const t of tblRollTimers) clearTimeout(t);
   tblRollTimers = [];
   dice3dShow(dice).then((how) => {
+    if (how !== "stale") dice3dRelease();
     // "stale" means a newer roll owns the screen now. Touching anything here would reach into ITS
     // overlay — stripping a class it needs, or scheduling a hide that goes off early.
     if (how === "stale" || !node.classList.contains("on")) return;
@@ -409,7 +545,9 @@ function tblShowRoll(entry) {
     if (how !== "solid") node.classList.remove("with-3d");
     tblRollTimers.push(setTimeout(away, how === "solid" ? 2600 : 2000));
   }).catch(() => {
-    // Nothing above is allowed to leave the overlay stuck on screen with no way down.
+    // Nothing above is allowed to leave the overlay stuck on screen with no way down — or, worse, to
+    // leave the roll's own numbers withheld from the table for good.
+    dice3dRelease();
     node.classList.remove("with-3d");
     dice3dClear(true);
     tblRollTimers.push(setTimeout(away, 1600));
@@ -435,6 +573,7 @@ function tblPoolSpec() {
 
 function dicePanelHTML() {
   const t = tblDicePool();
+  const look = dice3dLook();
   const spec = tblPoolSpec();
   const text = tblSpecText(spec);
   const inPool = spec.terms.length;
@@ -462,12 +601,41 @@ function dicePanelHTML() {
       ${!oneDie && t.mode !== "normal" ? `<p class="muted">Advantage needs a single die — with a handful
         it is ignored.</p>` : ""}
       <button class="btn" data-tbl="roll-pool" ${inPool ? "" : "disabled"}>Roll ${esc(text || "…")}</button>
-      <p class="panel-sub">On this device</p>
+      <p class="panel-sub">Your dice <span class="muted">— on this device, nobody else sees them</span></p>
       <div class="chips">
-        <button class="chip ${dice3dChosen() ? "on" : ""}" data-tbl="dice-3d">Dice in 3D</button>
+        <button class="chip ${dice3dChosen() ? "on" : ""}" data-tbl="dice-3d">${
+          dice3dChosen() ? "Rolling in 3D" : "Flat dice"}</button>
+        ${dice3dChosen() ? `<button class="chip ${look.quiet ? "" : "on"}" data-tbl="dice-sound">${
+          look.quiet ? "Silent" : "Sound on"}</button>` : ""}
       </div>
-      <p class="muted">Real dice, thrown across the screen, landing on the roll that was made. A d4 or a
-        percentile roll keeps the flat ones — those are the two this cannot land truthfully.</p>
+      ${dice3dChosen() ? `
+        <p class="panel-sub">Colour</p>
+        <div class="chips">${TBL_INK_COLOURS.map(([hex, name]) =>
+          `<button class="chip ${look.colour === hex ? "on" : ""}" data-tbl="dice-colour" data-val="${esc(hex)}"
+            title="${esc(name)}"><span class="ink-dot" style="background:${esc(hex)}"></span>${esc(name)}</button>`
+          ).join("")}</div>
+        <p class="panel-sub">Numbers</p>
+        <div class="chips">${[["#10100f", "Dark"], ["#f2efe6", "Light"], ["#c9a54e", "Gold"],
+            ["#d94f43", "Red"]].map(([hex, name]) =>
+          `<button class="chip ${look.label === hex ? "on" : ""}" data-tbl="dice-label" data-val="${esc(hex)}"
+            title="${esc(name)}"><span class="ink-dot" style="background:${esc(hex)}"></span>${esc(name)}</button>`
+          ).join("")}</div>
+        <p class="panel-sub">Design</p>
+        <div class="chips">${DICE3D_DESIGNS.map(([id, name]) =>
+          `<button class="chip ${look.design === id ? "on" : ""}" data-tbl="dice-design" data-val="${esc(id)}"
+            >${esc(name)}</button>`).join("")}</div>
+        <p class="panel-sub">Finish</p>
+        <div class="chips">${DICE3D_FINISHES.map(([id, name]) =>
+          `<button class="chip ${look.finish === id ? "on" : ""}" data-tbl="dice-finish" data-val="${esc(id)}"
+            >${esc(name)}</button>`).join("")}</div>
+        ${look.quiet ? "" : `<p class="panel-sub">They sound like</p>
+          <div class="chips">${DICE3D_SOUNDS.map(([id, name]) =>
+            `<button class="chip ${look.sound === id ? "on" : ""}" data-tbl="dice-clack" data-val="${esc(id)}"
+              >${esc(name)}</button>`).join("")}</div>`}
+        <p class="muted">Real dice, thrown across the screen, landing on the roll that was made — the number
+          is held back until they stop. A mixed handful keeps the flat ones, since they cannot all be thrown
+          at once.</p>`
+      : `<p class="muted">The flat overlay, which is quicker and asks nothing of the device.</p>`}
     </section>
     <section class="panel">
       <p class="panel-sub">Rolls at this table</p>
@@ -499,6 +667,12 @@ function tblRollBits(e) {
 /* The newest roll, in one line, for the bar that is visible whatever panel is open. */
 function lastRollHTML(e) {
   if (e.kind !== "roll" || !tblEntryDice(e).length) return esc(e.text || "");
+  // Its dice are still rolling on this screen. Saying who is throwing what is the whole of what the bar
+  // may give away until they stop.
+  if (dice3dHeld(e)) {
+    return `<strong>${esc(e.who || "Someone")}</strong>${e.label ? " " + esc(e.label) : ""}` +
+      `<span class="roll-waiting">${esc(e.spec || "")} &middot; rolling&hellip;</span>`;
+  }
   const bits = tblRollBits(e);
   return `<strong>${esc(e.who || "Someone")}</strong>${e.label ? " " + esc(e.label) : ""} ${bits.pips}` +
     `${bits.mod}<span class="roll-card-total">${esc(bits.total)}</span>`;
