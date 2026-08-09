@@ -1175,7 +1175,8 @@ function tblDiagnostics() {
       dpr: typeof devicePixelRatio === "number" ? devicePixelRatio : null,
       screen: typeof innerWidth === "number" ? innerWidth + "x" + innerHeight : "",
     },
-    live: { mode: CocLive.mode, code: tbl ? tbl.code : "", role: tbl ? tbl.role : "" },
+    live: { mode: CocLive.mode, transport: CocLive.transport + " (" + CocLive.transportState + ")",
+            code: tbl ? tbl.code : "", role: tbl ? tbl.role : "" },
     me: tbl ? { id: tbl.me.clientId, name: tbl.me.name, char: tbl.me.charCode, token: tbl.me.tokenId || "" } : null,
     gesture: tbl ? {
       pointers: [...tbl.pointers.keys()],
@@ -1228,6 +1229,7 @@ function debugPanelHTML() {
       ${row("figures / strokes / rolls / here",
         d.counts ? `${d.counts.figures} / ${d.counts.strokes} / ${d.counts.rolls} / ${d.counts.here}` : "")}
       ${row("live", `${d.live.mode} as ${d.live.role || "?"}`)}
+      ${row("transport", d.live.transport)}
       <p class="panel-sub">Browser</p>
       ${row("engine", d.browser.brands || d.browser.ua.slice(0, 60))}
       ${row("screen", `${d.browser.screen} @${d.browser.dpr}${d.browser.touch ? " touch" : ""}`)}

@@ -5,18 +5,29 @@
  * document — it is a room several people are inside at once, and everyone has to see a token move
  * as it moves. That needs a push, not a poll, and this file is the whole of it.
  *
- * Two backends, same interface, chosen by what is in config.js:
+ * Three backends, same interface, chosen by what is in config.js:
  *
- *   firebase — the Realtime Database you already have, over plain REST. Writes are PUT/PATCH/POST/
- *              DELETE; reads that must stay current use the database's STREAMING endpoint: request a
- *              path with `Accept: text/event-stream` and it stays open, sending `put` and `patch`
- *              events as the data changes. EventSource does that natively, so there is no SDK, no
- *              build step, no npm, and the site stays a folder of static files on GitHub Pages.
+ *   rest     — the Realtime Database over plain REST. Writes are PUT/PATCH/POST/DELETE; reads that
+ *              must stay current use the database's STREAMING endpoint: request a path with
+ *              `Accept: text/event-stream` and it stays open, sending `put` and `patch` events as the
+ *              data changes. EventSource does that natively, so there is no SDK and no build step.
+ *              Hand-rolled, and it works — but every stream is an HTTP/1.1 connection, and a browser
+ *              allows about six of them per host.
+ *
+ *   sdk      — the SAME database through Firebase's own library, imported as ESM straight from
+ *              gstatic.com. Still no bundler and still a folder of static files: a classic script may
+ *              `import()` a module at runtime. What it buys is one WebSocket instead of a connection
+ *              per stream, reconnection it handles itself, writes queued while the network is away,
+ *              and `onDisconnect` — a real answer to "has this person gone", instead of a heartbeat.
+ *              If the CDN cannot be reached it falls back to `rest` rather than leaving a dead table.
  *
  *   local    — one browser, no network: the whole tree lives in localStorage and changes are
  *              announced on a BroadcastChannel, so two TABS of the same browser genuinely see each
  *              other. That is what makes this testable without a network, and it is also the honest
  *              fallback for someone who has not filled in config.js.
+ *
+ * `mode` says WHERE the data lives (cloud or this browser); `transport` says HOW the cloud is
+ * reached (sdk or rest). They are separate because the second is being swapped and the first is not.
  *
  * Paths are slash-joined strings ("tables/482910/tokens/abc"), the same shape the database uses, so
  * nothing here has to know what a table is. This file knows about trees; table.js knows about games.
@@ -240,7 +251,174 @@ const CocLive = (() => {
     };
   })();
 
-  let backend = mode === "firebase" ? firebase : local;
+  /* ------------------------------------------------------------------ firebase, its own SDK */
+
+  /* The same database, reached through the library Google writes for it. The whole of the difference
+     is in `watch`: REST opens one HTTP connection per stream and a browser allows about six to a
+     host, which is a limit this app has already hit and lost writes to. The SDK multiplexes every
+     watcher over ONE WebSocket, reconnects by itself, and queues writes made while the network is
+     away — none of which I want to hand-roll a second time.
+
+     It is loaded LAZILY, on the first call, for two reasons: a page that never opens a table should
+     never pay for it, and a module fetched from another host is the one thing here that can fail
+     without anything else being wrong. If it does fail, every operation quietly uses the REST backend
+     instead — a table on a locked-down network still works, it just works the old way. */
+  const sdk = (() => {
+    const VERSION = "12.17.1";
+    const cdn = (part) => `https://www.gstatic.com/firebasejs/${VERSION}/firebase-${part}.js`;
+    /* A plain `import(url)` with a variable in it, so nothing tries to resolve gstatic.com at check
+       time. Replaceable, because a test cannot reach a CDN and should not need one to prove that the
+       choosing and the falling back are right. */
+    let bring = (url) => import(/* the CDN, at runtime */ url);
+    let loading = null;    // the in-flight load, so ten calls at once load once
+    let api = null;        // { db, ref, get, set, update, push, remove, onValue, onDisconnect }
+    let broken = "";       // why the CDN could not be reached: everything below goes over REST
+    let brokenAt = 0;      // and when, because a network comes back
+    let era = 0;           // bumped when a loader is swapped, so a stale load cannot land on top
+
+    /* Eight seconds, then give up and use REST. A timeout rather than a `catch` because the failure
+       that matters is not the one that fails: a captive portal or a corporate proxy ACCEPTS the
+       connection and then answers nothing, so the import never settles either way. Without this, every
+       call in the file — the join, the first read, the table's one watcher — waits on it, and a table
+       on a bad network shows "Knocking…" forever instead of quietly working the old way. */
+    const GIVE_UP_AFTER = 8000;
+    /* And a network comes back. Latching "broken" for the life of the page means one two-second blip
+       at load costs the whole session; a minute later it is worth another try, and the browser will
+       have the module cached if it ever arrived. */
+    const TRY_AGAIN_AFTER = 60000;
+
+    const grumble = (why) => {
+      try { console.warn("live: the Firebase SDK could not be loaded, using REST — " + why); }
+      catch { /* no console */ }
+    };
+
+    function load() {
+      if (api) return Promise.resolve(api);
+      if (broken && Date.now() - brokenAt < TRY_AGAIN_AFTER) return Promise.resolve(null);
+      if (loading) return loading;
+      const mine = ++era;
+      const fetching = (async () => {
+        const [app, database] = await Promise.all([bring(cdn("app")), bring(cdn("database"))]);
+        // A named app, so this cannot collide with anything else a page has already initialised, and
+        // no API key: the Realtime Database is reached by URL and its rules are what guard it.
+        const started = app.initializeApp({ databaseURL: base() }, "circus-of-chaos");
+        return Object.assign({ db: database.getDatabase(started, base()) }, database);
+      })().catch((err) => new Error((err && err.message) || String(err)));
+      const patience = new Promise((done) => setTimeout(() => done(new Error("timed out")), GIVE_UP_AFTER));
+      loading = Promise.race([fetching, patience]).then((got) => {
+        // A loader swapped underneath us: whatever this one found is no longer anybody's answer.
+        if (mine !== era) return api;
+        loading = null;
+        if (got instanceof Error) { broken = got.message; brokenAt = Date.now(); grumble(got.message); return null; }
+        broken = ""; api = got;
+        return api;
+      });
+      return loading;
+    }
+
+    const at = (f, path) => f.ref(f.db, path);
+    return {
+      /* Exposed for the diagnostics panel and for the two-device test: "sdk" only once the module is
+         actually running, so a claim on screen is never ahead of the truth. */
+      get state() { return api ? "sdk" : broken ? "rest (" + broken + ")" : "loading"; },
+      /* Tests hand in their own loader. Nothing else should. Bumping the era is what stops a load
+         already in flight from landing on top of the one this starts. */
+      useLoader(fn) { bring = fn; era++; loading = null; api = null; broken = ""; brokenAt = 0; },
+      async get(path) {
+        const f = await load();
+        if (!f) return firebase.get(path);
+        return (await f.get(at(f, path))).val();
+      },
+      async put(path, value) {
+        const f = await load();
+        if (!f) return firebase.put(path, value);
+        // The SDK writes null as a deletion too, so "gone" means the same thing in all three backends.
+        await f.set(at(f, path), value === undefined ? null : value);
+        return value;
+      },
+      async patch(path, obj) {
+        const f = await load();
+        if (!f) return firebase.patch(path, obj);
+        await f.update(at(f, path), obj);
+        return obj;
+      },
+      async push(path, value) {
+        const f = await load();
+        if (!f) return firebase.push(path, value);
+        const made = f.push(at(f, path), value);
+        await made;
+        return made.key;
+      },
+      async del(path) {
+        const f = await load();
+        if (!f) return firebase.del(path);
+        await f.remove(at(f, path));
+        return true;
+      },
+      /* Watching has to hand back a canceller SYNCHRONOUSLY — the caller keeps it in a list and calls
+         it when the table closes, possibly before the module has even arrived. So the unsubscribe is a
+         box that is filled in later, and a table left in the first second still stops listening. */
+      watch(path, cb) {
+        let off = null, dropped = false, again = null;
+        const listen = () => {
+          load().then((f) => {
+            if (dropped) return;
+            if (!f) { off = firebase.watch(path, cb); return; }
+            off = f.onValue(at(f, path), (snap) => {
+              try { cb(snap.val()); } catch { /* a broken watcher must not kill the connection */ }
+            }, (err) => {
+              /* The library reconnects a dropped socket by itself; THIS is the other kind — the read was
+                 cancelled outright, and the listener is now dead and will never fire again. The table
+                 opens exactly one of these, so a silent one is a board that quietly stops updating and
+                 says nothing. The REST watchdog reopened; so does this, at a rate that cannot spin. */
+              off = null;
+              try { console.warn("live: the table's listener was cancelled — " + (err && err.message)); }
+              catch { /* no console */ }
+              if (!dropped) again = setTimeout(listen, 30000);
+            });
+          }).catch(() => { /* load() answers rather than throwing; a bad path must not be an unhandled one */ });
+        };
+        listen();
+        return () => {
+          dropped = true;
+          if (again) clearTimeout(again);
+          if (off) { try { off(); } catch { /* already gone */ } }
+          off = null;
+        };
+      },
+      /* The database's own dead-man's switch: it promises to delete this path the moment the socket
+         drops, however it drops. REST has no such thing, which is why presence is a heartbeat today.
+         Returns false when it is not available, so a caller can keep the heartbeat instead. */
+      async onGone(path) {
+        const f = await load();
+        if (!f || !f.onDisconnect) return false;
+        await f.onDisconnect(at(f, path)).remove();
+        return true;
+      },
+    };
+  })();
+
+  /* ------------------------------------------------------------------ which cloud transport */
+
+  /* `?transport=sdk` on the address beats config.js, which beats the default. The point of the switch
+     is that the swap can be PROVEN on the deployed site — the two-device test runs the whole session
+     both ways against the same database — instead of being argued about. */
+  function chosenTransport() {
+    try {
+      // Every shareable address in this app is a HASH one, so "#/table/482910?transport=sdk" is the
+      // natural thing to paste and it puts the query inside the hash where `location.search` cannot
+      // see it. Both places are read, the hash first, or the switch works only for the test.
+      const inHash = location.hash.includes("?") ? location.hash.slice(location.hash.indexOf("?")) : "";
+      const asked = new URLSearchParams(inHash).get("transport")
+        || new URLSearchParams(location.search).get("transport");
+      if (asked === "sdk" || asked === "rest") return asked;
+    } catch { /* no location, or no search: a test environment */ }
+    return cfg.transport === "sdk" || cfg.transport === "rest" ? cfg.transport : "rest";
+  }
+  let transport = chosenTransport();
+  const cloud = () => (transport === "sdk" ? sdk : firebase);
+
+  let backend = mode === "firebase" ? cloud() : local;
 
   /* ------------------------------------------------------------------ coalesced writes */
 
@@ -286,12 +464,30 @@ const CocLive = (() => {
   return {
     get mode() { return mode; },
     get isCloud() { return mode === "firebase"; },
+    /* Which cloud transport is CHOSEN, and what it is actually doing — they differ for the second or
+       two the module takes to arrive, and the diagnostics panel should say which. */
+    get transport() { return transport; },
+    get transportState() {
+      // Offline, no cloud transport is reached at all — saying "sdk (loading)" forever would be a
+      // diagnostic that lies, and a lying diagnostic costs a debugging round.
+      if (mode !== "firebase") return "local";
+      return transport === "sdk" ? sdk.state : "rest";
+    },
     /* Tests and local play force the offline tree; nothing else should call this. */
     setMode(next) {
       flush();
       mode = next === "firebase" && cfg.firebaseUrl ? "firebase" : "local";
-      backend = mode === "firebase" ? firebase : local;
+      backend = mode === "firebase" ? cloud() : local;
       return mode;
+    },
+    /* Swapping transport mid-session is for the tests and the address bar, not for the app: a table
+       already open keeps the watchers it opened. `loader` is a test's stand-in for the CDN. */
+    setTransport(next, loader) {
+      flush();
+      if (loader) sdk.useLoader(loader);
+      transport = next === "sdk" ? "sdk" : "rest";
+      if (mode === "firebase") backend = cloud();
+      return transport;
     },
     get(path) { return backend.get(path); },
     put(path, value) { cancelPending(path); return backend.put(path, value); },
@@ -299,6 +495,9 @@ const CocLive = (() => {
     push(path, value) { return backend.push(path, value); },
     del(path) { cancelPending(path); return backend.del(path); },
     watch(path, cb) { return backend.watch(path, cb); },
+    /* "Delete this when I disappear." Only the SDK can promise it — everything else answers false, and
+       a caller that gets false keeps saying "I am still here" on a timer instead. */
+    onGone(path) { return backend.onGone ? backend.onGone(path) : Promise.resolve(false); },
     throttled,
     flush,
     newId: pushId,

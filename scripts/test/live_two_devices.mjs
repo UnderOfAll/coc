@@ -8,8 +8,15 @@
 // connection a browser will open to one host over HTTP/1.1, so a player joined and their token and
 // presence writes hung forever with nothing on screen to say so. Local mode has no connection limit,
 // which is exactly why it could not see it.
+//
+// It runs against EITHER cloud transport, so the swap can be proved rather than argued about:
+//   npm run test:2dev            the REST layer, as the site is configured
+//   npm run test:2dev:sdk        the same session, same database, through Firebase's own library
+// Every assertion below reads the REAL database over REST whatever the browsers are using, so a pass
+// means the data genuinely arrived and not merely that the page believes it did.
 import puppeteer from "puppeteer";
-const SITE = "https://underofall.github.io/coc/index.html";
+const TRANSPORT = process.env.TRANSPORT === "sdk" ? "sdk" : "";
+const SITE = "https://underofall.github.io/coc/index.html" + (TRANSPORT ? "?transport=" + TRANSPORT : "");
 const DB = "https://circus-of-chaos-78122-default-rtdb.europe-west1.firebasedatabase.app";
 const ROOM = "999123", CHAR = "999321", DMKEY = "987654";
 let fails = 0;
@@ -43,6 +50,8 @@ const open = async (label, w, h) => {
 console.log("\n— the DM opens a table on the live site —");
 const dm = await open("dm", 1280, 900);
 ok(await dm.page.evaluate(() => CocLive.isCloud), "the deployed site is in cloud mode, not offline");
+const wanted = TRANSPORT || "rest";
+ok(await dm.page.evaluate((t) => CocLive.transport === t, wanted), `over the ${wanted} transport`);
 await dm.page.evaluate(() => { location.hash = "#/table"; });
 await wait(600);
 await dm.page.evaluate((r, k) => {
@@ -134,6 +143,12 @@ await wait(2500);
 const dmLog = await dm.page.evaluate(() => document.querySelector("#vtt-lastroll").textContent);
 // The bar lays the roll out (who / dice / total) rather than writing a sentence, so this asserts the parts.
 ok(/^Live Test/.test(dmLog.trim()) && /\d/.test(dmLog), "and the DM read the result: " + dmLog.trim().replace(/\s+/g, " "));
+
+// A silent fall back to REST must not pass as a run of the library: everything above would still be
+// green, and the swap would be "proved" by the transport it was meant to replace.
+const running = await Promise.all([dm.page.evaluate(() => CocLive.transportState),
+                                   pl.page.evaluate(() => CocLive.transportState)]);
+ok(running.every((s) => s === wanted), `both devices really ran on ${wanted} (${running.join(", ")})`);
 
 ok(dm.errs.length === 0 && pl.errs.length === 0, "no page errors on either device" +
   ([...dm.errs, ...pl.errs].length ? ": " + [...dm.errs, ...pl.errs][0] : ""));

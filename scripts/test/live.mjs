@@ -140,6 +140,104 @@ ok(calls[2].method === "DELETE", "del -> DELETE");
 const pushed = await peek(`CocLive.push("tables/482910/log", { text: "hi" })`);
 ok(pushed === "generated-key", "push uses the key the database mints");
 
+console.log("\n— THE SDK TRANSPORT —");
+// The library itself cannot be fetched here, and should not have to be: what this proves is the part
+// that is MINE — that choosing "sdk" really routes every verb through the library instead of REST, that
+// a watcher cancelled before the module lands never subscribes, and that a CDN that cannot be reached
+// falls back to REST rather than leaving a table with no transport at all. That the library then talks
+// to the real database correctly is what `npm run test:2dev` is for.
+peek(`
+  window.__sdk = { calls: [], watchers: [], gone: [], app: null };
+  const rec = (what, path, value) => window.__sdk.calls.push({ what, path, value });
+  window.__fakeDb = {
+    getDatabase: (app, url) => ({ app, url }),
+    ref: (db, path) => ({ db, path }),
+    get: async (r) => { rec("get", r.path); return { val: () => ({ name: "read by the sdk" }) }; },
+    set: async (r, v) => rec("set", r.path, v),
+    update: async (r, v) => rec("update", r.path, v),
+    push: (r, v) => { rec("push", r.path, v); const p = Promise.resolve({ key: "sdk-key" }); p.key = "sdk-key"; return p; },
+    remove: async (r) => rec("remove", r.path),
+    onValue: (r, cb) => { const w = { path: r.path, cb, off: false }; window.__sdk.watchers.push(w); return () => { w.off = true; }; },
+    onDisconnect: (r) => ({ remove: async () => { window.__sdk.gone.push(r.path); } }),
+  };
+  window.__fakeApp = { initializeApp: (opts, name) => { window.__sdk.app = { opts, name }; return window.__sdk.app; } };
+  window.__loader = async (url) => (/firebase-app/.test(url) ? window.__fakeApp : window.__fakeDb);
+  window.__fetches = [];
+  CocLive.setTransport("sdk", window.__loader);
+`);
+ok(peek(`CocLive.transport`) === "sdk", "the cloud can be reached through the SDK instead");
+ok(peek(`CocLive.transportState`) === "loading", "and says so honestly before the module has arrived");
+const readBack = await peek(`CocLive.get("tables/482910/meta")`);
+ok(readBack && readBack.name === "read by the sdk", "a read comes back through the library");
+ok(peek(`CocLive.transportState`) === "sdk", "which is running once the first call has loaded it");
+ok(peek(`window.__sdk.app.opts.databaseURL`) === "https://example-rtdb.firebasedatabase.app",
+  "pointed at the same database as REST was");
+ok(peek(`window.__sdk.app.name`) === "circus-of-chaos", "under a name of its own, colliding with nothing");
+await peek(`CocLive.put("tables/482910/meta/name", "Cloud")`);
+await peek(`CocLive.patch("tables/482910/meta", { activeScene: "s2" })`);
+await peek(`CocLive.del("tables/482910/tokens/t9")`);
+const sdkKey = await peek(`CocLive.push("tables/482910/log", { text: "hi" })`);
+const verbs = JSON.parse(peek(`JSON.stringify(window.__sdk.calls)`));
+ok(verbs[1].what === "set" && verbs[1].path === "tables/482910/meta/name" && verbs[1].value === "Cloud",
+  "put -> set on the path, with the value");
+ok(verbs[2].what === "update", "patch -> update");
+ok(verbs[3].what === "remove", "del -> remove");
+ok(verbs[4].what === "push", "push -> push");
+ok(sdkKey === "sdk-key", "and the key the library minted comes back");
+ok(peek(`window.__fetches.length`) === 0, "and not one of them went out over REST");
+// Deleting still means deleting, whichever backend is underneath.
+await peek(`CocLive.put("tables/482910/meta/activeScene", null)`);
+ok(JSON.parse(peek(`JSON.stringify(window.__sdk.calls.slice(-1)[0])`)).value === null,
+  "writing null is still a deletion");
+ok((await peek(`CocLive.onGone("tables/482910/presence/me")`)) === true
+  && peek(`window.__sdk.gone[0]`) === "tables/482910/presence/me",
+  "the database will delete a path for us when the socket drops");
+
+peek(`window.__off2 = CocLive.watch("tables/482910/tokens", (v) => { window.__sdkSaw = v; });`);
+await wait(20);
+ok(peek(`window.__sdk.watchers.length`) === 1, "watching subscribes once");
+peek(`window.__sdk.watchers[0].cb({ val: () => ({ t1: { x: 4 } }) });`);
+ok(peek(`window.__sdkSaw.t1.x`) === 4, "and hands the caller the value, exactly as the streams did");
+peek(`window.__off2();`);
+ok(peek(`window.__sdk.watchers[0].off`) === true, "unsubscribing lets go");
+// The one that is easy to get wrong: the canceller is handed back before the module exists.
+peek(`CocLive.watch("tables/482910/log", () => {})();`);
+await wait(20);
+ok(peek(`window.__sdk.watchers.length`) === 1, "a watcher dropped before the module lands never subscribes");
+
+// A CDN that cannot be reached must not take the table with it.
+peek(`window.__warned = []; window.console.warn = (...a) => window.__warned.push(a.join(" "));
+  window.__fetches = [];
+  CocLive.setTransport("sdk", async () => { throw new Error("blocked"); });`);
+await peek(`CocLive.put("tables/482910/meta/name", "Fallen back")`);
+ok(peek(`window.__fetches.length`) === 1 && JSON.parse(peek(`JSON.stringify(window.__fetches[0])`)).method === "PUT",
+  "a library that will not load falls back to REST");
+ok(peek(`CocLive.transportState`) === "rest (blocked)", "and the diagnostics say why");
+ok(peek(`window.__warned.length`) === 1, "once, out loud, rather than silently");
+peek(`window.__seenFallback = null;
+  CocLive.watch("tables/482910/tokens", (v) => { window.__seenFallback = v; });`);
+await wait(20);
+ok(peek(`window.__sources.length`) === 2, "and a watcher opens a stream the old way instead");
+
+// The failure that actually strands a table is the one that never fails: a captive portal or a proxy that
+// accepts the connection and then answers nothing. No `catch` ever runs, so without a deadline every call
+// in this file waits on it — the join, the first read, the table's one watcher — and the room says
+// "Knocking…" until the browser gives up minutes later, with nothing on screen to say why.
+console.log("  (sitting out the load deadline — eight seconds)");
+peek(`window.__warned = []; window.__fetches = [];
+  CocLive.setTransport("sdk", () => new Promise(() => {}));`);
+const stranded = Date.now();
+await peek(`CocLive.get("tables/482910/meta")`);
+const waited = Date.now() - stranded;
+ok(waited > 7000 && waited < 12000, `a library that never answers is given up on (${(waited / 1000).toFixed(1)}s)`);
+ok(peek(`CocLive.transportState`) === "rest (timed out)", "and the table carries on the old way");
+ok(peek(`window.__fetches.length`) === 1, "with the read actually made, rather than left hanging");
+
+// Offline is offline: claiming a cloud transport there is a diagnostic that lies.
+peek(`CocLive.setMode("local");`);
+ok(peek(`CocLive.transportState`) === "local", "and offline says offline, whatever transport was picked");
+peek(`CocLive.setTransport("rest"); CocLive.setMode("firebase");`);
+
 console.log("\njsdom errors: " + errs.length); errs.slice(0, 6).forEach((e) => console.log("  " + e));
 console.log(fails || errs.length ? "\nFAILURES: " + fails : "\nALL GREEN");
 process.exit(fails || errs.length ? 1 : 0);
