@@ -163,9 +163,18 @@ ok(has3d, "there is a switch for them, per device");
 // throw of a session is a real one — it used to take a warm-up roll and that read as a broken feature.
 ok(await dm.page.evaluate(() => !!dice3dBox), "the physics was fetched when the table opened");
 await dm.page.evaluate(() => document.querySelector('[data-tbl="roll-pool"]').click());
-// Read them while they are ON THE TABLE. They settle after a couple of seconds and are swept a couple
-// of seconds after that, and the library forgets the throw the moment its scene is emptied.
-await wait(3500);
+/* Waited for, not slept through. The dice take two to four seconds to settle depending on the machine,
+   and they are swept a couple of seconds after that — so a fixed sleep is either too early to see them
+   land or too late to see them at all. This waits for the throw to be recorded and then looks. */
+for (let i = 0; i < 40; i++) {
+  const done = await dm.page.evaluate(() => {
+    const log = Object.values(tbl.data.log || {}).sort((a, b) => (a.t || 0) - (b.t || 0));
+    const last = log[log.length - 1] || {};
+    return typeof dice3dLanded !== "undefined" && dice3dLanded.t === last.t && dice3dLanded.faces.length > 0;
+  });
+  if (done) break;
+  await wait(400);
+}
 // Not "did a canvas appear" — that is true of a box that never throws. Read the faces the physics
 // actually settled on, out of the library itself, and hold them against the roll in the shared log.
 const solid = await dm.page.evaluate(() => {
