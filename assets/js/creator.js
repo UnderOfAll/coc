@@ -1126,7 +1126,7 @@ function vitals(d, p) {
         <div class="hp-head"><h2>Hit points</h2>
           <div class="hp-num ${state}"><strong>${esc(p.hp)}</strong><span>/ ${esc(d.hpMax)}</span>
             ${p.tempHp ? `<em>+${esc(p.tempHp)} temp</em>` : ""}</div></div>
-        <div class="hp-bar"><div class="hp-fill ${state}" style="width:${pct}%"></div></div>
+        <div class="hp-bar"><div class="hp-fill ${state}" style="transform:scaleX(${pct / 100})"></div></div>
         <div class="hp-controls">
           <input id="hp-amt" class="num" type="number" min="1" value="${esc(ui.hpAmt)}" />
           <button class="btn-quiet" data-act="dmg">Damage</button>

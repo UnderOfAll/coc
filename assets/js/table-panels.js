@@ -700,7 +700,7 @@ function figureInfoHTML(id) {
     ${t.image ? `<img class="figure-art" src="${esc(t.image)}" alt="" />` : ""}
     ${showHp && t.hpMax ? `<div class="hp-head"><span class="panel-sub">Hit points</span>
         <div class="hp-num ${pct <= 25 ? "hurt" : ""}"><strong>${esc(t.hp)}</strong><span>/ ${esc(t.hpMax)}</span></div></div>
-      <div class="hp-bar"><div class="hp-fill ${pct <= 25 ? "hurt" : ""}" style="width:${pct}%"></div></div>`
+      <div class="hp-bar"><div class="hp-fill ${pct <= 25 ? "hurt" : ""}" style="transform:scaleX(${pct / 100})"></div></div>`
       : showHp ? `<p class="muted">No hit points recorded for this one.</p>`
       : `<p class="muted">How badly hurt it is, is the DM's to know.</p>`}
     <p class="panel-sub">Conditions</p>

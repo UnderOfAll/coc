@@ -16,6 +16,25 @@
 
 * { box-sizing: border-box; }
 
+/* MARKED BLOCKS. Nine components carried a 3px coloured `border-left` — a compendium card, a class
+   field, a key stat, a narration, a menu card, a headline number, a feature card, and the two critical
+   rolls. It is the most recognisable tell of an interface nobody designed, and having written it nine
+   times I had stopped seeing it.
+   What it was doing is worth keeping: saying "this block belongs to something". So the colour stays and
+   the bar goes. A wash bleeding in from the leading edge and a hairline tinted from the same hue carry
+   it instead — visible at a glance, and reading as material rather than as a tab stuck on the side.
+   Each block names its colour in `--mark` and declares no border of its own.
+   The plain border comes FIRST as a fallback: the tinted one is a `color-mix()` inside a shorthand, and
+   a browser that cannot parse it drops the whole declaration — which would leave these blocks with no
+   border at all rather than a duller one. */
+.card, .class-field, .key-stat, .narration, .kn, .feat-card, .menu-card,
+.pick.on, .sub-card.on, .last-roll.nat20, .last-roll.nat1, .roll-line.nat20, .roll-line.nat1 {
+  border: 1px solid var(--border);
+  border-color: color-mix(in srgb, var(--mark, var(--gold)) 26%, var(--border));
+  background-image: linear-gradient(90deg,
+    color-mix(in srgb, var(--mark, var(--gold)) 14%, transparent), transparent 45%);
+}
+
 /* Grid tracks are written minmax(min(Xrem, 100%), 1fr) throughout. A bare minmax(Xrem, 1fr) keeps
    its Xrem floor even when the container is NARROWER than that, so on a phone the grid silently
    pushes the page wider than the screen and the browser zooms out to compensate. */
@@ -42,6 +61,27 @@ body {
                               the sticky top bar. */
 }
 
+/* THE SURFACES NOBODY DRAWS. Selection, the caret, the scrollbar, the focus ring and the numerals in
+   a table all ship with browser defaults that belong to no design system — and on a dark, gold-on-near
+   -black page a stock blue selection band is the one thing on screen that came from somewhere else.
+   Cheap to theme, and it is the difference between a page that was built and one that was assembled. */
+::selection { background: color-mix(in srgb, var(--gold) 34%, transparent); color: var(--text); }
+input, textarea { caret-color: var(--gold); }
+:root { accent-color: var(--gold); color-scheme: dark; }
+* { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px;
+  border: 3px solid transparent; background-clip: content-box; }
+*::-webkit-scrollbar-thumb:hover { background: var(--muted); background-clip: content-box; }
+/* One focus ring for everything that does not draw its own, so tabbing through never lands on the
+   platform's blue halo. */
+:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; border-radius: 3px; }
+/* Numbers that sit in columns — hit points, ability scores, a roll's total — line up digit over digit
+   rather than drifting with the width of a 1. */
+.kn-v, .ab-score, .ab-mod, .roll-card-total, .roll-total, .hp-num, .sheet-code strong, .pip-die,
+.lv-v, .step-val { font-variant-numeric: tabular-nums; }
+
 /* Top bar */
 .topbar {
   position: sticky; top: 0; z-index: 40;
@@ -53,7 +93,12 @@ body {
   border-bottom: 2px solid var(--accent);
 }
 .brand { display: flex; align-items: baseline; gap: 0.5rem; }
-.brand-mark { color: var(--accent-soft); font-size: 1.4rem; }
+/* One icon family: a 24-unit grid, a 1.5 stroke, round ends, currentColor. Every mark in this app is
+   drawn on it — which is the whole reason none of them are emoji any more. A dingbat arrives in
+   whatever face the device has, at whatever weight, and no two of them agree. */
+.icon { width: 1.5rem; height: 1.5rem; flex-shrink: 0; display: block;
+  fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.brand-mark { color: var(--accent-soft); width: 1.35rem; height: 1.35rem; }
 .brand-name { font-family: var(--serif); font-size: 1.5rem; letter-spacing: 0.5px; }
 .brand-sub { color: var(--muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 2px; }
 .search {
@@ -137,21 +182,22 @@ body {
 .content { flex: 1; min-width: 0; padding: 1.5rem 2rem; }
 h1 { font-family: var(--serif); font-weight: 600; margin: 0 0 1.25rem; }
 .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(230px, 100%), 1fr)); gap: 1rem; }
+/* Capped at a readable measure. The list is one wide column on a desktop, so a summary was running to
+   about a hundred characters a line and the eye lost its place on the way back. */
 .card-summary {
-  margin: 0.45rem 0 0; font-size: 0.85rem; color: var(--muted); line-height: 1.45;
+  margin: 0.45rem 0 0; font-size: 0.85rem; color: var(--muted); line-height: 1.45; max-width: 72ch;
   display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
 }
 .card-summary mark { background: rgba(201,165,78,0.32); color: var(--text); padding: 0 2px; border-radius: 3px; }
 .card {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--accent);
+  background-color: var(--panel);
+  --mark: var(--accent);
   border-radius: var(--radius);
   padding: 1rem;
   cursor: pointer;
   transition: transform 0.12s, border-color 0.12s;
 }
-.card:hover { transform: translateY(-2px); border-left-color: var(--gold); }
+.card:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--gold) 55%, var(--border)); }
 .card h3 { margin: 0 0 0.35rem; font-family: var(--serif); font-size: 1.15rem; }
 .card .meta { color: var(--muted); font-size: 0.87rem; }
 .card .tag {
@@ -230,7 +276,7 @@ h1 { font-family: var(--serif); font-weight: 600; margin: 0 0 1.25rem; }
 .level-title {
   margin: 0 0 0.6rem; font-family: var(--sans); font-size: 0.78rem; font-weight: 600;
   text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted);
-  border-left: 2px solid var(--gold); padding-left: 0.6rem;
+  border-left: 1px solid color-mix(in srgb, var(--gold) 60%, var(--border)); padding-left: 0.6rem;
 }
 
 /* Trick tier badge (Pledge / Turn / Prestige) + the trick's in-world flavor line */
@@ -266,11 +312,12 @@ h1 { font-family: var(--serif); font-weight: 600; margin: 0 0 1.25rem; }
 /* Classes tab: full-width field per class, with an open-arrow button */
 .class-field {
   display: flex; align-items: center; gap: 1rem;
-  background: var(--panel); border: 1px solid var(--border); border-left: 3px solid var(--accent);
+  background-color: var(--panel); --mark: var(--accent);
   border-radius: var(--radius); padding: 1rem 1.15rem; cursor: pointer;
   transition: transform 0.12s ease, border-color 0.12s ease;
 }
-.class-field:hover { transform: translateY(-1px); border-left-color: var(--gold); }
+.class-field:hover { transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--gold) 55%, var(--border)); }
 .class-field-main { flex: 1; min-width: 0; }
 .class-field h3 { margin: 0 0 0.35rem; font-family: var(--serif); font-size: 1.3rem; }
 .class-field-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
@@ -355,7 +402,7 @@ h1 { font-family: var(--serif); font-weight: 600; margin: 0 0 1.25rem; }
   gap: 0.75rem; margin-bottom: 1.75rem;
 }
 .key-stat {
-  background: var(--panel); border: 1px solid var(--border); border-left: 3px solid var(--gold);
+  background-color: var(--panel); --mark: var(--gold);
   border-radius: var(--radius); padding: 0.7rem 0.9rem;
 }
 .key-stat .label { color: var(--gold); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1px; }
@@ -455,8 +502,10 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 .view-toggle .toggle-btn { padding: 0.18rem 0.6rem; font-size: 0.83rem; }
 .narration {
   margin: 0.5rem 0 0; padding: 0.75rem 0.9rem;
-  border-left: 3px solid var(--gold); background: var(--panel-2);
-  border-radius: 0 6px 6px 0; font-style: italic; line-height: 1.65;
+  --mark: var(--gold); background-color: var(--panel-2);
+  /* Flat down the leading edge, rounded away from it: a block that has been quoted out of the rules
+     rather than another panel. */
+  border-radius: 0 var(--radius) var(--radius) 0; font-style: italic; line-height: 1.65;
 }
 
 /* A nested group inside a group: a subclass's granted tricks under its class (MECHANICS §4.9d),
@@ -464,7 +513,7 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 .ladder { display: block; }
 .sub-block {
   margin-top: 1.25rem; padding-left: 0.9rem;
-  border-left: 2px solid var(--gold);
+  border-left: 1px solid color-mix(in srgb, var(--gold) 60%, var(--border));
 }
 .sub-title {
   font-family: var(--serif); color: var(--gold);
@@ -536,21 +585,42 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
    an explicit width the box falls back to fit-content — which is min-content when the content
    cannot fit — so it grew WIDER than the screen and took the whole page with it, while the top bar
    (no auto margins, so still stretched) stayed at 360px. That is the black gap on the phone. */
-.menu-view { width: 100%; max-width: 60rem; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; }
-.menu-hero { text-align: center; margin-bottom: 2.5rem; }
-.menu-hero h1 { font-family: var(--serif); font-size: clamp(2rem, 6vw, 3.2rem); margin: 0 0 0.6rem; }
-.menu-tagline { color: var(--muted); max-width: 38rem; margin: 0 auto; line-height: 1.7; }
-.menu-cards { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr)); }
+.menu-view { width: 100%; max-width: 60rem; margin: 0 auto; padding: 4rem 1.25rem 4rem; }
+/* More air above the title than below it, and the tagline held close to the thing it explains: the
+   two used to sit in one evenly-spaced block, which reads as three unrelated lines. */
+.menu-hero { text-align: center; margin-bottom: 3rem; }
+.menu-hero h1 { font-family: var(--serif); font-size: clamp(2.1rem, 6vw, 3.4rem); margin: 0 0 0.75rem;
+  letter-spacing: -0.015em; line-height: 1.05; text-wrap: balance; }
+.menu-tagline { color: var(--muted); max-width: 38rem; margin: 0 auto; line-height: 1.7;
+  text-wrap: pretty; }
+/* Two by two. `auto-fit` put three across and left the fourth alone on its own row, which reads as
+   something having gone wrong rather than as a set of four. */
+.menu-cards { display: grid; gap: 0.85rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .menu-card {
-  display: flex; flex-direction: column; gap: 0.35rem;
-  padding: 1.4rem 1.2rem; background: var(--panel); border: 1px solid var(--border);
-  border-left: 3px solid var(--accent); border-radius: var(--radius);
-  text-decoration: none; color: inherit; transition: border-color 0.15s ease, transform 0.15s ease;
+  display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto;
+  column-gap: 0.9rem; row-gap: 0.25rem; align-items: start;
+  padding: 1.15rem 1.2rem; background-color: var(--panel); --mark: var(--accent);
+  border-radius: var(--radius);
+  text-decoration: none; color: inherit;
+  transition: border-color 0.18s ease, background-color 0.18s ease, transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.menu-card:hover, .menu-card:focus-visible { border-color: var(--gold); transform: translateY(-2px); }
-.menu-icon { font-size: 1.6rem; color: var(--gold); line-height: 1; }
-.menu-card-title { font-family: var(--serif); font-size: 1.15rem; }
-.menu-card-sub { color: var(--muted); font-size: 0.90rem; line-height: 1.5; }
+/* The icon sits in a plate of its own so it reads as a mark rather than as a stray character, and it
+   spans both rows so the title and its line are a block beside it. */
+.menu-icon { grid-row: span 2; display: grid; place-items: center; width: 2.9rem; height: 2.9rem;
+  margin-top: 0.1rem;
+  border-radius: calc(var(--radius) - 2px); color: var(--gold);
+  background: color-mix(in srgb, var(--gold) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--gold) 20%, transparent);
+  transition: background-color 0.18s ease, border-color 0.18s ease; }
+.menu-card:hover, .menu-card:focus-visible {
+  border-color: color-mix(in srgb, var(--gold) 55%, var(--border));
+  background-color: var(--panel-2); transform: translateY(-2px); }
+.menu-card:hover .menu-icon, .menu-card:focus-visible .menu-icon {
+  background: color-mix(in srgb, var(--gold) 17%, transparent);
+  border-color: color-mix(in srgb, var(--gold) 38%, transparent); }
+.menu-card-title { font-family: var(--serif); font-size: 1.15rem; align-self: end; }
+.menu-card-sub { color: var(--muted); font-size: 0.90rem; line-height: 1.5; align-self: start;
+  text-wrap: pretty; }
 /* 64rem was borrowed from the compendium, where a column of prose SHOULD be narrow. The creator, the
    sheet and the table are not prose — they are forms and a board, and on a 1400px screen that cap left
    a third of the window empty with everything squeezed into the middle. Wider for those, and the table
@@ -572,9 +642,9 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 .pick-grid { display: grid; gap: 0.6rem; grid-template-columns: repeat(auto-fit, minmax(min(13rem, 100%), 1fr)); }
 .pick { display: flex; flex-direction: column; gap: 0.2rem; text-align: left; cursor: pointer;
   padding: 0.7rem 0.8rem; background: var(--panel-2); color: inherit;
-  border: 1px solid var(--border); border-left: 3px solid transparent; border-radius: var(--radius); }
+  border: 1px solid var(--border); border-radius: var(--radius); }
 .pick:hover { border-color: var(--gold); }
-.pick.on { border-left-color: var(--gold); background: rgba(201,165,78,0.1); }
+.pick.on { --mark: var(--gold); background-color: rgba(201,165,78,0.08); }
 .pick-title { font-family: var(--serif); font-size: 1rem; }
 .pick-sub { font-size: 0.81rem; color: var(--gold); }
 .pick-flavor { font-size: 0.83rem; color: var(--muted); line-height: 1.4; }
@@ -695,7 +765,11 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 .hp-num.hurt strong { color: var(--accent-soft); } .hp-num.down strong { color: var(--accent); }
 .hp-num em { color: var(--gold); font-style: normal; margin-left: 0.4rem; font-size: 0.89rem; }
 .hp-bar { height: 8px; background: var(--panel-2); border-radius: 999px; overflow: hidden; margin: 0.5rem 0 0.7rem; }
-.hp-fill { height: 100%; background: var(--ok); transition: width 0.2s ease; }
+/* Scaled, not widthed. Animating `width` lays the bar out every frame; a transform does not touch
+   layout at all. (The transition is for the day these panels are patched rather than rebuilt — today
+   the node is replaced wholesale on every save, so there is nothing to animate FROM.) */
+.hp-fill { height: 100%; width: 100%; background: var(--ok); transform-origin: left center;
+  transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1); }
 .hp-fill.hurt { background: var(--accent-soft); } .hp-fill.down { background: var(--accent); }
 .hp-controls { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
 .warn { color: var(--accent-soft); font-size: 0.92rem; }
@@ -743,8 +817,7 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
    it and the working-out under that. The old layout put a small grey label on top of a smaller
    number and read like a spreadsheet. */
 .kn-grid { display: grid; gap: 0.55rem; grid-template-columns: repeat(auto-fill, minmax(min(8.5rem, 100%), 1fr)); }
-.kn { min-width: 0; background: var(--panel-2); border: 1px solid var(--border);
-  border-left: 3px solid var(--gold); border-radius: var(--radius);
+.kn { min-width: 0; background-color: var(--panel-2); --mark: var(--gold); border-radius: var(--radius);
   padding: 0.6rem 0.7rem; text-align: center; overflow-wrap: break-word; }
 .kn-v { display: block; font-family: var(--serif); font-size: 1.6rem; font-weight: 600; color: var(--gold); line-height: 1.1; }
 .kn-l { display: block; margin-top: 0.25rem; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1px; }
@@ -787,8 +860,8 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 .feat-grid { display: grid; gap: 0.6rem;
   grid-template-columns: repeat(auto-fit, minmax(min(17rem, 100%), 1fr)); }
 .feat-card { display: flex; flex-direction: column; gap: 0.35rem; min-width: 0;
-  padding: 0.7rem 0.8rem; background: var(--panel-2); border: 1px solid var(--border);
-  border-left: 3px solid var(--gold); border-radius: var(--radius); }
+  padding: 0.7rem 0.8rem; background-color: var(--panel-2); --mark: var(--gold);
+  border-radius: var(--radius); }
 .feat-title { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: baseline; }
 .feat-name { font-weight: 600; }
 .feat-from { margin: 0; font-size: 0.80rem; color: var(--muted); }
@@ -852,7 +925,8 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
    everything becomes a single column with touch-sized controls.
    ============================================================ */
 @media (max-width: 760px) {
-  .menu-view { padding: 1.5rem 1rem 3rem; }
+  .menu-view { padding: 2rem 1rem 3rem; }
+  .menu-cards { grid-template-columns: minmax(0, 1fr); }
   .tool-view { padding: 0 0.9rem 3rem; }
   .step, .panel { padding: 0.9rem 0.85rem; }
   .pick-grid { grid-template-columns: 1fr; }
@@ -958,9 +1032,9 @@ input.step-val { width: 3.4rem; }
 .chev { margin-left: auto; color: var(--muted); font-family: var(--serif); font-size: 1.10rem; }
 .feat-body { padding: 0.2rem 0 0.3rem; }
 .sub-card { display: flex; flex-direction: column; gap: 0.4rem; padding: 0.7rem 0.85rem;
-  background: var(--panel-2); border: 1px solid var(--border); border-left: 3px solid transparent;
+  background: var(--panel-2); border: 1px solid var(--border);
   border-radius: var(--radius); min-width: 0; }
-.sub-card.on { border-left-color: var(--gold); background: rgba(201, 165, 78, 0.1); }
+.sub-card.on { --mark: var(--gold); background-color: rgba(201, 165, 78, 0.08); }
 .sub-card .btn, .sub-card .btn-quiet { align-self: flex-start; }
 .lu-list li { margin-bottom: 0.6rem; }
 .lu-sum { display: block; color: var(--muted); font-size: 0.89rem; line-height: 1.55; margin-top: 0.15rem; }
@@ -1104,7 +1178,7 @@ body:has(.vtt) { height: 100dvh; overflow: hidden; }
    still readable around it, rather than being lifted to the top of the panel away from where it was
    tapped. The panel inside loses its own frame — it is already inside one. */
 .caret { display: inline-block; width: 0.8em; color: var(--muted); }
-.figure-open { margin: 0 0 0.5rem 0.6rem; padding-left: 0.7rem; border-left: 2px solid var(--gold); }
+.figure-open { margin: 0 0 0.5rem 0.6rem; padding-left: 0.7rem; border-left: 1px solid color-mix(in srgb, var(--gold) 60%, var(--border)); }
 .figure-open .panel { margin: 0; padding: 0.2rem 0 0.4rem; background: none; border: none; box-shadow: none; }
 .figure-open .panel h2 { margin-top: 0; }
 .grid-row { display: flex; flex-wrap: wrap; gap: 0.8rem; align-items: flex-end; margin: 0.6rem 0; }
@@ -1126,11 +1200,13 @@ body:has(.vtt) { height: 100dvh; overflow: hidden; }
 .last-roll .roll-card-total { margin-left: auto; }
 /* A natural 20 and a natural 1 are the two results a table reacts to, so they are the two the log
    shows without being read. */
-.last-roll.nat20, .roll-line.nat20 { border-left: 3px solid var(--ok); color: var(--text); }
-.last-roll.nat1, .roll-line.nat1 { border-left: 3px solid var(--accent); color: var(--text); }
+.last-roll.nat20, .roll-line.nat20 { --mark: var(--ok); color: var(--text); }
+.last-roll.nat1, .roll-line.nat1 { --mark: var(--accent); color: var(--text); }
 .roll-log { display: flex; flex-direction: column; gap: 0.25rem; max-height: 40dvh; overflow-y: auto; }
-.roll-line { margin: 0; padding: 0.25rem 0.4rem; font-size: 0.87rem; color: var(--muted);
-  border-left: 3px solid transparent; }
+.roll-line { margin: 0; padding: 0.25rem 0.5rem; font-size: 0.87rem; color: var(--muted);
+  /* Transparent, but PRESENT: the two crit lines take a real border, and without this every one of them
+     stood a pixel taller than its neighbours and nudged the column sideways. */
+  border: 1px solid transparent; border-radius: 6px; }
 /* A roll you can watch. Dice tumble for half a second and land on the truth — the moment the table
    looks up for. Used on a sheet away from a table as well, because a roll is a roll. */
 .roll-stage { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center;
@@ -1185,7 +1261,9 @@ body:has(.vtt) { height: 100dvh; overflow: hidden; }
 .die.dropped .die-face polygon { stroke: var(--border); }
 .die.dropped { opacity: 0.4; color: var(--muted); }
 .roll-stage.rolling .die { animation: die-tumble 0.34s linear infinite; }
-.roll-stage.landed .die { animation: die-land 0.42s cubic-bezier(0.22, 1.4, 0.35, 1) 1; }
+/* Exponential ease-out. The overshoot curve this used to carry reads as a toy: real dice settle, they
+   do not spring back up. */
+.roll-stage.landed .die { animation: die-land 0.42s cubic-bezier(0.16, 1, 0.3, 1) 1; }
 /* Dice do not fade in, they clatter: each one turns right over as it falls, and the second and third are
    a beat behind the first so a handful does not move as one object. */
 @keyframes die-tumble {
