@@ -1226,20 +1226,37 @@ body:has(.vtt) { height: 100dvh; overflow: hidden; }
 .roll-3d canvas { display: block; width: 100%; height: 100%; max-width: 100%; }
 /* With real dice on the table the flat ones would be the same roll told twice, so the box keeps only the
    words and the total, steps out of the middle, and stops dimming the view of what it is describing. */
+/* NOTHING ON SCREEN BUT THE DICE while they are in the air. The box used to open the moment the button
+   was pressed and sit there through the whole throw with its numbers blanked — a window announcing that
+   something was about to be announced. It arrives WITH the result now, which is the only thing it was
+   ever for. */
 .roll-stage.with-3d { background: rgba(6,6,5,0.28); place-items: end center; padding-bottom: 7vh; }
-.roll-stage.with-3d .roll-dice { display: none; }
+.roll-stage.with-3d.waiting { background: transparent; pointer-events: none; }
+.roll-stage.with-3d.waiting .roll-box {
+  opacity: 0; transform: translateY(10px) scale(0.98); pointer-events: none; }
+.roll-stage.with-3d .roll-box {
+  transition: opacity 0.28s ease, transform 0.34s cubic-bezier(0.16, 1, 0.3, 1); }
+/* The result is EVERY DIE THAT LANDED, each with its own number and its own label — a 6 on a d6 beside
+   a 4 on a d4, the same handful that just stopped rolling. Not the notation that was asked for: "d8 +
+   2d6 + d4" describes the button, not the answer, and with this row hidden it was all the box said.
+   The drawn faces come off, though. The real ones are on the table two inches above; a second set of
+   flat ones underneath is the same dice told twice. */
+.roll-stage.with-3d .roll-dice { display: flex; gap: 0.9rem; margin-bottom: 0.4rem; }
+.roll-stage.with-3d .die { width: auto; height: auto; min-width: 1.6rem; font-size: 1.5rem;
+  grid-template-rows: auto auto; row-gap: 0.05rem; }
+.roll-stage.with-3d .die-face { display: none; }
+.roll-stage.with-3d .die em { position: static; }
+.roll-stage.with-3d .roll-spec { display: none; }
 .roll-stage.with-3d .roll-box { min-width: min(16rem, 82vw); padding: 0.7rem 1.1rem; }
-/* Two things the flat row was carrying that the real dice cannot: WHICH die counted under advantage —
-   both land the same size and colour, and a dropped 20 beside a total of 4 is the misread that row
-   existed to prevent — and the total of a single die, since the row that held it is hidden. */
+/* The total of a single die, which the flat row used to carry — a lone d20 with no modifier would
+   otherwise have no number in the box at all, and it is the commonest roll in the game. (Which die
+   counted under advantage is answered by the row itself now: the dropped one is dimmed in it.) */
 .only-3d { display: none; }
-.roll-stage.with-3d .roll-kept.only-3d { display: block; }
 .roll-stage.with-3d .roll-total.only-3d { display: inline; }
-.roll-kept { margin: 0 0 0.5rem; color: var(--muted); font-size: 0.9rem; }
 /* Still in the air. The numbers are held back until the dice stop, here and in the bar at the top of the
    table, so that watching them land is the moment it is supposed to be rather than a wait for a total
    that was already printed. */
-.roll-stage.waiting .roll-total, .roll-stage.waiting .roll-kept { visibility: hidden; }
+.roll-stage.waiting .roll-total { visibility: hidden; }
 .roll-waiting { color: var(--muted); font-style: italic; margin-left: 0.5rem; }
 .roll-box { position: relative; min-width: min(20rem, 88vw); padding: 1rem 1.2rem; text-align: center;
   background: var(--panel); border: 1px solid var(--gold); border-radius: var(--radius);

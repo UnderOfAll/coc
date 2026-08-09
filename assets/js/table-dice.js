@@ -546,14 +546,12 @@ function tblShowRoll(entry) {
     <p class="roll-head"><strong>${esc(entry.who || "Someone")}</strong>${
       entry.label ? ` &middot; ${esc(entry.label)}` : ""}</p>
     <div class="roll-dice">${faces}</div>
-    ${keptIdx >= 0 && dice[keptIdx] ? `<p class="roll-kept only-3d">kept ${esc(dice[keptIdx].v)}${
-      dice.filter((_, i) => i !== keptIdx).map((d) => ` &middot; ${esc(d.v)} dropped`).join("")}</p>` : ""}
     <p class="roll-sum">
       <span class="roll-spec">${esc(spec)}${
         entry.mode === "adv" ? " · advantage" : entry.mode === "dis" ? " · disadvantage" : ""}</span>
       ${dice.length > 1 || mod ? `<span class="roll-total">${esc(entry.total)}</span>`
-        // With real dice the flat row is hidden, so a lone d20 with no modifier would have no number in
-        // the box at all — and that is the commonest roll in the game. It gets one, for the 3D case only.
+        // A lone d20 with no modifier would otherwise have no number in the box at all — and that is
+        // the commonest roll in the game. It gets one, for the 3D case only.
         : `<span class="roll-total only-3d">${esc(entry.total)}</span>`}
     </p>
   </div>`;
