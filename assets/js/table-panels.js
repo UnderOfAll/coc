@@ -516,6 +516,9 @@ async function tblOpenSheetByCode() {
 /* Hit points changed on a sheet, reflected under the figure on the board — for everyone. Called by
    the sheet's own save path (creator.js), so it fires on damage, healing and a level-up alike, and
    only ever touches the token that carries that character code. */
+/* What each character's picture was the last time a sheet told us — so a CHANGE can be told apart from
+   a save that merely happens to carry the same old photo. */
+const tblPhotoSeen = new Map();
 function tblSyncTokenFromSheet(code, ch) {
   if (!tbl || !code || !ch) return;
   const d = (typeof derive === "function") ? derive(ch) : null;
@@ -528,8 +531,17 @@ function tblSyncTokenFromSheet(code, ch) {
     if (hpMax != null && Number(t.hpMax) !== hpMax) patch.hpMax = hpMax;
     // A name or a portrait can change between sessions; the figure should not be the last one to know.
     if (ch.name && t.name !== String(ch.name).slice(0, 40)) patch.name = String(ch.name).slice(0, 40);
+    /* The picture, which the figure used to take once when it was placed and never again — so giving a
+       character a face later left it blank on the board for the rest of the campaign.
+       Pushed when it has just CHANGED, or when the figure has no picture at all. Not on every save: the
+       DM may have dressed this figure up deliberately, and a sheet that merely holds an older photo has
+       no business overruling that every time its owner takes damage. */
+    const before = tblPhotoSeen.has(code) ? tblPhotoSeen.get(code) : (t.image || ch.photo || "");
+    if (ch.photo && ch.photo !== before && t.image !== ch.photo) patch.image = ch.photo;
+    else if (ch.photo && !t.image) patch.image = ch.photo;
     if (Object.keys(patch).length) CocLive.patch(tblPath("tokens/" + id), patch).catch(() => {});
   }
+  tblPhotoSeen.set(code, ch.photo || "");
 }
 
 

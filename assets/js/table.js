@@ -561,7 +561,6 @@ function renderTableShell() {
         </span>
       </div>
       <p id="vtt-error" class="warn hidden"></p>
-      <p id="vtt-lastroll" class="last-roll hidden"></p>
       <div id="vtt-turn" class="vtt-turn hidden"></div>
       <div id="vtt-handout" class="vtt-handout hidden"></div>
       <div class="vtt-body">
@@ -576,6 +575,11 @@ function renderTableShell() {
           </div>
           <div id="vtt-measure" class="vtt-measure hidden"></div>
           <div id="vtt-peek" class="vtt-peek hidden"></div>
+          <!-- The last roll lives ON the board and for five seconds only. Standing in the column above
+               it, permanently, it pushed everything else down far enough that the page grew a scrollbar
+               of its own on top of the panel's — two scrolls to fight at once. Anybody who wants it back
+               opens the Dice panel, where every roll is kept. -->
+          <p id="vtt-lastroll" class="last-roll hidden"></p>
           <div class="vtt-zoom">
             <button class="btn-quiet" data-tbl="zoom" data-val="-1">&minus;</button>
             <button class="btn-quiet" data-tbl="zoom" data-val="0">Fit</button>
@@ -925,13 +929,9 @@ document.addEventListener("click", (e) => {
     paintDice();
   } else if (act === "dice-clear") { tblDicePool().pool = {}; paintDice(); }
   else if (act === "dice-3d") { dice3dToggle(); paintDice(); }
-  // Every one of these rebuilds the dice world, which is why they all go through the same door.
-  else if (act === "dice-sound") { dice3dRelook({ quiet: !dice3dLook().quiet }); paintDice(); }
+  // Both of these restyle the dice where they stand, which is why they go through the same door.
   else if (act === "dice-colour") { dice3dRelook({ colour: val }); paintDice(); }
-  else if (act === "dice-label") { dice3dRelook({ label: val }); paintDice(); }
   else if (act === "dice-design") { dice3dRelook({ design: val }); paintDice(); }
-  else if (act === "dice-finish") { dice3dRelook({ finish: val }); paintDice(); }
-  else if (act === "dice-clack") { dice3dRelook({ sound: val }); paintDice(); }
   else if (act === "dice-mod") {
     const t = tblDicePool();
     t.mod = Math.max(-20, Math.min(20, t.mod + Number(val)));

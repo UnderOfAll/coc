@@ -1009,7 +1009,16 @@ function renderSheet() {
     <div class="tool-head sheet-head">
       <a class="back" href="#/manage">&larr; My characters</a>
       <div class="sheet-id">
-        ${ch.photo ? `<img class="portrait" src="${esc(ch.photo)}" alt="" />` : `<div class="portrait empty">${esc((ch.name || "?")[0])}</div>`}
+        ${/* The picture, and a way to change it. It could only ever be chosen while the character was
+              being BUILT, which is the one moment you are least likely to have one — so it sat empty for
+              good, on the sheet and on the figure at the table alike. Clicking it opens the picker; the
+              figure follows on the next save. */""}
+        <label class="portrait-swap" title="${ch.photo ? "Change the picture" : "Add a picture"}">
+          ${ch.photo ? `<img class="portrait" src="${esc(ch.photo)}" alt="" />`
+            : `<div class="portrait empty">${esc((ch.name || "?")[0])}</div>`}
+          <input id="sheet-photo" type="file" accept="image/*" />
+          <span class="portrait-swap-hint">${ch.photo ? "Change" : "Add"}</span>
+        </label>
         <div class="sheet-titles">
           <h1>${esc(ch.name || "Unnamed")}</h1>
           <p class="sheet-class">${esc(d.cls.name)}${d.subclass ? ` <span class="sep">&middot;</span> ${esc(d.subclass.name)}` : ""}${ch.size ? ` <span class="sep">&middot;</span> ${esc(ch.size)}` : ""}</p>
@@ -1831,6 +1840,17 @@ document.addEventListener("input", (e) => {
   if (!toolEl() || $("#tool-view").classList.contains("hidden")) return;
   if (evTarget(e).id === "photo") {
     readPortrait(evTarget(e).files[0], (data) => { draft.photo = data; renderCreator(); });
+    return;
+  }
+  // The same picker on an OPEN sheet, so a character can be given a face at any point in its life —
+  // and the figure at the table takes it on with the next save.
+  if (evTarget(e).id === "sheet-photo" && sheet) {
+    readPortrait(evTarget(e).files[0], (data) => {
+      if (!data || !sheet) return;
+      sheet.ch.photo = data;
+      persist();
+      renderSheet();
+    });
     return;
   }
   creatorInput(e);

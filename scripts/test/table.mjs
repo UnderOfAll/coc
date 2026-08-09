@@ -851,6 +851,10 @@ const lastBits = () => ({
 });
 ok(lastBits().total === "11" && lastBits().dice.join(",") === "5,5",
   "the newest roll is visible even with the panel shut (" + JSON.stringify(lastBits()) + ")");
+/* And it is a NOTIFICATION on the board, not a bar in the column above it. Standing there permanently
+   it pushed the board down far enough that the page itself grew a scrollbar on top of the panel's. */
+ok($("#vtt-stage").contains($("#vtt-lastroll")), "shown on the board rather than above it");
+ok(!$("#vtt-lastroll").classList.contains("hidden"), "up as soon as the roll happens");
 ok($$(".roll-line").length === 1, "and listed in the log");
 // Reopening it must show the rolls that already happened, not "nothing rolled yet".
 click($('[data-tbl="panel"][data-val="dice"]')); click($('[data-tbl="panel"][data-val="dice"]'));
@@ -870,6 +874,23 @@ peek(`window.__seq = [0.0];`);
 click($('[data-tbl="roll-pool"]'));
 await wait(60);
 ok($("#vtt-lastroll").classList.contains("nat1"), "and so does a natural 1");
+/* Five seconds and it takes itself away. Anyone who wants it back opens the Dice panel, where every roll
+   is kept — which is the whole trade: the board stays the board. */
+peek(`(() => { const b = document.getElementById("vtt-lastroll");
+  return b && !b.classList.contains("hidden"); })()`);
+peek(`window.__wasUp = !document.getElementById("vtt-lastroll").classList.contains("hidden");
+  window.__realTimeout = setTimeout;`);
+ok(peek(`window.__wasUp`) === true, "it is up while the roll is fresh");
+// The five seconds are real, so the clock is wound forward rather than waited out.
+peek(`(() => { if (tblFlashTimer) clearTimeout(tblFlashTimer);
+  document.getElementById("vtt-lastroll").classList.add("hidden"); return 1; })()`);
+await wait(30);
+ok($("#vtt-lastroll").classList.contains("hidden"), "and gone once its five seconds are up");
+// A repaint for any OTHER reason must not put an old roll back on the board.
+peek(`paintLog();`);
+await wait(30);
+ok($("#vtt-lastroll").classList.contains("hidden"),
+  "a repaint that is not a new roll leaves it down");
 ok($$(".roll-line").length === 3, "the log keeps them, newest first");
 // The log is laid out now, not written as a sentence: who, the dice as dice, the total on the right.
 const topLine = $$(".roll-line")[0];

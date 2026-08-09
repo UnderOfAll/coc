@@ -200,6 +200,14 @@ mk("joker",5);
 // Each class names its own DC — the sheet reads keyStats rather than assuming one generic
 // "trick save DC" off the primary ability (which for a Juggler would be an invented number).
 const knLabel=k=>{const t=k.querySelector(".kn-l .tip-term");return (t?t.firstChild.textContent:k.querySelector(".kn-l").textContent).trim();};
+/* A character can be given a face at any point in its life, not only while it is being built — which is
+   the one moment you are least likely to have a picture ready, and is why sheets sat blank for good. */
+ok($("#sheet-photo"),"the portrait on a sheet is a picker, so a picture can be added later");
+ok($(".portrait-swap").contains($("#sheet-photo")),"the picture itself is what you click");
+peek(`(() => { sheet.ch.photo = "data:image/jpeg;base64,AAAA"; renderSheet(); return 1; })()`);
+ok($(".portrait-swap img.portrait"),"a chosen picture replaces the initial");
+ok(/Change/.test($(".portrait-swap-hint").textContent),"and the picker offers to change it");
+peek(`(() => { sheet.ch.photo = ""; renderSheet(); return 1; })()`);
 const knLabels=$$(".kn").map(knLabel);
 ok(knLabels.includes("Gambit DC"),"a Joker sees his Gambit DC by name ("+knLabels.join(", ")+")");
 ok(!knLabels.includes("Trick save DC"),"and not a generic 'Trick save DC'");

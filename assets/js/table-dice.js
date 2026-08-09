@@ -227,15 +227,14 @@ const DICE3D_DESIGNS = [
   ["water", "Water"], ["wood", "Woodgrain"], ["speckles", "Speckled"], ["glitter", "Glitter"],
   ["lizard", "Lizard"], ["cloudy", "Cloudy"], ["paper", "Paper"],
 ];
-const DICE3D_FINISHES = [["metal", "Metal"], ["none", "Plastic"], ["glass", "Glass"], ["wood", "Wood"],
-  ["perfectmetal", "Mirror"]];
-/* What the dice are struck on and what they sound like. The material here is about the SOUND, which is
-   why it is separate from the finish above — glass dice on a felt table is a real combination. */
-const DICE3D_SOUNDS = [["plastic", "Plastic"], ["metal", "Metal"], ["wood", "Wood"], ["coin", "Coin"]];
+/* The numbers are ALWAYS this. It was a setting for about a day, and the answer to "what colour should
+   the numbers be" turns out to be "the one you can read" — on a red die, on a dragon-scaled one, on a
+   black one, only white works. A finish (metal, glass, wood) was a setting too, and was removed for a
+   better reason: nobody could tell what it was choosing between. */
+const DICE3D_LABEL = "#f2efe6";
+const DICE3D_FINISH = "metal";
 
-const DICE3D_DEFAULT = {
-  colour: "#c9a54e", label: "#10100f", design: "", finish: "metal", sound: "plastic", loud: 55, quiet: false,
-};
+const DICE3D_DEFAULT = { colour: "#c9a54e", design: "" };
 let dice3dSeen = null;   // the chosen look, once read
 function dice3dLook() {
   if (!dice3dSeen) {
@@ -251,26 +250,19 @@ function dice3dTheme() {
   const look = dice3dLook();
   return {
     theme_customColorset: {
-      background: look.colour, foreground: look.label,
-      texture: look.design || "none", material: look.finish || "none",
+      background: look.colour, foreground: DICE3D_LABEL,
+      texture: look.design || "none", material: DICE3D_FINISH,
     },
-    sounds: !look.quiet,
-    volume: Number(look.loud) || 0,
-    sound_dieMaterial: look.sound || "plastic",
   };
 }
 /* Changing the look RESTYLES the world rather than replacing it — a tenth of a second, against several
    seconds to build a second one while the first is still animating, which is exactly when somebody
-   changes a colour and is how a table ended up with no dice at all for the rest of a session.
-   The sound is the exception: those files are loaded when the world is made, so turning sound on after
-   the fact does need a new one. That is one tap, rarely, and it is the honest place to pay for it. */
+   changes a colour and is how a table ended up with no dice at all for the rest of a session. */
 function dice3dRelook(change) {
-  const wasQuiet = dice3dLook().quiet, wasSound = dice3dLook().sound;
   Object.assign(dice3dLook(), change);
   try { localStorage.setItem("coc:dice-look", JSON.stringify(dice3dSeen)); } catch { /* no storage */ }
   dice3dClear(true);
-  const heard = dice3dLook().quiet !== wasQuiet || dice3dLook().sound !== wasSound;
-  if (!heard && dice3dBox && dice3dBox.updateConfig) {
+  if (dice3dBox && dice3dBox.updateConfig) {
     try { dice3dBox.updateConfig(dice3dTheme()); return; }
     catch { /* fall through and build a new one */ }
   }
@@ -312,43 +304,54 @@ function dice3dWanted() {
   return true;
 }
 
-/* A handful this library can be trusted with: all one kind of die, a kind it can be turned to, and few
-   enough to see. Mixed handfuls are the remaining exception — the notation parser reads only the first
-   group of them, so `1d20@7+2d6@3,4` silently throws the d20 alone. */
+/* A handful this library can be trusted with: every kind of die in it must be one it can be turned to,
+   and there must be few enough to see. */
 function dice3dCanShow(dice) {
   if (!dice.length || dice.length > DICE3D_MOST) return false;
-  const sides = Number(dice[0].s);
-  return DICE3D_SIDES.includes(sides) && dice.every((d) => Number(d.s) === sides);
+  return dice.every((d) => DICE3D_SIDES.includes(Number(d.s)));
 }
 
 /* What to throw, and what every die must be showing afterwards.
  *
- * A percentile roll is the interesting one. This library has no hundred-sided die and never did — what
- * it calls a d100 is the TENS die of a real percentile pair, its faces reading 10, 20 … 90, 00. So a 73
- * is thrown the way it is thrown on a table: the tens die on 70 beside a units die on 3. A 7 is the
- * tens die on 00 beside a 7, and a 100 is 00 beside 0, which is exactly the convention everyone already
- * reads. `want` is in the order the dice end up in, tens first, because that is the order they are
- * checked against afterwards. */
+ * A mixed handful is ONE throw, not several: `1d8+2d6+1d4@7,6,6,4` — every kind of die first, then every
+ * face they must land on, in the same order. (`1d20@7+2d6@3,4`, which is the shape that suggests itself,
+ * parses the d20 and silently drops the rest. Thrown as separate calls they land in waves seconds apart,
+ * and thrown at once they cancel each other.) So a smite is a d8 and two d6 and a d4 hitting the table
+ * together, which is the point of throwing dice at all.
+ *
+ * A percentile roll joins in as a PAIR. This library has no hundred-sided die and never did: what it
+ * calls a d100 is the tens die, its faces reading 10, 20 … 90, 00. So a 73 is thrown the way it is
+ * thrown on a table — the tens die on 70 beside a units die on 3. A 7 is 00 beside a 7, and a 100 is 00
+ * beside 0, which is the convention everyone already reads.
+ *
+ * `want` is in the order the dice END UP in — grouped, biggest die first — because that is the order
+ * they are checked in afterwards. Dice on a table have no order of their own, so this costs nothing. */
 function dice3dPlan(dice) {
-  const sides = Number(dice[0].s);
-  if (sides !== 100) {
-    const want = dice.map((d) => Number(d.v));
-    return { notation: dice.length + "d" + sides + "@" + want.join(","), extra: "", want };
-  }
-  const tens = [], units = [];
+  const groups = new Map();      // sides -> the values wanted, in the order they were rolled
   for (const d of dice) {
-    const v = Number(d.v);
-    const ones = v % 10;
-    const ten = Math.floor(v / 10) % 10;
-    // The face labelled "00" is worth 100 to the library, and the units face labelled "0" is worth 10.
-    tens.push(ten === 0 ? 100 : ten * 10);
-    units.push(ones === 0 ? 10 : ones);
+    const sides = Number(d.s);
+    if (!groups.has(sides)) groups.set(sides, []);
+    groups.get(sides).push(Number(d.v));
   }
-  return {
-    notation: dice.length + "d100@" + tens.join(","),
-    extra: dice.length + "d10@" + units.join(","),
-    want: tens.concat(units),
-  };
+  const kinds = [], want = [];
+  for (const sides of [...groups.keys()].sort((a, b) => b - a)) {
+    const values = groups.get(sides);
+    if (sides !== 100) {
+      kinds.push(values.length + "d" + sides);
+      want.push(...values);
+      continue;
+    }
+    const tens = [], units = [];
+    for (const v of values) {
+      const ones = v % 10, ten = Math.floor(v / 10) % 10;
+      // The face labelled "00" is worth 100 to the library, and the units face labelled "0" is worth 10.
+      tens.push(ten === 0 ? 100 : ten * 10);
+      units.push(ones === 0 ? 10 : ones);
+    }
+    kinds.push(values.length + "d100", values.length + "d10");
+    want.push(...tens, ...units);
+  }
+  return { notation: kinds.join("+") + "@" + want.join(","), want };
 }
 
 function dice3dStage() {
@@ -416,7 +419,6 @@ async function dice3dShow(dice, stamp) {
   let faces = [];
   try {
     await box.roll(plan.notation);
-    if (plan.extra) await box.add(plan.extra);
     /* Read the faces THEMSELVES, off the dice standing on the table, rather than the summary the library
        hands back. They are not always the same thing: a d4 is turned correctly and then reported as
        whatever the physics had rolled before the turn, which is why d4s used to be refused. `getFaceValue`
@@ -532,6 +534,7 @@ function tblShowRoll(entry) {
       node.classList.add("landed");
     }
   }, 55);
+  if (tbl) tblFlashRoll(entry);
   const away = () => { node.classList.remove("on"); dice3dRelease(); dice3dClear(); };
   tblRollTimers.push(setTimeout(away, 3200));
 
@@ -620,8 +623,6 @@ function dicePanelHTML() {
       <div class="chips">
         <button class="chip ${dice3dChosen() ? "on" : ""}" data-tbl="dice-3d">${
           dice3dChosen() ? "Rolling in 3D" : "Flat dice"}</button>
-        ${dice3dChosen() ? `<button class="chip ${look.quiet ? "" : "on"}" data-tbl="dice-sound">${
-          look.quiet ? "Silent" : "Sound on"}</button>` : ""}
       </div>
       ${dice3dChosen() ? `
         <p class="panel-sub">Colour</p>
@@ -629,27 +630,12 @@ function dicePanelHTML() {
           `<button class="chip ${look.colour === hex ? "on" : ""}" data-tbl="dice-colour" data-val="${esc(hex)}"
             title="${esc(name)}"><span class="ink-dot" style="background:${esc(hex)}"></span>${esc(name)}</button>`
           ).join("")}</div>
-        <p class="panel-sub">Numbers</p>
-        <div class="chips">${[["#10100f", "Dark"], ["#f2efe6", "Light"], ["#c9a54e", "Gold"],
-            ["#d94f43", "Red"]].map(([hex, name]) =>
-          `<button class="chip ${look.label === hex ? "on" : ""}" data-tbl="dice-label" data-val="${esc(hex)}"
-            title="${esc(name)}"><span class="ink-dot" style="background:${esc(hex)}"></span>${esc(name)}</button>`
-          ).join("")}</div>
         <p class="panel-sub">Design</p>
         <div class="chips">${DICE3D_DESIGNS.map(([id, name]) =>
           `<button class="chip ${look.design === id ? "on" : ""}" data-tbl="dice-design" data-val="${esc(id)}"
             >${esc(name)}</button>`).join("")}</div>
-        <p class="panel-sub">Finish</p>
-        <div class="chips">${DICE3D_FINISHES.map(([id, name]) =>
-          `<button class="chip ${look.finish === id ? "on" : ""}" data-tbl="dice-finish" data-val="${esc(id)}"
-            >${esc(name)}</button>`).join("")}</div>
-        ${look.quiet ? "" : `<p class="panel-sub">They sound like</p>
-          <div class="chips">${DICE3D_SOUNDS.map(([id, name]) =>
-            `<button class="chip ${look.sound === id ? "on" : ""}" data-tbl="dice-clack" data-val="${esc(id)}"
-              >${esc(name)}</button>`).join("")}</div>`}
         <p class="muted">Real dice, thrown across the screen, landing on the roll that was made — the number
-          is held back until they stop. A mixed handful keeps the flat ones, since they cannot all be thrown
-          at once.</p>`
+          is held back until they stop.</p>`
       : `<p class="muted">The flat overlay, which is quicker and asks nothing of the device.</p>`}
     </section>
     <section class="panel">
@@ -679,7 +665,33 @@ function tblRollBits(e) {
   };
 }
 
-/* The newest roll, in one line, for the bar that is visible whatever panel is open. */
+/* The newest roll, shown ON the board for five seconds and then gone. It used to stand in the column
+   above the board for as long as the table was open, which pushed the board down far enough that the
+   page itself grew a scrollbar — and a page scroll on top of the panel's own is two scrolls fighting
+   over one finger. Every roll is still kept, in the Dice panel, for anyone who wants to look again. */
+let tblFlashTimer = null;
+function tblFlashRoll(entry) {
+  const bar = document.getElementById("vtt-lastroll");
+  if (!bar || !entry) return;
+  // Written here rather than by the log's repaint, because YOUR OWN roll is on screen before it has
+  // reached the log at all — the roller shows it and posts it, in that order, so that a roll appears the
+  // instant it is made instead of after a round trip.
+  bar.innerHTML = lastRollHTML(entry);
+  bar.classList.toggle("nat20", entry.nat === 20);
+  bar.classList.toggle("nat1", entry.nat === 1);
+  bar.classList.remove("hidden");
+  if (tblFlashTimer) { clearTimeout(tblFlashTimer); tblFlashTimer = null; }
+  // While the dice are still in the air it says "rolling…", and the five seconds are for the RESULT —
+  // so the clock does not start until they have landed and the numbers are out.
+  if (dice3dHeld(entry)) return;
+  tblFlashTimer = setTimeout(() => {
+    const n = document.getElementById("vtt-lastroll");
+    if (n) n.classList.add("hidden");
+    tblFlashTimer = null;
+  }, 5000);
+}
+
+/* The newest roll, in one line. */
 function lastRollHTML(e) {
   if (e.kind !== "roll" || !tblEntryDice(e).length) return esc(e.text || "");
   // Its dice are still rolling on this screen. Saying who is throwing what is the whole of what the bar
@@ -717,20 +729,18 @@ function paintLog() {
   // Somebody else's roll is rolled on your screen too — that is the point of everyone being here. The
   // first paint only records where the log had got to, or joining would replay the whole session.
   const newest = entries.length ? entries[0][1] : null;
+  let fresh = false;
   if (tbl.lastRollAt == null) tbl.lastRollAt = newest ? (newest.t || 0) : 0;
   else if (newest && (newest.t || 0) > tbl.lastRollAt) {
     tbl.lastRollAt = newest.t;
+    fresh = true;
     if (newest.kind === "roll") tblShowRoll(newest);
   }
-  if (last) {
-    const top = entries[0];
-    // Built from the numbers, not from the stored sentence: the sentence is a fallback for old entries
-    // and for the DM's system lines, and a bar that reads whatever prose was saved cannot be relied on.
-    last.innerHTML = top ? lastRollHTML(top[1]) : "";
-    last.classList.toggle("hidden", !top);
-    last.classList.toggle("nat20", !!(top && top[1].nat === 20));
-    last.classList.toggle("nat1", !!(top && top[1].nat === 1));
-  }
+  /* A roll APPEARS through tblShowRoll, above — for your own the moment you make it, for everyone
+     else's the moment it arrives. All this has to do is keep what is already on screen current, which
+     is what turns "rolling…" into the number when the dice land. A repaint for any other reason —
+     somebody moving a figure, a map changing — must not put a spent roll back on the board. */
+  if (last && newest && !fresh && !last.classList.contains("hidden")) tblFlashRoll(newest);
   const host = $("#vtt-log");
   if (host) {
     host.innerHTML = entries.slice(0, 60).map(([, e]) => rollLineHTML(e)).join("")

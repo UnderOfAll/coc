@@ -645,6 +645,17 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 .portrait-actions { flex: 1 1 12rem; min-width: 0; display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
 .portrait-actions input[type="file"] { max-width: 100%; font-size: 0.87rem; }
 .portrait { width: 72px; height: 72px; border-radius: var(--radius); object-fit: cover; border: 1px solid var(--border); }
+/* The portrait on a sheet IS the picker: click it and choose a file. The input itself is not shown —
+   a bare "Choose file" button beside a face is the ugliest control in any browser — and the hint only
+   appears when there is somewhere to point it. */
+.portrait-swap { position: relative; display: inline-grid; cursor: pointer; }
+.portrait-swap input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.portrait-swap-hint { position: absolute; left: 0; right: 0; bottom: 0; text-align: center;
+  font-size: 0.78rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--bg);
+  background: var(--gold); border-radius: 0 0 var(--radius) var(--radius); opacity: 0; transition: opacity 0.15s ease; }
+.portrait-swap:hover .portrait-swap-hint, .portrait-swap:focus-within .portrait-swap-hint { opacity: 1; }
+/* On a touch screen there is no hover to discover it with, so it is simply always there. */
+@media (hover: none) { .portrait-swap-hint { opacity: 0.92; } }
 .portrait.empty { display: grid; place-items: center; color: var(--muted); font-family: var(--serif); font-size: 1.6rem; background: var(--panel-2); }
 /* 1.6rem is for the single initial the sheet shows in this box. A worded placeholder needs caption
    sizing or it simply does not fit 72px. */
@@ -974,7 +985,25 @@ input.step-val { width: 3.4rem; }
 .field > span { font-size: 0.83rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
 .join-row { display: flex; flex-wrap: wrap; gap: 0.8rem; align-items: flex-end; }
 
-.vtt { display: flex; flex-direction: column; gap: 0.6rem; }
+/* At a table the BODY gets a definite height. Without one it is `min-height: 100dvh` and otherwise as
+   tall as its contents, so every `flex: 1` beneath it resolves against a height that the contents
+   themselves decided — and the dice dock, which is long, quietly pushed the board and the page past the
+   bottom of the window. Nothing needs to scroll the page here once everything fits, and the top bar has
+   nothing to stick to any more. */
+body:has(.vtt) { height: 100dvh; overflow: hidden; }
+
+/* The table fills the screen and NOTHING here scrolls the page. A board with a fixed height plus a row
+   of bars above it added up to more than the window, so the document grew a scrollbar of its own on top
+   of the side panel's — two scrolls fighting over one finger, and the lower half of every panel out of
+   reach until you had scrolled the whole page down first. The column takes exactly what is left under
+   the top bar, the board takes what is left inside that, and the panels scroll INSIDE themselves. */
+.vtt { display: flex; flex-direction: column; gap: 0.6rem; flex: 1; min-height: 0; }
+/* Every link in the chain, or the flex heights do not reach the board. `#tool` is a plain div between
+   the page and the table, and a block box in the middle is where "fill the screen" quietly turns back
+   into "as tall as the contents". */
+.tool-view:has(.vtt), .tool-view:has(.vtt) > #tool {
+  flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.content:has(.vtt) { min-height: 0; padding: 0.9rem 1rem; overflow: hidden; }
 .vtt-bar { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; }
 .vtt-exit { margin: 0; }
 .vtt-title { display: flex; flex-wrap: wrap; gap: 0.45rem; align-items: baseline; min-width: 0; }
@@ -984,12 +1013,12 @@ input.step-val { width: 3.4rem; }
   background: var(--panel-2); border: 1px solid var(--border); color: var(--muted); }
 .who-dm { border-color: var(--gold); color: var(--gold); }
 .vtt-acts { margin-left: auto; display: flex; gap: 0.35rem; flex-wrap: wrap; }
-.vtt-body { display: flex; gap: 0.7rem; align-items: stretch; min-width: 0; }
+.vtt-body { display: flex; gap: 0.7rem; align-items: stretch; min-width: 0; flex: 1; min-height: 0; }
 
 /* The stage is the window; the world inside it is the map, and the camera is one transform on that
    world. touch-action: none is not optional — without it the browser scrolls and zooms the PAGE
    while you are trying to drag a token, and the board becomes unusable on a phone. */
-.vtt-stage { position: relative; flex: 1; min-width: 0; height: 74dvh; min-height: 320px;
+.vtt-stage { position: relative; flex: 1; min-width: 0; height: auto; min-height: 200px;
   overflow: hidden; touch-action: none; overscroll-behavior: contain; cursor: grab;
   background: #0b0b0a; border: 1px solid var(--border); border-radius: var(--radius); }
 .vtt-stage:active { cursor: grabbing; }
@@ -1033,7 +1062,7 @@ input.step-val { width: 3.4rem; }
 
 /* The side panel: dice, your sheet, the DM's tools. A column beside the board on a desktop, and a
    sheet over it on a phone, because 320px cannot spare a column. */
-.vtt-side { width: min(400px, 32vw); flex-shrink: 0; max-height: 74dvh; overflow-y: auto;
+.vtt-side { width: min(400px, 32vw); flex-shrink: 0; max-height: 100%; min-height: 0; overflow-y: auto;
   background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
   padding: 0.8rem; }
 .vtt-side .panel { background: none; border: none; padding: 0; margin: 0 0 0.9rem; }
@@ -1045,9 +1074,7 @@ input.step-val { width: 3.4rem; }
   /* On a phone the board takes whatever is left rather than a fixed fraction of the screen: the bars
      above it come and go (a roll, a turn running, a handout), and a fixed 56dvh either left dead space
      below the board or pushed it past the bottom of the screen depending on which of them were up. */
-  .vtt { min-height: calc(100dvh - 5.5rem); }
-  .vtt-body { flex: 1; min-height: 0; }
-  .vtt-stage { height: auto; flex: 1; min-height: 240px; }
+  .vtt-stage { flex: 1; min-height: 200px; }
   /* With the drawer open the two share the screen: enough board to see where you are, enough sheet to
      use. */
   .vtt-side:not(.hidden) ~ .vtt-stage, .vtt-body:has(.vtt-side:not(.hidden)) .vtt-stage {
@@ -1087,6 +1114,12 @@ input.step-val { width: 3.4rem; }
 /* Dice: a tray, and the one line the whole table reads. */
 .dice-row { display: flex; flex-wrap: wrap; gap: 0.9rem; margin: 0.6rem 0; }
 .dice-row .stepper { gap: 0.4rem; }
+/* Over the board, briefly. `pointer-events: none` matters: it sits where figures are, and a notification
+   that swallows a drag is worse than no notification. */
+.last-roll { position: absolute; z-index: 6; left: 50%; transform: translateX(-50%); top: 0.6rem;
+  max-width: min(34rem, calc(100% - 1.2rem)); pointer-events: none; box-shadow: 0 8px 24px rgba(0,0,0,0.55);
+  transition: opacity 0.25s ease; opacity: 1; }
+.last-roll.hidden { display: flex !important; opacity: 0; }   /* fades out; .hidden's display:none is !important */
 .last-roll { margin: 0; padding: 0.45rem 0.7rem; border-radius: var(--radius); display: flex;
   flex-wrap: wrap; gap: 0.35rem; align-items: center;
   background: var(--panel-2); border: 1px solid var(--border); font-size: 0.94rem; }
@@ -1105,7 +1138,7 @@ input.step-val { width: 3.4rem; }
 .roll-stage.on { opacity: 1; pointer-events: auto; }
 /* Where the real dice are thrown: the whole window, behind the roll box and in front of everything else,
    and never in the way of a finger. It is empty and invisible until a throw, and swept after one. */
-.roll-3d { position: fixed; inset: 0; z-index: 69; overflow: hidden; pointer-events: none;
+.roll-3d { position: fixed; inset: 3.2rem 0 0 0; z-index: 69; overflow: hidden; pointer-events: none;
   opacity: 0; transition: opacity 0.2s ease; }
 .roll-3d.on { opacity: 1; }
 /* A settled die is readable, so one showing the wrong face has to go NOW — the fade is for dice that
@@ -1288,7 +1321,7 @@ input.step-val { width: 3.4rem; }
    difference between the two layouts. */
 .vtt-dock { display: none; }
 @media (min-width: 761px) {
-  .vtt-dock { display: block; width: min(330px, 26vw); flex-shrink: 0; max-height: 74dvh;
+  .vtt-dock { display: block; width: min(330px, 26vw); flex-shrink: 0; max-height: 100%; min-height: 0;
     overflow-y: auto; background: var(--panel); border: 1px solid var(--border);
     border-radius: var(--radius); padding: 0.8rem; }
   .vtt-dock.hidden { display: none; }

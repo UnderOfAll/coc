@@ -21,6 +21,10 @@ const PORT = 8791;
 let fails = 0;
 const ok = (c, m) => { if (!c) { fails++; console.log("  FAIL " + m); } else console.log("  ok   " + m); };
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+/* The same numbers, in whatever order. Dice on a table have no order — a mixed handful is thrown in
+   groups, so the d8 lands before the d6s whatever order the roll listed them in. */
+const same = (a, b) => a.length === b.length
+  && [...a].sort((x, y) => x - y).join(",") === [...b].sort((x, y) => x - y).join(",");
 /* Polled rather than slept through: building the world takes a few seconds and rather longer on a machine
    with no GPU, and a fixed sleep here is a test that fails on somebody else's laptop. */
 async function ready(within) {
@@ -100,7 +104,7 @@ async function thrown(pool, label) {
 }
 
 const four = await thrown({ 4: 3 }, "three d4 — the die the library reports wrongly");
-ok(four.faces.length === 3 && four.faces.join(",") === four.rolled.dice.join(","),
+ok(four.faces.length === 3 && same(four.faces, four.rolled.dice),
   `every face is the roll (dice ${four.faces.join(",")} = log ${four.rolled.dice.join(",")})`);
 
 const hundred = await thrown({ 100: 1 }, "a percentile roll — two dice, not one");
@@ -114,8 +118,14 @@ ok(hundred.faces.length === 2, `thrown as a tens die and a units die (${hundred.
 }
 
 const many = await thrown({ 6: 30 }, "thirty at once — the top of the range");
-ok(many.faces.length === 30 && many.faces.join(",") === many.rolled.dice.join(","),
+ok(many.faces.length === 30 && same(many.faces, many.rolled.dice),
   "all thirty landed on the roll they were given");
+
+// A handful of DIFFERENT dice, which the library's notation cannot express in one throw: the first group
+// is thrown and the rest are added to the table beside it.
+const mixed = await thrown({ 8: 1, 6: 2, 4: 1 }, "a smite — a d8, two d6 and a d4, together");
+ok(mixed.faces.length === 4 && same(mixed.faces, mixed.rolled.dice),
+  `all four kinds landed on the roll (${mixed.faces.join(",")} for ${mixed.rolled.dice.join(",")})`);
 
 console.log("\n— your own dice —");
 await page.evaluate(() => document.querySelector('[data-tbl="dice-design"][data-val="dragon"]').click());
@@ -128,7 +138,7 @@ ok(await page.evaluate(() => dice3dLook().design === "dragon" && dice3dLook().co
 // which is exactly when somebody changes a colour — is what used to leave a table with no dice at all.
 ok(await ready(25000), "and the dice take them on without the world being rebuilt around them");
 const dragon = await thrown({ 20: 4 }, "four dragon-scaled d20");
-ok(dragon.faces.join(",") === dragon.rolled.dice.join(","), "still landing on the truth after the rebuild");
+ok(same(dragon.faces, dragon.rolled.dice), "still landing on the truth after the rebuild");
 
 ok(errs.length === 0, "no page errors" + (errs.length ? ": " + errs.slice(0, 3).join(" | ") : ""));
 
