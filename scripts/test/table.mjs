@@ -275,6 +275,41 @@ click($('[data-tbl="ink-off"]'));
 await wait(40);
 ok(peek(`tblInkState().on`) === false, "and the pen can be put away again");
 
+console.log("\n— A PLAYER'S OWN TOOLS WORK —");
+// Every "everyone" action had been sitting behind the DM-only guard, so for a player the pen, the notepad,
+// the tracker and the seat picker all did precisely nothing. One line of chain order.
+peek(`tbl.role = "player"; tbl.me.clientId = "thisBrowser"; tbl.me.charCode = "123456"; renderTableShell();
+  tbl.view = { x: 0, y: 0, z: 1, fitted: true }; applyView();`);
+// An earlier section locked drawing on a scene; make sure this one allows it, or the panel is a refusal.
+await peek(`CocLive.put("tables/482910/scenes/" + tblSceneId() + "/drawLocked", null)`);
+await wait(80);
+peek(`tbl.ui.panel = "draw"; paintSide();`);
+await wait(60);
+click($('[data-tbl="ink-pen"]'));
+await wait(40);
+ok(peek(`tblInkState().on`) === true, "a player can pick up the pen");
+drag($("#vtt-stage"), 150, 150, 420, 320);
+await wait(150);
+const playerInk = await aget(`Object.values(await CocLive.get("tables/482910/draw") || {})`);
+ok(playerInk.length >= 1, "and draw with it");
+ok(playerInk.some((k) => k.by === "pc:123456"), "with the stroke belonging to them");
+peek(`paintSide();`);
+click($('[data-tbl="ink-clear-mine"]'));
+await until(async () => (await aget(`Object.values(await CocLive.get("tables/482910/draw") || {}).length`)) === 0);
+ok((await aget(`Object.values(await CocLive.get("tables/482910/draw") || {}).length`)) === 0, "and rub out their own");
+click($('[data-tbl="ink-off"]'));
+openPanel("notes");
+await wait(60);
+click($('[data-tbl="note-new"]'));
+await wait(150);
+ok($("#note-body"), "a player can keep notes too");
+ok((await aget(`Object.values(await CocLive.get("tables/482910/notes") || {}).some(n => n.by === "pc:123456")`)) === true,
+  "kept under their own name");
+// Tidied away, so the DM's own notepad section further down counts only the DM's.
+click($$('[data-tbl="note-del"]')[0]);
+await wait(120);
+peek(`tbl.ui.panel = ""; paintSide(); tbl.role = "dm"; tbl.me.charCode = ""; renderTableShell(); paintTokens();`);
+
 console.log("\n— TWO FIGURES CANNOT SHARE A SQUARE —");
 // Dropped onto somebody, a figure slides to the side rather than either vanishing into them or refusing
 // to move at all.
@@ -770,6 +805,7 @@ click($$("#vtt-sheet .roll")[0]);
 await until(() => /^Rig/.test($("#vtt-lastroll").textContent.trim()));
 const logLenAfter = Object.keys(await aget(`CocLive.get("tables/482910/log")`) || {}).length;
 ok(logLenAfter === logLenBefore + 1, "a number rolled off the drawer reaches the shared log");
+await until(() => /^Rig/.test($("#vtt-lastroll").textContent.trim()));
 ok(/^Rig/.test($("#vtt-lastroll").textContent.trim()), "under your character's name: " + $("#vtt-lastroll").textContent.trim());
 // Closing it hands the page back — otherwise the next sheet opened anywhere paints into nothing.
 click($('[data-tbl="sheet-close"]'));
@@ -977,6 +1013,14 @@ await go("#/table/482910", 400);
 await wait(300);
 ok(peek(`tbl.role`) === "player", "as a player");
 ok(peek(`tbl.ui.panel`) === "seat", "and you are asked who you are playing, rather than given a figure");
+// Asked once — but never lost. Clicking away used to leave no way back to the question.
+ok($('[data-tbl="panel"][data-val="seat"]'), "with a way back to the question in the bar");
+openPanel("notes");
+await wait(40);
+ok(peek(`tbl.ui.panel`) === "notes", "you can go and look at something else");
+openPanel("seat");
+await wait(40);
+ok(peek(`tbl.ui.panel`) === "seat", "and come straight back to choosing");
 ok($$('[data-tbl="seat-take"]').length >= 1, "with the figures already on the table offered");
 // Rig is on the board from earlier and nobody is holding it, so it can be taken.
 const rigBtn = $$('[data-tbl="seat-take"]').find((b) => b.dataset.val === "tRig");
@@ -989,6 +1033,8 @@ ok((await aget(`CocLive.get("tables/482910/tokens/tRig/owner")`)) === peek(`tbl.
 ok(peek(`tbl.me.charCode`) === "123456", "and you become whoever it is — sheet and all");
 ok(peek(`tblCanMove(tblTokens().tRig)`) === true, "which is what lets you move it");
 ok(peek(`tbl.ui.panel`) === "", "the question closes once answered");
+peek(`paintBar();`);
+ok(!$('[data-tbl="panel"][data-val="seat"]'), "and the button goes away once you have a figure");
 // Somebody else holding a figure: it cannot be taken while they are here.
 await peek(`CocLive.put("tables/482910/tokens/tHeld", { name: "Sable", kind: "pc", owner: "otherClient",
   x: 3, y: 9, size: 1, hp: 10, hpMax: 10, speed: 30 })`);

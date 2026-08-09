@@ -498,8 +498,8 @@ async function tblEnsureToken() {
     return;
   }
   if (tbl.me.left) return;          // you took your figure off on purpose; it does not come back by itself
-  // No figure: ask who they are, once. Asking again every twenty seconds would reopen the panel over
-  // whatever they had opened instead.
+  // Asked ONCE, because reopening it every twenty seconds would shove aside whatever they had opened
+  // instead. It is not a trap any more: while you hold no figure, "Choose a character" sits in the bar.
   if (!tbl.ui.askedSeat) {
     tbl.ui.askedSeat = true;
     tbl.ui.panel = "seat";
@@ -524,6 +524,8 @@ function renderTableShell() {
         <span id="vtt-who" class="vtt-who"></span>
         <span class="vtt-acts">
           <button class="btn-quiet" data-tbl="panel" data-val="dice">Dice</button>
+          ${tbl.role !== "dm" && !tblMyTokens().length
+            ? `<button class="btn-quiet on" data-tbl="panel" data-val="seat">Choose a character</button>` : ""}
           <button class="btn-quiet" data-tbl="panel" data-val="notes">Notes</button>
           <button class="btn-quiet" data-tbl="panel" data-val="draw">Draw</button>
           ${tbl.role === "dm" || tbl.me.charCode
@@ -560,6 +562,10 @@ function renderTableShell() {
     </div>`;
   paintHeader();
   paintBoard();
+  // The shell replaces the side panel with an empty one, so whatever was open has to be drawn again —
+  // otherwise anything that re-renders the shell (claiming the DM chair, stepping down, a role settling)
+  // leaves you looking at a blank panel with no way to tell it is not just empty.
+  paintSide();
   bindStage();
   // The stage takes its height from flex, which is not settled in the tick the markup is written in.
   if (typeof requestAnimationFrame === "function") {
@@ -572,6 +578,7 @@ function renderTableShell() {
    actually changes. The alternative (working out which branch moved) was seven streams, and that cost
    the app every connection the browser had. */
 function paintEverything() {
+  paintBar();
   // The DM closed the room while people were in it — or somebody opened a code from their list that no
   // longer exists. Either way there is no table, and showing an empty board is the one answer that
   // explains nothing. (It is also why this cannot simply be ignored: the heartbeat would go on writing
@@ -608,6 +615,20 @@ function tblTableGone() {
 }
 
 /* Header, who-is-here, error bar: small nodes, replaced whole. */
+/* The bar carries a button that only exists while you have no figure, so it has to be re-rendered when
+   that changes — otherwise "Choose a character" hangs around after you have, or stays missing after you let
+   a figure go. Cheap: the bar is four spans and some buttons. */
+function paintBar() {
+  const acts = document.querySelector(".vtt-acts");
+  if (!acts || !tbl) return;
+  const seat = acts.querySelector('[data-val="seat"]');
+  const need = tbl.role !== "dm" && !tblMyTokens().length;
+  if (need && !seat) {
+    acts.insertAdjacentHTML("afterbegin",
+      `<button class="btn-quiet on" data-tbl="panel" data-val="seat">Choose a character</button>`);
+  } else if (!need && seat) seat.remove();
+}
+
 function paintHeader() {
   const meta = tbl.data.meta || {};
   const el = $("#vtt-title");
@@ -3184,8 +3205,40 @@ document.addEventListener("click", (e) => {
   // Closing the drawer hands paint() back to the page. Leaving it pointed here would mean the next
   // sheet you opened anywhere painted into a node that no longer exists.
   else if (act === "sheet-close") { closeSheetPanel(); tbl.ui.panel = ""; paintSide(); }
-  // Everything below changes the board itself, which is the DM's alone. The buttons are not rendered
-  // for a player, and the check is here as well because a rendered-away control is not a locked one.
+
+  else if (act === "ed-open") tblOpenToken(val);
+  else if (act === "ink-pen" || act === "ink-erase" || act === "ink-off") {
+    const ink = tblInkState();
+    ink.on = act !== "ink-off";
+    if (act === "ink-pen") ink.mode = "pen";
+    if (act === "ink-erase") ink.mode = "erase";
+    // The board's cursor says which tool is in your hand, since the pen changes what a drag does.
+    const stage = $("#vtt-stage");
+    if (stage) stage.classList.toggle("inking", ink.on);
+    paintSide();
+  }
+  else if (act === "ink-color") { tblInkState().color = val; paintSide(); }
+  else if (act === "ink-width") { tblInkState().width = Number(val); paintSide(); }
+  else if (act === "ink-clear-mine") {
+    for (const [id] of tblMyStrokes()) CocLive.del(tblPath("draw/" + id)).catch(() => {});
+  }
+  else if (act === "note-new") tblNewNote().catch(tblFail);
+  else if (act === "note-open") { tbl.ui.note = tbl.ui.note === val ? "" : val; paintSide(); }
+  else if (act === "note-del") {
+    const n = (tbl.data.notes || {})[val];
+    if (n && n.by === tblNoteOwner()) {
+      CocLive.del(tblPath("notes/" + val)).catch(tblFail);
+      if (tbl.ui.note === val) tbl.ui.note = "";
+      paintSide();
+    }
+  }
+  /* Everything BELOW this line changes the board, which is the DM's alone.
+     Everything ABOVE it is anyone's: the pen, the notepad, the tracker, choosing which character you are
+     playing, and opening a figure to look at it. They were all below it, which meant that for a player
+     every one of those buttons did precisely nothing — Kayki reported the drawing "not working", and the
+     notepad, the tracker and the seat picker were dead in the same way for the same reason.
+     The guard stays (a control that is merely unrendered is not a locked one); what changed is that the
+     things it was never meant to cover are now on the right side of it. */
   else if (tbl.role !== "dm") return;
   else if (act === "init-roll") tblRollInitiative().catch(tblFail);
   else if (act === "turn-end") tblTurnEnd().catch(tblFail);
@@ -3232,7 +3285,6 @@ document.addEventListener("click", (e) => {
     if (id) CocLive.put(tblPath("scenes/" + id + "/drawLocked"), tblScene().drawLocked !== true).catch(tblFail);
   }
   else if (act === "spawn") tblSpawn().catch(tblFail);
-  else if (act === "ed-open") tblOpenToken(val);
   else if (act === "ed-close") { tbl.ui.editToken = ""; paintSide(); }
   else if (act === "ed-save") tblSaveToken(val).catch(tblFail);
   else if (act === "ed-dup") tblDuplicate(val).catch(tblFail);
@@ -3253,31 +3305,6 @@ document.addEventListener("click", (e) => {
   else if (act === "ed-del") {
     CocLive.del(tblPath("tokens/" + val)).catch(tblFail);
     tbl.ui.editToken = ""; paintSide();
-  }
-  else if (act === "ink-pen" || act === "ink-erase" || act === "ink-off") {
-    const ink = tblInkState();
-    ink.on = act !== "ink-off";
-    if (act === "ink-pen") ink.mode = "pen";
-    if (act === "ink-erase") ink.mode = "erase";
-    // The board's cursor says which tool is in your hand, since the pen changes what a drag does.
-    const stage = $("#vtt-stage");
-    if (stage) stage.classList.toggle("inking", ink.on);
-    paintSide();
-  }
-  else if (act === "ink-color") { tblInkState().color = val; paintSide(); }
-  else if (act === "ink-width") { tblInkState().width = Number(val); paintSide(); }
-  else if (act === "ink-clear-mine") {
-    for (const [id] of tblMyStrokes()) CocLive.del(tblPath("draw/" + id)).catch(() => {});
-  }
-  else if (act === "note-new") tblNewNote().catch(tblFail);
-  else if (act === "note-open") { tbl.ui.note = tbl.ui.note === val ? "" : val; paintSide(); }
-  else if (act === "note-del") {
-    const n = (tbl.data.notes || {})[val];
-    if (n && n.by === tblNoteOwner()) {
-      CocLive.del(tblPath("notes/" + val)).catch(tblFail);
-      if (tbl.ui.note === val) tbl.ui.note = "";
-      paintSide();
-    }
   }
   else if (act === "step-down") tblStepDown().catch(tblFail);
   else if (act === "close-arm") { tbl.ui.closeArmed = true; tbl.ui.closeText = ""; paintSide(); }
