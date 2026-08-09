@@ -106,6 +106,7 @@ function tblFresh(code, role) {
     drag: null,
     offs: [],          // live subscriptions, closed on teardown
     beat: null,        // presence heartbeat
+    deadman: false,    // the database has promised to take our presence away when the socket drops
     pointers: new Map(),
     inkPending: null,       // a rub that has been sent but not yet echoed back
     inkNew: new Set(),      // the pieces it created, so they are not drawn twice on the way
@@ -456,16 +457,29 @@ async function tblSettleSeat() {
   tblFail({ message: tbl.ui.seatNote });
 }
 
-/* Presence is a heartbeat, not a connection: without the Firebase SDK there is no onDisconnect, so
-   everyone writes "I am still here" every twenty seconds and anyone silent for a minute is gone. */
+/* Presence is said twice, because a browser can leave two ways.
+   - Politely: it says so, and `tblTeardown` deletes it.
+   - By vanishing: a closed laptop, a phone in a pocket, a lost network. Nothing gets to run then, so
+     the DATABASE is asked in advance to take the entry away the moment the socket drops. That is what
+     `onGone` is, and it is the reason for the transport swap: a DM who closes their laptop used to
+     hold the chair for a full minute afterwards, with everyone else locked out of it.
+   The twenty-second beat stays as the backstop — it refreshes `at`, which is what tells the others
+   somebody is still here when the dead-man's switch is not available (the REST transport has none). */
 function tblAnnounce() {
   if (!tbl) return;
-  CocLive.put(tblPath("presence/" + tbl.me.clientId), {
+  const mine = tblPath("presence/" + tbl.me.clientId);
+  CocLive.put(mine, {
     name: tbl.me.name || (tbl.role === "dm" ? "DM" : "Player"),
     role: tbl.role,
     charCode: tbl.me.charCode || "",
     at: Date.now(),
   }).catch(() => {});
+  // Armed once per table. The library re-arms it itself after a reconnection, so the beat must not
+  // keep asking — that would be a write every twenty seconds for a promise already made.
+  if (!tbl.deadman) {
+    tbl.deadman = true;
+    CocLive.onGone(mine).catch(() => { if (tbl) tbl.deadman = false; });
+  }
   tblEnsureToken();
 }
 

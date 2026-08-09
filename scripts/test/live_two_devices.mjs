@@ -221,6 +221,23 @@ ok(running.every((s) => s === wanted), `both devices really ran on ${wanted} (${
 ok(dm.errs.length === 0 && pl.errs.length === 0, "no page errors on either device" +
   ([...dm.errs, ...pl.errs].length ? ": " + [...dm.errs, ...pl.errs][0] : ""));
 
+console.log("\n— the phone vanishes without saying goodbye —");
+// A closed laptop, a phone in a pocket, a lost network: nothing on the page gets to run, so the only
+// thing that can clear the entry is the promise the database was given in advance. This is what the
+// transport was swapped FOR — a DM who disappeared used to hold the chair for a full minute.
+const gone = await pl.page.evaluate(() => tbl.me.clientId);
+ok(!!(await db(`tables/${ROOM}/presence/${gone}`, "GET")), "the phone is listed as being at the table");
+await pl.ctx.close();
+await wait(4000);
+const after = await db(`tables/${ROOM}/presence/${gone}`, "GET");
+if (wanted === "sdk") {
+  ok(after === null, "and the database took the entry away by itself, seconds after the browser went");
+  const whoLeft = await dm.page.evaluate(() => document.querySelector("#vtt-who").textContent);
+  ok(!/Live Test/.test(whoLeft), "so the DM's screen stopped showing them at once (" + whoLeft.trim() + ")");
+} else {
+  ok(after !== null, "and over REST it lingers, as it always did — the beat has to go stale first");
+}
+
 await browser.close();
 // Leave the real database as it was found.
 await db(`tables/${ROOM}`, "DELETE");
