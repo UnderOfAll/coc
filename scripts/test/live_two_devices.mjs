@@ -61,11 +61,20 @@ console.log("\n— a second device joins as a player —");
 const pl = await open("player", 393, 850);
 await pl.page.evaluate(() => { location.hash = "#/table"; });
 await wait(600);
-await pl.page.evaluate((r, c) => {
+// Joining is the room code and nothing else now; WHO you are is chosen inside.
+await pl.page.evaluate((r) => {
   document.querySelector("#tbl-room").value = r;
-  document.querySelector("#tbl-char").value = c;
   document.querySelector('[data-tbl="join"]').click();
-}, ROOM, CHAR);
+}, ROOM);
+await wait(2500);
+// The room asks who they are playing. Nobody is on the board yet, so they add themselves — with a Circus of
+// Chaos code, which is what pulls the real sheet across.
+const asked = await pl.page.evaluate(() => !!document.querySelector("#seat-name"));
+ok(asked, "the room asks who they are playing");
+await pl.page.evaluate((c) => {
+  document.querySelector("#seat-code").value = c;
+  document.querySelector('[data-tbl="seat-new"]').click();
+}, CHAR);
 await wait(3500);
 ok(await pl.page.evaluate(() => !!(typeof tbl !== "undefined" && tbl && tbl.role === "player")), "the phone is in as a player");
 if (pl.errs.length) console.log("       [player errors] " + pl.errs.join(" | "));

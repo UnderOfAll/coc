@@ -943,6 +943,7 @@ async function tblTakeSeat(id) {
   tbl.ui.panel = "";
   paintSide();
   paintHeader();
+  paintBar();     // "Choose a character" goes, "My sheet" arrives if the code brought one
 }
 
 async function tblNewSeat() {

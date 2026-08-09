@@ -629,12 +629,18 @@ function tblTableGone() {
 function paintBar() {
   const acts = document.querySelector(".vtt-acts");
   if (!acts || !tbl) return;
-  const seat = acts.querySelector('[data-val="seat"]');
-  const need = tbl.role !== "dm" && !tblMyTokens().length;
-  if (need && !seat) {
-    acts.insertAdjacentHTML("afterbegin",
-      `<button class="btn-quiet on" data-tbl="panel" data-val="seat">Choose a character</button>`);
-  } else if (!need && seat) seat.remove();
+  /* Two buttons come and go with what you are holding, and BOTH have to be maintained here rather than only
+     in the shell: taking a seat with a character code used to leave a player with no way to open the sheet it
+     had just fetched, because only a shell re-render would have added the button. */
+  const want = (val, label, cls) => {
+    const has = acts.querySelector(`[data-val="${val}"]`);
+    if (!has) acts.insertAdjacentHTML("afterbegin",
+      `<button class="btn-quiet${cls || ""}" data-tbl="panel" data-val="${val}">${label}</button>`);
+  };
+  const drop = (val) => { const n = acts.querySelector(`[data-val="${val}"]`); if (n) n.remove(); };
+  const holding = tblMyTokens().length;
+  if (tbl.role !== "dm" && !holding) want("seat", "Choose a character", " on"); else drop("seat");
+  if (tbl.role === "dm" || tbl.me.charCode) want("sheet", "My sheet"); else drop("sheet");
 }
 
 function paintHeader() {
