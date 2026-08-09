@@ -333,20 +333,65 @@ function tblEraseAt(at) {
     if (!k || k.scene !== sceneId) continue;
     if (tbl.role !== "dm" && k.by !== mine) continue;
     const pts = tblInkDecode(k.pts);
-    const hit = pts.some((p, i) => {
-      if (Math.hypot(p.x - at.x, p.y - at.y) < near) return true;
-      const q = pts[i + 1];
-      if (!q) return false;
-      // Distance from the point to this SEGMENT, so a long straight line can be rubbed out anywhere along
-      // it rather than only where it happened to be sampled.
-      const dx = q.x - p.x, dy = q.y - p.y;
-      const len = dx * dx + dy * dy;
-      if (!len) return false;
-      const t = Math.max(0, Math.min(1, ((at.x - p.x) * dx + (at.y - p.y) * dy) / len));
-      return Math.hypot(p.x + t * dx - at.x, p.y + t * dy - at.y) < near;
+    if (!pts.length) continue;
+
+    /* A SHAPE goes whole. There is no sensible half of a rectangle, and every drawing program agrees: you
+       touch it, it goes. */
+    if (k.kind && k.kind !== "free") {
+      if (tblInkTouches(pts, k.kind, at, near)) CocLive.del(tblPath("draw/" + id)).catch(() => {});
+      continue;
+    }
+
+    /* FREEHAND is rubbed, not deleted — which is what an eraser is. Kayki's complaint: touching a long line
+       anywhere removed the whole thing. The points under the eraser are dropped and what survives is written
+       back as separate pieces, so rubbing through the middle of a line leaves two lines. */
+    const keep = pts.map((p) => Math.hypot(p.x - at.x, p.y - at.y) >= near);
+    if (keep.every(Boolean)) continue;                 // the eraser is not over this stroke at all
+    const pieces = [];
+    let run = [];
+    pts.forEach((p, i) => {
+      if (keep[i]) run.push(p);
+      else if (run.length) { pieces.push(run); run = []; }
     });
-    if (hit) CocLive.del(tblPath("draw/" + id)).catch(() => {});
+    if (run.length) pieces.push(run);
+    CocLive.del(tblPath("draw/" + id)).catch(() => {});
+    for (const piece of pieces) {
+      // A single surviving point is a speck nobody drew on purpose.
+      if (piece.length < 2) continue;
+      CocLive.push(tblPath("draw"), {
+        by: k.by, scene: k.scene, color: k.color, width: k.width, kind: "free",
+        pts: tblInkEncode(piece), at: k.at || Date.now(),
+      }).catch(() => {});
+    }
   }
+}
+
+/* Is the eraser over this shape's outline (or, for a box, its edge)? */
+function tblInkTouches(pts, kind, at, near) {
+  const seg = (a, b) => {
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const len = dx * dx + dy * dy;
+    if (!len) return Math.hypot(a.x - at.x, a.y - at.y);
+    const t = Math.max(0, Math.min(1, ((at.x - a.x) * dx + (at.y - a.y) * dy) / len));
+    return Math.hypot(a.x + t * dx - at.x, a.y + t * dy - at.y);
+  };
+  const a = pts[0], b = pts[1] || pts[0];
+  if (kind === "line") return seg(a, b) < near;
+  if (kind === "rect") {
+    const x1 = Math.min(a.x, b.x), x2 = Math.max(a.x, b.x);
+    const y1 = Math.min(a.y, b.y), y2 = Math.max(a.y, b.y);
+    const corners = [{ x: x1, y: y1 }, { x: x2, y: y1 }, { x: x2, y: y2 }, { x: x1, y: y2 }];
+    return corners.some((c, i) => seg(c, corners[(i + 1) % 4]) < near);
+  }
+  if (kind === "circle") {
+    const cx = (a.x + b.x) / 2, cy = (a.y + b.y) / 2;
+    const rx = Math.abs(b.x - a.x) / 2, ry = Math.abs(b.y - a.y) / 2;
+    if (!rx || !ry) return Math.hypot(cx - at.x, cy - at.y) < near;
+    // How far the point is from the ellipse, near enough for an eraser's purposes.
+    const d = Math.hypot((at.x - cx) / rx, (at.y - cy) / ry);
+    return Math.abs(d - 1) < near / Math.min(rx, ry);
+  }
+  return false;
 }
 
 /* Every finger is up and nothing is being dragged. Called whenever the browser tells us a gesture
@@ -400,7 +445,8 @@ function onPointerDown(e) {
     tbl.drag = null;
     if (tblInkState().mode === "erase") { tblEraseAt(at); return; }
     tblTrace("ink start");
-    tbl.inking = { points: [at], color: tblInkState().color, width: tblInkState().width };
+    tbl.inking = { points: [at], color: tblInkState().color, width: tblInkState().width,
+                   kind: tblInkState().shape || "free" };
     paintDrawings();
     if (stage.setPointerCapture) { try { stage.setPointerCapture(e.pointerId); } catch { /* fine */ } }
     return;
@@ -442,6 +488,13 @@ function onPointerMove(e) {
   }
   if (tbl.inking) {
     const at = tblInkPoint(stagePoint(e));
+    // A shape is always exactly two points — where the drag began and where it is now — so it grows and
+    // shrinks under the hand instead of leaving a trail.
+    if (tbl.inking.kind !== "free") {
+      tbl.inking.points[1] = at;
+      paintDrawings();
+      return;
+    }
     const last = tbl.inking.points[tbl.inking.points.length - 1];
     // Only once the hand has actually moved: sampling every event would store hundreds of identical points
     // and make the stroke expensive for everyone else to draw.
@@ -493,7 +546,7 @@ function onPointerUp(e) {
     if (stroke.points.length) {
       CocLive.push(tblPath("draw"), {
         by: tblNoteOwner(), scene: tblSceneId(), color: stroke.color, width: stroke.width,
-        pts: tblInkEncode(stroke.points), at: Date.now(),
+        kind: stroke.kind || "free", pts: tblInkEncode(stroke.points), at: Date.now(),
       }).catch(tblFail);
     }
     paintDrawings();
@@ -603,13 +656,18 @@ function tblDieFace(sides) {
 }
 
 const TBL_INK_COLOURS = [
-  ["#c9a54e", "Gold"], ["#e07a5f", "Red"], ["#6ab04c", "Green"],
-  ["#4a90d9", "Blue"], ["#e9e4da", "White"], ["#1a1917", "Black"],
+  ["#d94f43", "Red"], ["#5cb85c", "Green"], ["#4a90d9", "Blue"],
+  ["#f2efe6", "White"], ["#14110f", "Black"], ["#8b8b86", "Grey"],
+  ["#e8c341", "Yellow"], ["#e77fb3", "Pink"], ["#8a5a34", "Brown"],
 ];
 const TBL_INK_MAX_POINTS = 400;
+/* Freehand, and the three shapes anybody actually draws on a battle map. A shape is TWO points — where the
+   drag began and where it is now — so it resizes as you drag and stores as almost nothing. */
+const TBL_INK_SHAPES = [["free", "Freehand"], ["line", "Line"], ["rect", "Box"], ["circle", "Circle"]];
 
 function tblInkState() {
-  if (!tbl.ui.ink) tbl.ui.ink = { mode: "pen", color: TBL_INK_COLOURS[0][0], width: 2, on: false };
+  if (!tbl.ui.ink) tbl.ui.ink = { mode: "pen", shape: "free", color: TBL_INK_COLOURS[0][0], width: 2, on: false };
+  if (!tbl.ui.ink.shape) tbl.ui.ink.shape = "free";
   return tbl.ui.ink;
 }
 /* May I draw here? The DM always may; a player may unless the DM has turned it off for this scene. */
@@ -649,22 +707,42 @@ function paintDrawings() {
     const pts = tblInkDecode(k.pts);
     if (!pts.length) return "";
     const width = Math.max(1, (Number(k.width) || 2) * cell / 24);
+    const stroke = esc(k.color || "#c9a54e");
+    const common = `fill="none" stroke="${stroke}" stroke-width="${width.toFixed(1)}"
+      stroke-linecap="round" stroke-linejoin="round" data-ink="${esc(id)}"`;
+    const X = (p) => (p.x * w).toFixed(1), Y = (p) => (p.y * h).toFixed(1);
+    // A shape is its two corners; freehand is every point it was drawn through.
+    if (k.kind === "line" && pts.length > 1) {
+      return `<line x1="${X(pts[0])}" y1="${Y(pts[0])}" x2="${X(pts[1])}" y2="${Y(pts[1])}" ${common} />`;
+    }
+    if (k.kind === "rect" && pts.length > 1) {
+      const x = Math.min(pts[0].x, pts[1].x) * w, y = Math.min(pts[0].y, pts[1].y) * h;
+      const bw = Math.abs(pts[1].x - pts[0].x) * w, bh = Math.abs(pts[1].y - pts[0].y) * h;
+      return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}"
+        height="${bh.toFixed(1)}" ${common} />`;
+    }
+    if (k.kind === "circle" && pts.length > 1) {
+      // Corner to corner, like every drawing program: an ellipse inside the box you dragged.
+      const cx = ((pts[0].x + pts[1].x) / 2) * w, cy = ((pts[0].y + pts[1].y) / 2) * h;
+      const rx = Math.abs(pts[1].x - pts[0].x) * w / 2, ry = Math.abs(pts[1].y - pts[0].y) * h / 2;
+      return `<ellipse cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" rx="${rx.toFixed(1)}"
+        ry="${ry.toFixed(1)}" ${common} />`;
+    }
     if (pts.length === 1) {
       // A tap is a dot, not nothing — people mark spots.
-      return `<circle cx="${(pts[0].x * w).toFixed(1)}" cy="${(pts[0].y * h).toFixed(1)}"
-        r="${(width / 2).toFixed(1)}" fill="${esc(k.color || "#c9a54e")}" data-ink="${esc(id)}" />`;
+      return `<circle cx="${X(pts[0])}" cy="${Y(pts[0])}" r="${(width / 2).toFixed(1)}"
+        fill="${stroke}" data-ink="${esc(id)}" />`;
     }
-    const d = pts.map((p, i) => `${i ? "L" : "M"}${(p.x * w).toFixed(1)} ${(p.y * h).toFixed(1)}`).join(" ");
-    return `<path d="${d}" fill="none" stroke="${esc(k.color || "#c9a54e")}"
-      stroke-width="${width.toFixed(1)}" stroke-linecap="round" stroke-linejoin="round"
-      data-ink="${esc(id)}" />`;
+    const d = pts.map((p, i) => `${i ? "L" : "M"}${X(p)} ${Y(p)}`).join(" ");
+    return `<path d="${d}" ${common} />`;
   };
   const strokes = Object.entries(tbl.data.draw || {})
     .filter(([, k]) => k && k.scene === sceneId)
     .sort((a, b) => (a[1].at || 0) - (b[1].at || 0))
     .map(([id, k]) => path(k, id)).join("");
   const live = tbl.inking && tbl.inking.points.length
-    ? path({ pts: tblInkEncode(tbl.inking.points), color: tbl.inking.color, width: tbl.inking.width }, "live")
+    ? path({ pts: tblInkEncode(tbl.inking.points), color: tbl.inking.color, width: tbl.inking.width,
+             kind: tbl.inking.kind }, "live")
     : "";
   svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
   svg.innerHTML = strokes + live;

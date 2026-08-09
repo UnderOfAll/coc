@@ -538,7 +538,7 @@ function renderTableShell() {
           ${tblDebugOn() ? `<button class="btn-quiet" data-tbl="panel" data-val="debug">Debug</button>` : ""}
           ${tbl.role === "dm" || tbl.me.charCode
             ? `<button class="btn-quiet" data-tbl="panel" data-val="sheet">My sheet</button>` : ""}
-          <button class="btn-quiet" data-tbl="panel" data-val="mine">Tracker</button>
+          <button class="btn-quiet" data-tbl="panel" data-val="mine">Character</button>
           ${tbl.role === "dm"
             ? `<button class="btn-quiet" data-tbl="panel" data-val="dm">DM</button>`
             : `<button class="btn-quiet" data-tbl="panel" data-val="claim">I'm the DM</button>`}
@@ -781,7 +781,18 @@ COC_ROUTES.debug = routeDebug;
    two-step "choose then save" is one more thing to forget. */
 document.addEventListener("change", (e) => {
   if (!tbl) return;
-  if (evTarget(e).id === "ed-file") tblUploadTokenImage(tbl.ui.editToken, e.target, "ed-imgmsg");
+  if (evTarget(e).id === "seat-file") {
+    // Shrunk and held until the character is created, since there is no figure to hang it on yet.
+    const file = evTarget(e).files && evTarget(e).files[0];
+    const say = (t, cls) => { const m = $("#seat-pic-msg"); if (m) { m.textContent = t; m.className = "save-msg" + cls; } };
+    if (file) {
+      say("Shrinking it…", "");
+      tblShrinkImage(file, (data) => { tbl.ui.seatPic = data; say("Picture ready.", " good"); },
+        (why) => say(why, " bad"), TBL_TOKEN_IMAGE);
+    }
+    return;
+  }
+  if (evTarget(e).id === "ed-file") tblUploadTokenImage(tbl.ui.editToken, evTarget(e), "ed-imgmsg");
   else if (evTarget(e).id === "mine-file") {
     tblUploadTokenImage(tblMyTokens()[0] || tbl.ui.lookAt, e.target, "mine-imgmsg");
   }
@@ -898,6 +909,7 @@ document.addEventListener("click", (e) => {
   }
   else if (act === "dbg-copy") tblCopyDiagnostics();
   else if (act === "dbg-backup") tblDownloadBackup();
+  else if (act === "seat-pic") { tbl.ui.seatPic = "maps/" + val; paintSide(); }
   else if (act === "seat-take") tblTakeSeat(val).catch(tblFail);
   else if (act === "seat-new") tblNewSeat().catch(tblFail);
   else if (act === "trk-add") {
@@ -966,6 +978,7 @@ document.addEventListener("click", (e) => {
     if (stage) stage.classList.toggle("inking", ink.on);
     paintSide();
   }
+  else if (act === "ink-shape") { tblInkState().shape = val; paintSide(); }
   else if (act === "ink-color") { tblInkState().color = val; paintSide(); }
   else if (act === "ink-width") { tblInkState().width = Number(val); paintSide(); }
   else if (act === "ink-clear-mine") {

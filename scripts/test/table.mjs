@@ -50,6 +50,7 @@ const until = async (fn, ms = 800) => {
   return false;
 };
 const tblCols = () => peek(`tblScene().cols`);
+const tblInkDecodeLen = (pts) => String(pts || "").split(" ").filter(Boolean).length;
 // The panel buttons TOGGLE, so asking for one that is already open would shut it.
 const openPanel = (name) => { if (peek("tbl.ui.panel") !== name) click($(`[data-tbl="panel"][data-val="${name}"]`)); };
 /* The dice have two homes: a dock of their own where there is room for one (which is what a test
@@ -196,7 +197,7 @@ peek(`tbl.role = "dm"; tbl.me.charCode = ""; renderTableShell(); paintTokens();
 openPanel("draw");
 await wait(60);
 ok($('[data-tbl="ink-pen"]') && $('[data-tbl="ink-erase"]'), "everyone gets a pen and an eraser");
-ok($$('[data-tbl="ink-color"]').length === 6, "with colours to choose from");
+ok($$('[data-tbl="ink-color"]').length === 9, "with nine colours to choose from");
 ok($("#vtt-ink"), "and a layer to draw on");
 // With the pen away the board behaves as it always did.
 const orcWas = await aget(`CocLive.get("tables/482910/tokens/tOrc/x")`);
@@ -223,16 +224,60 @@ ok(inkBefore !== inkAfter, "re-gridding rescales the ink with the picture");
 ok($("#vtt-ink").getAttribute("viewBox") === "0 0 4200 2800", "the layer follows the world: " + $("#vtt-ink").getAttribute("viewBox"));
 await peek(`CocLive.patch("tables/482910/scenes/" + tblSceneId(), { cols: 30, rows: 20 })`);
 await wait(80);
-// The eraser.
+// Shapes: two corners, resizing under the hand.
+peek(`tblInkState().shape = "rect"; paintSide();`);
+drag($("#vtt-stage"), 700, 200, 1000, 500);
+await wait(150);
+const inkStrokes = await aget(`Object.values(await CocLive.get("tables/482910/draw"))`);
+const boxStroke = inkStrokes.find((k) => k.kind === "rect");
+ok(boxStroke, "a box can be drawn");
+ok(tblInkDecodeLen(boxStroke.pts) === 2, "stored as its two corners, not a trail of points");
+ok($$("#vtt-ink rect").length === 1, "and drawn as a rectangle");
+peek(`tblInkState().shape = "circle"; paintSide();`);
+drag($("#vtt-stage"), 700, 600, 900, 800);
+await wait(150);
+ok($$("#vtt-ink ellipse").length === 1, "a circle too");
+peek(`tblInkState().shape = "line"; paintSide();`);
+drag($("#vtt-stage"), 1100, 200, 1300, 400);
+await wait(150);
+ok($$("#vtt-ink line").length === 1, "and a straight line");
+peek(`tblInkState().shape = "free"; paintSide();`);
+
+// The eraser rubs out the PART it passes over. Kayki's complaint: touching a long line anywhere took the
+// whole thing, which is a delete, not an eraser.
+peek(`(async () => { const d = await CocLive.get("tables/482910/draw");
+  for (const id of Object.keys(d || {})) await CocLive.del("tables/482910/draw/" + id); })()`);
+await wait(120);
+// A long straight freehand line across the board, sampled every few pixels.
+await peek(`CocLive.push("tables/482910/draw", { by: tblNoteOwner(), scene: tblSceneId(), color: "#fff",
+  width: 2, kind: "free", at: 1,
+  pts: Array.from({ length: 21 }, (_, i) => (0.05 + i * 0.045).toFixed(4) + ",0.5000").join(" ") })`);
+await wait(120);
 click($('[data-tbl="ink-erase"]'));
 await wait(40);
-pointer("pointerdown", $("#vtt-stage"), 200, 200, 1);
-pointer("pointerup", $("#vtt-stage"), 200, 200, 1);
+// Rub the MIDDLE of it.
+const midX = 0.5 * 30 * 70, midY = 0.5 * 20 * 70;
+pointer("pointerdown", $("#vtt-stage"), midX, midY, 1);
+pointer("pointerup", $("#vtt-stage"), midX, midY, 1);
+await wait(200);
+const left = await aget(`Object.values(await CocLive.get("tables/482910/draw") || {})`);
+ok(left.length === 2, "rubbing the middle of a line leaves the two ends, not nothing (" + left.length + " pieces)");
+ok(left.every((k) => k.kind === "free" && k.pts.split(" ").length >= 2), "each a line in its own right");
+// A shape, by contrast, goes whole — there is no sensible half of a box.
+await peek(`CocLive.push("tables/482910/draw", { by: tblNoteOwner(), scene: tblSceneId(), color: "#fff",
+  width: 2, kind: "rect", at: 2, pts: "0.2000,0.2000 0.4000,0.4000" })`);
 await wait(120);
-ok((await aget(`CocLive.get("tables/482910/draw")`)) === null, "the eraser rubs out what is under it");
-// Whose ink is whose.
+const boxCount = () => aget(`Object.values(await CocLive.get("tables/482910/draw") || {}).filter(k => k.kind === "rect").length`);
+pointer("pointerdown", $("#vtt-stage"), 0.2 * 2100, 0.3 * 1400, 1);
+pointer("pointerup", $("#vtt-stage"), 0.2 * 2100, 0.3 * 1400, 1);
+await wait(200);
+ok((await boxCount()) === 0, "touching a box's edge removes the box");
+// Whose ink is whose. Cleared first, since the shape tests above left pieces of their own.
+peek(`(async () => { const d = await CocLive.get("tables/482910/draw");
+  for (const id of Object.keys(d || {})) await CocLive.del("tables/482910/draw/" + id); })()`);
+await wait(150);
 await peek(`CocLive.push("tables/482910/draw", { by: "pc:999999", scene: tblSceneId(), color: "#6ab04c",
-  width: 2, pts: "0.1000,0.1000 0.2000,0.2000", at: Date.now() })`);
+  width: 2, kind: "free", pts: "0.1000,0.1000 0.1050,0.1050 0.2000,0.2000", at: Date.now() })`);
 await wait(80);
 peek(`tbl.role = "player"; tbl.me.charCode = "123456"; renderTableShell(); tblInkState().on = true; tblInkState().mode = "erase";`);
 pointer("pointerdown", $("#vtt-stage"), 0.1 * 2100, 0.1 * 1400, 1);
@@ -311,6 +356,31 @@ ok((await aget(`Object.values(await CocLive.get("tables/482910/notes") || {}).so
 click($$('[data-tbl="note-del"]')[0]);
 await wait(120);
 peek(`tbl.ui.panel = ""; paintSide(); tbl.role = "dm"; tbl.me.charCode = ""; renderTableShell(); paintTokens();`);
+
+console.log("\n— THE CHARACTER PANEL —");
+peek(`tbl.role = "player"; tbl.me.clientId = "thisBrowser"; tbl.me.charCode = ""; renderTableShell();`);
+openPanel("mine");
+await wait(80);
+ok($("#trk-name"), "a character panel of your own");
+ok(/Character/.test($$('[data-tbl="panel"]').map(b => b.textContent).join(" ")), "reached from a button that says Character");
+type($("#trk-name"), "Greta"); type($("#trk-hp"), "18"); type($("#trk-hpmax"), "22");
+await wait(900);
+const sheet = await aget(`CocLive.get("tables/482910/sheets/" + tblNoteOwner())`);
+ok(sheet && sheet.name === "Greta" && sheet.hp === 18, "which saves as you type");
+// "Add a field" is the thing Kayki could not make sense of. It must add a row you can actually fill in.
+ok($('[data-tbl="trk-add"]'), "and offers to add something else to track");
+click($('[data-tbl="trk-add"]'));
+await wait(250);
+ok($("#trk-k-0") && $("#trk-v-0"), "which appears as a name and a value you can type in");
+type($("#trk-k-0"), "Ki points"); type($("#trk-v-0"), "4");
+await wait(900);
+const withField = await aget(`CocLive.get("tables/482910/sheets/" + tblNoteOwner())`);
+ok(withField.fields && withField.fields[0] && withField.fields[0].k === "Ki points" && withField.fields[0].v === "4",
+  "and is kept: " + JSON.stringify((withField.fields || [])[0]));
+click($('[data-tbl="trk-drop"][data-val="0"]'));
+await wait(250);
+ok(!$("#trk-k-0"), "and can be thrown away again");
+peek(`tbl.ui.panel = ""; paintSide(); tbl.role = "dm"; renderTableShell(); paintTokens();`);
 
 console.log("\n— TWO FIGURES CANNOT SHARE A SQUARE —");
 // Dropped onto somebody, a figure slides to the side rather than either vanishing into them or refusing

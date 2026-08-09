@@ -841,6 +841,12 @@ function drawPanelHTML() {
           : "Drag over your own lines to rub them out. Other people's are theirs.")
         : "Draw on the board with a finger or the mouse. While the pen is out, figures cannot be dragged."}</p>`
         : `<p class="muted">The pen is away, so the board drags and pans as usual.</p>`}
+      ${ink.on && ink.mode === "pen" ? `<p class="panel-sub">What to draw</p>
+        <div class="chips">${TBL_INK_SHAPES.map(([k, label]) =>
+          `<button class="chip ${(ink.shape || "free") === k ? "on" : ""}" data-tbl="ink-shape"
+            data-val="${k}">${esc(label)}</button>`).join("")}</div>
+        ${(ink.shape || "free") !== "free" ? `<p class="muted">Drag from one corner to the other — it resizes
+          under your hand and lands when you let go.</p>` : ""}` : ""}
       <p class="panel-sub">Colour</p>
       <div class="chips">${TBL_INK_COLOURS.map(([hex, name]) =>
         `<button class="chip ${ink.color === hex ? "on" : ""}" data-tbl="ink-color" data-val="${esc(hex)}"
@@ -879,6 +885,7 @@ function tblHeldBy(token) {
 
 function seatPanelHTML() {
   const scene = tblSceneId();
+  if (tblRepoMaps === null) tblLoadRepoMaps();   // so "one from the repo" can appear without a second visit
   const rows = Object.entries(tblTokens())
     .filter(([, t]) => t && t.kind !== "npc")
     .sort((a, b) => String(a[1].name || "").localeCompare(String(b[1].name || "")))
@@ -905,6 +912,13 @@ function seatPanelHTML() {
       <label class="field"><span>Circus of Chaos code <span class="muted">optional</span></span>
         <input id="seat-code" class="text code-input" type="text" inputmode="numeric" maxlength="6"
           placeholder="123456" autocomplete="off" /></label>
+      <label class="field"><span>Their picture <span class="muted">from this device, optional</span></span>
+        <input id="seat-file" class="text" type="file" accept="image/*" /></label>
+      ${tblRepoMaps && tblRepoMaps.length ? `<p class="panel-sub">Or one from the repo</p>
+        <div class="chips">${tblRepoMaps.map((f) =>
+          `<button class="chip ${tbl.ui.seatPic === "maps/" + f ? "on" : ""}" data-tbl="seat-pic"
+            data-val="${esc(f)}">${esc(f)}</button>`).join("")}</div>` : ""}
+      <p id="seat-pic-msg" class="save-msg"></p>
       <button class="btn" data-tbl="seat-new">Put them on the board</button>
       <p id="seat-msg" class="save-msg"></p>
       <p class="muted">With a code you get the real sheet and every number on it becomes a die you can
@@ -948,17 +962,20 @@ async function tblNewSeat() {
   const d = (ch && typeof derive === "function") ? derive(ch) : null;
   const spot = tblFreeSquare("", 1, 1, 1, 1, 1);
   const id = CocLive.newId();
+  // A picture chosen on this form, a portrait from the sheet, or nothing — in that order, because the one
+  // just chosen is the more deliberate.
   await CocLive.put(tblPath("tokens/" + id), {
     name: String(finalName).slice(0, 40),
     charCode: code || "",
     owner: tbl.me.clientId,
-    image: (ch && ch.photo) || "",
+    image: tbl.ui.seatPic || (ch && ch.photo) || "",
     x: spot.x, y: spot.y, size: 1, kind: "pc", shape: "square",
     initMod: d ? (d.mods.Dexterity || 0) : 0,
     hp: d ? (ch.play && ch.play.hp != null ? ch.play.hp : d.hpMax) : 0,
     hpMax: d ? d.hpMax : 0,
     speed: 30, color: "#c9a54e",
   });
+  tbl.ui.seatPic = "";
   await tblTakeSeat(id);
 }
 
@@ -985,8 +1002,12 @@ function tblTrackerKeyFor(t) {
 function tblTracker(key) {
   return (tbl.data.sheets || {})[key || tblNoteOwner()] || {};
 }
+/* ALL the rows, including the empty one you just asked for. The first version filtered empties out here,
+   which is why "Add a field" appeared to do nothing at all: it wrote a blank row and the renderer
+   immediately hid it again. Empties are dropped when they are READ BY SOMEBODY ELSE (see trackerReadHTML),
+   not when their owner is halfway through typing one. */
 function tblTrackerFields(sheet) {
-  return Array.isArray(sheet.fields) ? sheet.fields.filter((f) => f && (f.k || f.v)) : [];
+  return Array.isArray(sheet.fields) ? sheet.fields.filter((f) => f && typeof f === "object") : [];
 }
 
 function trackerHTML() {
@@ -998,7 +1019,8 @@ function trackerHTML() {
   return `<section class="panel">
       <h2>Your character</h2>
       <p class="muted">For a character this app does not know — any system, or none. Saved as you type and
-        kept with the table, so it is here on your next device.</p>
+        kept with the table, so it is here on your next device. If you have a Circus of Chaos character
+        instead, <strong>My sheet</strong> is the real thing and this is just somewhere to jot extras.</p>
       <label class="field"><span>Name</span>
         <input id="trk-name" class="text" type="text" maxlength="40" value="${esc(sheet.name || "")}" /></label>
       <label class="field"><span>What you are</span>
@@ -1027,9 +1049,10 @@ function trackerHTML() {
         <input id="trk-v-${i}" class="text trk-val" type="text" maxlength="24" placeholder="4" value="${esc(f.v || "")}" />
         <button class="btn-quiet" data-tbl="trk-drop" data-val="${i}">&times;</button>
       </div>`).join("")}</div>
-      <button class="btn-quiet" data-tbl="trk-add">Add a field</button>
-      <p class="muted">Spell slots, ki, rage, ammunition, a debt you owe someone — it does not care what it
-        is called.</p>
+      <button class="btn-quiet" data-tbl="trk-add">Add something to track</button>
+      <p class="muted">A name and a number, whatever they are: <em>Ki points 4</em>, <em>Rage 2</em>,
+        <em>Arrows 17</em>, <em>Owed to Vex 300gp</em>. This app has no idea what game you are playing, which
+        is the point — anything you would otherwise write on your hand goes here, and the DM can read it.</p>
     </section>
     <section class="panel">
       <p class="panel-sub">Notes on your character</p>
@@ -1044,7 +1067,8 @@ function trackerHTML() {
 function trackerReadHTML(key) {
   const sheet = tblTracker(key);
   if (!sheet || !Object.keys(sheet).length) return "";
-  const fields = tblTrackerFields(sheet);
+  // Somebody else's view skips the blanks — a half-typed row is nobody's business but its owner's.
+  const fields = tblTrackerFields(sheet).filter((f) => f.k || f.v);
   const bit = (label, v) => (v === "" || v == null) ? "" : `<span class="trk-read"><em>${esc(label)}</em> ${esc(v)}</span>`;
   return `<p class="panel-sub">What they are tracking</p>
     <p class="trk-reads">
