@@ -64,12 +64,6 @@ await page.evaluate(() => {
 });
 await wait(1600);
 
-console.log("\n— the library arrives —");
-// The first roll of a session is deliberately flat: it starts the fetch and does not wait for it, because
-// no roll should ever wait on a network.
-await page.evaluate(() => document.querySelector('[data-tbl="roll-pool"]').click());
-ok(await ready(25000), "fetched on the first roll, without that roll waiting for it");
-
 /* One throw, watched from the moment the button is pressed to a couple of seconds after it lands. */
 async function thrown(pool, label) {
   await page.evaluate((p) => { tblDicePool().pool = p; tblDicePool().mode = "normal"; paintDice(); }, pool);
@@ -102,6 +96,18 @@ async function thrown(pool, label) {
   done.faces = done.landed.faces;
   return done;
 }
+
+console.log("\n— the library arrives —");
+/* Fetched when the TABLE OPENS, not on the first roll. It used to wait, and the price was that the first
+   roll of every session fell back to the flat overlay while the library arrived — which reads, correctly,
+   as the 3D dice being broken: you roll, you get the old animation, you roll again and there are real
+   dice. So no click here: opening the table above should already have started it. */
+ok(await page.evaluate(() => !!dice3dBox || !!dice3dLoading), "starts fetching the moment a table opens");
+ok(await ready(25000), "and is ready without anything having been rolled");
+
+// Which means THE FIRST ROLL is a real one.
+const first = await thrown({ 20: 1 }, "the very first roll of the session");
+ok(same(first.faces, first.rolled.dice), "the first roll of a session is real dice, not the flat overlay");
 
 const four = await thrown({ 4: 3 }, "three d4 — the die the library reports wrongly");
 ok(four.faces.length === 3 && same(four.faces, four.rolled.dice),

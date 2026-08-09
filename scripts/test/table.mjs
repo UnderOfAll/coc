@@ -555,6 +555,22 @@ drag($('[data-token="tRig"]'), 6 * 70 + 35, 4 * 70 + 35, 7 * 70 + 35, 4 * 70 + 3
 await wait(60);
 ok((await peek(`CocLive.get("tables/482910/tokens/tRig/x")`)) === 7, "but your own token still moves");
 
+/* A player owns their own character's FACE completely, and nobody else's. Changing it on the board
+   changes the character too — otherwise it holds until that sheet next saves and then springs back to
+   whatever the sheet still had. */
+peek(`tblSetTokenImage("tRig", "data:image/jpeg;base64,MINE");`);
+await wait(200);
+ok((await aget(`CocLive.get("tables/482910/tokens/tRig/image")`)) === "data:image/jpeg;base64,MINE",
+  "a player can put a picture on their own figure");
+ok((await aget(`CocStore.load("123456").then((c) => c && c.photo)`)) === "data:image/jpeg;base64,MINE",
+  "and it lands on the CHARACTER, so it survives the next time the sheet saves");
+// Somebody else's figure is not theirs to dress.
+const orcArt = await aget(`CocLive.get("tables/482910/tokens/tOrc/image")`);
+peek(`tblSetTokenImage("tOrc", "data:image/jpeg;base64,NOPE");`);
+await wait(150);
+ok((await aget(`CocLive.get("tables/482910/tokens/tOrc/image")`)) === orcArt,
+  "and cannot put one on a creature, or on anybody else");
+
 console.log("\n— ZOOM —");
 const z0 = peek(`tbl.view.z`);
 click($$('[data-tbl="zoom"]').find((b) => b.dataset.val === "1"));

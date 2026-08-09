@@ -186,6 +186,7 @@ const DICE3D_MOST = 30;   // thirty land and settle in a couple of seconds; past
 let dice3dBox = null;      // the loaded box, once
 let dice3dLoading = null;  // the load in flight, so two quick rolls load it once
 let dice3dOff = false;     // it failed, or it is not wanted: stop asking
+let dice3dGL = null;       // can this browser actually give us a WebGL context? asked once
 let dice3dThrow = 0;       // which throw is the current one, so a stale one cannot un-hide the board
 /* The faces the physics last settled on, and WHICH roll they belong to. The library forgets a throw the
    moment its world is cleared, so this is the record of what was actually on the table — and it carries
@@ -295,11 +296,23 @@ function dice3dWanted() {
   if (dice3dOff || !dice3dChosen()) return false;
   try {
     if (typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches) return false;
-    // Asked of the WINDOW rather than by making a context: jsdom has no canvas at all and reaching for
-    // one there is an error in the test log, every roll, for no information — the type either exists or
-    // this browser was never going to draw anything. If it exists and still fails, the load below catches
-    // it and turns the whole thing off for the session.
+    // Asked of the WINDOW first: jsdom has no canvas at all, and reaching for one there is an error in
+    // the test log for no information.
     if (typeof WebGLRenderingContext === "undefined") return false;
+    // Then asked for real, ONCE. The type existing is not the same as a context being obtainable — a
+    // browser with no GPU, or with WebGL disabled, says yes to the first question and fails the second.
+    // That distinction did not matter while the library was fetched on the first roll; now that a table
+    // fetches it on sight, asking properly is what stops those machines downloading a megabyte of
+    // physics engine in order to print an error about it.
+    if (dice3dGL === null) {
+      const probe = document.createElement("canvas");
+      const gl = probe.getContext("webgl2") || probe.getContext("webgl");
+      dice3dGL = !!gl;
+      // Handed straight back: a context left lying about counts against the browser's limit of them.
+      try { const lose = gl && gl.getExtension("WEBGL_lose_context"); if (lose) lose.loseContext(); }
+      catch { /* nothing to give back */ }
+    }
+    if (!dice3dGL) return false;
   } catch { return false; }
   return true;
 }
@@ -365,9 +378,26 @@ function dice3dStage() {
   return node;
 }
 
+/* Fetched the moment a table opens, not on the first roll.
+ *
+ * It used to wait, so that a device which never throws a die never paid the megabyte — and the price of
+ * that was the FIRST roll of every session falling back to the flat overlay while the library arrived.
+ * Which reads, correctly, as the feature being broken: you roll, you get the old animation, you roll
+ * again and suddenly there are real dice. Opening a table is a clear enough statement that dice are
+ * about to be thrown. The compendium still never asks for it. */
+function dice3dPreload() {
+  if (dice3dWanted() && !dice3dBox && !dice3dLoading) dice3dReady();
+}
+
 /* The library, loaded once and kept. Any failure at all — no network, a blocked CDN, WebGL that says yes
-   and then throws — turns the whole feature off for the session rather than being retried on every roll. */
-function dice3dReady() {
+   and then throws — turns the whole feature off for the session rather than being retried on every roll.
+   `within` is how long a CALLER is prepared to wait for a load already in flight before giving up on it
+   for this roll; the load itself carries on regardless, so the next roll gets it. */
+function dice3dReady(within) {
+  if (within && !dice3dBox) {
+    const giveUp = new Promise((done) => setTimeout(() => done(null), within));
+    return Promise.race([dice3dReady(), giveUp]);
+  }
   if (dice3dBox) return Promise.resolve(dice3dBox);
   if (dice3dLoading) return dice3dLoading;
   dice3dStage();
@@ -409,7 +439,10 @@ function dice3dReady() {
                that roll, and an old throw finishing must not reach into it. */
 async function dice3dShow(dice, stamp) {
   const mine = ++dice3dThrow;
-  const box = await dice3dReady();
+  /* Two and a half seconds is what a roll will wait for a library that is already on its way — long
+     enough to cover the gap between opening a table and the first throw, short enough that a bad network
+     never leaves anybody watching an empty box. The load carries on either way, so the next roll has it. */
+  const box = await dice3dReady(2500);
   if (!box) return "flat";
   if (mine !== dice3dThrow) return "stale";
   const plan = dice3dPlan(dice);
@@ -539,10 +572,10 @@ function tblShowRoll(entry) {
   tblRollTimers.push(setTimeout(away, 3200));
 
   if (!solid) { dice3dClear(); return; }
-  /* NO roll waits on the network. The first one throws the flat dice and starts fetching the library in
-     the background; every roll after that is a real one. A device that never rolls never fetches it, and
-     nobody ever watches a spinner where a die should be. */
-  if (!dice3dBox) { dice3dReady(); dice3dClear(); return; }
+  /* The library is normally already here — it is fetched when the table opens. If a roll gets in first,
+     it waits a moment for it rather than falling back immediately: the flat dice are drawn behind this
+     the whole time, so if it does not arrive they are simply revealed, and nothing has been lost. */
+  if (!dice3dBox && !dice3dLoading) { dice3dReady(); dice3dClear(); return; }
 
   // Real dice from here: the flat row is not drawn at all, the total shows at once exactly as it always
   // has, and the dice land underneath it a couple of seconds later.

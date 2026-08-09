@@ -418,6 +418,10 @@ function tblOpen(code) {
   }));
   tblAnnounce();
   tbl.beat = setInterval(tblAnnounce, 20000);
+  // Opening a table is a clear enough statement that dice are about to be thrown, so the physics arrives
+  // now rather than on the first roll — which used to mean the first roll of every session was the flat
+  // overlay, and read as the 3D dice being broken.
+  if (typeof dice3dPreload === "function") dice3dPreload();
 }
 
 /* Figures left between squares by a drag that was interrupted before this was fixed. The DM's browser

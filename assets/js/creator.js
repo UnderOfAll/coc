@@ -1001,6 +1001,9 @@ function persist() {
 }
 
 function renderSheet() {
+  // A sheet is covered in numbers you can throw, so the dice physics is fetched here too rather than on
+  // the first throw — see dice3dPreload.
+  if (typeof dice3dPreload === "function") dice3dPreload();
   const { code, ch } = sheet;
   const d = derive(ch);
   if (!d) { paint(`<p class="muted">This character's class no longer exists.</p>`); return; }

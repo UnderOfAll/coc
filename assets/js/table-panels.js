@@ -516,9 +516,6 @@ async function tblOpenSheetByCode() {
 /* Hit points changed on a sheet, reflected under the figure on the board — for everyone. Called by
    the sheet's own save path (creator.js), so it fires on damage, healing and a level-up alike, and
    only ever touches the token that carries that character code. */
-/* What each character's picture was the last time a sheet told us — so a CHANGE can be told apart from
-   a save that merely happens to carry the same old photo. */
-const tblPhotoSeen = new Map();
 function tblSyncTokenFromSheet(code, ch) {
   if (!tbl || !code || !ch) return;
   const d = (typeof derive === "function") ? derive(ch) : null;
@@ -531,17 +528,13 @@ function tblSyncTokenFromSheet(code, ch) {
     if (hpMax != null && Number(t.hpMax) !== hpMax) patch.hpMax = hpMax;
     // A name or a portrait can change between sessions; the figure should not be the last one to know.
     if (ch.name && t.name !== String(ch.name).slice(0, 40)) patch.name = String(ch.name).slice(0, 40);
-    /* The picture, which the figure used to take once when it was placed and never again — so giving a
-       character a face later left it blank on the board for the rest of the campaign.
-       Pushed when it has just CHANGED, or when the figure has no picture at all. Not on every save: the
-       DM may have dressed this figure up deliberately, and a sheet that merely holds an older photo has
-       no business overruling that every time its owner takes damage. */
-    const before = tblPhotoSeen.has(code) ? tblPhotoSeen.get(code) : (t.image || ch.photo || "");
-    if (ch.photo && ch.photo !== before && t.image !== ch.photo) patch.image = ch.photo;
-    else if (ch.photo && !t.image) patch.image = ch.photo;
+    /* The picture. A player owns their OWN character completely — its face is theirs to change whenever
+       they like, and the figure on the board is a view of that character rather than a thing with a life
+       of its own. So the sheet's photo simply wins here. (It only ever reaches figures carrying this
+       character's code, which is why nobody can touch anybody else's, or a creature's, this way.) */
+    if (ch.photo && t.image !== ch.photo) patch.image = ch.photo;
     if (Object.keys(patch).length) CocLive.patch(tblPath("tokens/" + id), patch).catch(() => {});
   }
-  tblPhotoSeen.set(code, ch.photo || "");
 }
 
 
@@ -1246,6 +1239,28 @@ function tblSetTokenImage(id, image) {
   if (!t) return;
   if (tbl.role !== "dm" && !tblIsMine(t)) return;
   CocLive.put(tblPath("tokens/" + id + "/image"), image || "").catch(tblFail);
+  /* If this figure IS a character, the character is where its face belongs — otherwise the picture holds
+     until the next time that sheet saves and then reverts to whatever the sheet still has. A player owns
+     their own character completely, so changing it here changes it everywhere: on the board, on the
+     sheet, and in the next session. Only ever their own — `tblIsMine` above is the whole guard, and a
+     creature has no code to write to. */
+  if (t.charCode && (tblIsMine(t) || tbl.role === "dm")) tblSetCharacterPhoto(t.charCode, image || "");
+}
+
+/* Write a picture onto the CHARACTER behind a figure, wherever that character lives. Read-modify-write,
+   because a sheet is one document and this must not clear the rest of it. */
+async function tblSetCharacterPhoto(code, image) {
+  try {
+    // The open sheet is the live copy; writing underneath it would be overwritten by its next save.
+    if (typeof sheet !== "undefined" && sheet && sheet.code === code) {
+      sheet.ch.photo = image;
+      if (typeof renderSheet === "function" && tbl && tbl.ui.panel === "sheet") renderSheet();
+    }
+    const ch = await CocStore.load(code);
+    if (!ch) return;
+    ch.photo = image;
+    await CocStore.save(code, ch);
+  } catch { /* a code that no longer opens anything is not this button's problem */ }
 }
 
 /* A photo off the phone, shrunk to something a token can carry. */
