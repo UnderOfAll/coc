@@ -58,6 +58,20 @@ used.update(c for c in re.findall(r'\.([a-z][a-z0-9-]+)', CSS) if c.startswith(D
 # A trailing dash is an artifact of stripping a ${...} out of e.g. "tier-${tier}" — not a class.
 used = {c for c in used if c and not c.endswith("-")}
 
+# A top-level name defined in TWO scripts is silently overridden by whichever loads last, and the app then
+# calls the wrong function with the wrong arguments. That is exactly what happened when an undo helper was
+# named tblRemember, which already meant "remember this table" — the table test hung for five minutes. The
+# splitter checks this when it splits; this checks it every time, for anything added by hand afterwards.
+top_level = {}
+clashes = []
+for f in sorted((ROOT / "assets/js").glob("*.js")):
+    text = f.read_text(encoding="utf-8")
+    for m in re.finditer(r'^(?:async )?function (\w+)|^const (\w+)|^let (\w+)', text, re.M):
+        name = m.group(1) or m.group(2) or m.group(3)
+        if name in top_level and top_level[name] != f.name:
+            clashes.append(f"{name} in {top_level[name]} and {f.name}")
+        top_level[name] = f.name
+
 declared = set(re.findall(r'\.([a-z][a-z0-9-]+)', CSS))
 missing = sorted(c for c in used if c not in declared)
 unused = sorted(c for c in declared if c not in used)
@@ -76,6 +90,13 @@ for schema in sorted((ROOT / "data/schema").glob("*.schema.json")):
             unread.append(f"{schema.stem}.{field}")
 
 errors = []
+if clashes:
+    print("ASSET LINT FAILED:")
+    print("  - the same top-level name is defined in two scripts (the last one loaded wins):")
+    for c in clashes:
+        print("      " + c)
+    sys.exit(1)
+
 if missing:
     errors.append("CSS classes used but never declared: " + ", ".join(missing))
 if dead_fns:

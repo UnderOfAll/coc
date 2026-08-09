@@ -845,8 +845,11 @@ function drawPanelHTML() {
         <div class="chips">${TBL_INK_SHAPES.map(([k, label]) =>
           `<button class="chip ${(ink.shape || "free") === k ? "on" : ""}" data-tbl="ink-shape"
             data-val="${k}">${esc(label)}</button>`).join("")}</div>
-        ${(ink.shape || "free") !== "free" ? `<p class="muted">Drag from one corner to the other — it resizes
-          under your hand and lands when you let go.</p>` : ""}` : ""}
+        ${(ink.shape || "free") !== "free" ? `<div class="chips">
+            <button class="chip ${ink.fill ? "on" : ""}" data-tbl="ink-fill">${ink.fill ? "Filled" : "Outline"}</button>
+          </div>
+          <p class="muted">Drag from one corner to the other — it resizes under your hand and lands when you
+            let go. Filled shapes stay see-through, since there is a map underneath.</p>` : ""}` : ""}
       <p class="panel-sub">Colour</p>
       <div class="chips">${TBL_INK_COLOURS.map(([hex, name]) =>
         `<button class="chip ${ink.color === hex ? "on" : ""}" data-tbl="ink-color" data-val="${esc(hex)}"
@@ -855,6 +858,7 @@ function drawPanelHTML() {
       <div class="chips">${[[1, "Thin"], [2, "Medium"], [4, "Thick"]].map(([n, label]) =>
         `<button class="chip ${ink.width === n ? "on" : ""}" data-tbl="ink-width" data-val="${n}">${esc(label)}</button>`).join("")}</div>
       <div class="hp-controls">
+        <button class="btn-quiet" data-tbl="ink-undo">Undo <span class="muted">Ctrl+Z</span></button>
         <button class="btn-quiet" data-tbl="ink-clear-mine" ${mine ? "" : "disabled"}>Rub out mine (${esc(mine)})</button>
         ${tbl.role === "dm" ? `<button class="btn-quiet" data-tbl="ink-clear-all" ${all ? "" : "disabled"}>Clear the scene (${esc(all)})</button>` : ""}
       </div>

@@ -325,49 +325,116 @@ function tblInkPoint(p) {
 
 /* The eraser: whatever of MINE is under the point goes. The DM may rub out anybody's, which is the whole
    difference between an eraser and a moderation tool. */
+/* The eraser works ON A COPY and writes once, when the hand comes up.
+ *
+ * The first version wrote as it went: every pointermove deleted the strokes it touched and pushed their
+ * surviving pieces, and the next move then cut THOSE — so a single drag multiplied one line into dozens,
+ * each cut costing a delete, several pushes and a full repaint. It erased for about two seconds, saturated
+ * the browser's handful of connections to the database, and froze the page. Kayki reported exactly that.
+ *
+ * So: rubbing edits `tbl.erasing`, which the board draws instead of the stored strokes, and only pointerup
+ * turns it into writes — at most one delete and a few pushes per stroke, however long the drag. */
+const TBL_ERASE_MAX_PIECES = 8;
+
+/* What Ctrl+Z takes back. Only ever MY OWN actions, in this session: drawing a stroke, or one sweep of the
+   eraser. Kept in memory rather than in the table — an undo history is a fact about the hand that made the
+   marks, not about the board, and the last thing anybody wants is one player undoing another's work. */
+const TBL_UNDO = [];
+const TBL_UNDO_MAX = 25;
+function tblUndoPush(step) {
+  TBL_UNDO.push(step);
+  while (TBL_UNDO.length > TBL_UNDO_MAX) TBL_UNDO.shift();
+}
+
+/* Ctrl+Z / Cmd+Z. An added stroke is deleted; an erase is put back exactly as it was, which means deleting
+   the pieces it left and restoring the originals it cut. */
+async function tblUndoInk() {
+  const step = TBL_UNDO.pop();
+  if (!step) return false;
+  if (step.kind === "add") {
+    await CocLive.del(tblPath("draw/" + step.id)).catch(() => {});
+    return true;
+  }
+  if (step.kind === "erase") {
+    for (const id of step.added) await CocLive.del(tblPath("draw/" + id)).catch(() => {});
+    for (const [id, stroke] of step.removed) await CocLive.put(tblPath("draw/" + id), stroke).catch(() => {});
+    return true;
+  }
+  return false;
+}
+
 function tblEraseAt(at) {
   const sceneId = tblSceneId();
   const mine = tblNoteOwner();
   const near = 0.012;
+  if (!tbl.erasing) tbl.erasing = new Map();     // stroke id -> surviving pieces (empty means it is gone)
+  let changed = false;
   for (const [id, k] of Object.entries(tbl.data.draw || {})) {
     if (!k || k.scene !== sceneId) continue;
     if (tbl.role !== "dm" && k.by !== mine) continue;
-    const pts = tblInkDecode(k.pts);
-    if (!pts.length) continue;
+
+    // Once a stroke is being rubbed, work on what is LEFT of it rather than on the stored original.
+    const already = tbl.erasing.has(id);
+    const source = already ? tbl.erasing.get(id) : [tblInkDecode(k.pts)];
+    if (already && !source.length) continue;       // nothing left to rub
+    if (!source.length || !source[0].length) continue;
 
     /* A SHAPE goes whole. There is no sensible half of a rectangle, and every drawing program agrees: you
-       touch it, it goes. */
+       touch it, it goes. A FILLED one counts as touched anywhere inside it, because that is what it is. */
     if (k.kind && k.kind !== "free") {
-      if (tblInkTouches(pts, k.kind, at, near)) CocLive.del(tblPath("draw/" + id)).catch(() => {});
+      if (tblInkTouches(source[0], k.kind, at, near, k.fill)) { tbl.erasing.set(id, []); changed = true; }
       continue;
     }
 
-    /* FREEHAND is rubbed, not deleted — which is what an eraser is. Kayki's complaint: touching a long line
-       anywhere removed the whole thing. The points under the eraser are dropped and what survives is written
-       back as separate pieces, so rubbing through the middle of a line leaves two lines. */
-    const keep = pts.map((p) => Math.hypot(p.x - at.x, p.y - at.y) >= near);
-    if (keep.every(Boolean)) continue;                 // the eraser is not over this stroke at all
+    /* FREEHAND is rubbed, not deleted — which is what an eraser is. The points under it are dropped and what
+       survives stays in pieces, so rubbing through the middle of a line leaves two lines. */
     const pieces = [];
-    let run = [];
-    pts.forEach((p, i) => {
-      if (keep[i]) run.push(p);
-      else if (run.length) { pieces.push(run); run = []; }
-    });
-    if (run.length) pieces.push(run);
+    for (const run of source) {
+      let piece = [];
+      for (const p of run) {
+        if (Math.hypot(p.x - at.x, p.y - at.y) >= near) piece.push(p);
+        else if (piece.length) { pieces.push(piece); piece = []; }
+      }
+      if (piece.length) pieces.push(piece);
+    }
+    const kept = pieces.filter((p) => p.length >= 2);
+    const before = source.reduce((n, r) => n + r.length, 0);
+    const after = kept.reduce((n, r) => n + r.length, 0);
+    if (after === before) continue;                 // the eraser is not over this stroke
+    // Rubbed into confetti: nobody is going to miss the crumbs, and eight pieces is already generous.
+    tbl.erasing.set(id, kept.length > TBL_ERASE_MAX_PIECES ? [] : kept);
+    changed = true;
+  }
+  if (changed) paintDrawings();
+}
+
+/* The hand came up: turn what was rubbed into writes. One delete per stroke, plus whatever survived. */
+function tblEraseCommit() {
+  if (!tbl.erasing || !tbl.erasing.size) { tbl.erasing = null; return; }
+  const strokes = tbl.data.draw || {};
+  const step = { kind: "erase", removed: [], added: [] };
+  const writes = [];
+  for (const [id, pieces] of tbl.erasing) {
+    const k = strokes[id];
+    if (!k) continue;
+    // Kept whole, so Ctrl+Z can put the line back exactly as it was rather than approximately.
+    step.removed.push([id, JSON.parse(JSON.stringify(k))]);
     CocLive.del(tblPath("draw/" + id)).catch(() => {});
     for (const piece of pieces) {
-      // A single surviving point is a speck nobody drew on purpose.
       if (piece.length < 2) continue;
-      CocLive.push(tblPath("draw"), {
-        by: k.by, scene: k.scene, color: k.color, width: k.width, kind: "free",
+      writes.push(CocLive.push(tblPath("draw"), {
+        by: k.by, scene: k.scene, color: k.color, width: k.width, kind: "free", fill: k.fill || false,
         pts: tblInkEncode(piece), at: k.at || Date.now(),
-      }).catch(() => {});
+      }).then((newId) => step.added.push(newId)).catch(() => {}));
     }
   }
+  tbl.erasing = null;
+  // Remembered once every piece has an id, or an undo would leave the pieces behind.
+  Promise.all(writes).then(() => { if (step.removed.length) tblUndoPush(step); });
 }
 
 /* Is the eraser over this shape's outline (or, for a box, its edge)? */
-function tblInkTouches(pts, kind, at, near) {
+function tblInkTouches(pts, kind, at, near, filled) {
   const seg = (a, b) => {
     const dx = b.x - a.x, dy = b.y - a.y;
     const len = dx * dx + dy * dy;
@@ -377,6 +444,17 @@ function tblInkTouches(pts, kind, at, near) {
   };
   const a = pts[0], b = pts[1] || pts[0];
   if (kind === "line") return seg(a, b) < near;
+  if (filled) {
+    // A filled shape IS its inside, so touching anywhere in it counts.
+    const x1 = Math.min(a.x, b.x), x2 = Math.max(a.x, b.x);
+    const y1 = Math.min(a.y, b.y), y2 = Math.max(a.y, b.y);
+    if (kind === "rect") return at.x >= x1 - near && at.x <= x2 + near && at.y >= y1 - near && at.y <= y2 + near;
+    if (kind === "circle") {
+      const cx = (a.x + b.x) / 2, cy = (a.y + b.y) / 2;
+      const rx = Math.abs(b.x - a.x) / 2 || near, ry = Math.abs(b.y - a.y) / 2 || near;
+      return Math.hypot((at.x - cx) / rx, (at.y - cy) / ry) <= 1 + near;
+    }
+  }
   if (kind === "rect") {
     const x1 = Math.min(a.x, b.x), x2 = Math.max(a.x, b.x);
     const y1 = Math.min(a.y, b.y), y2 = Math.max(a.y, b.y);
@@ -410,6 +488,7 @@ function tblResetGestures() {
   }
   tbl.drag = null;
   tbl.inking = null;
+  if (tbl.erasing) tblEraseCommit();   // a gesture cut short still keeps what it rubbed
   paintTokens();
   paintRuler();
   paintDrawings();
@@ -446,7 +525,7 @@ function onPointerDown(e) {
     if (tblInkState().mode === "erase") { tblEraseAt(at); return; }
     tblTrace("ink start");
     tbl.inking = { points: [at], color: tblInkState().color, width: tblInkState().width,
-                   kind: tblInkState().shape || "free" };
+                   kind: tblInkState().shape || "free", fill: !!tblInkState().fill };
     paintDrawings();
     if (stage.setPointerCapture) { try { stage.setPointerCapture(e.pointerId); } catch { /* fine */ } }
     return;
@@ -540,14 +619,17 @@ function onPointerMove(e) {
 function onPointerUp(e) {
   if (!tbl) return;
   tbl.pointers.delete(e.pointerId);
+  // Rubbing writes nothing until the hand comes up; this is that moment.
+  if (tbl.erasing) tblEraseCommit();
   if (tbl.inking) {
     const stroke = tbl.inking;
     tbl.inking = null;
     if (stroke.points.length) {
       CocLive.push(tblPath("draw"), {
         by: tblNoteOwner(), scene: tblSceneId(), color: stroke.color, width: stroke.width,
-        kind: stroke.kind || "free", pts: tblInkEncode(stroke.points), at: Date.now(),
-      }).catch(tblFail);
+        kind: stroke.kind || "free", fill: !!stroke.fill,
+        pts: tblInkEncode(stroke.points), at: Date.now(),
+      }).then((id) => tblUndoPush({ kind: "add", id })).catch(tblFail);
     }
     paintDrawings();
     return;
@@ -708,7 +790,10 @@ function paintDrawings() {
     if (!pts.length) return "";
     const width = Math.max(1, (Number(k.width) || 2) * cell / 24);
     const stroke = esc(k.color || "#c9a54e");
-    const common = `fill="none" stroke="${stroke}" stroke-width="${width.toFixed(1)}"
+    /* Filled, like the paint bucket: the same colour inside, kept translucent because it is lying over a
+       map somebody drew and a solid block would simply delete that part of the picture. */
+    const paint = k.fill ? `fill="${stroke}" fill-opacity="0.32"` : `fill="none"`;
+    const common = `${paint} stroke="${stroke}" stroke-width="${width.toFixed(1)}"
       stroke-linecap="round" stroke-linejoin="round" data-ink="${esc(id)}"`;
     const X = (p) => (p.x * w).toFixed(1), Y = (p) => (p.y * h).toFixed(1);
     // A shape is its two corners; freehand is every point it was drawn through.
@@ -736,13 +821,21 @@ function paintDrawings() {
     const d = pts.map((p, i) => `${i ? "L" : "M"}${X(p)} ${Y(p)}`).join(" ");
     return `<path d="${d}" ${common} />`;
   };
+  const rubbing = tbl.erasing;
   const strokes = Object.entries(tbl.data.draw || {})
     .filter(([, k]) => k && k.scene === sceneId)
     .sort((a, b) => (a[1].at || 0) - (b[1].at || 0))
-    .map(([id, k]) => path(k, id)).join("");
+    .map(([id, k]) => {
+      // Mid-rub, a stroke is drawn as whatever is left of it — the writes have not happened yet.
+      if (rubbing && rubbing.has(id)) {
+        return rubbing.get(id).map((piece, i) =>
+          path({ ...k, kind: "free", pts: tblInkEncode(piece) }, id + "-" + i)).join("");
+      }
+      return path(k, id);
+    }).join("");
   const live = tbl.inking && tbl.inking.points.length
     ? path({ pts: tblInkEncode(tbl.inking.points), color: tbl.inking.color, width: tbl.inking.width,
-             kind: tbl.inking.kind }, "live")
+             kind: tbl.inking.kind, fill: tbl.inking.fill }, "live")
     : "";
   svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
   svg.innerHTML = strokes + live;

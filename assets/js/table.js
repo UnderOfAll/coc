@@ -858,6 +858,22 @@ function tblTrackerInput(el) {
   CocLive.throttled(tblPath("sheets/" + key + "/fields"), rows, 600);
 }
 
+/* Ctrl+Z, the one keyboard shortcut in the app. It takes back your own last mark or your own last sweep of
+   the eraser, never anybody else's — and it keeps its hands off Ctrl+Z inside a text box, where the browser's
+   own undo is the right one. */
+document.addEventListener("keydown", (e) => {
+  if (!tbl) return;
+  const z = (e.key === "z" || e.key === "Z") && (e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey;
+  if (!z) return;
+  const inText = evTarget(e).closest && evTarget(e).closest("input, textarea, [contenteditable]");
+  if (inText) return;
+  e.preventDefault();
+  tblUndoInk().then((did) => {
+    if (did) tblTrace("undo");
+    else if ($("#vtt-error")) tblFail({ message: "Nothing of yours left to undo." });
+  });
+});
+
 /* Rolling from a sheet. Listened for here rather than in creator.js because the dice belong to the
    table, and the sheet is the same sheet whether it is open at a table or on its own. */
 document.addEventListener("click", (e) => {
@@ -985,6 +1001,8 @@ document.addEventListener("click", (e) => {
     paintSide();
   }
   else if (act === "ink-shape") { tblInkState().shape = val; paintSide(); }
+  else if (act === "ink-fill") { tblInkState().fill = !tblInkState().fill; paintSide(); }
+  else if (act === "ink-undo") tblUndoInk().catch(tblFail);
   else if (act === "ink-color") { tblInkState().color = val; paintSide(); }
   else if (act === "ink-width") { tblInkState().width = Number(val); paintSide(); }
   else if (act === "ink-clear-mine") {

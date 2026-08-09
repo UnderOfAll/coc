@@ -263,15 +263,86 @@ await wait(200);
 const left = await aget(`Object.values(await CocLive.get("tables/482910/draw") || {})`);
 ok(left.length === 2, "rubbing the middle of a line leaves the two ends, not nothing (" + left.length + " pieces)");
 ok(left.every((k) => k.kind === "free" && k.pts.split(" ").length >= 2), "each a line in its own right");
+// The bug Kayki hit: erasing wrote as it went, so each move cut the pieces the last move had made and one
+// drag became dozens of strokes and hundreds of writes. Rubbing now edits a copy and writes ONCE, on release.
+peek(`(async () => { const d = await CocLive.get("tables/482910/draw");
+  for (const id of Object.keys(d || {})) await CocLive.del("tables/482910/draw/" + id); })()`);
+await wait(150);
+await peek(`CocLive.push("tables/482910/draw", { by: tblNoteOwner(), scene: tblSceneId(), color: "#fff",
+  width: 2, kind: "free", at: 1,
+  pts: Array.from({ length: 41 }, (_, i) => (0.05 + i * 0.022).toFixed(4) + ",0.3000").join(" ") })`);
+await wait(150);
+// Count what the board writes during a long rub: a watcher fires once per write.
+peek(`window.__inkWrites = 0;
+  window.__offInk = CocLive.watch("tables/482910/draw", () => window.__inkWrites++);`);
+await wait(60);
+peek(`window.__inkWrites = 0; tblInkState().mode = "erase";`);
+const y = 0.3 * 20 * 70;
+pointer("pointerdown", $("#vtt-stage"), 0.2 * 30 * 70, y, 1);
+for (let i = 1; i <= 18; i++) { pointer("pointermove", $("#vtt-stage"), (0.2 + i * 0.008) * 30 * 70, y, 1); }
+const midRub = peek(`window.__inkWrites`);
+ok(midRub === 0, "a long rub writes NOTHING while the hand is down (" + midRub + " writes)");
+ok(peek(`tbl.erasing && tbl.erasing.size`) === 1, "it edits a copy instead");
+ok($$("#vtt-ink path").length >= 2, "and the board already shows the gap");
+pointer("pointerup", $("#vtt-stage"), (0.2 + 18 * 0.008) * 30 * 70, y, 1);
+await wait(250);
+const afterRub = peek(`window.__inkWrites`);
+ok(afterRub > 0 && afterRub <= 6, "and one release writes a handful, not hundreds (" + afterRub + ")");
+const pieces = await aget(`Object.values(await CocLive.get("tables/482910/draw") || {})`);
+ok(pieces.length === 2, "leaving the two ends of the line (" + pieces.length + ")");
+peek(`window.__offInk();`);
+
+// Ctrl+Z takes back your own last mark, and an undone erase restores the line whole.
+peek(`tblInkState().mode = "pen"; tblInkState().shape = "free";`);
+const zed = () => doc.dispatchEvent(new window.KeyboardEvent("keydown", { key: "z", ctrlKey: true, bubbles: true }));
+zed();
+await wait(250);
+const restored = await aget(`Object.values(await CocLive.get("tables/482910/draw") || {})`);
+ok(restored.length === 1, "undoing the rub puts the line back as one piece (" + restored.length + ")");
+ok(restored[0].pts.split(" ").length === 41, "with every point it had");
+// And a stroke you just drew.
+drag($("#vtt-stage"), 300, 900, 500, 1000);
+await wait(200);
+const drawn = await aget(`Object.values(await CocLive.get("tables/482910/draw") || {}).length`);
+zed();
+await wait(250);
+ok((await aget(`Object.values(await CocLive.get("tables/482910/draw") || {}).length`)) === drawn - 1,
+  "and Ctrl+Z takes back a stroke you just drew");
+// Not while typing: the browser's own undo owns a text box.
+peek(`document.body.insertAdjacentHTML("beforeend", '<textarea id="typing"></textarea>');`);
+const inkBeforeTyping = await aget(`Object.values(await CocLive.get("tables/482910/draw") || {}).length`);
+$("#typing").dispatchEvent(new window.KeyboardEvent("keydown", { key: "z", ctrlKey: true, bubbles: true }));
+await wait(150);
+ok((await aget(`Object.values(await CocLive.get("tables/482910/draw") || {}).length`)) === inkBeforeTyping,
+  "and it keeps its hands off Ctrl+Z inside a text box");
+peek(`$("#typing").remove();`);
+
+// Filled shapes: see-through, and erased by touching anywhere inside.
+peek(`tblInkState().shape = "rect"; tblInkState().fill = true; paintSide();`);
+drag($("#vtt-stage"), 1400, 300, 1700, 600);
+await wait(200);
+const filled = (await aget(`Object.values(await CocLive.get("tables/482910/draw") || {})`)).find((k) => k.fill);
+ok(filled && filled.kind === "rect", "a filled box can be drawn");
+ok($$("#vtt-ink rect").some((n) => n.getAttribute("fill") !== "none"), "and is painted, not just outlined");
+peek(`tblInkState().mode = "erase";`);
+pointer("pointerdown", $("#vtt-stage"), 1550, 450, 1);
+pointer("pointerup", $("#vtt-stage"), 1550, 450, 1);
+await wait(250);
+ok(!(await aget(`Object.values(await CocLive.get("tables/482910/draw") || {})`)).some((k) => k.fill),
+  "and touching anywhere inside it rubs it out, because the inside is what it is");
+peek(`tblInkState().fill = false; tblInkState().shape = "free"; tblInkState().mode = "pen";`);
+
 // A shape, by contrast, goes whole — there is no sensible half of a box.
 await peek(`CocLive.push("tables/482910/draw", { by: tblNoteOwner(), scene: tblSceneId(), color: "#fff",
   width: 2, kind: "rect", at: 2, pts: "0.2000,0.2000 0.4000,0.4000" })`);
 await wait(120);
 const boxCount = () => aget(`Object.values(await CocLive.get("tables/482910/draw") || {}).filter(k => k.kind === "rect").length`);
+peek(`tblInkState().mode = "erase";`);
 pointer("pointerdown", $("#vtt-stage"), 0.2 * 2100, 0.3 * 1400, 1);
 pointer("pointerup", $("#vtt-stage"), 0.2 * 2100, 0.3 * 1400, 1);
-await wait(200);
-ok((await boxCount()) === 0, "touching a box's edge removes the box");
+await wait(250);
+ok((await boxCount()) === 0, "touching an outlined box's edge removes the whole box");
+peek(`tblInkState().mode = "pen";`);
 // Whose ink is whose. Cleared first, since the shape tests above left pieces of their own.
 peek(`(async () => { const d = await CocLive.get("tables/482910/draw");
   for (const id of Object.keys(d || {})) await CocLive.del("tables/482910/draw/" + id); })()`);
