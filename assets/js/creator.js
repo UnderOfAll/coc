@@ -845,7 +845,9 @@ function routeManage() {
           </a>
           <button class="btn-quiet" data-forget="${esc(r.code)}">Forget</button>
         </div>`).join("")}</div>
-      <p class="muted">“Forget” only removes it from this list — the character stays saved under its code.</p>
+      <p class="muted">“Forget” only removes it from this list — the character stays saved under its code.
+        A character's <strong>picture</strong> is set on its own sheet: open one and the button is under
+        its name.</p>
       </section>` : ""}
     <section class="step"><a class="btn" href="#/create">Create a new character</a></section>
   `);
@@ -1012,20 +1014,27 @@ function renderSheet() {
     <div class="tool-head sheet-head">
       <a class="back" href="#/manage">&larr; My characters</a>
       <div class="sheet-id">
-        ${/* The picture, and a way to change it. It could only ever be chosen while the character was
-              being BUILT, which is the one moment you are least likely to have one — so it sat empty for
-              good, on the sheet and on the figure at the table alike. Clicking it opens the picker; the
-              figure follows on the next save. */""}
-        <label class="portrait-swap" title="${ch.photo ? "Change the picture" : "Add a picture"}">
+        ${/* The picture. It could only ever be chosen while the character was being BUILT — the one
+              moment you are least likely to have one — so it sat empty for good, on the sheet and on the
+              figure at the table alike.
+              It is a BUTTON THAT SAYS WHAT IT DOES, not a hover strip on the portrait. Four times it was
+              "already there" and four times it could not be found, because a 56px tile with a caption in
+              its corner, in a wall of numbers, is not a control anybody sees. The portrait still opens
+              it — one input, two labels pointing at it. */""}
+        <label class="portrait-swap" for="sheet-photo" title="${ch.photo ? "Change the picture" : "Add a picture"}">
           ${ch.photo ? `<img class="portrait" src="${esc(ch.photo)}" alt="" />`
             : `<div class="portrait empty">${esc((ch.name || "?")[0])}</div>`}
-          <input id="sheet-photo" type="file" accept="image/*" />
           <span class="portrait-swap-hint">${ch.photo ? "Change" : "Add"}</span>
         </label>
         <div class="sheet-titles">
           <h1>${esc(ch.name || "Unnamed")}</h1>
           <p class="sheet-class">${esc(d.cls.name)}${d.subclass ? ` <span class="sep">&middot;</span> ${esc(d.subclass.name)}` : ""}${ch.size ? ` <span class="sep">&middot;</span> ${esc(ch.size)}` : ""}</p>
           <p class="sheet-code">code <strong>${esc(code)}</strong> <span class="sep">&middot;</span> <span id="save-state">saved</span></p>
+          <p class="sheet-pic">
+            <input id="sheet-photo" type="file" accept="image/*" />
+            <label class="btn-quiet" for="sheet-photo">${ch.photo ? "Change picture" : "Add a picture"}</label>
+            ${ch.photo ? `<button class="btn-quiet" data-act="clear-photo">Remove</button>` : ""}
+          </p>
         </div>
         <div class="sheet-level"><span class="lv-k">Level</span><span class="lv-v">${esc(d.level)}</span></div>
       </div>
@@ -1667,6 +1676,12 @@ function sheetAction(e) {
   const ch = sheet.ch, p = ch.play, d = derive(ch);
   const amt = () => Math.max(1, Number(($("#hp-amt") || {}).value) || 1);
 
+  if (act === "clear-photo") {
+    sheet.ch.photo = "";
+    persist();
+    renderSheet();
+    return;
+  }
   if (act === "combat") {
     p.inCombat = !p.inCombat;
     if (p.inCombat && d.cls.play?.autoRefill === "turn") p.engine = d.engineCap ?? 0;

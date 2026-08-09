@@ -952,7 +952,9 @@ peek(`document.body.insertAdjacentHTML("beforeend",
   '<button id="sheetroll" class="roll" data-roll="1d20+7" data-label="Dagger to hit"></button>');
   window.__seq = [0.5];`);
 click($("#sheetroll"));
-await wait(60);
+// Waited for: the roll is posted to the log and the bar is painted from it, and 60ms is a coin toss
+// once anything else is still settling.
+await until(() => /Dagger to hit/.test($("#vtt-lastroll").textContent));
 ok(/Dagger to hit/.test($("#vtt-lastroll").textContent), "a sheet number posts to the table's log by name");
 ok(lastBits().total === "18", "with your bonus already in it: " + JSON.stringify(lastBits()));
 // Shift and alt are the shortcut for advantage and disadvantage.
@@ -1056,7 +1058,9 @@ function paintTurnBarCheck() {
 console.log("\n— YOUR SHEET, OVER THE BOARD —");
 // Still the player holding Rig's figure from the turn-order section.
 openPanel("sheet");
-await wait(150);
+/* Waited for, not slept through. The drawer LOADS the character before it can draw it, so 150ms is a
+   coin toss on a busy machine — and when it lost, every assertion below fell over on an empty drawer. */
+await until(() => !!$("#vtt-sheet .tab-strip"));
 ok($("#vtt-sheet"), "a drawer for the sheet");
 ok($("#vtt-sheet .tab-strip"), "holding the REAL sheet, fields and all — not a cut-down copy");
 ok($$("#vtt-sheet .ab-box").length === 6, "with the six abilities");

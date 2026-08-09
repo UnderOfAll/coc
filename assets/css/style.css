@@ -719,7 +719,13 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
    a bare "Choose file" button beside a face is the ugliest control in any browser — and the hint only
    appears when there is somewhere to point it. */
 .portrait-swap { position: relative; display: inline-grid; cursor: pointer; }
-.portrait-swap input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+/* The control that says what it does, under the name where the eye already is. The file input itself is
+   never shown — a browser's own "Choose file" button beside a face is the ugliest control there is —
+   and BOTH the portrait and this button point at the same one. */
+.sheet-pic { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.5rem 0 0; }
+.sheet-pic input[type="file"] { position: absolute; width: 1px; height: 1px; opacity: 0;
+  pointer-events: none; }
+.sheet-pic label.btn-quiet { cursor: pointer; }
 .portrait-swap-hint { position: absolute; left: 0; right: 0; bottom: 0; text-align: center;
   font-size: 0.78rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--bg);
   background: var(--gold); border-radius: 0 0 var(--radius) var(--radius); opacity: 0; transition: opacity 0.15s ease; }

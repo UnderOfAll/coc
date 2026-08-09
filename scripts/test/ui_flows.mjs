@@ -201,13 +201,22 @@ mk("joker",5);
 // "trick save DC" off the primary ability (which for a Juggler would be an invented number).
 const knLabel=k=>{const t=k.querySelector(".kn-l .tip-term");return (t?t.firstChild.textContent:k.querySelector(".kn-l").textContent).trim();};
 /* A character can be given a face at any point in its life, not only while it is being built — which is
-   the one moment you are least likely to have a picture ready, and is why sheets sat blank for good. */
-ok($("#sheet-photo"),"the portrait on a sheet is a picker, so a picture can be added later");
-ok($(".portrait-swap").contains($("#sheet-photo")),"the picture itself is what you click");
+   the one moment you are least likely to have a picture ready, and is why sheets sat blank for good.
+   It is a BUTTON THAT SAYS WHAT IT DOES. Four times this was "already there" and four times it could not
+   be found, because it was a caption in the corner of a 56px tile. */
+const picBtn = () => $$(".sheet-pic label").find((n) => /picture/i.test(n.textContent));
+ok($("#sheet-photo"),"a sheet can be given a picture");
+ok(picBtn(),"and says so in words, under the name");
+ok(picBtn() && picBtn().getAttribute("for") === "sheet-photo","the button opens the picker");
+ok(/Add a picture/.test(picBtn().textContent),"it offers to ADD one when there is none");
+ok($(".portrait-swap") && $(".portrait-swap").getAttribute("for") === "sheet-photo",
+  "and the portrait itself opens the same one");
 peek(`(() => { sheet.ch.photo = "data:image/jpeg;base64,AAAA"; renderSheet(); return 1; })()`);
 ok($(".portrait-swap img.portrait"),"a chosen picture replaces the initial");
-ok(/Change/.test($(".portrait-swap-hint").textContent),"and the picker offers to change it");
+ok(/Change picture/.test(picBtn().textContent),"and the button offers to change it");
+ok($$('.sheet-pic [data-act="clear-photo"]').length === 1,"with a way to take it off again");
 peek(`(() => { sheet.ch.photo = ""; renderSheet(); return 1; })()`);
+ok(/Add a picture/.test(picBtn().textContent),"which puts it back to adding one");
 const knLabels=$$(".kn").map(knLabel);
 ok(knLabels.includes("Gambit DC"),"a Joker sees his Gambit DC by name ("+knLabels.join(", ")+")");
 ok(!knLabels.includes("Trick save DC"),"and not a generic 'Trick save DC'");
