@@ -189,6 +189,7 @@ function tokenResolver(d) {
       : ABILITIES.find((x) => x.toLowerCase() === String(name).toLowerCase());
     return a ? { name: a, mod: d.mods[a] || 0 } : null;
   };
+  /** @type {Array<[RegExp, (m: any, label?: any, formula?: any) => any]>} */
   const rules = [
     // "8 + proficiency bonus + Charisma modifier" — every DC in the game, whatever it is called.
     [new RegExp(`^(\\d+)\\s*\\+\\s*proficiency bonus\\s*\\+\\s*${ABIL_RE} modifier`, "i"), (m) => {
@@ -292,9 +293,10 @@ function paint(html) {
   const active = document.activeElement;
   let key = null, caret = null;
   if (active && host.contains(active)) {
-    if (active.id) key = "#" + active.id;
-    else if (active.dataset && active.dataset.abil) key = `[data-abil="${active.dataset.abil}"]`;
-    if (key) { try { caret = active.selectionStart; } catch { caret = null; } }
+    const act = asEl(active);
+    if (act.id) key = "#" + act.id;
+    else if (act.dataset && act.dataset.abil) key = `[data-abil="${act.dataset.abil}"]`;
+    if (key) { try { caret = asEl(active).selectionStart; } catch { caret = null; } }
   }
   host.innerHTML = html;
   page.scrollTop = top;
@@ -674,7 +676,7 @@ function stepSave() {
 /* ---------------------------------------------------------------- creator events */
 
 function creatorClick(e) {
-  const b = e.target.closest("[data-pick]");
+  const b = evTarget(e).closest("[data-pick]");
   if (!b || b.disabled) return;
   const { pick, val } = b.dataset;
   if (pick === "class") {
@@ -717,7 +719,7 @@ function creatorClick(e) {
 }
 
 function creatorInput(e) {
-  const t = e.target;
+  const t = evTarget(e);
   if (t.id === "lvl") {
     // An empty box is a legal thing to be holding mid-edit: you have to be able to clear "12"
     // before typing "3". The TEXT is what you typed; the LEVEL only follows once it is a number.
@@ -745,7 +747,7 @@ function creatorInput(e) {
    the form showing a value the character does not have. */
 function creatorBlur(e) {
   if (!draft) return;
-  const t = e.target;
+  const t = evTarget(e);
   if (t.id === "lvl" && draft.levelText !== String(draft.level)) { draft.levelText = String(draft.level); renderCreator(); }
   else if (t.dataset && t.dataset.abil && t.tagName === "INPUT" && draft.method === "manual") {
     const v = Number(draft.scores[t.dataset.abil]);
@@ -772,7 +774,7 @@ function readPortrait(file, done) {
       done(c.toDataURL("image/jpeg", 0.75));
     };
     img.onerror = () => done("");
-    img.src = reader.result;
+    img.src = /** @type {string} */ (reader.result);
   };
   reader.readAsDataURL(file);
 }
@@ -1019,7 +1021,7 @@ function renderSheet() {
     </div>
     ${ui.levelUp ? levelUpPanel(d) : ""}
     ${vitals(d, p)}
-    ${p.inCombat ? combatBar(d, p) : idleLine(d)}
+    ${p.inCombat ? combatBar(d, p) : idleLine()}
     ${p.prompt ? promptBar(p.prompt) : ""}
     ${d.engine ? enginePanel(d, p) : ""}
     ${sheetFields(d, p, ch)}
@@ -1645,7 +1647,7 @@ const UI_ONLY_ACTS = new Set(["levelup", "lu-cancel", "lu-sub", "open-opts",
                               "sub-open", "lu-asi", "delete-arm", "delete-cancel", "tab"]);
 
 function sheetAction(e) {
-  const b = e.target.closest("[data-act]");
+  const b = evTarget(e).closest("[data-act]");
   if (!b || b.disabled || !sheet) return;
   const { act, val } = b.dataset;
   // The only action that leaves this page entirely, and the only asynchronous one.
@@ -1814,11 +1816,11 @@ COC_ROUTES.roster = routeRoster;
 
 document.addEventListener("click", (e) => {
   if (!toolEl() || $("#tool-view").classList.contains("hidden")) return;
-  if (e.target.closest("[data-pick]")) return creatorClick(e);
-  if (e.target.closest("[data-act]")) return sheetAction(e);
-  if (e.target.closest("#save-btn")) return saveDraft();
-  if (e.target.closest("#open-btn")) return openByCode();
-  const forget = e.target.closest("[data-forget]");
+  if (evTarget(e).closest("[data-pick]")) return creatorClick(e);
+  if (evTarget(e).closest("[data-act]")) return sheetAction(e);
+  if (evTarget(e).closest("#save-btn")) return saveDraft();
+  if (evTarget(e).closest("#open-btn")) return openByCode();
+  const forget = evTarget(e).closest("[data-forget]");
   if (forget) {
     const code = forget.dataset.forget;
     localStorage.setItem(RECENT_KEY, JSON.stringify(recentCodes().filter((r) => r.code !== code)));
@@ -1827,8 +1829,8 @@ document.addEventListener("click", (e) => {
 });
 document.addEventListener("input", (e) => {
   if (!toolEl() || $("#tool-view").classList.contains("hidden")) return;
-  if (e.target.id === "photo") {
-    readPortrait(e.target.files[0], (data) => { draft.photo = data; renderCreator(); });
+  if (evTarget(e).id === "photo") {
+    readPortrait(evTarget(e).files[0], (data) => { draft.photo = data; renderCreator(); });
     return;
   }
   creatorInput(e);
@@ -1843,5 +1845,5 @@ window.addEventListener("scroll", () => { if (sheet) ui.sheetScroll = pageScroll
 
 document.addEventListener("keydown", (e) => {
   if (e.key !== "Enter") return;
-  if (e.target.id === "open-code") { e.preventDefault(); openByCode(); }
+  if (evTarget(e).id === "open-code") { e.preventDefault(); openByCode(); }
 });

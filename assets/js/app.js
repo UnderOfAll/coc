@@ -40,7 +40,24 @@ const listScroll = {};   // key -> remembered list scroll position, restored on 
 // Canonical 5e ability order — used to group/sort skills by the stat they scale with.
 const ABILITY_ORDER = ["Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma"];
 
+/* Typed as `any` deliberately. Every call site knows what it asked for — `$("#hp-amt").value`,
+   `$(".tab-strip").scrollIntoView` — and the alternative is a cast on several hundred lines to tell the
+   checker what the selector already says. Everything else in the codebase IS checked (see tsconfig.json);
+   this is the one place where being honest about the DOM would cost more than it is worth.
+   @param {string} sel
+   @returns {any} */
 const $ = (sel) => document.querySelector(sel);
+/* `e.target` is an EventTarget, which is true and useless: in this app it is always an element in a page we
+   wrote, and every use asks it something an element knows (`closest`, `id`, `value`, `files`). Rather than
+   cast at forty call sites, the widening happens once, here, with a name that says what it is.
+   @param {Event} e
+   @returns {any} */
+const evTarget = (e) => e.target;
+/* The same bargain for a node we just queried: `querySelectorAll` yields Element, and the caller knows it
+   asked for something with a dataset.
+   @param {any} node
+   @returns {any} */
+const asEl = (node) => node;
 /* The whole document scrolls (see the shell note in style.css), so every "where were we" question
    is asked of the page, never of a panel inside it. */
 const pageScroller = () => document.scrollingElement || document.documentElement;
@@ -153,24 +170,24 @@ function wireEvents() {
   // Landing menu needs the sidebar built even before the compendium is first opened.
 
   $("#search").addEventListener("input", (e) => {
-    const q = e.target.value.trim().toLowerCase();
+    const q = evTarget(e).value.trim().toLowerCase();
     if (q) renderSearch(q); else selectCategory(current);
   });
   window.addEventListener("hashchange", routeFromHash);
   $("#legend-btn").addEventListener("click", () => $("#legend-panel").classList.toggle("hidden"));
   $("#legend-panel").addEventListener("click", (e) => {
-    if (e.target.id === "legend-close") $("#legend-panel").classList.add("hidden");
+    if (evTarget(e).id === "legend-close") $("#legend-panel").classList.add("hidden");
   });
   // Tricks tab: the Tier / Class / Level grouping toggle.
   document.addEventListener("click", (e) => {
-    const btn = e.target.closest("[data-trick-group]");
+    const btn = evTarget(e).closest("[data-trick-group]");
     if (!btn) return;
     trickGrouping = btn.dataset.trickGroup;
     renderList("tricks");
   });
   // How it works / In play: flips ONE entry's body, never the whole page.
   document.addEventListener("click", (e) => {
-    const btn = e.target.closest("[data-fview]");
+    const btn = evTarget(e).closest("[data-fview]");
     if (!btn) return;
     const box = btn.closest(".tabbed");
     if (!box) return;
@@ -183,7 +200,7 @@ function wireEvents() {
   // Tap-to-toggle tooltips: touchscreens can't hover, so a tap opens the formula /
   // scaling-die box; tapping the same term again or anywhere else closes it.
   document.addEventListener("click", (e) => {
-    const term = e.target.closest(".tip-term, .scaling-die");
+    const term = evTarget(e).closest(".tip-term, .scaling-die");
     document.querySelectorAll(".tip-open").forEach((n) => { if (n !== term) n.classList.remove("tip-open"); });
     if (term) { term.classList.toggle("tip-open"); clampTip(term); e.stopPropagation(); }
   });
@@ -191,13 +208,13 @@ function wireEvents() {
   // the term sits near an edge — the tier badge at the top-left of a trick page was half-hidden.
   // Measure on open and nudge it back inside the reading column; the arrow follows the term.
   document.addEventListener("mouseover", (e) => {
-    const term = e.target.closest(".tip-term, .scaling-die");
+    const term = evTarget(e).closest(".tip-term, .scaling-die");
     if (term) clampTip(term);
   });
   // Keyboard parity: these are spans, so Tab focuses them and Enter/Space opens the same box a
   // mouse hover or a tap would. Escape closes it.
   document.addEventListener("keydown", (e) => {
-    const term = e.target.closest && e.target.closest(".tip-term, .scaling-die");
+    const term = evTarget(e).closest && evTarget(e).closest(".tip-term, .scaling-die");
     if (term && (e.key === "Enter" || e.key === " ")) {
       e.preventDefault();
       term.classList.toggle("tip-open");
@@ -207,7 +224,7 @@ function wireEvents() {
     }
   });
   document.addEventListener("focusin", (e) => {
-    const term = e.target.closest && e.target.closest(".tip-term, .scaling-die");
+    const term = evTarget(e).closest && evTarget(e).closest(".tip-term, .scaling-die");
     if (term) clampTip(term);
   });
 }
@@ -266,7 +283,7 @@ function routeFromHash() {
 
 function selectCategory(key) {
   current = key;
-  document.querySelectorAll(".nav-btn").forEach((b) => b.classList.toggle("active", b.dataset.key === key));
+  document.querySelectorAll(".nav-btn").forEach((b) => b.classList.toggle("active", asEl(b).dataset.key === key));
   $("#detail-view").classList.add("hidden");
   $("#list-view").classList.remove("hidden");
   $("#list-title").textContent = CATEGORIES.find((c) => c.key === key).label;
@@ -433,6 +450,24 @@ function renderSearch(q) {
     list.appendChild(section);
   }
   if (!total) list.appendChild(el("p", "muted", `No matches for “${esc(q)}”.`));
+}
+
+/* The words around the match, with the match marked — so a result that hit on body text says WHY it is a
+   result. This was called from makeSearchCard, documented at the top of the file, and never actually
+   written: searching for anything that did not appear in a name threw and killed the result list. The type
+   checker found it on its first run, in a file nobody had touched in weeks.
+   @param {string} text
+   @param {string} q */
+function snippet(text, q) {
+  const hay = String(text || "");
+  const at = hay.toLowerCase().indexOf(String(q || "").toLowerCase());
+  if (at < 0 || !q) return esc(hay.slice(0, 140));
+  const from = Math.max(0, at - 60);
+  const to = Math.min(hay.length, at + q.length + 80);
+  const before = esc((from ? "…" : "") + hay.slice(from, at));
+  const hit = esc(hay.slice(at, at + q.length));
+  const after = esc(hay.slice(at + q.length, to) + (to < hay.length ? "…" : ""));
+  return `${before}<mark>${hit}</mark>${after}`;
 }
 
 /* A result card: name, category meta, and a snippet showing where the term matched. */

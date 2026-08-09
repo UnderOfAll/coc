@@ -294,7 +294,7 @@ function bindStage() {
   }, { passive: false });
   // A double tap on a token is the shortest path to "what is this thing" — for the DM, its editor.
   stage.addEventListener("dblclick", (e) => {
-    const node = e.target.closest("[data-token]");
+    const node = evTarget(e).closest("[data-token]");
     if (node) tblOpenToken(node.dataset.token);
   });
 }
@@ -405,7 +405,7 @@ function onPointerDown(e) {
     if (stage.setPointerCapture) { try { stage.setPointerCapture(e.pointerId); } catch { /* fine */ } }
     return;
   }
-  const node = e.target.closest("[data-token]");
+  const node = evTarget(e).closest("[data-token]");
   const id = node && node.dataset.token;
   const token = id ? tblTokens()[id] : null;
   if (token && tblCanMove(token)) {

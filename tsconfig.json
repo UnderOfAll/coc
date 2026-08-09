@@ -1,0 +1,21 @@
+{
+  "//": "TypeScript is used here as a CHECKER, never as a compiler. There is no build step and there is not",
+  "//2": "going to be one: the site is the files in this repo, served as they are. `npm run typecheck` reads",
+  "//3": "the JSDoc in the .js files and finds the class of bug that has cost the most rounds — a wrong field",
+  "//4": "name, a value read before it exists, an action handler that cannot be reached. Nothing is emitted.",
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "strict": false,
+    "noImplicitAny": false,
+    "strictNullChecks": false,
+    "skipLibCheck": true,
+    "types": []
+  },
+  "include": ["assets/js/**/*.js"]
+}

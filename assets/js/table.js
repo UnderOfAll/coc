@@ -693,7 +693,7 @@ function tblPanel(which) {
     tbl.ui.dock = tbl.ui.dock === false;
     paintDock();
     document.querySelectorAll("[data-tbl='panel']").forEach((b) =>
-      b.classList.toggle("on", b.dataset.val === "dice" ? tbl.ui.dock !== false : b.dataset.val === tbl.ui.panel));
+      asEl(b).classList.toggle("on", asEl(b).dataset.val === "dice" ? tbl.ui.dock !== false : asEl(b).dataset.val === tbl.ui.panel));
     return;
   }
   const wasSheet = tbl.ui.panel === "sheet";
@@ -707,7 +707,7 @@ function paintSide() {
   const which = tbl.ui.panel;
   side.classList.toggle("hidden", !which);
   document.querySelectorAll("[data-tbl='panel']").forEach((b) =>
-    b.classList.toggle("on", b.dataset.val === which));
+    b.classList.toggle("on", asEl(b).dataset.val === which));
   if (!which) { side.innerHTML = ""; return; }
   if (which === "dm") { const html = dmPanelHTML(); side.innerHTML = html; side.dataset.rendered = html; }
   else if (which === "dice") {
@@ -748,9 +748,9 @@ function paintDmPanel() {
   const next = dmPanelHTML();
   if (next === side.dataset.rendered) return;
   const active = document.activeElement;
-  const focusId = active && side.contains(active) && active.id ? active.id : "";
+  const focusId = active && side.contains(active) && asEl(active).id ? asEl(active).id : "";
   let caret = null;
-  if (focusId) { try { caret = active.selectionStart; } catch { caret = null; } }
+  if (focusId) { try { caret = asEl(active).selectionStart; } catch { caret = null; } }
   const kept = {};
   side.querySelectorAll("input[id], textarea[id]").forEach((n) => {
     if (n.type !== "file") kept[n.id] = n.value;
@@ -781,16 +781,16 @@ COC_ROUTES.debug = routeDebug;
    two-step "choose then save" is one more thing to forget. */
 document.addEventListener("change", (e) => {
   if (!tbl) return;
-  if (e.target.id === "ed-file") tblUploadTokenImage(tbl.ui.editToken, e.target, "ed-imgmsg");
-  else if (e.target.id === "mine-file") {
+  if (evTarget(e).id === "ed-file") tblUploadTokenImage(tbl.ui.editToken, e.target, "ed-imgmsg");
+  else if (evTarget(e).id === "mine-file") {
     tblUploadTokenImage(tblMyTokens()[0] || tbl.ui.lookAt, e.target, "mine-imgmsg");
   }
 });
 
 document.addEventListener("input", (e) => {
   if (!tbl) return;
-  if (e.target.id === "close-confirm") {
-    tbl.ui.closeText = String(e.target.value || "").replace(/\D/g, "").slice(0, 6);
+  if (evTarget(e).id === "close-confirm") {
+    tbl.ui.closeText = String(evTarget(e).value || "").replace(/\D/g, "").slice(0, 6);
     // Only the button's state changes, so the panel is not rebuilt — that would take the focus out of
     // the box you are typing in.
     const go = $('[data-tbl="close-go"]');
@@ -798,13 +798,13 @@ document.addEventListener("input", (e) => {
     return;
   }
   // The tracker saves itself, and the figure on the board follows the two things it can show.
-  if (/^trk-/.test(e.target.id || "")) { tblTrackerInput(e.target); return; }
+  if (/^trk-/.test(evTarget(e).id || "")) { tblTrackerInput(e.target); return; }
   // A notepad saves itself. Coalesced, so a paragraph is a handful of writes rather than one per letter.
-  if ((e.target.id === "note-title" || e.target.id === "note-body") && tbl.ui.note) {
-    const field = e.target.id === "note-title" ? "title" : "body";
+  if ((evTarget(e).id === "note-title" || evTarget(e).id === "note-body") && tbl.ui.note) {
+    const field = evTarget(e).id === "note-title" ? "title" : "body";
     const cap = field === "title" ? 60 : 8000;
     CocLive.throttled(tblPath("notes/" + tbl.ui.note + "/" + field),
-      String(e.target.value || "").slice(0, cap), 700);
+      String(evTarget(e).value || "").slice(0, cap), 700);
   }
 });
 
@@ -844,7 +844,7 @@ function tblTrackerInput(el) {
 /* Rolling from a sheet. Listened for here rather than in creator.js because the dice belong to the
    table, and the sheet is the same sheet whether it is open at a table or on its own. */
 document.addEventListener("click", (e) => {
-  const roller = e.target.closest("[data-roll]");
+  const roller = evTarget(e).closest("[data-roll]");
   if (roller && !roller.disabled) {
     const onSheet = roller.closest("#vtt-sheet") && typeof sheet !== "undefined" && sheet && sheet.ch;
     tblRollAndPost(roller.dataset.roll, roller.dataset.label || "",
@@ -852,7 +852,7 @@ document.addEventListener("click", (e) => {
       onSheet ? sheet.ch.name : null);
     return;
   }
-  const btn = e.target.closest("[data-tbl]");
+  const btn = evTarget(e).closest("[data-tbl]");
   if (!btn || btn.disabled) return;
   const { tbl: act, val } = btn.dataset;
   if (act === "create") return tblCreate();
@@ -1153,7 +1153,7 @@ function tblDiagnostics() {
 function debugPanelHTML() {
   const d = tblDiagnostics();
   const row = (k, v) => `<div class="dbg-row"><span>${esc(k)}</span><code>${esc(v)}</code></div>`;
-  const g = d.gesture || {};
+  const g = d.gesture || /** @type {any} */ ({});
   return `<section class="panel">
       <h2>Diagnostics</h2>
       <p class="muted">Yours alone. If something misbehaves, press Copy and paste it to me — it beats

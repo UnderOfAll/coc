@@ -212,12 +212,12 @@ function tblShowRoll(entry) {
   const spin = setInterval(() => {
     ticks += 1;
     for (const die of shown) {
-      const sides = Number(die.dataset.sides) || 20;
+      const sides = Number(asEl(die).dataset.sides) || 20;
       die.querySelector("b").textContent = String(1 + Math.floor(Math.random() * sides));
     }
     if (ticks > 9) {
       clearInterval(spin);
-      for (const die of shown) die.querySelector("b").textContent = die.dataset.final;
+      for (const die of shown) die.querySelector("b").textContent = asEl(die).dataset.final;
       node.classList.remove("rolling");
       node.classList.add("landed");
     }

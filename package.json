@@ -4,6 +4,7 @@
   "description": "Dev tooling for the Grimoire circus-system compendium (not shipped to GitHub Pages).",
   "scripts": {
     "build": "python3 scripts/build_manifest.py",
+    "typecheck": "tsc -p tsconfig.json",
     "backup": "node scripts/backup.mjs",
     "test:dom": "node scripts/test/dom_smoke.mjs",
     "test:live": "node scripts/test/live.mjs",
@@ -17,6 +18,7 @@
   "devDependencies": {
     "jsdom": "^29.1.1",
     "playwright": "^1.62.1",
-    "puppeteer": "^24.43.1"
+    "puppeteer": "^24.43.1",
+    "typescript": "^7.0.2"
   }
 }

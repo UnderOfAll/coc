@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 # One-command health check for Circus of Chaos. Runs the full gate:
 #   1. build_manifest.py  — rebuild manifest + bundle, dup-id check, inline-formula lint
-#   2. validate.py        — JSON Schema validation + subclass-parent resolution
+#   2. npm run typecheck   — TypeScript reading the JSDoc in plain .js files. No build step, nothing emitted:
+#                           it catches the class of bug that has cost the most rounds — a wrong field name, a
+#                           call with the wrong arity, a variable that was never defined. It found `snippet()`
+#                           being called and never written, on its first run.
+#   3. validate.py        — JSON Schema validation + subclass-parent resolution
 #   3. lint_assets.py     — front-end hygiene: missing styles, dead functions, unread fields
 #   4. npm run test:live   — CocLive: writes land, watchers fire, a drag collapses into few writes,
 #                           and the database's streaming events are applied to the mirror correctly
@@ -27,6 +31,9 @@ cd "$(dirname "$0")/.."
 
 echo "==> build_manifest.py"
 python3 scripts/build_manifest.py
+
+echo "==> npm run typecheck"
+npm run typecheck
 
 echo "==> validate.py"
 python3 scripts/validate.py

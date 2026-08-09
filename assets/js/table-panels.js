@@ -230,7 +230,7 @@ function tblShrinkImage(file, done, fail, budget) {
       }
       fail("Even shrunk, that image is too big to store. Commit it into maps/ instead.");
     };
-    img.src = reader.result;
+    img.src = /** @type {string} */ (reader.result);
   };
   reader.readAsDataURL(file);
 }
@@ -397,7 +397,7 @@ function paintTurnBar() {
   // Highlight has to be cleared even when the tracker is off, or a stale ring stays on a token.
   const currentId = order.length ? order[Math.min(turn.idx || 0, order.length - 1)] : "";
   document.querySelectorAll("#vtt-tokens .tok").forEach((n) =>
-    n.classList.toggle("turn", n.dataset.token === currentId));
+    n.classList.toggle("turn", asEl(n).dataset.token === currentId));
   if (!order.length) {
     bar.classList.toggle("hidden", tbl.role !== "dm");
     if (tbl.role === "dm") {
