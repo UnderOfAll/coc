@@ -187,10 +187,11 @@ let dice3dBox = null;      // the loaded box, once
 let dice3dLoading = null;  // the load in flight, so two quick rolls load it once
 let dice3dOff = false;     // it failed, or it is not wanted: stop asking
 let dice3dThrow = 0;       // which throw is the current one, so a stale one cannot un-hide the board
-/* The faces the physics last settled on, kept after the scene has been emptied. The library forgets a
-   throw the moment its world is cleared, and this is the record of what was actually on the table —
-   which is the only thing that can be held against the roll in the log and show they agreed. */
-let dice3dLanded = [];
+/* The faces the physics last settled on, and WHICH roll they belong to. The library forgets a throw the
+   moment its world is cleared, so this is the record of what was actually on the table — and it carries
+   the roll's own timestamp, because "the last faces" and "the last roll in the log" are not always the
+   same throw, and a check that assumes they are passes and fails at random. */
+let dice3dLanded = { t: 0, faces: [] };
 /* Which roll is being watched, by its timestamp, while its dice are still in the air. Nothing shows its
    NUMBERS until they stop — otherwise the total is sitting there before the throw has begun and the
    animation is decoration rather than the moment. It holds on this device only: everyone else at the
@@ -258,20 +259,28 @@ function dice3dTheme() {
     sound_dieMaterial: look.sound || "plastic",
   };
 }
-/* Changing the look rebuilds the box: every one of these is read once, when the world is made. The
-   module itself is already in the browser's cache, so the second build is quick. */
+/* Changing the look RESTYLES the world rather than replacing it — a tenth of a second, against several
+   seconds to build a second one while the first is still animating, which is exactly when somebody
+   changes a colour and is how a table ended up with no dice at all for the rest of a session.
+   The sound is the exception: those files are loaded when the world is made, so turning sound on after
+   the fact does need a new one. That is one tap, rarely, and it is the honest place to pay for it. */
 function dice3dRelook(change) {
+  const wasQuiet = dice3dLook().quiet, wasSound = dice3dLook().sound;
   Object.assign(dice3dLook(), change);
   try { localStorage.setItem("coc:dice-look", JSON.stringify(dice3dSeen)); } catch { /* no storage */ }
   dice3dClear(true);
+  const heard = dice3dLook().quiet !== wasQuiet || dice3dLook().sound !== wasSound;
+  if (!heard && dice3dBox && dice3dBox.updateConfig) {
+    try { dice3dBox.updateConfig(dice3dTheme()); return; }
+    catch { /* fall through and build a new one */ }
+  }
   dice3dBox = null;
   dice3dLoading = null;
   dice3dOff = false;
   const node = document.getElementById("roll-3d");
   if (node) node.innerHTML = "";
-  // Built again NOW, not on the next roll. Choosing a colour is the moment you are willing to wait a
-  // second; pressing Roll is not, and a world takes a few seconds to make — longer while the previous
-  // one is still settling, which is exactly when you are changing it.
+  // Built again NOW rather than on the next roll: choosing a setting is a moment you are willing to
+  // wait through, and pressing Roll is not.
   if (dice3dWanted()) dice3dReady();
 }
 
@@ -395,7 +404,7 @@ function dice3dReady() {
      "flat"  — they did not, or the throw failed. The flat dice take over, and the real ones go at once.
      "stale" — a NEWER roll has started since. Say nothing and touch nothing: the screen now belongs to
                that roll, and an old throw finishing must not reach into it. */
-async function dice3dShow(dice) {
+async function dice3dShow(dice, stamp) {
   const mine = ++dice3dThrow;
   const box = await dice3dReady();
   if (!box) return "flat";
@@ -416,7 +425,7 @@ async function dice3dShow(dice) {
     for (const die of box.diceList || []) faces.push(Number(die.getFaceValue().value));
   } catch { faces = []; }
   if (mine !== dice3dThrow) return "stale";
-  dice3dLanded = faces;
+  dice3dLanded = { t: stamp || 0, faces };
   const truthful = faces.length === want.length && faces.every((v, i) => v === want[i]);
   // A settled die is READABLE, so a wrong one has to leave immediately — no fade, no frame of it sitting
   // there being wrong. The fade is for dice that told the truth and are simply done.
@@ -541,7 +550,7 @@ function tblShowRoll(entry) {
   if (tbl && typeof paintLog === "function") { try { paintLog(); } catch { /* not at a table */ } }
   for (const t of tblRollTimers) clearTimeout(t);
   tblRollTimers = [];
-  dice3dShow(dice).then((how) => {
+  dice3dShow(dice, entry.t).then((how) => {
     if (how !== "stale") dice3dRelease();
     // "stale" means a newer roll owns the screen now. Touching anything here would reach into ITS
     // overlay — stripping a class it needs, or scheduling a hide that goes off early.

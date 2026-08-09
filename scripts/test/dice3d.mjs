@@ -81,11 +81,11 @@ async function thrown(pool, label) {
     solid: document.querySelector("#roll-stage").classList.contains("with-3d"),
     held: document.querySelector("#roll-stage").classList.contains("waiting"),
     bar: (document.querySelector("#vtt-lastroll") || {}).textContent || "",
-    faces: (typeof dice3dLanded !== "undefined" ? dice3dLanded : []).slice(),
+    landed: typeof dice3dLanded !== "undefined" ? dice3dLanded : { t: 0, faces: [] },
     rolled: (() => {
       const log = Object.values(tbl.data.log || {}).sort((a, b) => (a.t || 0) - (b.t || 0));
       const last = log[log.length - 1] || {};
-      return { dice: (last.dice || []).map((d) => Number(d.v)), total: last.total };
+      return { dice: (last.dice || []).map((d) => Number(d.v)), total: last.total, t: last.t };
     })(),
   }));
   console.log(`\n— ${label} —`);
@@ -93,6 +93,9 @@ async function thrown(pool, label) {
   ok(done.solid, "they landed on what was rolled, so the real dice stayed");
   ok(!done.held && !/rolling/.test(done.bar),
     "and it arrives when they stop: " + done.bar.trim().replace(/\s+/g, " "));
+  // The faces are only evidence if they belong to THIS roll.
+  ok(done.landed.t === done.rolled.t, "and the faces on the table are this roll's, not an earlier one's");
+  done.faces = done.landed.faces;
   return done;
 }
 
@@ -121,9 +124,9 @@ await page.evaluate(() => document.querySelector('[data-tbl="dice-colour"][data-
 await wait(400);
 ok(await page.evaluate(() => dice3dLook().design === "dragon" && dice3dLook().colour === "#d94f43"),
   "a design and a colour are remembered on this device");
-// Rebuilding while the last throw is still settling is exactly what used to leave a table with no dice at
-// all — so it starts the moment the colour is chosen, rather than making the next roll wait for it.
-ok(await ready(25000), "and the dice world is rebuilt for them, without being rolled first");
+// Restyled in place rather than rebuilt. Building a second world while the first is still animating —
+// which is exactly when somebody changes a colour — is what used to leave a table with no dice at all.
+ok(await ready(25000), "and the dice take them on without the world being rebuilt around them");
 const dragon = await thrown({ 20: 4 }, "four dragon-scaled d20");
 ok(dragon.faces.join(",") === dragon.rolled.dice.join(","), "still landing on the truth after the rebuild");
 

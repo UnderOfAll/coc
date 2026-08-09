@@ -168,17 +168,19 @@ await wait(3500);
 // Not "did a canvas appear" — that is true of a box that never throws. Read the faces the physics
 // actually settled on, out of the library itself, and hold them against the roll in the shared log.
 const solid = await dm.page.evaluate(() => {
-  const faces = (typeof dice3dLanded !== "undefined" ? dice3dLanded : []).slice();
+  const landed = typeof dice3dLanded !== "undefined" ? dice3dLanded : { t: 0, faces: [] };
   const log = Object.values(tbl.data.log || {}).sort((a, b) => (a.t || 0) - (b.t || 0));
   const last = log[log.length - 1] || {};
   return {
     canvas: !!document.querySelector("#roll-3d canvas"),
     shown: document.querySelector("#roll-3d").classList.contains("on"),
     truthful: document.querySelector("#roll-stage").classList.contains("with-3d"),
-    faces, logged: (last.dice || []).map((d) => Number(d.v)), total: last.total,
+    faces: landed.faces, sameRoll: landed.t === last.t,
+    logged: (last.dice || []).map((d) => Number(d.v)), total: last.total,
   };
 });
 ok(solid.canvas && solid.shown, "the dice are drawn on a real canvas, on screen");
+ok(solid.sameRoll, "the faces on the table belong to the roll in the log, not to an earlier throw");
 ok(solid.faces.length > 0 && solid.faces.join(",") === solid.logged.join(","),
   `and every face is the roll that was logged (dice ${solid.faces.join(",")} vs log ${solid.logged.join(",")})`);
 ok(solid.truthful, "which is what lets the box hide the flat dice (total " + solid.total + ")");
