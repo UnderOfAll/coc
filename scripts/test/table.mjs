@@ -890,6 +890,7 @@ peek(`window.__seq = [0.0];`);
 click($('[data-tbl="roll-pool"]'));
 await wait(60);
 ok($("#vtt-lastroll").classList.contains("nat1"), "and so does a natural 1");
+
 /* Five seconds and it takes itself away. Anyone who wants it back opens the Dice panel, where every roll
    is kept — which is the whole trade: the board stays the board. */
 peek(`(() => { const b = document.getElementById("vtt-lastroll");
@@ -914,6 +915,36 @@ ok(/^1$/.test(topLine.querySelector(".roll-card-total").textContent.trim()),
   "newest at the top, and its total reads on its own: " + topLine.querySelector(".roll-card-total").textContent.trim());
 // A straight single die shows only its total, so there is no die beside it — that pair is "18 18".
 ok(topLine.querySelectorAll(".pip-die").length === 0, "and no die repeated beside it");
+/* A NAT IS A NAT. The die's face decides it, never the total: a 20 with a modifier on it is still a
+   natural 20, and a total that happens to reach 20 off a lower die is not one. */
+peek(`tbl.ui.dice = { pool: { 20: 1 }, mod: 7, mode: "normal" }; paintDice();`);
+peek(`window.__seq = [0.999];`);
+click($('[data-tbl="roll-pool"]'));
+await wait(750);
+ok($("#roll-stage").classList.contains("nat20"), "a 20 with a +7 on it is still a natural 20");
+ok($("#roll-stage").classList.contains("crit-high"), "and it gets the moment");
+ok($("#vtt-lastroll .roll-card-total").textContent === "27", "with the total still counting the modifier");
+// A 13 that adds up to 20 is not a crit.
+peek(`tbl.ui.dice = { pool: { 20: 1 }, mod: 7, mode: "normal" }; paintDice();`);
+peek(`window.__seq = [0.62];`);
+click($('[data-tbl="roll-pool"]'));
+await wait(750);
+ok(!$("#roll-stage").classList.contains("nat20"), "a total of 20 off a lower die is not");
+ok(!$("#roll-stage").classList.contains("crit-high"), "and gets no moment");
+// A natural 1 with a modifier is still a natural 1, and gets the other half of the gesture.
+peek(`tbl.ui.dice = { pool: { 20: 1 }, mod: 5, mode: "normal" }; paintDice();`);
+peek(`window.__seq = [0.0];`);
+click($('[data-tbl="roll-pool"]'));
+await wait(750);
+ok($("#roll-stage").classList.contains("crit-low"), "a natural 1 with a +5 on it still flinches");
+ok(!$("#roll-stage").classList.contains("crit-high"), "and is not the other one");
+// Back to a plain roll, and the overlay taken down: it covers the whole screen while it is up, and the
+// next section clicks a button underneath it.
+peek(`tbl.ui.dice = { pool: { 20: 1 }, mod: 0, mode: "normal" }; paintDice();
+  const st = document.getElementById("roll-stage");
+  if (st) st.className = "roll-stage";`);
+await wait(60);
+
 
 // The other half of the brief: numbers ON THE SHEET are the roll buttons. The sheet drawer arrives in
 // a later checkpoint; what matters here is that a data-roll control anywhere posts to this table.

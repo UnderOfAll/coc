@@ -1104,6 +1104,10 @@ function trackerHTML() {
         ${num("trk-init", "Initiative", sheet.init)}
         ${num("trk-speed", "Speed (ft)", sheet.speed)}
       </div>
+      ${myToken && tbl.me.charCode ? `<p class="panel-sub">Your picture</p>
+        ${tokenImageHTML("mine", (tblTokens()[myToken] || {}).image)}
+        <p class="muted">It goes on your character, so it is on your figure here and on your sheet
+          everywhere else. Yours alone — nobody else can change it.</p>` : ""}
       ${myToken ? `<div class="hp-controls">
         <input id="trk-amt" class="num" type="number" min="1" value="1" />
         <button class="btn-quiet" data-tbl="trk-hp" data-val="-1">Damage</button>

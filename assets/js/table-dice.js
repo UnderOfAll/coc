@@ -90,6 +90,9 @@ function tblDoRoll(spec, mode) {
   return {
     dice, keptIdx, mode: twin ? mode : "normal", spec: norm,
     total: sum + norm.mod,
+    /* A NAT IS A NAT. This reads the face the die is showing, never the total — a 20 with a +7 on it is
+       still a natural 20, and a 13 that adds up to 20 is not one. It follows the die that COUNTED, so
+       under advantage it is the kept one. */
     natural: single && dice[twin ? keptIdx : 0].s === 20 ? dice[twin ? keptIdx : 0].v : 0,
   };
 }
@@ -230,8 +233,9 @@ const DICE3D_DESIGNS = [
 ];
 /* The numbers are ALWAYS this. It was a setting for about a day, and the answer to "what colour should
    the numbers be" turns out to be "the one you can read" — on a red die, on a dragon-scaled one, on a
-   black one, only white works. A finish (metal, glass, wood) was a setting too, and was removed for a
-   better reason: nobody could tell what it was choosing between. */
+   black one, only white works. A finish (metal, glass, wood) was a setting too, and went for a better
+   reason: nobody could tell what it was choosing between. Same for the sound material — the dice still
+   clatter, you just no longer get asked what they are made of. */
 const DICE3D_LABEL = "#f2efe6";
 const DICE3D_FINISH = "metal";
 
@@ -254,6 +258,10 @@ function dice3dTheme() {
       background: look.colour, foreground: DICE3D_LABEL,
       texture: look.design || "none", material: DICE3D_FINISH,
     },
+    // Dice that clatter. Fixed, not a setting: the CHOICE of material was the part that did nothing you
+    // could hear, and it is gone — the sound itself was never the problem. Loaded when the world is
+    // built, which is why changing it would need a new one and why nothing offers to.
+    sounds: true, volume: 55, sound_dieMaterial: "plastic",
   };
 }
 /* Changing the look RESTYLES the world rather than replacing it — a tenth of a second, against several
@@ -565,6 +573,9 @@ function tblShowRoll(entry) {
       for (const die of shown) die.querySelector("b").textContent = asEl(die).dataset.final;
       node.classList.remove("rolling");
       node.classList.add("landed");
+      // The flat dice have just turned over, so this is their readable beat. The 3D path fires its own,
+      // seconds later, when the real ones settle.
+      if (!solid) tblCritMoment(node, entry);
     }
   }, 55);
   if (tbl) tblFlashRoll(entry);
@@ -588,6 +599,7 @@ function tblShowRoll(entry) {
   tblRollTimers = [];
   dice3dShow(dice, entry.t).then((how) => {
     if (how !== "stale") dice3dRelease();
+    if (how === "solid") tblCritMoment(node, entry);
     // "stale" means a newer roll owns the screen now. Touching anything here would reach into ITS
     // overlay — stripping a class it needs, or scheduling a hide that goes off early.
     if (how === "stale" || !node.classList.contains("on")) return;
@@ -696,6 +708,18 @@ function tblRollBits(e) {
     mod: mod ? `<span class="roll-card-mod">${mod > 0 ? "+" : "−"}${esc(Math.abs(mod))}</span>` : "",
     total: dice.length ? String(e.total) : "",
   };
+}
+
+/* THE MOMENT, fired at the beat the number becomes readable — which is when the dice stop, not when the
+   box opens. That is the whole reason the total is held back: this is what the table is waiting through.
+   Restarted by hand, because two crits in a row are the same element and the browser will not replay an
+   animation that is already on it. */
+function tblCritMoment(node, entry) {
+  const how = entry && entry.nat === 20 ? "crit-high" : entry && entry.nat === 1 ? "crit-low" : "";
+  if (!node || !how) return;
+  node.classList.remove("crit-high", "crit-low");
+  void node.offsetWidth;
+  node.classList.add(how);
 }
 
 /* The newest roll, shown ON the board for five seconds and then gone. It used to stand in the column

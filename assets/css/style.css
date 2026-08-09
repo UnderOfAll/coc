@@ -724,8 +724,11 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
   font-size: 0.78rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--bg);
   background: var(--gold); border-radius: 0 0 var(--radius) var(--radius); opacity: 0; transition: opacity 0.15s ease; }
 .portrait-swap:hover .portrait-swap-hint, .portrait-swap:focus-within .portrait-swap-hint { opacity: 1; }
-/* On a touch screen there is no hover to discover it with, so it is simply always there. */
+/* On a touch screen there is no hover to discover it with. Neither is there when the portrait is EMPTY
+   and you are hunting for the way to add one — which is the only moment this control matters, and it
+   was invisible in it. */
 @media (hover: none) { .portrait-swap-hint { opacity: 0.92; } }
+.portrait-swap:has(.portrait.empty) .portrait-swap-hint { opacity: 0.92; }
 .portrait.empty { display: grid; place-items: center; color: var(--muted); font-family: var(--serif); font-size: 1.6rem; background: var(--panel-2); }
 /* 1.6rem is for the single initial the sheet shows in this box. A worded placeholder needs caption
    sizing or it simply does not fit 72px. */
@@ -1238,7 +1241,7 @@ body:has(.vtt) { height: 100dvh; overflow: hidden; }
    that was already printed. */
 .roll-stage.waiting .roll-total, .roll-stage.waiting .roll-kept { visibility: hidden; }
 .roll-waiting { color: var(--muted); font-style: italic; margin-left: 0.5rem; }
-.roll-box { min-width: min(20rem, 88vw); padding: 1rem 1.2rem; text-align: center;
+.roll-box { position: relative; min-width: min(20rem, 88vw); padding: 1rem 1.2rem; text-align: center;
   background: var(--panel); border: 1px solid var(--gold); border-radius: var(--radius);
   box-shadow: 0 18px 50px rgba(0,0,0,0.65); }
 .roll-head { margin: 0 0 0.7rem; color: var(--muted); font-size: 0.94rem; }
@@ -1290,6 +1293,76 @@ body:has(.vtt) { height: 100dvh; overflow: hidden; }
 .roll-stage.nat20 .roll-total { color: var(--ok); }
 .roll-stage.nat1 .roll-box { border-color: var(--accent); }
 .roll-stage.nat1 .roll-total { color: var(--accent-soft); }
+
+/* ---------------------------------------------------------------- the moment
+
+   A natural 20 and a natural 1 are the two results a table reacts to out loud, so they get the one
+   authored moment in this app. Everything else here settles quietly on purpose; if every roll had a
+   flourish, none of them would.
+
+   It fires when the NUMBER BECOMES READABLE — when the dice stop, not when the box opens — because the
+   whole point of holding the total back is that this is the beat everyone is waiting through. The two
+   read as opposites of one gesture: the 20 arrives from below and blooms, the 1 drops in and shudders.
+   Both are driven from `--crit`, so there is one colour to change and it is already the roll's own. */
+.roll-stage.crit-high { --crit: var(--ok); --crit-wash: rgba(106, 176, 76, 0.30); }
+.roll-stage.crit-low  { --crit: var(--accent); --crit-wash: rgba(192, 57, 43, 0.32); }
+
+/* The spotlight, thrown across the whole board so it catches the dice that just landed and not only
+   the box that describes them. */
+.roll-stage.crit-high::before, .roll-stage.crit-low::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: -1;
+  background: radial-gradient(58% 46% at 50% 58%, var(--crit-wash), transparent 72%);
+  animation: crit-spotlight 1s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes crit-spotlight {
+  0%   { opacity: 0; transform: scale(0.82); }
+  18%  { opacity: 1; }
+  100% { opacity: 0; transform: scale(1.14); }
+}
+
+/* One ring off the box, the width of a held breath. */
+.roll-stage.crit-high .roll-box::after, .roll-stage.crit-low .roll-box::after {
+  content: ""; position: absolute; inset: -1px; border-radius: inherit; pointer-events: none;
+  border: 1px solid var(--crit);
+  animation: crit-ring 780ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes crit-ring {
+  0%   { opacity: 0.9; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.13); }
+}
+
+/* The box itself, and the number on it. A 20 rises into place out of a blur; a 1 falls into it and the
+   box flinches once. */
+.roll-stage.crit-high .roll-box { animation: crit-lift 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  border-color: var(--crit); box-shadow: 0 18px 50px rgba(0,0,0,0.65), 0 0 34px -6px var(--crit-wash); }
+.roll-stage.crit-low .roll-box { animation: crit-flinch 460ms cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+  border-color: var(--crit); }
+.roll-stage.crit-high .roll-total { animation: crit-rise 720ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  display: inline-block; text-shadow: 0 0 26px var(--crit-wash); }
+.roll-stage.crit-low .roll-total { animation: crit-fall 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  display: inline-block; }
+
+@keyframes crit-lift {
+  0%   { transform: translateY(6px) scale(0.985); }
+  100% { transform: none; }
+}
+@keyframes crit-rise {
+  0%   { transform: translateY(14px) scale(0.7); opacity: 0; filter: blur(7px); }
+  45%  { transform: translateY(0) scale(1.16); opacity: 1; filter: blur(0); }
+  100% { transform: none; }
+}
+@keyframes crit-flinch {
+  0%, 100% { transform: translateX(0); }
+  18% { transform: translateX(-5px); }
+  38% { transform: translateX(4px); }
+  58% { transform: translateX(-3px); }
+  78% { transform: translateX(2px); }
+}
+@keyframes crit-fall {
+  0%   { transform: translateY(-13px) scale(1.1); opacity: 0; filter: blur(6px); }
+  55%  { transform: translateY(2px) scale(0.97); opacity: 1; filter: blur(0); }
+  100% { transform: none; }
+}
 /* A line of the log: who, the dice as dice, the total big enough to read from across the table. */
 .roll-card { display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.45rem; }
 /* Wraps between words, never inside one: in a 330px dock "Bartholomew Smite" was coming out as
@@ -1307,6 +1380,12 @@ body:has(.vtt) { height: 100dvh; overflow: hidden; }
 .roll-card.nat1 .roll-card-total { color: var(--accent-soft); }
 @media (prefers-reduced-motion: reduce) {
   .roll-stage.rolling .die, .roll-stage.landed .die { animation: none; }
+  /* The crit keeps its COLOUR and loses its movement — the result is the information, the flourish was
+     never the point. */
+  .roll-stage.crit-high::before, .roll-stage.crit-low::before,
+  .roll-stage.crit-high .roll-box::after, .roll-stage.crit-low .roll-box::after { animation: none; opacity: 0; }
+  .roll-stage.crit-high .roll-box, .roll-stage.crit-low .roll-box,
+  .roll-stage.crit-high .roll-total, .roll-stage.crit-low .roll-total { animation: none; filter: none; }
 }
 /* Any number on a sheet you can actually throw dice for. It has to look like the number it replaced,
    or the sheet turns into a wall of buttons — so it is the same type, with a hairline and a cursor. */
@@ -1337,7 +1416,16 @@ body:has(.vtt) { height: 100dvh; overflow: hidden; }
    third of the width the page gives it, so the grids that assume room are told to stop assuming. */
 .sheet-drawer-bar { display: flex; align-items: center; justify-content: space-between;
   gap: 0.5rem; margin-bottom: 0.5rem; }
+/* The head is hidden in the drawer — except the FACE. Hiding the whole head took the portrait with it,
+   and the portrait is the picker: a player opening their own character at a table found no way to give
+   it a picture, because the only control was in the one block the drawer switched off. What is actually
+   unwanted here is the back-link to "My characters" and the level plate, not the character's face. */
 #vtt-sheet .tool-head { display: none; }
+#vtt-sheet .sheet-head { display: block; margin-bottom: 0.6rem; }
+#vtt-sheet .sheet-head > .back, #vtt-sheet .sheet-head > .btn, #vtt-sheet .sheet-level { display: none; }
+#vtt-sheet .sheet-id { gap: 0.7rem; }
+#vtt-sheet .sheet-id h1 { font-size: 1.25rem; }
+#vtt-sheet .portrait { width: 56px; height: 56px; }
 #vtt-sheet .panel { background: var(--panel-2); border: 1px solid var(--border); padding: 0.6rem 0.7rem;
   margin-bottom: 0.6rem; }
 #vtt-sheet .vital-row { grid-template-columns: 1fr; }
