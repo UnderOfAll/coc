@@ -815,6 +815,18 @@ ok(!stage.classList.contains("rolling") && stage.classList.contains("landed"), "
 ok(stage.querySelector(".die b").textContent === String(peek(`Object.values(tbl.data.log).sort((a,b)=>b.t-a.t)[0].dice[0].v`)),
   "showing the number that was actually rolled, not a random face");
 ok(/d20/.test(stage.querySelector(".die em").textContent), "and which kind of die it was");
+// A die should LOOK like the die it is: the shape is drawn behind the number, not clipped out of the box.
+ok(stage.querySelector(".die .die-face polygon"), "the die is drawn as a shape, not a tile");
+const d20pts = stage.querySelector(".die .die-face polygon").getAttribute("points");
+ok(d20pts.split(" ").length === 6, "a d20 is the six-sided silhouette everyone knows (" + d20pts.split(" ").length + " points)");
+ok(stage.querySelector(".die b").textContent.length > 0, "with the number on top of it, not cut in half");
+// Each kind has its own outline.
+peek(`tblShowRoll({ who: "DM", label: "", spec: "d4 + d12", mod: 0, mode: "normal", keptIdx: -1, total: 9,
+  dice: [{ s: 4, v: 3 }, { s: 12, v: 6 }], t: Date.now() + 9000 });`);
+await wait(40);
+const shapes = [...doc.querySelectorAll("#roll-stage .die .die-face polygon")].map((n) => n.getAttribute("points").split(" ").length);
+ok(shapes[0] === 3, "a d4 is a triangle");
+ok(shapes[1] === 5, "a d12 is a pentagon");
 // Advantage keeps both dice on screen, with the discarded one dimmed — "which did I keep" is the first
 // thing anyone asks.
 peek(`window.__seq = [0.1, 0.9]; tbl.ui.dice.mode = "adv"; tbl.ui.dice.mod = 0; paintDice();`);

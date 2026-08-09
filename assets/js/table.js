@@ -1771,7 +1771,7 @@ function tblShowRoll(entry) {
   const faces = dice.map((x, i) => {
     const dropped = keptIdx >= 0 && i !== keptIdx ? " dropped" : "";
     return `<span class="die${dropped}" data-final="${esc(x.v)}" data-sides="${esc(x.s)}">` +
-      `<b>${esc(x.v)}</b><em>d${esc(x.s)}</em></span>`;
+      `${tblDieFace(x.s)}<b>${esc(x.v)}</b><em>d${esc(x.s)}</em></span>`;
   }).join("");
   const spec = entry.spec
     || tblSpecText({ terms: dice.map((x) => ({ count: 1, sides: x.s, sign: 1 })), mod });
@@ -1947,6 +1947,28 @@ function paintLog() {
  *
  * A stroke belongs to whoever drew it, by the same key the notepad uses. You may rub out your own; the DM
  * may rub out anybody's, and may turn drawing off for a scene entirely. */
+/* A die should look like the die it is. Clipping the box into a polygon cut the number in half, so the
+   shape is drawn BEHIND the number instead — an outline the digit sits on top of. Points are the
+   silhouettes everyone recognises: the d20's hexagon, the d4's triangle, the d8's rhombus. The inner
+   lines on the d20 and d12 are what stops a hexagon reading as a stop sign. */
+const TBL_DIE_SHAPES = {
+  4:   { pts: "50,6 94,88 6,88", inner: "50,6 50,88 M6,88 L50,58 L94,88" },
+  6:   { pts: "14,14 86,14 86,86 14,86", inner: "" },
+  8:   { pts: "50,4 92,50 50,96 8,50", inner: "8,50 92,50" },
+  10:  { pts: "50,3 92,40 50,97 8,40", inner: "8,40 92,40" },
+  12:  { pts: "50,4 95,37 78,92 22,92 5,37", inner: "50,30 22,50 33,80 67,80 78,50 50,30" },
+  20:  { pts: "50,4 91,27 91,73 50,96 9,73 9,27", inner: "50,26 20,66 80,66 50,26" },
+  100: { pts: "50,3 76,11 94,33 94,67 76,89 50,97 24,89 6,67 6,33 24,11", inner: "" },
+};
+function tblDieFace(sides) {
+  const shape = TBL_DIE_SHAPES[sides] || TBL_DIE_SHAPES[6];
+  const inner = shape.inner
+    ? `<path d="M${shape.inner.split(" ").join(" L").replace(/L M/g, "M")}" class="die-inner" />`
+    : "";
+  return `<svg class="die-face" viewBox="0 0 100 100" aria-hidden="true">` +
+    `<polygon points="${shape.pts}" /></svg>${inner ? `<svg class="die-face" viewBox="0 0 100 100" aria-hidden="true">${inner}</svg>` : ""}`;
+}
+
 const TBL_INK_COLOURS = [
   ["#c9a54e", "Gold"], ["#e07a5f", "Red"], ["#6ab04c", "Green"],
   ["#4a90d9", "Blue"], ["#e9e4da", "White"], ["#1a1917", "Black"],
