@@ -144,10 +144,11 @@ for (const width of [430, 412, 393, 360, 320]) {
     CocLive.setMode("local");
     localStorage.setItem("coc:live", "{}");
     localStorage.setItem("coc:table:dm:482910", "1");
+    localStorage.setItem("coc:table:me:482910", JSON.stringify({ clientId: "cme", name: "Bartholomew", charCode: "123456" }));
     await CocLive.put("tables/482910", {
       meta: { name: "A table with a fairly long name", createdAt: 1, dmHash: "fnv:x", activeScene: "s1" },
       scenes: { s1: { name: "Blank", image: "", cols: 24, rows: 16, cell: 70, createdAt: 1 } },
-      tokens: { t1: { name: "Bartholomew Quicksilver", charCode: "123456", x: 3, y: 3, size: 1, kind: "pc", hp: 20, hpMax: 44, speed: 30 },
+      tokens: { t1: { name: "Bartholomew Quicksilver", charCode: "123456", owner: "cme", x: 3, y: 3, size: 1, kind: "pc", hp: 20, hpMax: 44, speed: 30 },
                 t2: { name: "Goblin 2", kind: "npc", scene: "s1", x: 9, y: 6, size: 2, hp: 7, hpMax: 7, speed: 30 } },
       log: { l1: { t: 1, who: "DM", kind: "roll", text: "DM rolled Goblin 2 to hit: d20 + 4 → 17 = 21" } },
     });

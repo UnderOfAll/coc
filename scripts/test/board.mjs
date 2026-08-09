@@ -29,7 +29,9 @@ const TABLE = {
   meta: { name: "Board test", createdAt: 1, dmHash: "fnv:none", activeScene: "s1" },
   scenes: { s1: { name: "Blank", image: "", cols: 20, rows: 14, cell: 70, createdAt: 1 } },
   tokens: {
-    t1: { name: "Rig", charCode: "123456", x: 2, y: 2, size: 1, kind: "pc", hp: 20, hpMax: 44, speed: 30, initMod: 3 },
+    // `owner` is what makes a figure yours now — the browser holding it, matching the clientId seeded into
+    // localStorage below. A character code alone no longer grants control of anything.
+    t1: { name: "Rig", charCode: "123456", owner: "cme", x: 2, y: 2, size: 1, kind: "pc", hp: 20, hpMax: 44, speed: 30, initMod: 3 },
     t2: { name: "Orc", kind: "npc", scene: "s1", x: 8, y: 5, size: 1, hp: 7, hpMax: 7, speed: 30, initMod: 1 },
   },
 };

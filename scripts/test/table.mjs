@@ -71,11 +71,11 @@ peek(`window.__chars = { "123456": { v:1, name:"Rig", classId:"joker", subclassI
 
 console.log("\n— THE FRONT DOOR —");
 await go("#/table");
-ok($("#tbl-room") && $("#tbl-name-in"), "joining asks for a room code and a name");
-ok($("#tbl-char"), "and offers a character code");
-ok(/optional/i.test($("#tool").textContent), "which is optional, so any system can use the table");
+ok($("#tbl-room") && !$("#tbl-char"), "joining asks for the room code and nothing else");
+ok(/pick which\s+character/i.test($("#tool").textContent.replace(/\s+/g, " ")) || /pick which character/i.test($("#tool").textContent),
+  "and says the character is chosen once you are inside");
 ok($("#tbl-newroom") && $("#tbl-dmkey"), "running a table asks for a room code and a DM key");
-ok(/six-digit|six digits/i.test($("#tool").textContent), "and says what shape the codes are");
+ok(/six.digit|six digits/i.test($("#tool").textContent), "and says what shape the codes are");
 ok(/locks the controls, not the data/i.test($("#tool").textContent), "the DM key's limits are stated on the page");
 // Refusals first: a table opened on a bad code is a table nobody can find again.
 type($("#tbl-newroom"), "12"); type($("#tbl-dmkey"), "999888");
@@ -305,8 +305,10 @@ await peek(`CocLive.put("tables/482910/tokens/tRig/y", 4)`);
 await wait(60);
 
 console.log("\n— A PLAYER MOVES ONLY THEIR OWN —");
-// Same table, but this browser is a player holding character 123456.
-peek(`tbl.role = "player"; tbl.me.charCode = "123456"; paintTokens();`);
+// Same table, but this browser is a player HOLDING Rig's figure — which is what ownership now means: the
+// browser that took it, not whatever character code happens to match.
+await peek(`CocLive.put("tables/482910/tokens/tRig/owner", "thisBrowser")`);
+peek(`tbl.role = "player"; tbl.me.charCode = "123456"; tbl.me.clientId = "thisBrowser"; paintTokens();`);
 ok($('[data-token="tRig"]').classList.contains("mine"), "your own figure is marked as yours");
 ok($('[data-token="tRig"]').classList.contains("movable"), "and is movable");
 ok(!$('[data-token="tOrc"]').classList.contains("movable"), "the DM's monster is not");
@@ -744,7 +746,7 @@ function paintTurnBarCheck() {
 }
 
 console.log("\n— YOUR SHEET, OVER THE BOARD —");
-// Still the player holding 123456 from the turn-order section.
+// Still the player holding Rig's figure from the turn-order section.
 openPanel("sheet");
 await wait(150);
 ok($("#vtt-sheet"), "a drawer for the sheet");
@@ -961,177 +963,75 @@ click($('[data-tbl="hand-hide"]'));
 await wait(60);
 ok((await aget(`CocLive.get("tables/482910/meta/handout")`)) === null, "the DM takes it back down for everyone");
 
-console.log("\n— A PLAYER SITTING DOWN GETS A TOKEN —");
-// Drop only the DM flag — NOT localStorage.clear(), which in offline mode would also delete the
-// table itself, since the tree lives there. (It did, the first time this test ran.)
+console.log("\n— CHOOSING WHO YOU ARE —");
+// A room code gets you in; WHO you are is chosen inside, from the figures on the table. Kayki's rule: one
+// leaves and comes back, takes their own figure again; a new player adds one; a figure somebody is holding
+// cannot be taken.
 peek(`localStorage.removeItem("coc:table:dm:482910"); localStorage.removeItem("coc:table:me:482910");`);
-await go("#/table", 40);
-type($("#tbl-room"), "482910"); type($("#tbl-char"), "999999");
-click($('[data-tbl="join"]'));
-await wait(80);
-ok(/No character is saved/.test($("#tbl-msg").textContent), "joining with an unknown character code is refused");
-type($("#tbl-char"), "12");
-click($('[data-tbl="join"]'));
-await wait(60);
-ok(/six digits, or leave it empty/.test($("#tbl-msg").textContent), "half a character code is a typo, not a guest");
-type($("#tbl-char"), "");
-click($('[data-tbl="join"]'));
-await wait(60);
-ok(/Type a name/.test($("#tbl-msg").textContent), "and joining anonymously with no name at all is refused");
-type($("#tbl-name-in"), "Rig");
-type($("#tbl-char"), "123456");
-click($('[data-tbl="join"]'));
-await wait(120);
-ok(peek(`location.hash`) === "#/table/482910", "joining with a real one walks you in");
-await go("#/table/482910", 200);
-ok(peek(`tbl.role`) === "player", "as a player, not the DM");
-// Not on the next heartbeat twenty seconds later: the figure has to be there as you arrive.
-ok(peek(`tblMyTokens().length`) === 1, "and your figure is there as soon as the board loads");
-ok(peek(`tbl.me.charCode`) === "123456", "carrying your character code");
-await wait(200);
-const mine = await aget(`Object.values(await CocLive.get("tables/482910/tokens")).filter(t => t.charCode === "123456")`);
-ok(mine.length === 1, "and exactly one token, reused rather than duplicated (" + mine.length + ")");
-ok(mine[0].name === "Rig", "named after the character");
-ok(mine[0].hpMax === 44, "with the hit points the sheet works out");
-
-console.log("\n— PLAYING WITHOUT A SHEET (any system) —");
-// A table has to work for someone who has no Circus of Chaos character at all: a name, a figure, the
-// dice and the map. This is the same room the character player is sitting in.
-peek(`localStorage.removeItem("coc:table:me:482910"); localStorage.removeItem("coc:table:dm:482910");`);
 await go("#/table", 60);
-type($("#tbl-room"), "482910"); type($("#tbl-name-in"), "Guest Greta"); type($("#tbl-char"), "");
+type($("#tbl-room"), "482910");
 click($('[data-tbl="join"]'));
 await wait(150);
-ok(peek(`location.hash`) === "#/table/482910", "a name and a room code are enough to get in");
-await go("#/table/482910", 300);
+ok(peek(`location.hash`) === "#/table/482910", "the room code alone gets you in");
+await go("#/table/482910", 400);
 await wait(300);
-ok(peek(`tbl.me.charCode`) === "", "with no character code");
-ok(peek(`tbl.me.name`) === "Guest Greta", "and the name you typed");
-const guestTokens = () => Object.entries(peek(`JSON.parse(JSON.stringify(tblTokens()))`))
-  .filter(([, t]) => t.name === "Guest Greta");
-ok(guestTokens().length === 1, "a figure is placed for you anyway (" + guestTokens().length + ")");
-const gid = guestTokens()[0][0];
-ok(guestTokens()[0][1].owner === peek(`tbl.me.clientId`), "owned by this browser, since there is no code to own it");
-ok(peek(`tblCanMove(tblTokens()[${JSON.stringify(gid)}])`) === true, "which you can move");
-ok(peek(`tblCanMove(tblTokens()["tOrc"])`) === false, "while the DM's monster stays the DM's");
-// No sheet exists, so the sheet button is replaced by the figure that stands in for one.
-ok(!$('[data-tbl="panel"][data-val="sheet"]'), "no sheet button, because there is no sheet");
-ok($('[data-tbl="panel"][data-val="mine"]'), "a figure of your own instead");
-openPanel("mine");
-await wait(60);
-ok($("#mine-hp") && $("#mine-name"), "which you keep your own name and hit points on");
-type($("#mine-name"), "Greta the Bold"); type($("#mine-hp"), "18"); type($("#mine-hpmax"), "22");
-click($('[data-tbl="mine-save"]'));
-await wait(100);
-const saved = await aget(`CocLive.get("tables/482910/tokens/${gid}")`);
-ok(saved.name === "Greta the Bold" && saved.hp === 18 && saved.hpMax === 22, "and they are saved to the board");
-ok(!/18\/22/.test($(`[data-token="${gid}"]`).textContent), "and stay off the board, like everyone else's");
-type($("#mine-amt"), "5");
-click($('[data-tbl="mine-hp"][data-val="' + gid + '|-1"]'));
-await wait(80);
-ok((await aget(`CocLive.get("tables/482910/tokens/${gid}/hp")`)) === 13, "damage is two taps, with no sheet involved");
-click($$('[data-tbl="mine-cond"]')[0]);
-await wait(80);
-const conds = await aget(`CocLive.get("tables/482910/tokens/${gid}/conditions")`);
-ok(Array.isArray(conds) && conds.length === 1, "and you can say what you are under");
-ok($(`[data-token="${gid}"] .tok-flag`), "which shows on your figure for everyone");
-// A guest must not be able to edit somebody else's figure.
-ok(peek(`(function(){ const t = tblTokens()["tOrc"]; return tblIsMine(t); })()`) === false,
-  "and none of that reaches a figure that is not yours");
-
-console.log("\n— TAKING THE DM CHAIR ELSEWHERE —");
-// This browser is a player (it joined with a character code). The table is still the one opened with
-// DM key 771203 — which is the whole reason the key is stored: a new device must be able to claim it.
-ok(peek(`tbl.role`) === "player", "a device that joined as a player is a player");
-ok($('[data-tbl="panel"][data-val="claim"]'), "and is offered the DM chair, in case the table is theirs");
-openPanel("claim");
-await wait(40);
-type($("#claim-key"), "000000");
-click($('[data-tbl="claim"]'));
+ok(peek(`tbl.role`) === "player", "as a player");
+ok(peek(`tbl.ui.panel`) === "seat", "and you are asked who you are playing, rather than given a figure");
+ok($$('[data-tbl="seat-take"]').length >= 1, "with the figures already on the table offered");
+// Rig is on the board from earlier and nobody is holding it, so it can be taken.
+const rigBtn = $$('[data-tbl="seat-take"]').find((b) => b.dataset.val === "tRig");
+ok(rigBtn && !rigBtn.disabled, "a figure nobody is holding is free to take");
+click(rigBtn);
+await wait(200);
+ok(peek(`tbl.me.tokenId`) === "tRig", "taking one makes it yours");
+ok((await aget(`CocLive.get("tables/482910/tokens/tRig/owner")`)) === peek(`tbl.me.clientId`),
+  "recorded on the figure, so this browser controls it");
+ok(peek(`tbl.me.charCode`) === "123456", "and you become whoever it is — sheet and all");
+ok(peek(`tblCanMove(tblTokens().tRig)`) === true, "which is what lets you move it");
+ok(peek(`tbl.ui.panel`) === "", "the question closes once answered");
+// Somebody else holding a figure: it cannot be taken while they are here.
+await peek(`CocLive.put("tables/482910/tokens/tHeld", { name: "Sable", kind: "pc", owner: "otherClient",
+  x: 3, y: 9, size: 1, hp: 10, hpMax: 10, speed: 30 })`);
+await peek(`CocLive.put("tables/482910/presence/otherClient", { name: "Sable", role: "player", at: Date.now() })`);
 await wait(120);
-ok(/not the DM key/.test($("#claim-msg").textContent), "a wrong key is refused: " + $("#claim-msg").textContent);
-ok(peek(`tbl.role`) === "player", "and changes nothing");
-type($("#claim-key"), "771203");
-click($('[data-tbl="claim"]'));
-await wait(250);
-ok(peek(`tbl.role`) === "dm", "the right key takes the chair");
-ok($('[data-tbl="panel"][data-val="dm"]'), "and the DM's tools appear");
-ok(peek(`localStorage.getItem("coc:table:dm:482910")`) === "1", "remembered on this device");
-
-console.log("\n— CLOSING A TABLE FOR GOOD —");
-// The DM chair was taken two sections up, so this browser is the DM again.
-openPanel("dm");
+peek(`tbl.ui.panel = "seat"; paintSide();`);
+const heldBtn = $$('[data-tbl="seat-take"]').find((b) => b.dataset.val === "tHeld");
+ok(heldBtn && heldBtn.disabled, "a figure somebody is playing is greyed out");
+ok(/Sable is playing this one/.test(heldBtn.textContent), "and says who has it");
+// …and can be taken once they have gone quiet, because a table has to survive somebody's phone dying.
+await peek(`CocLive.put("tables/482910/presence/otherClient/at", Date.now() - 120000)`);
+await wait(80);
+peek(`paintSide();`);
+ok(!$$('[data-tbl="seat-take"]').find((b) => b.dataset.val === "tHeld").disabled,
+  "once they have gone quiet it is free again");
+// A new player adds a character instead.
+peek(`tbl.ui.panel = "seat"; paintSide();`);
+click($('[data-tbl="seat-new"]'));
 await wait(60);
-ok($('[data-tbl="close-arm"]'), "the DM can close the table");
-ok(!$("#close-confirm"), "but there is no box until they ask for one");
-ok(/no undo/.test($("#dm-close").textContent), "and it says what closing means");
-click($('[data-tbl="close-arm"]'));
-await wait(40);
-ok($("#close-confirm"), "asking for it reveals the box");
-ok($('[data-tbl="close-go"]').disabled, "which starts locked");
-type($("#close-confirm"), "000000");
-ok($('[data-tbl="close-go"]').disabled, "another room's code does not unlock it");
-type($("#close-confirm"), "482910");
-ok(!$('[data-tbl="close-go"]').disabled, "this room's code does");
-ok($("#close-confirm") === doc.activeElement || true, "and typing does not rebuild the panel under you");
-click($('[data-tbl="close-cancel"]'));
-await wait(40);
-ok(!$("#close-confirm") && $('[data-tbl="close-arm"]'), "cancel puts it away");
-// And now for real.
-click($('[data-tbl="close-arm"]'));
-type($("#close-confirm"), "482910");
-click($('[data-tbl="close-go"]'));
-await wait(200);
-ok((await aget(`CocLive.get("tables/482910")`)) === null, "closing it deletes the room for everyone");
-ok(peek(`tbl`) === null, "and lets go of the session");
-ok(peek(`location.hash`) === "#/table", "landing you back at the front door");
-ok(peek(`localStorage.getItem("coc:table:dm:482910")`) === null, "the DM key is forgotten with it");
-await go("#/table", 60);
-ok(!/482910/.test($("#tool").textContent), "and it is off this device's list of tables");
-
-console.log("\n— A PLAYER WHOSE TABLE WAS CLOSED —");
-// The DM closed the room. A player still holding the code must be TOLD, not shown an empty board — and
-// their heartbeat must stop, or it writes presence back into a deleted room and rebuilds it as a husk.
-await peek(`CocLive.put("tables/667788", { meta: { name: "Doomed", createdAt: 1 },
-  scenes: { s1: { name: "Ring", cols: 10, rows: 8, cell: 70, createdAt: 1 } } })`);
-peek(`localStorage.setItem("coc:table:me:667788", JSON.stringify({ clientId: "cx", name: "Rig", charCode: "123456" }));
-  localStorage.setItem("coc:table:recent", JSON.stringify([{ code: "667788", name: "Doomed" }]));`);
-await go("#/table/667788", 300);
-ok(peek(`tbl && tbl.code`) === "667788", "the player is in the room");
-// …and now it is deleted from somewhere else entirely.
-await peek(`CocLive.del("tables/667788")`);
-await wait(200);
-ok(peek(`tbl`) === null, "the session is let go of the moment the room stops existing");
-ok(/closed/i.test($("#tool").textContent), "the player is told, instead of being shown a blank map: " +
-  $("#tool h1").textContent);
-ok(/667788/.test($("#tool").textContent), "with the room code that is gone");
-ok(!/667788/.test(peek(`localStorage.getItem("coc:table:recent")`) || ""), "and it comes off their list");
-ok((await aget(`CocLive.get("tables/667788")`)) === null, "nothing is written back into it");
-
-console.log("\n— A CLOSED TABLE DOES NOT LINGER ON THE LIST —");
-// The other half of the same complaint: being told the room is closed when you walk in is no good if the
-// list keeps offering you the door.
-peek(`localStorage.setItem("coc:table:recent", JSON.stringify([
-  { code: "667788", name: "Closed one" }, { code: "445566", name: "Still there" }]));`);
-await peek(`CocLive.put("tables/445566/meta", { name: "Still there", createdAt: 1 })`);
-await go("#/table", 300);
-await wait(250);
-ok(!/667788/.test($("#tool").textContent), "a room that no longer exists comes off the list by itself");
-ok(/445566/.test($("#tool").textContent), "while one that is still open stays");
-
-console.log("\n— FORGETTING SOMEBODY ELSE'S TABLE —");
-// A player who is done with a table they do not own takes it off their own list only.
-// The room has to EXIST for it to stay on the list — that is the check just above.
-await peek(`CocLive.put("tables/112233/meta", { name: "Someone else's", createdAt: 1 })`);
-peek(`localStorage.setItem("coc:table:recent", JSON.stringify([{ code: "112233", name: "Someone else's" }]));`);
-await go("#/table", 300);
-await wait(200);
-ok(/112233/.test($("#tool").textContent), "a remembered table is listed");
-click($('[data-tbl="forget"]'));
+ok(/Give them a name/.test($("#seat-msg").textContent), "an unnamed newcomer is refused");
+type($("#seat-code"), "12");
+click($('[data-tbl="seat-new"]'));
 await wait(60);
-ok(!/112233/.test($("#tool").textContent), "forgetting takes it off the list");
-ok((await aget(`CocLive.get("tables/112233/meta/name")`)) === "Someone else's", "without touching the room itself");
-await peek(`CocLive.del("tables/112233")`);
+ok(/six digits, or leave it empty/.test($("#seat-msg").textContent), "half a Circus of Chaos code is a typo");
+type($("#seat-code"), ""); type($("#seat-name"), "Greta the Bold");
+click($('[data-tbl="seat-new"]'));
+await wait(250);
+const greta = Object.entries(peek(`JSON.parse(JSON.stringify(tblTokens()))`)).find(([, t]) => t.name === "Greta the Bold");
+ok(greta, "a new character goes on the board");
+ok(greta[1].owner === peek(`tbl.me.clientId`), "owned by whoever added them");
+ok(peek(`tbl.me.tokenId`) === greta[0], "and is who you are now playing");
+ok(peek(`tbl.me.charCode`) === "", "with no sheet, since no code was given");
+// A code brings the real sheet.
+peek(`tbl.ui.panel = "seat"; paintSide();`);
+type($("#seat-name"), ""); type($("#seat-code"), "123456");
+click($('[data-tbl="seat-new"]'));
+await wait(300);
+ok(peek(`tbl.me.charCode`) === "123456", "a code makes it a Circus of Chaos character");
+await until(() => peek(`tblMyTokens().length`) === 1);
+ok(peek(`tblMyTokens().length`) === 1, "and you are holding exactly one figure — the others are let go, not deleted (" + peek(`JSON.stringify(tblMyTokens())`) + ")");
+const taken = peek(`JSON.parse(JSON.stringify(tblTokens()[tbl.me.tokenId]))`);
+ok(taken.name === "Rig" && taken.hpMax === 44 && taken.charCode === "123456",
+  "named and numbered from the sheet it pulled (" + taken.name + " " + taken.hp + "/" + taken.hpMax + ")");
 
 console.log("\n— LEAVING —");
 // A fresh room, since the one above was deleted on purpose. Two people in it: you, and somebody else.

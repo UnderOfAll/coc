@@ -98,7 +98,7 @@ function tblFresh(code, role) {
     code, role,
     me: tblMe(code),
     data: { meta: null, scenes: null, tokens: null, log: null, presence: null, handouts: null, dm: null,
-            notes: null, draw: null },
+            notes: null, draw: null, sheets: null },
     view: { x: 0, y: 0, z: 1 },
     drag: null,
     offs: [],          // live subscriptions, closed on teardown
@@ -132,9 +132,11 @@ function tblCanMove(token) {
    another system has no code, so the browser that placed the figure owns it. Both, because one table
    can hold both kinds of player. */
 function tblIsMine(token) {
-  if (!token) return false;
-  if (token.charCode && tbl.me.charCode) return token.charCode === tbl.me.charCode;
-  return !!token.owner && token.owner === tbl.me.clientId;
+  /* Ownership is simply the browser HOLDING it — nothing else. A character-code fallback was tried and is
+     wrong: letting go of a figure could not then be expressed, since the code still matched and the figure
+     stayed "mine" forever. A figure from an older table has no holder, which the seat panel shows as free
+     to take, and taking it writes the holder. */
+  return !!token && !!token.owner && token.owner === tbl.me.clientId;
 }
 
 /* ---------------------------------------------------------------- routing */
@@ -198,19 +200,13 @@ function renderTableLanding() {
     </div>
     <section class="panel">
       <h2>Join a session</h2>
-      <p class="muted">The room code your DM gives you (six digits), and a name to be known by. A
-        Circus of Chaos character code — also six digits — is optional: with one, your sheet comes with
-        you and every number on it is a die you can throw. Without one you get a figure, the dice and
-        the map, which is all you need to play anything else.</p>
+      <p class="muted">The room code your DM gives you (six digits), and nothing else. Once you are in you
+        pick which character you are playing, or add a new one — so leaving and coming back is just the code
+        again.</p>
       <div class="join-row">
         <label class="field"><span>Room code</span>
           <input id="tbl-room" class="text code-input" type="text" inputmode="numeric"
             maxlength="6" placeholder="482910" autocomplete="off" /></label>
-        <label class="field"><span>Your name</span>
-          <input id="tbl-name-in" class="text" type="text" maxlength="30" placeholder="Kayki" autocomplete="off" /></label>
-        <label class="field"><span>Character code <span class="muted">optional</span></span>
-          <input id="tbl-char" class="text code-input" type="text" inputmode="numeric"
-            maxlength="6" placeholder="123456" autocomplete="off" /></label>
         <button class="btn" data-tbl="join">Sit down</button>
       </div>
       <p id="tbl-msg" class="save-msg"></p>
@@ -287,6 +283,7 @@ async function tblCreate() {
         name: name.slice(0, 60) || "Untitled table",
         createdAt: Date.now(),
         dmHash: await tblHashKey(key),
+        dmSeat: tblMe(room).clientId,     // the chair holds one, and this is who is in it
         activeScene: sceneId,
       },
       scenes: { [sceneId]: Object.assign({ createdAt: Date.now() }, TBL_DEFAULT_SCENE) },
@@ -302,28 +299,12 @@ async function tblCreate() {
 async function tblJoin() {
   const msg = $("#tbl-msg");
   const room = String(($("#tbl-room") || {}).value || "").replace(/\D/g, "");
-  const char = String(($("#tbl-char") || {}).value || "").replace(/\D/g, "");
-  const typedName = String(($("#tbl-name-in") || {}).value || "").trim().slice(0, 30);
   const say = (text, bad) => { if (msg) { msg.textContent = text; msg.className = "save-msg" + (bad ? " bad" : ""); } };
   if (!CocStore.validCode(room)) return say("A room code is exactly six digits.", true);
-  // A character code is OPTIONAL, so that a table can be played with any system's sheets — or none.
-  // Six digits or nothing; half a code is a typo, and joining as a guest by accident is worse than
-  // being told.
-  if (char && !CocStore.validCode(char)) return say("A character code is six digits, or leave it empty to join without one.", true);
-  if (!char && !typedName) return say("Type a name, so the table knows who you are.", true);
   say("Knocking…");
   try {
     const meta = await CocLive.get("tables/" + room + "/meta");
     if (!meta) return say("No table is open under " + room + ". Check the code with your DM.", true);
-    let ch = null;
-    if (char) {
-      ch = await CocStore.load(char);
-      if (!ch) return say("No character is saved under " + char + ".", true);
-    }
-    const me = tblMe(room);
-    me.charCode = char || "";
-    me.name = (ch && ch.name) || typedName || "Someone";
-    tblSaveMe(room, me);
     tblRemember(room, meta.name);
     location.hash = "#/table/" + room;
   } catch (err) {
@@ -334,12 +315,43 @@ async function tblJoin() {
 /* Taking the DM chair on a device that is not the one the table was made on — a new laptop, a phone,
    a cleared browser. This is the only reason the key is stored at all: without it, losing your browser
    would mean losing the ability to run your own table. */
-async function tblClaimDm(code, key) {
+/* Is somebody sitting in the DM chair right now? The seat records WHICH device holds it, and presence says
+   whether that device is still in the room — a DM who closed their laptop should not lock the table
+   forever, and a DM who is right there should not be quietly replaced. */
+async function tblSeatHolder(code) {
+  const meta = await CocLive.get("tables/" + code + "/meta");
+  const seat = meta && meta.dmSeat;
+  if (!seat) return null;
+  const who = await CocLive.get("tables/" + code + "/presence/" + seat);
+  const fresh = who && Date.now() - (Number(who.at) || 0) < 60000;
+  return fresh ? { id: seat, name: (who && who.name) || "Someone" } : null;
+}
+
+/* The key gets you the chair only if the chair is empty. Kayki's table ended up with two DMs at once
+   because the key was all it took, and the second one then had no way back to being a player. */
+async function tblClaimDm(code, key, myClientId) {
   const meta = await CocLive.get("tables/" + code + "/meta");
   if (!meta) throw new Error("No table is open under " + code + ".");
   if (!(await tblKeyMatches(key, meta.dmHash))) throw new Error("That is not the DM key for this table.");
+  const held = await tblSeatHolder(code);
+  if (held && held.id !== myClientId) {
+    throw new Error(held.name + " is running this table from another device. They can hand it over with "
+      + "Step down, or leave the room, and then the chair is yours.");
+  }
   localStorage.setItem(tblDmKey(code), "1");
+  if (myClientId) await CocLive.patch("tables/" + code + "/meta", { dmSeat: myClientId });
   return true;
+}
+
+/* Giving the chair back. The DM becomes an ordinary player at the same table — which is the other half of
+   what was missing: the accidental second DM could not get out of it. */
+async function tblStepDown() {
+  const code = tbl.code;
+  const mine = (tbl.data.meta || {}).dmSeat === tbl.me.clientId;
+  localStorage.removeItem(tblDmKey(code));
+  if (mine) await CocLive.put("tables/" + code + "/meta/dmSeat", null).catch(() => {});
+  tblTeardown();
+  tblOpen(code);
 }
 
 async function tblClaimFromPanel() {
@@ -348,7 +360,7 @@ async function tblClaimFromPanel() {
   const key = String(($("#claim-key") || {}).value || "").replace(/\D/g, "");
   if (!CocStore.validCode(key)) return say("A DM key is six digits.", true);
   try {
-    await tblClaimDm(tbl.code, key);
+    await tblClaimDm(tbl.code, key, tbl.me.clientId);
     // Reopen rather than patch the role in place: the shell, the panels and every permission check
     // read the role, and half of them are only rendered once.
     const code = tbl.code;
@@ -393,7 +405,7 @@ function tblOpen(code) {
     // Placing a figure has to wait until the board's contents are known, or a second device places a
     // second figure. But waiting for the next heartbeat meant sitting down and appearing to the table
     // up to twenty seconds later, which is how it behaved live. Try the moment the data lands.
-    if (first) { tblEnsureToken(); tblStraightenTokens(); tblMigrateDmNotes(); }
+    if (first) { tblSettleSeat(); tblEnsureToken(); tblStraightenTokens(); tblMigrateDmNotes(); }
   }));
   tblAnnounce();
   tbl.beat = setInterval(tblAnnounce, 20000);
@@ -408,6 +420,32 @@ function tblStraightenTokens() {
     const x = Math.round(Number(t.x) || 0), y = Math.round(Number(t.y) || 0);
     if (x !== t.x || y !== t.y) CocLive.patch(tblPath("tokens/" + id), { x, y }).catch(() => {});
   }
+}
+
+/* Who is actually the DM here, settled once the table's data has arrived.
+   Two devices can each believe they are the DM — one created the table, the other typed the key while the
+   first was away — and the answer has to be the same on both screens. The SEAT decides: hold it and you
+   are the DM, and if somebody else holds it and is still in the room, you are a player, told plainly. */
+async function tblSettleSeat() {
+  if (!tbl || tbl.role !== "dm") return;
+  const seat = (tbl.data.meta || {}).dmSeat || "";
+  if (!seat || seat === tbl.me.clientId) {
+    if (seat !== tbl.me.clientId) CocLive.patch(tblPath("meta"), { dmSeat: tbl.me.clientId }).catch(() => {});
+    return;
+  }
+  const held = await tblSeatHolder(tbl.code);
+  if (!held || held.id === tbl.me.clientId) {
+    CocLive.patch(tblPath("meta"), { dmSeat: tbl.me.clientId }).catch(() => {});
+    return;
+  }
+  // Somebody else is in the chair and still at the table: stand down, and say why.
+  localStorage.removeItem(tblDmKey(tbl.code));
+  const code = tbl.code;
+  tblTeardown();
+  tblOpen(code);
+  tbl.ui.seatNote = held.name + " is running this table, so you are here as a player. If they step down, "
+    + "the chair is yours with the DM key.";
+  tblFail({ message: tbl.ui.seatNote });
 }
 
 /* Presence is a heartbeat, not a connection: without the Firebase SDK there is no onDisconnect, so
@@ -430,60 +468,43 @@ function tblMyTokens() {
     .map(([id]) => id)
     .sort();
 }
-/* Two devices joining at the same moment can each place a figure before either sees the other's. The
-   owner clears up after itself: keep the oldest, drop the rest. Only the owner does this, so two
-   clients cannot fight over it. */
+/* You play ONE figure at a time. Holding several happens easily — you take one, then add another — and the
+   answer is to let the others GO, not to delete them: a figure you are no longer holding is exactly what
+   the next player is looking for. The one you last took is the one you keep. */
 function tblPruneMyTokens() {
   const mine = tblMyTokens();
   if (mine.length < 2) return;
-  for (const id of mine.slice(1)) CocLive.del(tblPath("tokens/" + id)).catch(() => {});
-  tbl.me.tokenId = mine[0];
+  const keep = mine.includes(tbl.me.tokenId) ? tbl.me.tokenId : mine[0];
+  for (const id of mine) {
+    if (id !== keep) CocLive.put(tblPath("tokens/" + id + "/owner"), null).catch(() => {});
+  }
+  tbl.me.tokenId = keep;
 }
 
 /* A player who sits down gets a token, once. It carries their portrait and their character code —
    the code is what proves ownership later, so nobody else can drag them around. */
+/* Nothing is placed on your behalf any more: a room code gets you in, and you SAY who you are. What is left
+   here is the tidying — noticing which figure is yours, and offering the choice when none is. */
+/* Nothing is placed on your behalf any more: a room code gets you in, and you SAY who you are. What is left
+   here is the tidying — noticing which figure is yours, and offering the choice when none is. */
 async function tblEnsureToken() {
-  if (!tbl || tbl.role === "dm") return;
+  if (!tbl || tbl.role === "dm" || !tbl.gotData) return;
+  const mine = tblMyTokens();
+  if (mine.length) {
+    // Do not overwrite the figure you just took with the oldest one you happen to own — that is how the
+    // figure a player had only this second chosen got quietly swapped for an older one.
+    if (!mine.includes(tbl.me.tokenId)) tbl.me.tokenId = mine[0];
+    tblPruneMyTokens();
+    return;
+  }
   if (tbl.me.left) return;          // you took your figure off on purpose; it does not come back by itself
-  if (!tbl.me.charCode && !tbl.me.name) return;   // nothing to name a figure after yet
-  // NEVER place before the table's data has arrived. Sitting down on a second device placed a second
-  // figure, because at that moment this client believed the board was empty.
-  if (!tbl.gotData) return;
-  const mineNow = tblMyTokens();
-  if (mineNow.length) { tbl.me.tokenId = mineNow[0]; tblPruneMyTokens(); return; }
-  if (tbl.me._placing) return;
-  tbl.me._placing = true;
-  try {
-    // A guest has no sheet to read: their figure is their name, and they keep their own hit points on it.
-    const ch = tbl.me.charCode ? await CocStore.load(tbl.me.charCode) : null;
-    if (tbl.me.charCode && !ch) return;
-    // The stream may well have delivered while that was loading.
-    if (tblMyTokens().length) { tbl.me.tokenId = tblMyTokens()[0]; return; }
-    const tokens = tblTokens();
-    const d = (ch && typeof derive === "function") ? derive(ch) : null;
-    const id = CocLive.newId();
-    // Dropped on the first free square of the top row, so two players joining at once do not land
-    // on top of each other.
-    const spot = tblFreeSquare("", 1, 1, 1, 1, 1);
-    const x = spot.x, y0 = spot.y;
-    await CocLive.put(tblPath("tokens/" + id), {
-      name: ((ch && ch.name) || tbl.me.name || "Someone").slice(0, 40),
-      charCode: tbl.me.charCode || "",
-      owner: tbl.me.clientId,        // what proves a guest's figure is theirs, having no character code
-      image: (ch && ch.photo) || "",
-      x, y: y0, size: 1,
-      kind: "pc",
-      shape: "square",
-      initMod: d ? (d.mods.Dexterity || 0) : 0,
-      hp: d ? (ch.play && ch.play.hp != null ? ch.play.hp : d.hpMax) : 0,
-      hpMax: d ? d.hpMax : 0,
-      speed: 30,
-      color: "#c9a54e",
-    });
-    tbl.me.tokenId = id;
-    tblSaveMe(tbl.code, { clientId: tbl.me.clientId, name: tbl.me.name, charCode: tbl.me.charCode });
-  } catch { /* a failed placement is retried on the next heartbeat */ }
-  finally { tbl.me._placing = false; }
+  // No figure: ask who they are, once. Asking again every twenty seconds would reopen the panel over
+  // whatever they had opened instead.
+  if (!tbl.ui.askedSeat) {
+    tbl.ui.askedSeat = true;
+    tbl.ui.panel = "seat";
+    paintSide();
+  }
 }
 
 function tblFail(err) {
@@ -506,8 +527,8 @@ function renderTableShell() {
           <button class="btn-quiet" data-tbl="panel" data-val="notes">Notes</button>
           <button class="btn-quiet" data-tbl="panel" data-val="draw">Draw</button>
           ${tbl.role === "dm" || tbl.me.charCode
-            ? `<button class="btn-quiet" data-tbl="panel" data-val="sheet">My sheet</button>`
-            : `<button class="btn-quiet" data-tbl="panel" data-val="mine">My figure</button>`}
+            ? `<button class="btn-quiet" data-tbl="panel" data-val="sheet">My sheet</button>` : ""}
+          <button class="btn-quiet" data-tbl="panel" data-val="mine">Tracker</button>
           ${tbl.role === "dm"
             ? `<button class="btn-quiet" data-tbl="panel" data-val="dm">DM</button>`
             : `<button class="btn-quiet" data-tbl="panel" data-val="claim">I'm the DM</button>`}
@@ -1219,7 +1240,9 @@ function paintSide() {
   else if (which === "figure") side.innerHTML = figureInfoHTML(tbl.ui.lookAt);
   else if (which === "notes") side.innerHTML = notesPanelHTML();
   else if (which === "draw") side.innerHTML = drawPanelHTML();
-  else if (which === "mine") side.innerHTML = figureInfoHTML(tblMyTokens()[0] || "");
+  else if (which === "mine") side.innerHTML = trackerHTML();
+  else if (which === "seat") side.innerHTML = seatPanelHTML();
+
   else if (which === "sheet") { side.innerHTML = `<p class="muted">Opening your sheet…</p>`; paintSheetPanel(); }
 }
 /* Re-render the DM's panel, keeping what is half-typed in it.
@@ -1284,7 +1307,7 @@ function dmPanelHTML() {
   // An open figure comes first: it is what you just double-tapped, and hunting for it under the map
   // list would be its own small insult.
   const editing = tbl.ui.editToken && tblTokens()[tbl.ui.editToken] ? tokenEditorHTML(tbl.ui.editToken) : "";
-  return editing + dmMapsHTML() + dmFiguresHTML() + dmScreenHTML() + closeTableHTML();
+  return editing + dmMapsHTML() + dmFiguresHTML() + dmScreenHTML() + stepDownHTML() + closeTableHTML();
 }
 
 function dmMapsHTML() {
@@ -2456,6 +2479,7 @@ function tokenEditorHTML(id) {
       <button class="btn-quiet" data-tbl="ed-del" data-val="${esc(id)}">Remove</button>
       <button class="btn-quiet" data-tbl="ed-close">Close</button>
     </div>
+    ${trackerReadHTML(tblTrackerKeyFor(t))}
     ${t.charCode || t.owner ? `<p class="muted">This is a player's figure — its hit points follow their
       sheet, so changing them here is a stopgap rather than the record. Removing it takes them off the
       board; if they are still in the room they can walk back in.</p>` : ""}
@@ -2515,6 +2539,19 @@ function myFigureHTML(id, t) {
    sitting in, so deleting it ends the game for every device at once and cannot be undone. Hence the
    same shape as deleting a character: nothing happens on one tap, and the confirmation is the ROOM
    CODE, typed out, because "which table am I closing" is the mistake worth preventing. */
+/* The DM's own exit. Kept beside Close the table because they are the two ways a DM stops being one, and
+   only one of them destroys anything. */
+function stepDownHTML() {
+  const meta = tbl.data.meta || {};
+  const mine = meta.dmSeat === tbl.me.clientId;
+  return `<section class="panel">
+    <p class="panel-sub">The DM chair</p>
+    <p class="muted">${mine ? "You are in it." : "Held by another device — yours will take it when they leave."}
+      Only one person can be the DM at a time; the key opens the chair only when it is empty.</p>
+    <button class="btn-quiet" data-tbl="step-down">Step down and play as a player</button>
+  </section>`;
+}
+
 function closeTableHTML() {
   if (!tbl.ui.closeArmed) {
     return `<section class="panel danger" id="dm-close">
@@ -2601,6 +2638,200 @@ function drawPanelHTML() {
           locked ? "Drawing is off" : "Drawing is on"}</button></div>
         <p class="muted">Turning it off leaves what is already drawn; only your own pen still works.</p>` : ""}
     </section>`;
+}
+
+/* ---------------------------------------------------------------- who am I playing?
+ *
+ * A room code gets you in; WHO you are is chosen inside, from the figures already on the table. That is how
+ * a table actually behaves: three people play, one leaves, they come back an hour later and take their own
+ * figure again — no codes to keep, nothing to type twice. A figure somebody is currently holding cannot be
+ * taken; one whose holder has gone quiet can.
+ *
+ * "Holding" is presence, not ownership on paper: a figure belongs to the browser that claimed it, and a
+ * browser that is not answering has plainly left. */
+function tblHeldBy(token) {
+  const owner = token && token.owner;
+  if (!owner) return null;
+  const who = (tbl.data.presence || {})[owner];
+  const fresh = who && Date.now() - (Number(who.at) || 0) < 60000;
+  return fresh ? { id: owner, name: who.name || "someone" } : null;
+}
+
+function seatPanelHTML() {
+  const scene = tblSceneId();
+  const rows = Object.entries(tblTokens())
+    .filter(([, t]) => t && t.kind !== "npc")
+    .sort((a, b) => String(a[1].name || "").localeCompare(String(b[1].name || "")))
+    .map(([id, t]) => {
+      const held = tblHeldBy(t);
+      const mine = tblIsMine(t);
+      return `<div class="scene-row ${mine ? "on" : ""}">
+        <button class="scene-pick" data-tbl="seat-take" data-val="${esc(id)}" ${held && !mine ? "disabled" : ""}>
+          <strong>${esc(t.name || "Someone")}</strong>
+          <span class="muted">${mine ? "yours" : held ? held.name + " is playing this one" : "free to take"}</span>
+        </button>
+      </div>`;
+    }).join("");
+  return `<section class="panel">
+      <h2>Who are you playing?</h2>
+      ${rows ? `<p class="muted">Take one of these, or add a new one below. Somebody else's is greyed out
+        while they are here.</p><div class="scene-list">${rows}</div>`
+        : `<p class="muted">Nobody is on the board yet. Add yourself.</p>`}
+    </section>
+    <section class="panel">
+      <p class="panel-sub">Add a new character</p>
+      <label class="field"><span>Name</span>
+        <input id="seat-name" class="text" type="text" maxlength="40" placeholder="Greta the Bold" /></label>
+      <label class="field"><span>Circus of Chaos code <span class="muted">optional</span></span>
+        <input id="seat-code" class="text code-input" type="text" inputmode="numeric" maxlength="6"
+          placeholder="123456" autocomplete="off" /></label>
+      <button class="btn" data-tbl="seat-new">Put them on the board</button>
+      <p id="seat-msg" class="save-msg"></p>
+      <p class="muted">With a code you get the real sheet and every number on it becomes a die you can
+        throw. Without one you get a figure and the tracker, which is all you need for any other system.
+        ${esc(scene ? "" : "")}</p>
+    </section>`;
+}
+
+/* Taking a figure: it becomes mine, and I become whoever it is. */
+async function tblTakeSeat(id) {
+  const t = tblTokens()[id];
+  if (!t) return;
+  const held = tblHeldBy(t);
+  if (held && held.id !== tbl.me.clientId) return;
+  tbl.me.charCode = t.charCode || "";
+  tbl.me.name = t.name || "Someone";
+  tbl.me.tokenId = id;
+  tbl.me.left = false;
+  tblSaveMe(tbl.code, { clientId: tbl.me.clientId, name: tbl.me.name, charCode: tbl.me.charCode });
+  await CocLive.patch(tblPath("tokens/" + id), { owner: tbl.me.clientId });
+  tblAnnounce();
+  tbl.ui.panel = "";
+  paintSide();
+  paintHeader();
+}
+
+async function tblNewSeat() {
+  const msg = $("#seat-msg");
+  const say = (t, bad) => { if (msg) { msg.textContent = t; msg.className = "save-msg" + (bad ? " bad" : ""); } };
+  const name = String(($("#seat-name") || {}).value || "").trim().slice(0, 40);
+  const code = String(($("#seat-code") || {}).value || "").replace(/\D/g, "");
+  if (code && !CocStore.validCode(code)) return say("A Circus of Chaos code is six digits, or leave it empty.", true);
+  let ch = null;
+  if (code) {
+    say("Fetching the sheet…");
+    try { ch = await CocStore.load(code); } catch (err) { return say(err.message, true); }
+    if (!ch) return say("No character is saved under " + code + ".", true);
+  }
+  const finalName = (ch && ch.name) || name;
+  if (!finalName) return say("Give them a name.", true);
+  const d = (ch && typeof derive === "function") ? derive(ch) : null;
+  const spot = tblFreeSquare("", 1, 1, 1, 1, 1);
+  const id = CocLive.newId();
+  await CocLive.put(tblPath("tokens/" + id), {
+    name: String(finalName).slice(0, 40),
+    charCode: code || "",
+    owner: tbl.me.clientId,
+    image: (ch && ch.photo) || "",
+    x: spot.x, y: spot.y, size: 1, kind: "pc", shape: "square",
+    initMod: d ? (d.mods.Dexterity || 0) : 0,
+    hp: d ? (ch.play && ch.play.hp != null ? ch.play.hp : d.hpMax) : 0,
+    hpMax: d ? d.hpMax : 0,
+    speed: 30, color: "#c9a54e",
+  });
+  await tblTakeSeat(id);
+}
+
+/* ---------------------------------------------------------------- the tracker
+ *
+ * A place to keep a character that is not one of ours. Everything in Circus of Chaos has a real sheet the
+ * app understands; a D&D player, or somebody playing a system this app has never heard of, has numbers they
+ * still need in front of them — and until now the only thing they could keep at the table was a figure with
+ * hit points on it.
+ *
+ * So: a name, a line to say what they are, the four numbers everybody has, and then AS MANY named fields as
+ * they like. Deliberately not a schema — the whole point is that it does not know what game you are playing,
+ * so "Ki points 4" and "Sorcery 3" are the same kind of thing to it. Notes at the bottom.
+ *
+ * Kept per person, keyed the same way notes are, so it follows a character code between devices and a
+ * browser for a guest. The DM can read a player's, because the DM asking "how many hit points have you got"
+ * is the question this is meant to save. */
+function tblTrackerKeyFor(t) {
+  if (!t) return "";
+  if (t.charCode) return "pc:" + t.charCode;
+  return t.owner ? "browser:" + t.owner : "";
+}
+function tblTracker(key) {
+  return (tbl.data.sheets || {})[key || tblNoteOwner()] || {};
+}
+function tblTrackerFields(sheet) {
+  return Array.isArray(sheet.fields) ? sheet.fields.filter((f) => f && (f.k || f.v)) : [];
+}
+
+function trackerHTML() {
+  const sheet = tblTracker();
+  const fields = tblTrackerFields(sheet);
+  const myToken = tblMyTokens()[0] || "";
+  const num = (id, label, value) => `<label class="field"><span>${esc(label)}</span>
+    <input id="${id}" class="num" type="number" value="${esc(value == null ? "" : value)}" /></label>`;
+  return `<section class="panel">
+      <h2>Your character</h2>
+      <p class="muted">For a character this app does not know — any system, or none. Saved as you type and
+        kept with the table, so it is here on your next device.</p>
+      <label class="field"><span>Name</span>
+        <input id="trk-name" class="text" type="text" maxlength="40" value="${esc(sheet.name || "")}" /></label>
+      <label class="field"><span>What you are</span>
+        <input id="trk-line" class="text" type="text" maxlength="60" placeholder="Level 4 half-orc barbarian"
+          value="${esc(sheet.line || "")}" /></label>
+      <div class="grid-row">
+        ${num("trk-hp", "Hit points", sheet.hp)}
+        ${num("trk-hpmax", "Out of", sheet.hpMax)}
+        ${num("trk-ac", "AC", sheet.ac)}
+      </div>
+      <div class="grid-row">
+        ${num("trk-init", "Initiative", sheet.init)}
+        ${num("trk-speed", "Speed (ft)", sheet.speed)}
+      </div>
+      ${myToken ? `<div class="hp-controls">
+        <input id="trk-amt" class="num" type="number" min="1" value="1" />
+        <button class="btn-quiet" data-tbl="trk-hp" data-val="-1">Damage</button>
+        <button class="btn-quiet" data-tbl="trk-hp" data-val="1">Heal</button>
+        <span class="muted">your figure follows these</span>
+      </div>` : ""}
+    </section>
+    <section class="panel">
+      <p class="panel-sub">Anything else you track</p>
+      <div class="trk-fields">${fields.map((f, i) => `<div class="trk-row">
+        <input id="trk-k-${i}" class="text" type="text" maxlength="24" placeholder="Ki points" value="${esc(f.k || "")}" />
+        <input id="trk-v-${i}" class="text trk-val" type="text" maxlength="24" placeholder="4" value="${esc(f.v || "")}" />
+        <button class="btn-quiet" data-tbl="trk-drop" data-val="${i}">&times;</button>
+      </div>`).join("")}</div>
+      <button class="btn-quiet" data-tbl="trk-add">Add a field</button>
+      <p class="muted">Spell slots, ki, rage, ammunition, a debt you owe someone — it does not care what it
+        is called.</p>
+    </section>
+    <section class="panel">
+      <p class="panel-sub">Notes on your character</p>
+      <textarea id="trk-notes" class="text notes-body" rows="6" maxlength="4000">${esc(sheet.notes || "")}</textarea>
+      ${myToken ? `<p class="panel-sub">Leaving</p>
+        <button class="btn-quiet" data-tbl="mine-remove" data-val="${esc(myToken)}">Take my figure off the table</button>`
+        : `<p class="muted">You have no figure on the board — the DM can place one, or rejoin to get one.</p>`}
+    </section>`;
+}
+
+/* What the DM sees of a player's tracker: read-only, because it is theirs. */
+function trackerReadHTML(key) {
+  const sheet = tblTracker(key);
+  if (!sheet || !Object.keys(sheet).length) return "";
+  const fields = tblTrackerFields(sheet);
+  const bit = (label, v) => (v === "" || v == null) ? "" : `<span class="trk-read"><em>${esc(label)}</em> ${esc(v)}</span>`;
+  return `<p class="panel-sub">What they are tracking</p>
+    <p class="trk-reads">
+      ${bit("HP", sheet.hpMax ? `${sheet.hp == null ? "?" : sheet.hp}/${sheet.hpMax}` : sheet.hp)}
+      ${bit("AC", sheet.ac)}${bit("Init", sheet.init)}${bit("Speed", sheet.speed)}
+      ${fields.map((f) => bit(f.k || "—", f.v)).join("")}
+    </p>
+    ${sheet.line ? `<p class="muted">${esc(sheet.line)}</p>` : ""}`;
 }
 
 /* ---------------------------------------------------------------- notes
@@ -2798,6 +3029,8 @@ document.addEventListener("input", (e) => {
     if (go) go.disabled = tbl.ui.closeText !== tbl.code;
     return;
   }
+  // The tracker saves itself, and the figure on the board follows the two things it can show.
+  if (/^trk-/.test(e.target.id || "")) { tblTrackerInput(e.target); return; }
   // A notepad saves itself. Coalesced, so a paragraph is a handful of writes rather than one per letter.
   if ((e.target.id === "note-title" || e.target.id === "note-body") && tbl.ui.note) {
     const field = e.target.id === "note-title" ? "title" : "body";
@@ -2806,6 +3039,39 @@ document.addEventListener("input", (e) => {
       String(e.target.value || "").slice(0, cap), 700);
   }
 });
+
+/* One field of the tracker, coalesced. Custom rows are written as a whole array, because they are a list
+   and half a list is not a thing. */
+function tblTrackerInput(el) {
+  const key = tblNoteOwner();
+  const id = el.id;
+  const simple = { "trk-name": "name", "trk-line": "line", "trk-hp": "hp", "trk-hpmax": "hpMax",
+                   "trk-ac": "ac", "trk-init": "init", "trk-speed": "speed", "trk-notes": "notes" };
+  if (simple[id]) {
+    const numeric = ["hp", "hpMax", "ac", "init", "speed"].includes(simple[id]);
+    const value = numeric
+      ? (el.value === "" ? null : Number(el.value))
+      : String(el.value || "").slice(0, id === "trk-notes" ? 4000 : 60);
+    CocLive.throttled(tblPath("sheets/" + key + "/" + simple[id]), value, 600);
+    // The board shows a name and hit points, so those two follow — the rest is nobody else's business.
+    const mine = tblMyTokens()[0];
+    if (mine && (simple[id] === "hp" || simple[id] === "hpMax" || simple[id] === "name")) {
+      const patch = {};
+      if (simple[id] === "name" && value) patch.name = String(value).slice(0, 40);
+      if (simple[id] === "hp" && value != null) patch.hp = Math.max(0, Number(value));
+      if (simple[id] === "hpMax" && value != null) patch.hpMax = Math.max(0, Number(value));
+      if (Object.keys(patch).length) CocLive.patch(tblPath("tokens/" + mine), patch).catch(() => {});
+    }
+    return;
+  }
+  const m = /^trk-([kv])-(\d+)$/.exec(id);
+  if (!m) return;
+  const rows = tblTrackerFields(tblTracker()).slice();
+  const i = Number(m[2]);
+  while (rows.length <= i) rows.push({ k: "", v: "" });
+  rows[i] = Object.assign({}, rows[i], { [m[1]]: String(el.value || "").slice(0, 24) });
+  CocLive.throttled(tblPath("sheets/" + key + "/fields"), rows, 600);
+}
 
 /* Rolling from a sheet. Listened for here rather than in creator.js because the dice belong to the
    table, and the sheet is the same sheet whether it is open at a table or on its own. */
@@ -2861,6 +3127,27 @@ document.addEventListener("click", (e) => {
   else if (act === "ed-repo" || act === "mine-repo") {
     const id = act === "ed-repo" ? tbl.ui.editToken : (tblMyTokens()[0] || tbl.ui.lookAt);
     tblSetTokenImage(id, "maps/" + val);
+  }
+  else if (act === "seat-take") tblTakeSeat(val).catch(tblFail);
+  else if (act === "seat-new") tblNewSeat().catch(tblFail);
+  else if (act === "trk-add") {
+    const rows = tblTrackerFields(tblTracker()).concat({ k: "", v: "" });
+    CocLive.put(tblPath("sheets/" + tblNoteOwner() + "/fields"), rows).then(() => paintSide()).catch(tblFail);
+  }
+  else if (act === "trk-drop") {
+    const rows = tblTrackerFields(tblTracker()).filter((_, i) => i !== Number(val));
+    CocLive.put(tblPath("sheets/" + tblNoteOwner() + "/fields"), rows.length ? rows : null)
+      .then(() => paintSide()).catch(tblFail);
+  }
+  else if (act === "trk-hp") {
+    const sheet = tblTracker();
+    const amt = Math.max(1, Number(($("#trk-amt") || {}).value) || 1);
+    const next = Math.max(0, (Number(sheet.hp) || 0) + amt * Number(val));
+    const capped = sheet.hpMax ? Math.min(Number(sheet.hpMax), next) : next;
+    CocLive.put(tblPath("sheets/" + tblNoteOwner() + "/hp"), capped).catch(tblFail);
+    const mine = tblMyTokens()[0];
+    if (mine) CocLive.patch(tblPath("tokens/" + mine), { hp: capped }).catch(() => {});
+    paintSide();
   }
   else if (act === "mine-remove") {
     const t = tblTokens()[val];
@@ -2992,6 +3279,7 @@ document.addEventListener("click", (e) => {
       paintSide();
     }
   }
+  else if (act === "step-down") tblStepDown().catch(tblFail);
   else if (act === "close-arm") { tbl.ui.closeArmed = true; tbl.ui.closeText = ""; paintSide(); }
   else if (act === "close-cancel") { tbl.ui.closeArmed = false; tbl.ui.closeText = ""; paintSide(); }
   else if (act === "close-go") tblCloseTable();

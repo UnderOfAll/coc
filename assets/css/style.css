@@ -1277,3 +1277,13 @@ input.step-val { width: 3.4rem; }
 
 /* A figure's picture, while you are choosing it. */
 .figure-thumb { max-height: 8rem; }
+
+/* The tracker's own rows: a label and a value, as many as somebody wants. */
+.trk-fields { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 0.5rem; }
+.trk-row { display: flex; gap: 0.35rem; align-items: center; }
+.trk-row .text { min-width: 0; }
+.trk-val { max-width: 6rem; }
+.trk-reads { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0 0 0.4rem; }
+.trk-read { font-size: 0.85rem; padding: 0.15rem 0.45rem; border-radius: var(--radius);
+  background: var(--panel-2); border: 1px solid var(--border); }
+.trk-read em { font-style: normal; color: var(--muted); margin-right: 0.25rem; }
