@@ -107,6 +107,8 @@ function tblFresh(code, role) {
     offs: [],          // live subscriptions, closed on teardown
     beat: null,        // presence heartbeat
     pointers: new Map(),
+    inkPending: null,       // a rub that has been sent but not yet echoed back
+    inkNew: new Set(),      // the pieces it created, so they are not drawn twice on the way
     centredOnMe: false,     // the camera has been aimed at this player's own figure, once
     cameraIsYours: false,   // …and after that, only you move it
     ui: { panel: "", error: "" },

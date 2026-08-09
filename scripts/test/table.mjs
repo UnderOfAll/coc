@@ -284,8 +284,18 @@ const midRub = peek(`window.__inkWrites`);
 ok(midRub === 0, "a long rub writes NOTHING while the hand is down (" + midRub + " writes)");
 ok(peek(`tbl.erasing && tbl.erasing.size`) === 1, "it edits a copy instead");
 ok($$("#vtt-ink path").length >= 2, "and the board already shows the gap");
+// The bug after the fix: the overlay was dropped the moment the deletes were SENT, so the board fell back to
+// the stored, still-whole line until the database echoed — the line came back, then vanished by itself.
+// Here the write path is held open, so "sent" and "arrived" are visibly different moments.
+peek(`window.__realDel = CocLive.del; window.__held = [];
+  CocLive.del = (p) => new Promise((res) => window.__held.push(() => window.__realDel(p).then(res)));`);
 pointer("pointerup", $("#vtt-stage"), (0.2 + 18 * 0.008) * 30 * 70, y, 1);
-await wait(250);
+await wait(150);
+ok($$("#vtt-ink path").length >= 2, "with the delete still in flight, the gap is still on screen");
+ok(peek(`!!tbl.inkPending`) === true, "because the rub is held until the data agrees");
+peek(`window.__held.forEach((f) => f()); CocLive.del = window.__realDel;`);
+await wait(300);
+ok(peek(`!!tbl.inkPending`) === false, "and it retires itself once the delete has landed");
 const afterRub = peek(`window.__inkWrites`);
 ok(afterRub > 0 && afterRub <= 6, "and one release writes a handful, not hundreds (" + afterRub + ")");
 const pieces = await aget(`Object.values(await CocLive.get("tables/482910/draw") || {})`);

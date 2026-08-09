@@ -414,7 +414,8 @@ function tblEraseCommit() {
   const strokes = tbl.data.draw || {};
   const step = { kind: "erase", removed: [], added: [] };
   const writes = [];
-  for (const [id, pieces] of tbl.erasing) {
+  const overlay = tbl.erasing;
+  for (const [id, pieces] of overlay) {
     const k = strokes[id];
     if (!k) continue;
     // Kept whole, so Ctrl+Z can put the line back exactly as it was rather than approximately.
@@ -425,12 +426,19 @@ function tblEraseCommit() {
       writes.push(CocLive.push(tblPath("draw"), {
         by: k.by, scene: k.scene, color: k.color, width: k.width, kind: "free", fill: k.fill || false,
         pts: tblInkEncode(piece), at: k.at || Date.now(),
-      }).then((newId) => step.added.push(newId)).catch(() => {}));
+      }).then((newId) => { step.added.push(newId); tbl.inkNew.add(newId); }).catch(() => {}));
     }
   }
+  /* The rub stops accepting new strokes but KEEPS BEING DRAWN, because sending a delete is not the same as
+     the delete having happened. Dropping the overlay here — which is what the first version did — meant the
+     board went back to the stored, still-whole line the moment the hand came up, and the erasure only
+     reappeared when the database echoed the change back seconds later. Exactly what Kayki saw: it erases, it
+     comes back, and then it "magically" vanishes.
+     paintDrawings clears this by itself, once the stored data agrees with it. */
   tbl.erasing = null;
-  // Remembered once every piece has an id, or an undo would leave the pieces behind.
-  Promise.all(writes).then(() => { if (step.removed.length) tblUndoPush(step); });
+  tbl.inkPending = overlay;
+  Promise.all(writes).then(() => { if (step.removed.length) tblUndoPush(step); paintDrawings(); });
+  paintDrawings();
 }
 
 /* Is the eraser over this shape's outline (or, for a box, its edge)? */
@@ -821,9 +829,17 @@ function paintDrawings() {
     const d = pts.map((p, i) => `${i ? "L" : "M"}${X(p)} ${Y(p)}`).join(" ");
     return `<path d="${d}" ${common} />`;
   };
-  const rubbing = tbl.erasing;
+  /* Whatever is being rubbed, or was just rubbed and is still on its way to the database. The pending overlay
+     retires itself the moment the stored strokes agree with it — no timers, no guessing at latency. */
+  if (tbl.inkPending) {
+    const store = tbl.data.draw || {};
+    if ([...tbl.inkPending.keys()].every((id) => !store[id])) { tbl.inkPending = null; tbl.inkNew.clear(); }
+  }
+  const rubbing = tbl.erasing || tbl.inkPending;
   const strokes = Object.entries(tbl.data.draw || {})
-    .filter(([, k]) => k && k.scene === sceneId)
+    // While a rub is in flight, the pieces it produced are already on screen as part of the overlay; drawing
+    // the stored copies as well would double every line for a moment.
+    .filter(([id, k]) => k && k.scene === sceneId && !(tbl.inkPending && tbl.inkNew.has(id)))
     .sort((a, b) => (a[1].at || 0) - (b[1].at || 0))
     .map(([id, k]) => {
       // Mid-rub, a stroke is drawn as whatever is left of it — the writes have not happened yet.
