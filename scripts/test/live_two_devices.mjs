@@ -132,7 +132,8 @@ const rolled = await pl.page.evaluate(() => {
 ok(rolled, "a number on the sheet in the drawer is a button (" + rolled + ")");
 await wait(2500);
 const dmLog = await dm.page.evaluate(() => document.querySelector("#vtt-lastroll").textContent);
-ok(/Live Test rolled/.test(dmLog), "and the DM read the result: " + dmLog.trim());
+// The bar lays the roll out (who / dice / total) rather than writing a sentence, so this asserts the parts.
+ok(/^Live Test/.test(dmLog.trim()) && /\d/.test(dmLog), "and the DM read the result: " + dmLog.trim().replace(/\s+/g, " "));
 
 ok(dm.errs.length === 0 && pl.errs.length === 0, "no page errors on either device" +
   ([...dm.errs, ...pl.errs].length ? ": " + [...dm.errs, ...pl.errs][0] : ""));
