@@ -44,7 +44,11 @@ const go = async (h, ms = 60) => { window.location.hash = h; window.dispatchEven
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 /* Wait for a condition rather than for a guessed number of milliseconds. A fixed wait after a write is a
    flake generator: it passes on a quiet machine and fails on a busy one. */
-const until = async (fn, ms = 800) => {
+/* Polling, so a slow machine waits and a fast one does not. The budget used to be 800ms, which is about
+   what a write, its echo and a repaint take when nothing else is running — and so it failed roughly one
+   run in ten on a busy laptop, which is the kind of failure that teaches you to ignore the gate. It costs
+   nothing to be patient here: the loop stops the moment the condition is true. */
+const until = async (fn, ms = 3000) => {
   const stop = Date.now() + ms;
   while (Date.now() < stop) { if (fn()) return true; await wait(20); }
   return false;
@@ -341,6 +345,39 @@ await wait(250);
 ok(!(await aget(`Object.values(await CocLive.get("tables/482910/draw") || {})`)).some((k) => k.fill),
   "and touching anywhere inside it rubs it out, because the inside is what it is");
 peek(`tblInkState().fill = false; tblInkState().shape = "free"; tblInkState().mode = "pen";`);
+
+// The bucket: a box drawn EMPTY, coloured in afterwards. Which is how anybody actually draws — the shape
+// goes down first, and what it turns out to be is decided later.
+peek(`tblInkState().shape = "rect"; tblInkState().fill = false; paintSide();`);
+drag($("#vtt-stage"), 1400, 700, 1700, 1000);
+await wait(200);
+const empty = (await aget(`Object.entries(await CocLive.get("tables/482910/draw") || {})`))
+  .find(([, k]) => k.kind === "rect" && !k.fill && k.pts.startsWith("0.6"));
+ok(!!empty, "a box is drawn with nothing in it");
+ok($('[data-tbl="ink-bucket"]'), "and there is a bucket beside the pen and the eraser");
+click($('[data-tbl="ink-bucket"]'));
+await wait(60);
+ok(peek(`tblInkState().mode`) === "fill", "which takes over the board when you pick it up");
+peek(`tblInkState().fill = "solid";`);
+// Tapped INSIDE it, not on its outline: an empty shape is filled through the middle, as it would be
+// anywhere else.
+pointer("pointerdown", $("#vtt-stage"), 1550, 850, 1);
+pointer("pointerup", $("#vtt-stage"), 1550, 850, 1);
+await wait(250);
+ok((await aget(`(await CocLive.get("tables/482910/draw/${empty ? empty[0] : "x"}/fill"))`)) === "solid",
+  "tapping inside it fills it in");
+ok($$("#vtt-ink rect").some((n) => n.getAttribute("fill-opacity") === "0.95"),
+  "solidly, so it covers the map rather than tinting it");
+// And again empties it, so the bucket is its own undo.
+pointer("pointerdown", $("#vtt-stage"), 1550, 850, 1);
+pointer("pointerup", $("#vtt-stage"), 1550, 850, 1);
+await wait(250);
+ok((await aget(`(await CocLive.get("tables/482910/draw/${empty ? empty[0] : "x"}/fill"))`)) == null,
+  "and tapping it again empties it");
+peek(`tblInkState().fill = false; tblInkState().shape = "free"; tblInkState().mode = "pen"; paintSide();`);
+// Taken off the board again, or the box-counting below would find this one too.
+await peek(`CocLive.del("tables/482910/draw/${empty ? empty[0] : "x"}")`);
+await wait(120);
 
 // A shape, by contrast, goes whole — there is no sensible half of a box.
 await peek(`CocLive.push("tables/482910/draw", { by: tblNoteOwner(), scene: tblSceneId(), color: "#fff",
@@ -1004,9 +1041,12 @@ await wait(40);
 
 console.log("\n— A ROLL YOU CAN WATCH —");
 // The overlay is built on demand and lives on the body, because every page can roll.
-peek(`window.__seq = [0.95];`);
 openDice();
 peek(`tbl.ui.dice = { pool: { 20: 1 }, mod: 2, mode: "normal" }; paintDice();`);
+/* Loaded at the LAST possible moment. Math.random is mocked for the whole page, and the id CocLive mints
+   for a pushed log entry draws from it too — so a write still in flight from an earlier step will eat the
+   number this roll was supposed to get, and the die lands on something else entirely. */
+peek(`window.__seq = [0.95];`);
 click($('[data-tbl="roll-pool"]'));
 await wait(60);
 const stage = doc.getElementById("roll-stage");
@@ -1035,7 +1075,8 @@ ok(shapes[0] === 3, "a d4 is a triangle");
 ok(shapes[1] === 5, "a d12 is a pentagon");
 // Advantage keeps both dice on screen, with the discarded one dimmed — "which did I keep" is the first
 // thing anyone asks.
-peek(`window.__seq = [0.1, 0.9]; tbl.ui.dice.mode = "adv"; tbl.ui.dice.mod = 0; paintDice();`);
+peek(`tbl.ui.dice.mode = "adv"; tbl.ui.dice.mod = 0; paintDice();`);
+peek(`window.__seq = [0.1, 0.9];`);   // last, for the reason above
 click($('[data-tbl="roll-pool"]'));
 await wait(700);
 const dice = [...doc.querySelectorAll("#roll-stage .die")];
@@ -1102,6 +1143,39 @@ const dbl = (node) => node.dispatchEvent(new window.MouseEvent("dblclick", { bub
 dbl($(`[data-token="${gob[0]}"]`));
 await wait(60);
 ok($("#ed-hp"), "double-tapping a figure opens its editor");
+/* And it opens WHERE IT STANDS. It used to be lifted to the top of the DM panel, above the map list, so
+   opening a figure moved it away from the row that was tapped. */
+const openedUnder = $(`[data-figure="${gob[0]}"]`);
+ok(!!openedUnder, "the figure has a row of its own in the list");
+ok(openedUnder && openedUnder.nextElementSibling
+  && openedUnder.nextElementSibling.classList.contains("figure-open"),
+  "and it unfolds directly underneath that row, not at the top of the panel");
+ok($(".figure-open #ed-hp") && $(".figure-open #ed-img"),
+  "with its numbers AND its picture inside the same fold");
+ok($(`[data-figure="${gob[0]}"] .scene-pick`).getAttribute("aria-expanded") === "true",
+  "the row says it is open");
+// Tapping the same row again closes it, as a disclosure does.
+click($(`[data-figure="${gob[0]}"] .scene-pick`));
+await wait(60);
+ok(!$(".figure-open"), "and tapping it again folds it away");
+click($(`[data-figure="${gob[0]}"] .scene-pick`));
+await wait(60);
+ok(!!$(".figure-open #ed-hp"), "and again to reopen it");
+/* And a PLAYER's figure the same way: a character already on the board can be given a picture, or have
+   the one it arrived with replaced, without waiting to be placed again. */
+const pcRow = $(`[data-figure="tRig"] .scene-pick`);
+ok(!!pcRow, "a player's character is in the same list");
+click(pcRow);
+await wait(80);
+ok(!!$(".figure-open #ed-img") && !!$(".figure-open #ed-file"),
+  "and opens with a picture on it too — a link, or a file from this device");
+ok($$(".figure-open [data-tbl='ed-repo']").length >= 0, "and whatever is in maps/");
+// Back to the goblin, which is the figure the rest of this section is about.
+click($(`[data-figure="tRig"] .scene-pick`));
+await wait(60);
+click($(`[data-figure="${gob[0]}"] .scene-pick`));
+await wait(60);
+ok(!!$(".figure-open #ed-hp"), "only one is open at a time");
 type($("#ed-hp"), "3"); type($("#ed-name"), "Goblin boss"); type($("#ed-size"), "2");
 click($('[data-tbl="ed-save"]'));
 await wait(80);

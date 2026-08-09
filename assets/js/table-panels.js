@@ -26,10 +26,10 @@ const TBL_MAP_SOURCES = [
 let tblRepoMaps = null;   // cached listing of maps/index.json
 
 function dmPanelHTML() {
-  // An open figure comes first: it is what you just double-tapped, and hunting for it under the map
-  // list would be its own small insult.
-  const editing = tbl.ui.editToken && tblTokens()[tbl.ui.editToken] ? tokenEditorHTML(tbl.ui.editToken) : "";
-  return editing + dmMapsHTML() + dmFiguresHTML() + dmScreenHTML() + stepDownHTML() + closeTableHTML();
+  /* An open figure used to be lifted to the TOP of this panel, above the maps — which meant that opening
+     one moved it away from where you tapped it, and the list you were reading jumped. It opens where it
+     stands now, inside the list, like every other disclosure in this app. */
+  return dmMapsHTML() + dmFiguresHTML() + dmScreenHTML() + stepDownHTML() + closeTableHTML();
 }
 
 function dmMapsHTML() {
@@ -171,14 +171,19 @@ function dmFiguresHTML() {
     .filter(([, t]) => t && !(t.kind === "npc" && t.scene && t.scene !== activeScene))
     .sort((a, b) => (a[1].kind === "pc" ? -1 : 1) - (b[1].kind === "pc" ? -1 : 1)
       || String(a[1].name || "").localeCompare(String(b[1].name || "")))
-    .map(([id, t]) => `<div class="scene-row">
-      <button class="scene-pick" data-tbl="ed-open" data-val="${esc(id)}">
-        <strong>${esc(t.name || "Figure")}</strong>
+    .map(([id, t]) => {
+      // Open, and therefore expanded in place: everything about this figure — its picture, its hit
+      // points, its conditions — unfolds under its own name rather than somewhere else on the page.
+      const open = tbl.ui.editToken === id;
+      return `<div class="scene-row ${open ? "on" : ""}" data-figure="${esc(id)}">
+      <button class="scene-pick" data-tbl="ed-open" data-val="${esc(id)}" aria-expanded="${open}">
+        <strong><span class="caret">${open ? "&#9662;" : "&#9656;"}</span> ${esc(t.name || "Figure")}</strong>
         <span class="muted">${t.hpMax ? esc(t.hp) + "/" + esc(t.hpMax) + " hp" : "no hp"}${
           t.kind === "pc" ? " · player" : ""}</span>
       </button>
       <button class="btn-quiet" data-tbl="ed-dup" data-val="${esc(id)}">Copy</button>
-    </div>`).join("");
+    </div>${open ? `<div class="figure-open">${tokenEditorHTML(id)}</div>` : ""}`;
+    }).join("");
   return `<section class="panel" id="dm-figures">
       <p class="panel-sub">Figures on this map</p>
       <div class="scene-list">${rows || `<p class="muted">Nothing on the board.</p>`}</div>
@@ -623,14 +628,31 @@ function tblRevealPanel() {
   }
 }
 
+/* Put an opened figure where its owner can see it. After the next frame, because the row it is scrolling
+   to has only just been written into the page. */
+function tblScrollToFigure(id) {
+  requestAnimationFrame(() => {
+    // Not CSS.escape: it does not exist everywhere this runs, and these ids are minted from base 36 and
+    // a dash, so there is nothing in one to escape.
+    const row = document.querySelector(`[data-figure="${String(id).replace(/["\\]/g, "")}"]`);
+    if (!row || !row.scrollIntoView) return;
+    try { row.scrollIntoView({ block: "nearest", behavior: "smooth" }); }
+    catch { row.scrollIntoView(); }
+  });
+}
+
 function tblOpenToken(id) {
   const t = tblTokens()[id];
   if (!t) return;
   if (tbl.role === "dm") {
-    tbl.ui.editToken = id;
+    // Tapping the one that is already open closes it, which is what a disclosure does.
+    tbl.ui.editToken = tbl.ui.editToken === id ? "" : id;
     tbl.ui.panel = "dm";
     paintSide();
     tblRevealPanel();
+    // …and bring it into view. Opening a figure at the bottom of a long list used to unfold it off the
+    // end of the panel, with nothing on screen to say anything had happened.
+    if (tbl.ui.editToken) tblScrollToFigure(id);
     return;
   }
   // A player gets their own sheet for their own figure, and a read-only look at anything else. Being
@@ -862,22 +884,31 @@ function drawPanelHTML() {
       <div class="chips">
         <button class="chip ${ink.on && ink.mode === "pen" ? "on" : ""}" data-tbl="ink-pen">Pen</button>
         <button class="chip ${ink.on && ink.mode === "erase" ? "on" : ""}" data-tbl="ink-erase">Eraser</button>
+        <button class="chip ${ink.on && ink.mode === "fill" ? "on" : ""}" data-tbl="ink-bucket">Fill</button>
         <button class="chip ${ink.on ? "" : "on"}" data-tbl="ink-off">Put it away</button>
       </div>
       ${ink.on ? `<p class="muted">${ink.mode === "erase"
         ? (tbl.role === "dm" ? "Drag over anything to rub it out — as the DM you can rub out anyone's."
           : "Drag over your own lines to rub them out. Other people's are theirs.")
+        : ink.mode === "fill"
+        ? `Tap inside a shape you have already drawn to colour it in, and tap it again to empty it. It keeps
+           its own colour${tbl.role === "dm" ? " — as the DM you can fill anyone's" : ""}.`
         : "Draw on the board with a finger or the mouse. While the pen is out, figures cannot be dragged."}</p>`
         : `<p class="muted">The pen is away, so the board drags and pans as usual.</p>`}
-      ${ink.on && ink.mode === "pen" ? `<p class="panel-sub">What to draw</p>
-        <div class="chips">${TBL_INK_SHAPES.map(([k, label]) =>
-          `<button class="chip ${(ink.shape || "free") === k ? "on" : ""}" data-tbl="ink-shape"
-            data-val="${k}">${esc(label)}</button>`).join("")}</div>
-        ${(ink.shape || "free") !== "free" ? `<div class="chips">
-            <button class="chip ${ink.fill ? "on" : ""}" data-tbl="ink-fill">${ink.fill ? "Filled" : "Outline"}</button>
-          </div>
-          <p class="muted">Drag from one corner to the other — it resizes under your hand and lands when you
-            let go. Filled shapes stay see-through, since there is a map underneath.</p>` : ""}` : ""}
+      ${ink.on && (ink.mode === "pen" || ink.mode === "fill") ? `
+        ${ink.mode === "pen" ? `<p class="panel-sub">What to draw</p>
+          <div class="chips">${TBL_INK_SHAPES.map(([k, label]) =>
+            `<button class="chip ${(ink.shape || "free") === k ? "on" : ""}" data-tbl="ink-shape"
+              data-val="${k}">${esc(label)}</button>`).join("")}</div>` : ""}
+        ${ink.mode === "fill" || (ink.shape || "free") !== "free" ? `
+          <p class="panel-sub">Inside</p>
+          <div class="chips">${[["", "Empty"], ["soft", "Shaded"], ["solid", "Filled"]].map(([k, label]) =>
+            `<button class="chip ${(ink.fill || "") === k ? "on" : ""}" data-tbl="ink-fill"
+              data-val="${k}">${esc(label)}</button>`).join("")}</div>
+          <p class="muted">Shaded lets the map read through it, for ground or a spell's reach. Filled covers
+            it, for a wall or a pit.${ink.mode === "pen"
+              ? " Drag from one corner to the other — it resizes under your hand and lands when you let go."
+              : ""}</p>` : ""}` : ""}
       <p class="panel-sub">Colour</p>
       <div class="chips">${TBL_INK_COLOURS.map(([hex, name]) =>
         `<button class="chip ${ink.color === hex ? "on" : ""}" data-tbl="ink-color" data-val="${esc(hex)}"

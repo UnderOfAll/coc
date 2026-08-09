@@ -1016,18 +1016,19 @@ document.addEventListener("click", (e) => {
   else if (act === "sheet-close") { closeSheetPanel(); tbl.ui.panel = ""; paintSide(); }
 
   else if (act === "ed-open") tblOpenToken(val);
-  else if (act === "ink-pen" || act === "ink-erase" || act === "ink-off") {
+  else if (act === "ink-pen" || act === "ink-erase" || act === "ink-bucket" || act === "ink-off") {
     const ink = tblInkState();
     ink.on = act !== "ink-off";
     if (act === "ink-pen") ink.mode = "pen";
     if (act === "ink-erase") ink.mode = "erase";
+    if (act === "ink-bucket") ink.mode = "fill";
     // The board's cursor says which tool is in your hand, since the pen changes what a drag does.
     const stage = $("#vtt-stage");
     if (stage) stage.classList.toggle("inking", ink.on);
     paintSide();
   }
   else if (act === "ink-shape") { tblInkState().shape = val; paintSide(); }
-  else if (act === "ink-fill") { tblInkState().fill = !tblInkState().fill; paintSide(); }
+  else if (act === "ink-fill") { tblInkState().fill = val || false; paintSide(); }
   else if (act === "ink-undo") tblUndoInk().catch(tblFail);
   else if (act === "peek-close") { tbl.ui.peek = ""; paintPeek(); }
   else if (act === "peek-edit") { tbl.ui.peek = ""; paintPeek(); tblOpenToken(val); }

@@ -497,6 +497,37 @@ function tblEraseCommit() {
   paintDrawings();
 }
 
+/* The paint bucket: fill in something already on the board, which is how anybody actually draws — the
+ * square goes down first and the colour goes in afterwards, once you know what it turned out to be.
+ *
+ * The topmost shape under the finger wins, newest first, which is the order they are drawn in: with two
+ * boxes overlapping you mean the one you can see. Filling obeys the same rule as rubbing out — your own
+ * work, or anybody's if you are the DM — and tapping a shape that is ALREADY filled the way you are
+ * filling takes the fill back out, so the bucket is its own undo. */
+function tblFillAt(at) {
+  const sceneId = tblSceneId();
+  const mine = tblNoteOwner();
+  const near = 0.012;
+  const level = tblInkState().fill === "solid" ? "solid" : "soft";
+  const hits = Object.entries(tbl.data.draw || {})
+    .filter(([, k]) => k && k.scene === sceneId && (tbl.role === "dm" || k.by === mine))
+    .sort((a, b) => (b[1].at || 0) - (a[1].at || 0));
+  for (const [id, k] of hits) {
+    const pts = tblInkDecode(k.pts);
+    if (!pts.length) continue;
+    // A shape is filled through its INSIDE, so it is hit-tested as though it were already filled — you
+    // should not have to find the outline of an empty box to colour it in.
+    const kind = k.kind || "free";
+    if (kind === "line") continue;                       // a line has no inside to fill
+    if (!tblInkTouches(pts, kind, at, near, true)) continue;
+    const next = k.fill === level ? null : level;
+    CocLive.put(tblPath("draw/" + id + "/fill"), next).catch(tblFail);
+    tblTrace("ink fill", id + " " + (next || "emptied"));
+    return true;
+  }
+  return false;
+}
+
 /* Is the eraser over this shape's outline (or, for a box, its edge)? */
 function tblInkTouches(pts, kind, at, near, filled) {
   const seg = (a, b) => {
@@ -509,7 +540,17 @@ function tblInkTouches(pts, kind, at, near, filled) {
   const a = pts[0], b = pts[1] || pts[0];
   if (kind === "line") return seg(a, b) < near;
   if (filled) {
-    // A filled shape IS its inside, so touching anywhere in it counts.
+    // A filled shape IS its inside, so touching anywhere in it counts. A freehand loop has an inside
+    // too — count the times a ray leaving the point crosses the line, and an odd number means in.
+    if (kind === "free") {
+      let inside = false;
+      for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+        const p = pts[i], q = pts[j];
+        if ((p.y > at.y) !== (q.y > at.y)
+          && at.x < ((q.x - p.x) * (at.y - p.y)) / ((q.y - p.y) || 1e-9) + p.x) inside = !inside;
+      }
+      return inside;
+    }
     const x1 = Math.min(a.x, b.x), x2 = Math.max(a.x, b.x);
     const y1 = Math.min(a.y, b.y), y2 = Math.max(a.y, b.y);
     if (kind === "rect") return at.x >= x1 - near && at.x <= x2 + near && at.y >= y1 - near && at.y <= y2 + near;
@@ -587,9 +628,11 @@ function onPointerDown(e) {
     const at = tblInkPoint(p);
     tbl.drag = null;
     if (tblInkState().mode === "erase") { tblEraseAt(at); return; }
+    // The bucket is a tap, not a stroke: it colours in something that is already there and starts nothing.
+    if (tblInkState().mode === "fill") { tblFillAt(at); return; }
     tblTrace("ink start");
     tbl.inking = { points: [at], color: tblInkState().color, width: tblInkState().width,
-                   kind: tblInkState().shape || "free", fill: !!tblInkState().fill };
+                   kind: tblInkState().shape || "free", fill: tblInkState().fill || false };
     paintDrawings();
     if (stage.setPointerCapture) { try { stage.setPointerCapture(e.pointerId); } catch { /* fine */ } }
     return;
@@ -691,7 +734,7 @@ function onPointerUp(e) {
     if (stroke.points.length) {
       CocLive.push(tblPath("draw"), {
         by: tblNoteOwner(), scene: tblSceneId(), color: stroke.color, width: stroke.width,
-        kind: stroke.kind || "free", fill: !!stroke.fill,
+        kind: stroke.kind || "free", fill: stroke.fill || false,
         pts: tblInkEncode(stroke.points), at: Date.now(),
       }).then((id) => tblUndoPush({ kind: "add", id })).catch(tblFail);
     }
@@ -857,9 +900,13 @@ function paintDrawings() {
     if (!pts.length) return "";
     const width = Math.max(1, (Number(k.width) || 2) * cell / 24);
     const stroke = esc(k.color || "#c9a54e");
-    /* Filled, like the paint bucket: the same colour inside, kept translucent because it is lying over a
-       map somebody drew and a solid block would simply delete that part of the picture. */
-    const paint = k.fill ? `fill="${stroke}" fill-opacity="0.32"` : `fill="none"`;
+    /* Filled, like the paint bucket. Two strengths, because both are wanted for different things: SHADED
+       lies over the map so the picture still reads through it — an area of difficult ground, a spell's
+       reach — and SOLID actually covers it, for a wall, a pit, a blacked-out room. `fill: true` is what
+       the old strokes stored and means shaded. */
+    const paint = k.fill
+      ? `fill="${stroke}" fill-opacity="${k.fill === "solid" ? "0.95" : "0.32"}"`
+      : `fill="none"`;
     const common = `${paint} stroke="${stroke}" stroke-width="${width.toFixed(1)}"
       stroke-linecap="round" stroke-linejoin="round" data-ink="${esc(id)}"`;
     const X = (p) => (p.x * w).toFixed(1), Y = (p) => (p.y * h).toFixed(1);

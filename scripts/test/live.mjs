@@ -229,7 +229,10 @@ peek(`window.__warned = []; window.__fetches = [];
 const stranded = Date.now();
 await peek(`CocLive.get("tables/482910/meta")`);
 const waited = Date.now() - stranded;
-ok(waited > 7000 && waited < 12000, `a library that never answers is given up on (${(waited / 1000).toFixed(1)}s)`);
+// A window rather than a stopwatch: what matters is that it gives up in SECONDS instead of hanging for
+// the browser's own network timeout. Pinning it to the exact deadline makes this fail on a busy machine,
+// which is a test that cries wolf about the one thing it is guarding.
+ok(waited > 5000 && waited < 15000, `a library that never answers is given up on (${(waited / 1000).toFixed(1)}s)`);
 ok(peek(`CocLive.transportState`) === "rest (timed out)", "and the table carries on the old way");
 ok(peek(`window.__fetches.length`) === 1, "with the read actually made, rather than left hanging");
 

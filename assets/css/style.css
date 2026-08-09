@@ -1073,6 +1073,13 @@ input.step-val { width: 3.4rem; }
   align-items: baseline; text-align: left; background: none; border: none; color: inherit;
   font: inherit; cursor: pointer; padding: 0.2rem 0; }
 .scene-pick:hover strong { color: var(--gold); }
+/* A figure opened from the DM's list unfolds UNDER its own name, indented so the list it belongs to is
+   still readable around it, rather than being lifted to the top of the panel away from where it was
+   tapped. The panel inside loses its own frame — it is already inside one. */
+.caret { display: inline-block; width: 0.8em; color: var(--muted); }
+.figure-open { margin: 0 0 0.5rem 0.6rem; padding-left: 0.7rem; border-left: 2px solid var(--gold); }
+.figure-open .panel { margin: 0; padding: 0.2rem 0 0.4rem; background: none; border: none; box-shadow: none; }
+.figure-open .panel h2 { margin-top: 0; }
 .grid-row { display: flex; flex-wrap: wrap; gap: 0.8rem; align-items: flex-end; margin: 0.6rem 0; }
 .vtt-side .field { margin-bottom: 0.5rem; }
 .vtt-side input[type="file"] { font-size: 0.85rem; max-width: 100%; }

@@ -445,6 +445,10 @@ function dice3dClear(now) {
    Built in JS rather than in index.html because every page can roll, and none of them should have to
    carry the markup for it. */
 let tblRollTimers = [];
+/* The tumble of the flat dice, which is an INTERVAL and so was never in the list above. Two rolls inside
+   half a second left the first one's tumble running against the second one's markup, taking its "rolling"
+   class off early and writing digits into elements that were no longer on the page. */
+let tblRollSpin = null;
 function tblRollStage() {
   let node = document.getElementById("roll-stage");
   if (!node) {
@@ -466,6 +470,7 @@ function tblShowRoll(entry) {
   const node = tblRollStage();
   for (const t of tblRollTimers) clearTimeout(t);
   tblRollTimers = [];
+  if (tblRollSpin) { clearInterval(tblRollSpin); tblRollSpin = null; }
   const dice = tblEntryDice(entry);
   const mod = Number(entry.mod) || 0;
   const nat = entry.nat === 20 ? "nat20" : entry.nat === 1 ? "nat1" : "";
@@ -504,7 +509,7 @@ function tblShowRoll(entry) {
   // mixed handful never flashes a 17 on its way to landing.
   const shown = [...node.querySelectorAll(".die")];
   let ticks = 0;
-  const spin = setInterval(() => {
+  const spin = tblRollSpin = setInterval(() => {
     ticks += 1;
     for (const die of shown) {
       const sides = Number(asEl(die).dataset.sides) || 20;
@@ -512,6 +517,7 @@ function tblShowRoll(entry) {
     }
     if (ticks > 9) {
       clearInterval(spin);
+      if (tblRollSpin === spin) tblRollSpin = null;
       for (const die of shown) die.querySelector("b").textContent = asEl(die).dataset.final;
       node.classList.remove("rolling");
       node.classList.add("landed");
