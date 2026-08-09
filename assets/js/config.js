@@ -13,12 +13,13 @@ const COC_CONFIG = {
   firebaseUrl: "https://circus-of-chaos-78122-default-rtdb.europe-west1.firebasedatabase.app",
 
   /* HOW that database is reached — the same data either way.
-       "rest" — hand-rolled: one HTTP stream per watcher, and a browser allows about six per host.
        "sdk"  — Firebase's own library, fetched as a module from gstatic.com: one WebSocket for
                 everything, reconnection handled for us, writes queued while the network is away.
-     `?transport=sdk` (or `=rest`) on the address overrides this for one visit, which is how the swap
-     is proved on the live site before it is made permanent. */
-  transport: "rest",
+       "rest" — hand-rolled: one HTTP stream per watcher, and a browser allows about six per host.
+                Still here, still tested, and still what runs if the library cannot be fetched.
+     `?transport=rest` (or `=sdk`) on the address overrides this for one visit — which is how the swap
+     was proved on the live site, two devices at a time, before it was made the default. */
+  transport: "sdk",
 
   /* The diagnostics overlay is Kayki's, not a feature. Visiting #/debug/<phrase> once on a device turns it
      on for that browser forever; nothing appears in the interface for anyone who has not. Only the HASH of

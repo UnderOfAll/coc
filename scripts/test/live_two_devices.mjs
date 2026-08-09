@@ -10,12 +10,13 @@
 // which is exactly why it could not see it.
 //
 // It runs against EITHER cloud transport, so the swap can be proved rather than argued about:
-//   npm run test:2dev            the REST layer, as the site is configured
+//   npm run test:2dev            however the deployed site is configured
 //   npm run test:2dev:sdk        the same session, same database, through Firebase's own library
+//   npm run test:2dev:rest       the same again over the hand-rolled REST layer
 // Every assertion below reads the REAL database over REST whatever the browsers are using, so a pass
 // means the data genuinely arrived and not merely that the page believes it did.
 import puppeteer from "puppeteer";
-const TRANSPORT = process.env.TRANSPORT === "sdk" ? "sdk" : "";
+const TRANSPORT = ["sdk", "rest"].includes(process.env.TRANSPORT || "") ? process.env.TRANSPORT : "";
 const SITE = "https://underofall.github.io/coc/index.html" + (TRANSPORT ? "?transport=" + TRANSPORT : "");
 const DB = "https://circus-of-chaos-78122-default-rtdb.europe-west1.firebasedatabase.app";
 const ROOM = "999123", CHAR = "999321", DMKEY = "987654";
@@ -50,8 +51,11 @@ const open = async (label, w, h) => {
 console.log("\n— the DM opens a table on the live site —");
 const dm = await open("dm", 1280, 900);
 ok(await dm.page.evaluate(() => CocLive.isCloud), "the deployed site is in cloud mode, not offline");
-const wanted = TRANSPORT || "rest";
-ok(await dm.page.evaluate((t) => CocLive.transport === t, wanted), `over the ${wanted} transport`);
+// With nothing asked for, whatever the deployed config.js says is the answer — that is the point of
+// running it that way: it tests what the players will actually get.
+const wanted = TRANSPORT || await dm.page.evaluate(() => CocLive.transport);
+ok(await dm.page.evaluate((t) => CocLive.transport === t, wanted),
+  `over the ${wanted} transport${TRANSPORT ? "" : ", which is what the site is set to"}`);
 await dm.page.evaluate(() => { location.hash = "#/table"; });
 await wait(600);
 await dm.page.evaluate((r, k) => {
@@ -143,6 +147,70 @@ await wait(2500);
 const dmLog = await dm.page.evaluate(() => document.querySelector("#vtt-lastroll").textContent);
 // The bar lays the roll out (who / dice / total) rather than writing a sentence, so this asserts the parts.
 ok(/^Live Test/.test(dmLog.trim()) && /\d/.test(dmLog), "and the DM read the result: " + dmLog.trim().replace(/\s+/g, " "));
+
+console.log("\n— the DM rubs out part of a line; it stays rubbed out —");
+// This one is here for the SDK specifically. The eraser cuts a line into two and holds the result on
+// screen "until the stored data agrees with it" — and the library raises an event for your OWN write
+// the instant you make it, before the database has confirmed anything, which is a different moment than
+// the REST streams ever gave. So: draw across the board, rub the middle out, and check that both the
+// database and the OTHER device end up with two pieces — and that the whole line does not come back a
+// few seconds later, which is exactly how this failed once before.
+await dm.page.evaluate(() => {
+  CocLive.push("tables/" + tbl.code + "/draw", {
+    by: tblNoteOwner(), scene: tblSceneId(), color: "#ffffff", width: 3, kind: "free", at: Date.now(),
+    pts: Array.from({ length: 41 }, (_, i) => (0.05 + i * 0.022).toFixed(4) + ",0.3000").join(" "),
+  });
+});
+await wait(2500);
+const drawn = await db(`tables/${ROOM}/draw`, "GET");
+const strokeId = Object.keys(drawn || {})[0];
+ok(!!strokeId, "the line is in the database");
+ok(await pl.page.evaluate(() => document.querySelectorAll("#vtt-ink path, #vtt-ink polyline").length > 0),
+  "and the phone is showing it");
+// Rub through the middle of it, with a real mouse, on the board as it is actually laid out. The panel
+// is opened FIRST and the layer measured after, because opening it resizes the board.
+await dm.page.evaluate(() => document.querySelector('[data-tbl="panel"][data-val="draw"]').click());
+await wait(600);
+const ink = await dm.page.evaluate(() => {
+  document.querySelector('[data-tbl="ink-erase"]').click();
+  // Fitted, so the WHOLE board is on screen and a normalised point is a screen point. Measured after
+  // fitting and after the panel opened, both of which move it: at 1:1 the board is four times the width
+  // of the stage, and the first version of this rubbed past the right-hand edge and called the eraser
+  // broken.
+  tbl.cameraIsYours = false; tbl.view.fitted = false; tblFit(); applyView();
+  const b = document.querySelector("#vtt-ink").getBoundingClientRect();
+  const s = document.querySelector("#vtt-stage").getBoundingClientRect();
+  return { x: b.left, y: b.top, w: b.width, h: b.height, on: tblInkState().on, mode: tblInkState().mode,
+           right: s.right, bottom: s.bottom };
+});
+ok(ink.on && ink.mode === "erase", "the eraser is out");
+const atInk = (nx, ny) => ({ x: ink.x + nx * ink.w, y: ink.y + ny * ink.h });
+// Somewhere in the MIDDLE of the line, not near either end: rubbing the first inch of it leaves a stub too
+// short to be a stroke, and that is one piece rather than two.
+const cutFrom = 0.42, cutTo = 0.52;
+ok(atInk(cutTo, 0.3).x < ink.right && atInk(cutTo, 0.3).y < ink.bottom,
+  "and the stretch being rubbed is on screen");
+const from = atInk(cutFrom, 0.3), to = atInk(cutTo, 0.3);
+await dm.page.mouse.move(from.x, from.y);
+await dm.page.mouse.down();
+for (let i = 1; i <= 12; i++) {
+  await dm.page.mouse.move(from.x + ((to.x - from.x) / 12) * i, from.y);
+  await wait(20);
+}
+await dm.page.mouse.up();
+await wait(3000);
+const cut = await db(`tables/${ROOM}/draw`, "GET");
+ok(!(cut || {})[strokeId], "the whole line is gone from the database");
+ok(Object.keys(cut || {}).length === 2, `and left two pieces where it was cut (${Object.keys(cut || {}).length})`);
+ok(await pl.page.evaluate(() => document.querySelectorAll("#vtt-ink path, #vtt-ink polyline").length === 2),
+  "the phone shows the gap too, pushed to it");
+ok(await dm.page.evaluate(() => !tbl.inkPending), "and the DM's board has let go of its own overlay");
+// The failure this is really watching for: the rub retiring on a local echo, and the stored line
+// reappearing once the database has its say.
+await wait(4000);
+const still = await db(`tables/${ROOM}/draw`, "GET");
+ok(!(still || {})[strokeId] && Object.keys(still || {}).length === 2, "and four seconds later it has not come back");
+await dm.page.evaluate(() => document.querySelector('[data-tbl="ink-off"]').click());
 
 // A silent fall back to REST must not pass as a run of the library: everything above would still be
 // green, and the swap would be "proved" by the transport it was meant to replace.
