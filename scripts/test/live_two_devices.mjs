@@ -37,7 +37,9 @@ await db(`characters/${CHAR}`, "PUT", {
 });
 await db(`tables/${ROOM}`, "DELETE");
 
-const browser = await puppeteer.launch({ args: ["--no-sandbox"] });
+// Software WebGL: headless Chromium has no GPU, and the 3D dice need one to exist. A real phone has
+// its own; this is only how the test gets to see what a phone would.
+const browser = await puppeteer.launch({ args: ["--no-sandbox", "--enable-unsafe-swiftshader"] });
 const open = async (label, w, h) => {
   const ctx = await browser.createBrowserContext();       // its own localStorage: a separate DEVICE
   const page = await ctx.newPage();
@@ -147,6 +149,42 @@ await wait(2500);
 const dmLog = await dm.page.evaluate(() => document.querySelector("#vtt-lastroll").textContent);
 // The bar lays the roll out (who / dice / total) rather than writing a sentence, so this asserts the parts.
 ok(/^Live Test/.test(dmLog.trim()) && /\d/.test(dmLog), "and the DM read the result: " + dmLog.trim().replace(/\s+/g, " "));
+
+console.log("\n— real dice, landing on the roll that was made —");
+// The first roll of a session is always the flat overlay: it starts fetching the physics library and does
+// not wait for it, because no roll should ever wait on a network. So this rolls TWICE and looks at the
+// second. `with-3d` is the assertion that matters — the overlay only wears it when every die was checked
+// against the numbers that were rolled and agreed with them.
+// On a wide screen the dice are already in the dock, so there is no panel to open — clicking the Dice
+// button there would CLOSE the dock and take the roll button with it.
+const has3d = await dm.page.evaluate(() => !!document.querySelector('[data-tbl="dice-3d"]'));
+ok(has3d, "there is a switch for them, per device");
+await dm.page.evaluate(() => document.querySelector('[data-tbl="roll-pool"]').click());
+await wait(7000);   // the library is most of a megabyte; this one stays flat while it arrives
+await dm.page.evaluate(() => document.querySelector('[data-tbl="roll-pool"]').click());
+await wait(7000);
+// Not "did a canvas appear" — that is true of a box that never throws. Read the faces the physics
+// actually settled on, out of the library itself, and hold them against the roll in the shared log.
+const solid = await dm.page.evaluate(() => {
+  const box = typeof dice3dBox !== "undefined" ? dice3dBox : null;
+  const res = box && box.getDiceResults ? box.getDiceResults() : null;
+  const faces = ((res && res.sets) || []).flatMap((s) => s.rolls.map((r) => Number(r.value)));
+  const log = Object.values(tbl.data.log || {}).sort((a, b) => (a.t || 0) - (b.t || 0));
+  const last = log[log.length - 1] || {};
+  return {
+    canvas: !!document.querySelector("#roll-3d canvas"),
+    shown: document.querySelector("#roll-3d").classList.contains("on"),
+    truthful: document.querySelector("#roll-stage").classList.contains("with-3d"),
+    faces, logged: (last.dice || []).map((d) => Number(d.v)), total: last.total,
+  };
+});
+ok(solid.canvas && solid.shown, "the dice are drawn on a real canvas, on screen");
+ok(solid.faces.length > 0 && solid.faces.join(",") === solid.logged.join(","),
+  `and every face is the roll that was logged (dice ${solid.faces.join(",")} vs log ${solid.logged.join(",")})`);
+ok(solid.truthful, "which is what lets the box hide the flat dice (total " + solid.total + ")");
+await wait(3500);
+ok(await dm.page.evaluate(() => !document.querySelector("#roll-3d").classList.contains("on")),
+  "then they are swept away");
 
 console.log("\n— the DM rubs out part of a line; it stays rubbed out —");
 // This one is here for the SDK specifically. The eraser cuts a line into two and holds the result on

@@ -157,9 +157,157 @@ function tblRollAndPost(spec, label, mode, whoOverride) {
   return res;
 }
 
+/* ---------------------------------------------------------------- dice that are actually dice */
+
+/* Real dice, in three dimensions, tumbling across the screen and landing on the number that was rolled.
+ *
+ * The load-bearing word is LANDING. The roll is decided before any of this runs — the roller's own
+ * generator makes it, the log carries it, and every other screen at the table renders the same numbers.
+ * So these dice are told what to land on, and the library is the one in this space that can be told:
+ * `3d6@4,5,6` throws three dice and turns them, once they have settled, to the faces we asked for.
+ *
+ * Which means the rule for using it at all is simple and absolute: **if the dice cannot be made to show
+ * the roll, they do not appear.** A d4 shows 3 while the sheet says 1 would be worse than no dice at all.
+ * Two things that library cannot do, both checked here rather than hoped about:
+ *   - a d4 cannot be turned at all. It lands where the physics put it and reports that instead.
+ *   - its d100 is a TENS die — it has no face for 73 — so a percentile roll has nothing to land on.
+ * And after every throw the faces are compared with what was asked for. One disagreement and the whole
+ * thing is swept away and the flat overlay takes over, which is what happens on a phone with no WebGL,
+ * on a slow network, and for anyone who has turned it off.
+ *
+ * Fetched from the CDN the first time somebody rolls, never as part of loading the page: it is most of a
+ * megabyte of physics engine, and a device that never throws a die never pays for it. */
+const DICE3D_SRC = "https://cdn.jsdelivr.net/npm/@3d-dice/dice-box-threejs@0.0.12/dist/dice-box-threejs.es.js";
+const DICE3D_SIDES = [6, 8, 10, 12, 20];   // the ones that can be told where to land
+const DICE3D_MOST = 12;                    // beyond a dozen they are specks, and the physics gets slow
+let dice3dBox = null;      // the loaded box, once
+let dice3dLoading = null;  // the load in flight, so two quick rolls load it once
+let dice3dOff = false;     // it failed, or it is not wanted: stop asking
+let dice3dThrow = 0;       // which throw is the current one, so a stale one cannot un-hide the board
+
+/* Turned off per device, and remembered. A phone that finds them heavy, or a player who wants the roll
+   over with, says so once. Kept in memory as well as in storage, so the switch still works in a browser
+   that refuses to store anything — it just forgets by the next visit. */
+let dice3dSaid = null;
+function dice3dChosen() {
+  if (dice3dSaid !== null) return dice3dSaid;
+  try { return localStorage.getItem("coc:dice3d") !== "off"; } catch { return true; }
+}
+function dice3dToggle() {
+  dice3dSaid = !dice3dChosen();
+  try { localStorage.setItem("coc:dice3d", dice3dSaid ? "on" : "off"); } catch { /* no storage */ }
+  if (!dice3dSaid) dice3dClear(true);
+}
+
+/* Reduced motion means what it says, and a browser with no WebGL would spend the download to fail. */
+function dice3dWanted() {
+  if (dice3dOff || !dice3dChosen()) return false;
+  try {
+    if (typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches) return false;
+    // Asked of the WINDOW rather than by making a context: jsdom has no canvas at all and reaching for
+    // one there is an error in the test log, every roll, for no information — the type either exists or
+    // this browser was never going to draw anything. If it exists and still fails, the load below catches
+    // it and turns the whole thing off for the session.
+    if (typeof WebGLRenderingContext === "undefined") return false;
+  } catch { return false; }
+  return true;
+}
+
+/* A handful this library can be trusted with: all one kind of die, a kind it can be turned to, and few
+   enough to see. Everything else keeps the overlay that has always been there. */
+function dice3dCanShow(dice) {
+  if (!dice.length || dice.length > DICE3D_MOST) return false;
+  const sides = Number(dice[0].s);
+  return DICE3D_SIDES.includes(sides) && dice.every((d) => Number(d.s) === sides);
+}
+
+function dice3dStage() {
+  let node = document.getElementById("roll-3d");
+  if (!node) {
+    node = document.createElement("div");
+    node.id = "roll-3d";
+    node.className = "roll-3d";
+    document.body.appendChild(node);
+  }
+  return node;
+}
+
+/* The library, loaded once and kept. Any failure at all — no network, a blocked CDN, WebGL that says yes
+   and then throws — turns the whole feature off for the session rather than being retried on every roll. */
+function dice3dReady() {
+  if (dice3dBox) return Promise.resolve(dice3dBox);
+  if (dice3dLoading) return dice3dLoading;
+  dice3dStage();
+  const url = DICE3D_SRC;
+  dice3dLoading = (async () => {
+    const mod = await import(/* the CDN, at runtime */ url);
+    const DiceBox = mod.default;
+    const box = new DiceBox("#roll-3d", {
+      // Gold on the table's own near-black, so they look like this game's dice rather than a demo's.
+      theme_customColorset: { background: "#c9a54e", foreground: "#10100f", texture: "none", material: "metal" },
+      light_intensity: 1.1, gravity_multiplier: 500, baseScale: 110, strength: 2.2, sounds: false, shadows: true,
+    });
+    await box.initialize();
+    dice3dBox = box;
+    return box;
+  })().catch((err) => {
+    dice3dOff = true;
+    try { console.warn("dice: the 3D dice could not be loaded, using the flat ones —", err && err.message); }
+    catch { /* no console */ }
+    return null;
+  });
+  return dice3dLoading;
+}
+
+/* Throw them, and answer with one of three words, because the caller must treat them differently:
+     "solid" — every die ended on the face it was asked for. Show them.
+     "flat"  — they did not, or the throw failed. The flat dice take over, and the real ones go at once.
+     "stale" — a NEWER roll has started since. Say nothing and touch nothing: the screen now belongs to
+               that roll, and an old throw finishing must not reach into it. */
+async function dice3dShow(dice) {
+  const mine = ++dice3dThrow;
+  const box = await dice3dReady();
+  if (!box) return "flat";
+  if (mine !== dice3dThrow) return "stale";
+  const want = dice.map((d) => Number(d.v));
+  const notation = dice.length + "d" + Number(dice[0].s) + "@" + want.join(",");
+  const stage = dice3dStage();
+  stage.classList.add("on");
+  let faces = [];
+  try {
+    const landed = await box.roll(notation);
+    // Read defensively: this is the check the whole feature rests on, and a library that answered in an
+    // unexpected shape must fail to "flat" rather than throw past the comparison altogether.
+    for (const set of (landed && landed.sets) || []) {
+      for (const die of (set && set.rolls) || []) faces.push(Number(die.value));
+    }
+  } catch { faces = []; }
+  if (mine !== dice3dThrow) return "stale";
+  const truthful = faces.length === want.length && faces.every((v, i) => v === want[i]);
+  // A settled die is READABLE, so a wrong one has to leave immediately — no fade, no frame of it sitting
+  // there being wrong. The fade is for dice that told the truth and are simply done.
+  if (!truthful) dice3dClear(true);
+  return truthful ? "solid" : "flat";
+}
+
+/* Take them off the screen. `now` skips the fade, for the two cases where what is on screen is wrong
+   rather than finished. `clearDice` is the library's own name for emptying the scene — it has no
+   `clear`, and calling one that does not exist would have left every throw's dice in the world. */
+function dice3dClear(now) {
+  dice3dThrow++;
+  const node = document.getElementById("roll-3d");
+  if (node) {
+    if (now) node.classList.add("at-once");
+    node.classList.remove("on");
+    if (now) requestAnimationFrame(() => node.classList.remove("at-once"));
+  }
+  if (dice3dBox && dice3dBox.clearDice) { try { dice3dBox.clearDice(); } catch { /* mid-throw */ } }
+}
+
 /* A roll you can WATCH. "17" appearing in a list is information; a die tumbling and landing on 17 is
-   the moment everyone looks up for, and it costs one element and no library. The same overlay is used
-   on a sheet away from a table, because a roll is a roll.
+   the moment everyone looks up for. In three dimensions when the dice can be made to land on the truth,
+   and as the flat overlay below otherwise — which is also what a sheet away from a table shows, because
+   a roll is a roll.
    Built in JS rather than in index.html because every page can roll, and none of them should have to
    carry the markup for it. */
 let tblRollTimers = [];
@@ -169,7 +317,9 @@ function tblRollStage() {
     node = document.createElement("div");
     node.id = "roll-stage";
     node.className = "roll-stage";
-    node.addEventListener("click", () => node.classList.remove("on"));
+    // Tapping it away has to take the DICE with it. It did not, once: the box went and a screenful of
+    // settled dice stayed behind it, unclickable because they ignore the pointer, until the next roll.
+    node.addEventListener("click", () => { node.classList.remove("on"); dice3dClear(true); });
     document.body.appendChild(node);
   }
   return node;
@@ -194,15 +344,24 @@ function tblShowRoll(entry) {
   }).join("");
   const spec = entry.spec
     || tblSpecText({ terms: dice.map((x) => ({ count: 1, sides: x.s, sign: 1 })), mod });
+  /* The 3D throw runs BESIDE the flat one, not instead of it: the flat dice tumble immediately while the
+     library is still being fetched, and are hidden only once real dice are actually on the table. Nothing
+     waits on the network to see a roll. */
+  const solid = dice3dWanted() && dice3dCanShow(dice);
   node.className = "roll-stage on rolling " + nat;
   node.innerHTML = `<div class="roll-box">
     <p class="roll-head"><strong>${esc(entry.who || "Someone")}</strong>${
       entry.label ? ` &middot; ${esc(entry.label)}` : ""}</p>
     <div class="roll-dice">${faces}</div>
+    ${keptIdx >= 0 && dice[keptIdx] ? `<p class="roll-kept only-3d">kept ${esc(dice[keptIdx].v)}${
+      dice.filter((_, i) => i !== keptIdx).map((d) => ` &middot; ${esc(d.v)} dropped`).join("")}</p>` : ""}
     <p class="roll-sum">
       <span class="roll-spec">${esc(spec)}${
         entry.mode === "adv" ? " · advantage" : entry.mode === "dis" ? " · disadvantage" : ""}</span>
-      ${dice.length > 1 || mod ? `<span class="roll-total">${esc(entry.total)}</span>` : ""}
+      ${dice.length > 1 || mod ? `<span class="roll-total">${esc(entry.total)}</span>`
+        // With real dice the flat row is hidden, so a lone d20 with no modifier would have no number in
+        // the box at all — and that is the commonest roll in the game. It gets one, for the 3D case only.
+        : `<span class="roll-total only-3d">${esc(entry.total)}</span>`}
     </p>
   </div>`;
   // The tumble: real dice do not fade in, they clatter. Each settles within its OWN range, so a d4 in a
@@ -222,7 +381,34 @@ function tblShowRoll(entry) {
       node.classList.add("landed");
     }
   }, 55);
-  tblRollTimers.push(setTimeout(() => node.classList.remove("on"), 3200));
+  const away = () => { node.classList.remove("on"); dice3dClear(); };
+  tblRollTimers.push(setTimeout(away, 3200));
+
+  if (!solid) { dice3dClear(); return; }
+  /* NO roll waits on the network. The first one throws the flat dice and starts fetching the library in
+     the background; every roll after that is a real one. A device that never rolls never fetches it, and
+     nobody ever watches a spinner where a die should be. */
+  if (!dice3dBox) { dice3dReady(); dice3dClear(); return; }
+
+  // Real dice from here: the flat row is not drawn at all, the total shows at once exactly as it always
+  // has, and the dice land underneath it a couple of seconds later.
+  node.classList.add("with-3d");
+  for (const t of tblRollTimers) clearTimeout(t);
+  tblRollTimers = [];
+  dice3dShow(dice).then((how) => {
+    // "stale" means a newer roll owns the screen now. Touching anything here would reach into ITS
+    // overlay — stripping a class it needs, or scheduling a hide that goes off early.
+    if (how === "stale" || !node.classList.contains("on")) return;
+    // They could not be made to show the roll: put the flat dice back, which have been tumbling behind
+    // the whole time and are already sitting on the right numbers.
+    if (how !== "solid") node.classList.remove("with-3d");
+    tblRollTimers.push(setTimeout(away, how === "solid" ? 2600 : 2000));
+  }).catch(() => {
+    // Nothing above is allowed to leave the overlay stuck on screen with no way down.
+    node.classList.remove("with-3d");
+    dice3dClear(true);
+    tblRollTimers.push(setTimeout(away, 1600));
+  });
 }
 
 const TBL_DICE = [4, 6, 8, 10, 12, 20, 100];
@@ -271,6 +457,12 @@ function dicePanelHTML() {
       ${!oneDie && t.mode !== "normal" ? `<p class="muted">Advantage needs a single die — with a handful
         it is ignored.</p>` : ""}
       <button class="btn" data-tbl="roll-pool" ${inPool ? "" : "disabled"}>Roll ${esc(text || "…")}</button>
+      <p class="panel-sub">On this device</p>
+      <div class="chips">
+        <button class="chip ${dice3dChosen() ? "on" : ""}" data-tbl="dice-3d">Dice in 3D</button>
+      </div>
+      <p class="muted">Real dice, thrown across the screen, landing on the roll that was made. A d4 or a
+        percentile roll keeps the flat ones — those are the two this cannot land truthfully.</p>
     </section>
     <section class="panel">
       <p class="panel-sub">Rolls at this table</p>

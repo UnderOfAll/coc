@@ -1096,6 +1096,27 @@ input.step-val { width: 3.4rem; }
 .roll-stage { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center;
   background: rgba(6,6,5,0.55); opacity: 0; pointer-events: none; transition: opacity 0.16s ease; }
 .roll-stage.on { opacity: 1; pointer-events: auto; }
+/* Where the real dice are thrown: the whole window, behind the roll box and in front of everything else,
+   and never in the way of a finger. It is empty and invisible until a throw, and swept after one. */
+.roll-3d { position: fixed; inset: 0; z-index: 69; overflow: hidden; pointer-events: none;
+  opacity: 0; transition: opacity 0.2s ease; }
+.roll-3d.on { opacity: 1; }
+/* A settled die is readable, so one showing the wrong face has to go NOW — the fade is for dice that
+   told the truth and are simply finished. */
+.roll-3d.at-once { transition: none; }
+.roll-3d canvas { display: block; width: 100%; height: 100%; max-width: 100%; }
+/* With real dice on the table the flat ones would be the same roll told twice, so the box keeps only the
+   words and the total, steps out of the middle, and stops dimming the view of what it is describing. */
+.roll-stage.with-3d { background: rgba(6,6,5,0.28); place-items: end center; padding-bottom: 7vh; }
+.roll-stage.with-3d .roll-dice { display: none; }
+.roll-stage.with-3d .roll-box { min-width: min(16rem, 82vw); padding: 0.7rem 1.1rem; }
+/* Two things the flat row was carrying that the real dice cannot: WHICH die counted under advantage —
+   both land the same size and colour, and a dropped 20 beside a total of 4 is the misread that row
+   existed to prevent — and the total of a single die, since the row that held it is hidden. */
+.only-3d { display: none; }
+.roll-stage.with-3d .roll-kept.only-3d { display: block; }
+.roll-stage.with-3d .roll-total.only-3d { display: inline; }
+.roll-kept { margin: 0 0 0.5rem; color: var(--muted); font-size: 0.9rem; }
 .roll-box { min-width: min(20rem, 88vw); padding: 1rem 1.2rem; text-align: center;
   background: var(--panel); border: 1px solid var(--gold); border-radius: var(--radius);
   box-shadow: 0 18px 50px rgba(0,0,0,0.65); }

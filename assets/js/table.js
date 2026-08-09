@@ -924,6 +924,7 @@ document.addEventListener("click", (e) => {
     if (pool[sides] > 1) pool[sides] -= 1; else delete pool[sides];
     paintDice();
   } else if (act === "dice-clear") { tblDicePool().pool = {}; paintDice(); }
+  else if (act === "dice-3d") { dice3dToggle(); paintDice(); }
   else if (act === "dice-mod") {
     const t = tblDicePool();
     t.mod = Math.max(-20, Math.min(20, t.mod + Number(val)));
