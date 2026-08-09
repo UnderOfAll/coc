@@ -159,8 +159,9 @@ console.log("\n— real dice, landing on the roll that was made —");
 // button there would CLOSE the dock and take the roll button with it.
 const has3d = await dm.page.evaluate(() => !!document.querySelector('[data-tbl="dice-3d"]'));
 ok(has3d, "there is a switch for them, per device");
-await dm.page.evaluate(() => document.querySelector('[data-tbl="roll-pool"]').click());
-await wait(7000);   // the library is most of a megabyte; this one stays flat while it arrives
+// ONE roll. The physics arrives when the table opens, which happened many seconds ago, so the first
+// throw of a session is a real one — it used to take a warm-up roll and that read as a broken feature.
+ok(await dm.page.evaluate(() => !!dice3dBox), "the physics was fetched when the table opened");
 await dm.page.evaluate(() => document.querySelector('[data-tbl="roll-pool"]').click());
 // Read them while they are ON THE TABLE. They settle after a couple of seconds and are swept a couple
 // of seconds after that, and the library forgets the throw the moment its scene is emptied.
