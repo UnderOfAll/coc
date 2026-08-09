@@ -165,6 +165,24 @@ async function runEngine(name, type) {
     `:has() and the full-width table agree (has=${layout.hasSupport}, wide=${layout.toolWide})`);
   ok(Number.isInteger(layout.cell), `a square is a whole number of pixels (${layout.cell})`);
 
+  // The app has to be installable, and — far more important — the service worker must never be allowed to
+  // serve a stale app. Hashed assets may be cached forever because their URL IS their version; index.html
+  // may not be, because it is what names those versions.
+  const pwa = await page.evaluate(async () => {
+    const man = await fetch("manifest.webmanifest").then((r) => r.ok ? r.json() : null).catch(() => null);
+    const sw = await fetch("sw.js").then((r) => r.ok ? r.text() : "").catch(() => "");
+    return {
+      name: man && man.name,
+      icons: man && (man.icons || []).length,
+      standalone: man && man.display === "standalone",
+      cachesHashedOnly: /\[?&\]v=/.test(sw) || /v=\[0-9a-f\]/.test(sw),
+      neverCachesHtmlFirst: !/cache.*first.*index\.html/i.test(sw),
+    };
+  });
+  ok(pwa.name === "Circus of Chaos" && pwa.icons >= 2, "there is a manifest with icons, so it installs");
+  ok(pwa.standalone, "and opens as an app rather than a tab");
+  ok(pwa.cachesHashedOnly, "the service worker caches only what carries a version in its URL");
+
   ok(errs.length === 0, "no console errors" + (errs.length ? ": " + errs[0].slice(0, 90) : ""));
   await browser.close();
 }

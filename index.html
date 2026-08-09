@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="color-scheme" content="dark" />
   <title>Circus of Chaos</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#10100f" />
+  <link rel="apple-touch-icon" href="assets/icon-192.png" />
   <link rel="stylesheet" href="assets/css/style.css?v=21b1c172" />
 </head>
 <body>
@@ -81,5 +84,13 @@
   <script src="assets/js/table-dice.js?v=23eb17f2" defer></script>
   <script src="assets/js/table-panels.js?v=27e3d9da" defer></script>
   <script src="assets/js/table.js?v=73be93d2" defer></script>
+  <script>
+    /* Registered from the page rather than a module, and only where it can work: a service worker needs https
+       (or localhost), and its scope is this folder — which on GitHub Pages is /coc/, not the root. If it
+       fails, nothing about the app changes. */
+    if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
+      addEventListener("load", () => navigator.serviceWorker.register("sw.js", { scope: "./" }).catch(() => {}));
+    }
+  </script>
 </body>
 </html>
