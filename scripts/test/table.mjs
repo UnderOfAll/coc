@@ -1237,8 +1237,32 @@ await until(() => !$('[data-tbl="init-out"][data-val="tKeg"]'));
 ok(((await aget(`CocLive.get("tables/482910/meta/turn/order")`)) || []).length === 3,
   "the DM can wave one off, and it stays out of the order");
 ok(!/Joining/.test($("#vtt-turn").textContent), "and stops being asked about");
-// Back to two in the order, for the sections below.
+/* A FIGURE TAKEN OFF THE BOARD MID-FIGHT LEAVES THE ORDER WITH IT.
+ *
+ * Kayki's session: a nameless "Figure" with a ? on it appeared out of nowhere and could not be dragged.
+ * The order still held the id of a figure that had gone; stepping the turn onto it wrote
+ * `tokens/<dead>/moved`, and a database with no schema CREATED the token from that one field — no name,
+ * no square, sitting in the corner of the map. Then it could not be moved, because a token with no `x`
+ * makes the drag arithmetic NaN and every write for it was refused. Three assertions, one bug. */
+await peek(`CocLive.put("tables/482910/meta/turn", { order: ["tZog", "tOrc", "tRig"], idx: 1, round: 1 })`);
 await peek(`CocLive.put("tables/482910/tokens/tZog", null)`);
+await until(async () => ((await aget(`CocLive.get("tables/482910/meta/turn/order")`)) || []).length === 2);
+const pruned = await aget(`CocLive.get("tables/482910/meta/turn")`);
+ok(pruned.order.join(",") === "tOrc,tRig", "a figure removed from the board drops out of the order");
+ok(pruned.idx === 0, "and whoever was up is still up, by name and not by position");
+// Stepping the turn must not write the dead one back into existence.
+click($('[data-tbl="turn"][data-val="1"]'));
+await wait(120);
+click($('[data-tbl="turn"][data-val="1"]'));
+await wait(120);
+ok((await aget(`CocLive.get("tables/482910/tokens/tZog")`)) == null,
+  "and stepping the turn does not conjure it back as a nameless figure");
+// The guard itself, directly: one field of a figure that is not there writes nothing at all.
+await peek(`tblTokenField("tGhost", "moved", 0)`);
+await wait(60);
+ok((await aget(`CocLive.get("tables/482910/tokens/tGhost")`)) == null,
+  "writing one field of a figure that does not exist creates nothing");
+// Back to two in the order, for the sections below.
 await peek(`CocLive.put("tables/482910/tokens/tKeg", null)`);
 await peek(`CocLive.put("tables/482910/meta/turn", { order: ["tOrc", "tRig"], idx: 1, round: 1 })`);
 await until(() => $$(".turn-face").length === 2);

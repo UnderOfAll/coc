@@ -642,11 +642,17 @@ function onPointerDown(e) {
   const token = id ? tblTokens()[id] : null;
   if (token && tblCanMove(token)) {
     const at = toSquares(p.sx, p.sy);
+    /* A figure with no `x` is a figure at zero, not a figure at NaN. Everything below subtracts from
+       these, so one missing field poisons the whole drag: `at.x - undefined` is NaN, every move writes
+       NaN, and the database refuses the lot with "value argument contains NaN" — which is what a figure
+       that would not move under the finger turned out to be. Tokens missing a field are supposed to be
+       impossible (see tblTokenField) and this makes them harmless as well. */
+    const tx = Number(token.x) || 0, ty = Number(token.y) || 0;
     tbl.drag = {
       id, token,
-      grabX: at.x - token.x, grabY: at.y - token.y,     // where inside the token you grabbed it
-      fromX: token.x, fromY: token.y,
-      x: token.x, y: token.y,
+      grabX: at.x - tx, grabY: at.y - ty,     // where inside the token you grabbed it
+      fromX: tx, fromY: ty,
+      x: tx, y: ty,
     };
     node.classList.add("dragging");
     tblTrace("drag start", id);
@@ -717,7 +723,9 @@ function onPointerMove(e) {
     node.style.left = (d.x * cell) + "px";
     node.style.top = (d.y * cell) + "px";
   }
-  // Everyone else sees the move as it happens, at a rate the database is happy with.
+  // Everyone else sees the move as it happens, at a rate the database is happy with. Guarded like every
+  // other field write: a figure the DM removes mid-drag must not be written back into existence.
+  if (!tblTokens()[d.id]) return;
   CocLive.throttled(tblPath("tokens/" + d.id + "/x"), Math.round(d.x * 100) / 100, 110);
   CocLive.throttled(tblPath("tokens/" + d.id + "/y"), Math.round(d.y * 100) / 100, 110);
   paintRuler();
@@ -785,7 +793,12 @@ function tblSquareTaken(id, x, y, size) {
 function tblFreeSquare(id, x, y, size, fallbackX, fallbackY) {
   const scene = tblScene();
   const maxX = (Number(scene.cols) || 30) - size, maxY = (Number(scene.rows) || 20) - size;
-  const fit = (v, max) => Math.max(0, Math.min(Math.max(0, max), v));
+  // Nothing that is not a number gets out of here. A square is where a figure IS; there is no useful
+  // answer to "which square is NaN", and the one thing it must never do is reach the database.
+  const fit = (v, max) => {
+    const n = Number(v);
+    return Math.max(0, Math.min(Math.max(0, max), Number.isFinite(n) ? n : 0));
+  };
   if (!tblSquareTaken(id, fit(x, maxX), fit(y, maxY), size)) return { x: fit(x, maxX), y: fit(y, maxY) };
   for (let r = 1; r <= 5; r++) {
     for (let dy = -r; dy <= r; dy++) {
@@ -807,8 +820,8 @@ function tblLandDrag(d) {
   tblTrace("figure landed", d.id);
   const size = Math.max(1, Number(d.token.size) || 1);
   const spot = tblFreeSquare(d.id, Math.round(d.x), Math.round(d.y), size, d.fromX, d.fromY);
-  CocLive.put(tblPath("tokens/" + d.id + "/x"), spot.x).catch(tblFail);
-  CocLive.put(tblPath("tokens/" + d.id + "/y"), spot.y).catch(tblFail);
+  tblTokenField(d.id, "x", spot.x).catch(tblFail);
+  tblTokenField(d.id, "y", spot.y).catch(tblFail);
   tblCountMove(d, spot.x, spot.y);
 }
 
@@ -1021,6 +1034,6 @@ function tblCountMove(drag, x, y) {
   const feet = tblFeetBetween(drag.fromX, drag.fromY, x, y);
   if (!feet) return;
   const used = Math.max(0, Number(drag.token.moved) || 0) + feet;
-  CocLive.put(tblPath("tokens/" + drag.id + "/moved"), used).catch(() => {});
+  tblTokenField(drag.id, "moved", used).catch(() => {});
 }
 

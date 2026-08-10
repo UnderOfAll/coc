@@ -137,6 +137,25 @@ function tblCanMove(token) {
 /* Whose figure this is. A Circus of Chaos player is identified by their character code; anyone playing
    another system has no code, so the browser that placed the figure owns it. Both, because one table
    can hold both kinds of player. */
+/* ONE FIELD OF A FIGURE, and only if the figure is still there.
+ *
+ * The database has no schema and no foreign keys: writing `tokens/<id>/moved` for an id that no longer
+ * exists does not fail, it CREATES `tokens/<id> = { moved: 0 }`. That is a figure with no name, no
+ * picture and no square — and it is exactly the "Figure with a ? on it" that appeared out of nowhere on
+ * Kayki's board after he stepped the turn onto a creature that had left. It then could not be dragged
+ * either, because a token with no `x` makes the drag arithmetic NaN and the database refuses every write
+ * for it ("value argument contains NaN in property tokens/…/y").
+ *
+ * So every write of a SINGLE FIELD goes through here. Writing a whole token still uses CocLive directly —
+ * that is the call that is supposed to bring one into existence, and there is exactly one of those per
+ * kind of figure. The guard reads this browser's own copy of the table, which is the same copy every
+ * caller here has just decided to act on.
+ */
+function tblTokenField(id, field, value) {
+  if (!id || !tblTokens()[id]) return Promise.resolve(null);
+  return CocLive.put(tblPath("tokens/" + id + "/" + field), value);
+}
+
 function tblIsMine(token) {
   /* Ownership is simply the browser HOLDING it — nothing else. A character-code fallback was tried and is
      wrong: letting go of a figure could not then be expressed, since the code still matched and the figure
@@ -504,7 +523,7 @@ function tblPruneMyTokens() {
   if (mine.length < 2) return;
   const keep = mine.includes(tbl.me.tokenId) ? tbl.me.tokenId : mine[0];
   for (const id of mine) {
-    if (id !== keep) CocLive.put(tblPath("tokens/" + id + "/owner"), null).catch(() => {});
+    if (id !== keep) tblTokenField(id, "owner", null).catch(() => {});
   }
   tbl.me.tokenId = keep;
 }
@@ -1054,11 +1073,11 @@ document.addEventListener("click", (e) => {
     } else if (act === "mine-hp") {
       const amt = Math.max(1, Number(($("#mine-amt") || {}).value) || 1);
       const next = Math.max(0, (Number(t.hp) || 0) + amt * Number(arg));
-      CocLive.put(tblPath("tokens/" + id + "/hp"), t.hpMax ? Math.min(Number(t.hpMax), next) : next).catch(tblFail);
+      tblTokenField(id, "hp", t.hpMax ? Math.min(Number(t.hpMax), next) : next).catch(tblFail);
     } else {
       const list = Array.isArray(t.conditions) ? t.conditions.slice() : [];
       const next = list.includes(arg) ? list.filter((c) => c !== arg) : list.concat(arg);
-      CocLive.put(tblPath("tokens/" + id + "/conditions"), next.length ? next : null).catch(tblFail);
+      tblTokenField(id, "conditions", next.length ? next : null).catch(tblFail);
     }
   }
   // Closing the drawer hands paint() back to the page. Leaving it pointed here would mean the next
@@ -1161,7 +1180,7 @@ document.addEventListener("click", (e) => {
   else if (act === "npc-shape") { tbl.ui.npcShape = val; paintSide(); }
   else if (act === "ed-shape") {
     const [id, shape] = String(val).split("|");
-    if (TBL_SHAPE_IDS.includes(shape)) CocLive.put(tblPath("tokens/" + id + "/shape"), shape).catch(tblFail);
+    if (TBL_SHAPE_IDS.includes(shape)) tblTokenField(id, "shape", shape).catch(tblFail);
   }
   else if (act === "ed-cond") {
     const [id, cond] = String(val).split("|");
@@ -1169,7 +1188,7 @@ document.addEventListener("click", (e) => {
     if (t) {
       const list = Array.isArray(t.conditions) ? t.conditions.slice() : [];
       const next = list.includes(cond) ? list.filter((c) => c !== cond) : list.concat(cond);
-      CocLive.put(tblPath("tokens/" + id + "/conditions"), next.length ? next : null).catch(tblFail);
+      tblTokenField(id, "conditions", next.length ? next : null).catch(tblFail);
     }
   }
   else if (act === "ed-del") {

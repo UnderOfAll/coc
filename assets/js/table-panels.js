@@ -427,7 +427,7 @@ async function tblInitOpen() {
 async function tblInitSet(id, value) {
   const n = tblInitNumber(value);
   await CocLive.put(tblPath("meta/init/have/" + id), n);
-  await CocLive.put(tblPath("tokens/" + id + "/init"), n);
+  await tblTokenField(id, "init", n);
   tblSettleSoon();
 }
 
@@ -483,7 +483,7 @@ async function tblInitSettle(force) {
     order: rolled.map((r) => r.id), idx: 0, round: 1, startedAt: Date.now(),
   });
   await CocLive.put(tblPath("meta/init"), null);
-  for (const r of rolled) await CocLive.put(tblPath("tokens/" + r.id + "/moved"), 0);
+  for (const r of rolled) await tblTokenField(r.id, "moved", 0);
   await CocLive.push(tblPath("log"), {
     t: Date.now(), who: "DM", kind: "system",
     text: "Initiative — " + rolled.map((r) => `${r.name} ${r.total}`).join(", "),
@@ -532,7 +532,7 @@ async function tblJoinSet(id, value) {
   const turn = (tbl.data.meta || {}).turn;
   if (!turn || !Array.isArray(turn.order) || !turn.order.length) return;
   const n = tblInitNumber(value);
-  await CocLive.put(tblPath("tokens/" + id + "/init"), n);
+  await tblTokenField(id, "init", n);
   await CocLive.put(tblPath("meta/turn/late/" + id), n);
   tblSettleSoon();
 }
@@ -576,7 +576,7 @@ async function tblJoinSettle() {
     order.splice(at, 0, id);
     // Whoever was up stays up: an insertion at or before them shifts them one to the right.
     if (at <= idx) idx += 1;
-    await CocLive.put(tblPath("tokens/" + id + "/moved"), 0);
+    await tblTokenField(id, "moved", 0);
   }
   await CocLive.patch(tblPath("meta/turn"), { order, idx });
   await CocLive.put(tblPath("meta/turn/late"), null);
@@ -594,22 +594,68 @@ async function tblJoinSettle() {
  * Without it, a fight where the DM rolls before the players never starts: the bar sits at "you are in",
  * waiting for a settle nobody will run.
  *
- * Deferred and guarded, and both for the same reason: a write does not land in this browser's own copy
+ * Deferred and serialised, and both for the same reason: a write does not land in this browser's own copy
  * until the stream brings it back, so the settle has to read the freshest state it can rather than the
  * state at the moment it was asked for — and two of them running at once would splice the same order
- * twice. Settling writes, and writing brings the event that lands back here, so nothing is ever left
- * un-settled by a skipped call. */
+ * twice.
+ *
+ * A call that arrives while one is running is QUEUED, not dropped. Dropping it was the first version and
+ * it was wrong: the reasoning was that settling writes, and a write brings the event that lands back
+ * here, so a skipped call always gets another chance. That only holds when the settle actually writes
+ * something. The pass that runs on a quiet moment writes nothing, brings no event, and takes the next
+ * call — the one that had real work — down with it. The figure Kayki watched fail to leave the order was
+ * exactly this: the pass that mattered arrived one tick inside the pass that did not. */
 let tblSettlePending = false;
+let tblSettleAgain = false;
 function tblSettleSoon() {
-  if (tblSettlePending || tbl.role !== "dm") return;
+  if (tbl.role !== "dm") return;
+  if (tblSettlePending) { tblSettleAgain = true; return; }
   tblSettlePending = true;
   Promise.resolve().then(() => {
     const meta = tbl.data.meta || {};
     const late = (meta.turn || {}).late;
     if (meta.init) return tblInitSettle();
     if (late && Object.keys(late).length) return tblJoinSettle();
-    return null;
-  }).catch(tblFail).then(() => { tblSettlePending = false; });
+    return tblPruneOrder();
+  }).catch(tblFail).then(() => {
+    tblSettlePending = false;
+    if (tblSettleAgain) { tblSettleAgain = false; tblSettleSoon(); }
+  });
+}
+
+/* A FIGURE THAT HAS LEFT THE BOARD LEAVES THE FIGHT WITH IT.
+ *
+ * The order is a list of ids, and nothing was removing an id when its figure was removed. Three things
+ * went wrong with a dead id sitting in it, and Kayki hit all three in one session:
+ *
+ *   - `idx` counts through the RAW order while the bar draws the FILTERED one, so with a dead id early in
+ *     the list the wrong figure was shown as up.
+ *   - stepping onto it wrote `tokens/<dead>/moved`, and the database has no schema — so the figure came
+ *     BACK, nameless, with no square, sitting at the top-left corner of the map. That is the "Figure with
+ *     a ? on it" that appeared out of nowhere. (Guarded at the write now too, in `tblTokenField` — a
+ *     thing this wrong deserves stopping twice.)
+ *   - and it could not be dragged away, because a figure with no `x` makes the drag NaN.
+ *
+ * Whoever was up stays up, by id and not by index. If it was the one who left, the turn passes to
+ * whoever took its place in the line, which is what happens at a table when someone's miniature is
+ * knocked off it. */
+async function tblPruneOrder() {
+  if (tbl.role !== "dm") return;
+  const turn = (tbl.data.meta || {}).turn;
+  if (!turn || !Array.isArray(turn.order) || !turn.order.length) return;
+  const tokens = tblTokens();
+  const kept = turn.order.filter((id) => tokens[id]);
+  if (kept.length === turn.order.length) return;
+  if (!kept.length) { await CocLive.put(tblPath("meta/turn"), null); return; }
+  const wasIdx = Math.min(Math.max(0, Number(turn.idx) || 0), turn.order.length - 1);
+  const wasUp = turn.order[wasIdx];
+  const at = kept.indexOf(wasUp);
+  await CocLive.patch(tblPath("meta/turn"),
+    { order: kept, idx: at >= 0 ? at : Math.min(wasIdx, kept.length - 1) });
+  await CocLive.push(tblPath("log"), {
+    t: Date.now(), who: "DM", kind: "system",
+    text: (turn.order.length - kept.length) + " figure(s) left the fight",
+  });
 }
 
 async function tblTurnStep(delta) {
@@ -624,7 +670,7 @@ async function tblTurnStep(delta) {
   // A turn starts with your movement unspent. Reset on ARRIVAL rather than on departure, so someone
   // who steps back through the order does not find a spent budget waiting for them.
   const id = turn.order[idx];
-  if (id) await CocLive.put(tblPath("tokens/" + id + "/moved"), 0);
+  if (id) await tblTokenField(id, "moved", 0);
 }
 
 async function tblTurnEnd() {
@@ -756,9 +802,15 @@ function paintTurnBar() {
   }
   const turn = (tbl.data.meta || {}).turn;
   const tokens = tblTokens();
-  const order = turn && Array.isArray(turn.order) ? turn.order.filter((id) => tokens[id]) : [];
+  /* `idx` counts through the order AS STORED, so whose turn it is has to be read from that and not from
+     the filtered list drawn below — reading the filtered one meant that a figure removed from the board
+     early in the order silently shifted the gold ring onto the wrong person for as long as the dead id
+     was still in the list. The DM's browser takes it out within the tick (tblPruneOrder); every other
+     browser has to be right in the meantime. */
+  const raw = turn && Array.isArray(turn.order) ? turn.order : [];
+  const currentId = raw.length ? raw[Math.min(Math.max(0, Number(turn.idx) || 0), raw.length - 1)] : "";
+  const order = raw.filter((id) => tokens[id]);
   // Highlight has to be cleared even when the tracker is off, or a stale ring stays on a token.
-  const currentId = order.length ? order[Math.min(turn.idx || 0, order.length - 1)] : "";
   document.querySelectorAll("#vtt-tokens .tok").forEach((n) =>
     n.classList.toggle("turn", asEl(n).dataset.token === currentId));
   if (!order.length) {
@@ -1605,7 +1657,7 @@ function tblSetTokenImage(id, image) {
   const t = tblTokens()[id];
   if (!t) return;
   if (tbl.role !== "dm" && !tblIsMine(t)) return;
-  CocLive.put(tblPath("tokens/" + id + "/image"), image || "").catch(tblFail);
+  tblTokenField(id, "image", image || "").catch(tblFail);
   /* If this figure IS a character, the character is where its face belongs — otherwise the picture holds
      until the next time that sheet saves and then reverts to whatever the sheet still has. A player owns
      their own character completely, so changing it here changes it everywhere: on the board, on the
