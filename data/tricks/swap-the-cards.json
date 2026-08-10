@@ -13,6 +13,12 @@
     "Flourish"
   ],
   "duration": "Instantaneous",
+  "board": {
+    "verb": "move",
+    "anchor": "creature",
+    "range": 30,
+    "distance": 30
+  },
   "description": "You and one willing creature you can see within range instantly trade places, each appearing in the space the other just left and facing however you choose. Neither of you provokes opportunity attacks from the exchange, and neither of you can be moved into a space that would not hold you. This is the Trickster's answer to a companion standing in the wrong place: pull the wounded one out of reach and put yourself, or somebody better armoured, where the trouble already is.",
   "narration": "Two quick gestures and a step that goes nowhere, and the pair of you are simply standing where the other one was. Nobody sees the move, including the person you moved.",
   "sheetSummary": "You and one willing creature you can see instantly swap places. Neither provokes opportunity attacks; neither can arrive in a space that wouldn't hold them.",

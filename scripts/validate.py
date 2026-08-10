@@ -41,6 +41,18 @@ def load(p):
     return doc if isinstance(doc, list) else [doc]
 
 
+# What a trick or a feature puts on the map. One definition, shared by every schema that can carry it,
+# because four copies of it would be four things to keep in step and three of them would drift.
+# The consuming schemas say `"board": { "$ref": "#/definitions/board" }`; it is spliced in here rather
+# than referenced across files so that no resolver is needed and a plain `jsonschema.validate` works.
+BOARD = json.loads((DATA / "schema" / "board.schema.json").read_text(encoding="utf-8"))
+
+
+def with_board(schema):
+    schema.setdefault("definitions", {})["board"] = BOARD
+    return schema
+
+
 def composition(obj):
     """The locked subclass shape (DESIGN.md): exactly 3 features, 2 combat + 1 roleplay."""
     feats = obj.get("features") or []
@@ -84,7 +96,7 @@ def main():
         schema_path = DATA / "schema" / f"{stem}.schema.json"
         if not schema_path.exists():
             continue
-        schema = json.loads(schema_path.read_text(encoding="utf-8"))
+        schema = with_board(json.loads(schema_path.read_text(encoding="utf-8")))
         for f in sorted((DATA / cat).glob("*.json")):
             try:
                 for obj in load(f):

@@ -218,6 +218,10 @@
                 }
               }
             }
+          },
+          "board": {
+            "$ref": "#/definitions/board",
+            "description": "Optional. What this feature puts on the map, for the virtual table — an area, a figure that appears, a figure that is moved. See data/schema/board.schema.json."
           }
         }
       }

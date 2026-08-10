@@ -100,6 +100,13 @@
       "level": 1,
       "name": "Manipulate",
       "description": "As an action, choose any number of creatures you currently have a String attached to, each within 60 feet of you. For each one, you pull or push it up to 15 feet in a direction of your choice; this forced movement doesn't provoke opportunity attacks and can drag a creature over or around minor obstacles it could normally cross, but never through solid objects or off a fall it can't survive without consent. An unwilling creature resists: it makes a Strength saving throw against your control DC, and on a success it isn't moved. A willing creature — typically an ally — is simply moved, no save required, letting you yank a friend out of danger or into position exactly as freely as you yank a foe into a wall. Manipulate deals no damage on its own.",
+      "board": {
+        "verb": "move",
+        "anchor": "creature",
+        "range": 60,
+        "distance": 15,
+        "targets": "many"
+      },
       "narration": "You lift a hand and they go where you point. Not thrown — walked, dragged, tipped, their own feet betraying them a step at a time while they fight the wire the whole way. An ally you can simply move; an enemy has to be worth the effort.",
       "sheetSummary": "Any number of Stringed creatures. Pull or push each up to 15 ft; no opportunity attacks provoked. Unwilling: Strength save vs {{control DC|8 + proficiency bonus + Wisdom modifier}} to resist. Willing: moved automatically. No damage.",
       "meta": {
@@ -152,6 +159,12 @@
       "level": 3,
       "name": "Guiding Pull",
       "description": "When a creature you have a String attached to and that is willing to be moved (typically an ally) is targeted by an attack you can see, you can use your reaction to yank it up to 10 feet toward you or to another space within your leash range, before the attack roll is made. If this pulls the target out of the attacker's reach (for a melee attack) or breaks the attacker's line of sight or range (for a ranged attack), the attack automatically misses; otherwise it resolves normally against the target's new position. This draws on the same reaction as Parry, Disrupting Pull, and opportunity attacks — you still get only one reaction per round.",
+      "board": {
+        "verb": "move",
+        "anchor": "ally",
+        "range": 60,
+        "distance": 10
+      },
       "narration": "You see it coming before your ally does, and you pull. They are yanked half a step sideways with an undignified stumble and the strike closes on empty air behind them, and afterwards they will complain about the bruise on their collarbone.",
       "sheetSummary": "Before an attack roll against a willing Stringed creature, pull it up to 10 ft toward you or elsewhere in leash. If that puts it out of reach, line of sight, or range, the attack misses automatically. Uses the same single reaction as Parry.",
       "meta": {
@@ -164,6 +177,12 @@
       "level": 5,
       "name": "Grand Marionette",
       "description": "As an action, choose one hostile creature you have a String attached to within 60 feet. It must make a Strength saving throw against your control DC. On a failure, you seize its body for this turn: you may move it up to its speed (its movement can provoke opportunity attacks as normal) and force it to make a single weapon attack, using its own statistics and weapon, against a target of your choice within its reach or range. Resolve that attack normally, with the creature rolling its own attack and damage. This is your only 'puppet an action' effect at these levels — it grants exactly one forced attack, not a full turn's worth of actions, and the controlled creature otherwise loses the rest of its action and its bonus action for the turn (it keeps its reaction). You can use Grand Marionette once per turn, and only on a creature you already have a String on.",
+      "board": {
+        "verb": "move",
+        "anchor": "creature",
+        "range": 60,
+        "distance": "speed"
+      },
       "narration": "You take the whole body. The wires go rigid, the head comes up, and for one horrible moment it walks and strikes exactly as you decide — fighting you the entire time, screaming behind a face that is doing what you told it to.",
       "sheetSummary": "One hostile Stringed creature. Strength save vs {{control DC|8 + proficiency bonus + Wisdom modifier}}. On a failure, move it up to its speed (provoking as normal) and force one weapon attack with its own statistics against a target you choose. It loses the rest of its action and its bonus action, keeping its reaction.",
       "meta": {

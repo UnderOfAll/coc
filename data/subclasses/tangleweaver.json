@@ -10,6 +10,14 @@
       "name": "Snare Weave",
       "role": "combat",
       "description": "As an action, you weave loose wire across the ground in a 15-foot square within 60 feet of you, filling it with a low, near-invisible lattice that lasts for 1 minute or until you dismiss it (no action required). The area is difficult terrain to any creature without a String attached to you. Any creature other than you that enters the area for the first time on a turn or starts its turn there must succeed on a Strength saving throw against your control DC or become restrained by the wire. A creature restrained this way can repeat the save at the end of each of its turns, ending the restrained condition on itself on a success, or use its action to make a Strength or Dexterity check (its choice) against your control DC to tear free instead. You can use Snare Weave {{uses per combat|1 at levels 1-4, 2 at 5-10, 3 at 11-16, 4 at 17+ — the same breakpoints the Scaling Die uses}} times per combat.",
+      "board": {
+        "verb": "mark",
+        "anchor": "point",
+        "range": 60,
+        "shape": "cube",
+        "size": 15,
+        "rounds": 10
+      },
       "narration": "You lay wire across the floor in a low, glittering lattice nobody notices until their ankle finds it. Crossing it is a decision; standing in it is a mistake that tightens.",
       "sheetSummary": "15-ft square within 60 ft, 1 minute. Difficult terrain for anyone without your String. Entering it for the first time on a turn or starting a turn there forces a Strength save vs {{control DC|8 + proficiency bonus + Wisdom modifier}} or restrained; repeat at the end of each turn, or use an action for a Strength or Dexterity check to tear free.",
       "meta": {
@@ -37,6 +45,13 @@
       "name": "Wired Room",
       "role": "roleplay",
       "description": "You never sleep anywhere you haven't strung first. Over 10 minutes, you can rig an area up to a 30-foot square — a room, a campsite, a corridor — with a lattice of near-invisible trip-lines that lasts 8 hours or until you dismantle it. You know instantly when a Small or larger creature enters the area (and roughly where). When you rig the area, you can include one snare: the first creature to trigger it must succeed on a Dexterity saving throw against your Control DC or be caught, restrained until it or an ally uses an action to cut it free.",
+      "board": {
+        "verb": "mark",
+        "anchor": "self",
+        "range": 0,
+        "shape": "cube",
+        "size": 30
+      },
       "narration": "You have not slept in an unstrung room in years. Ten minutes with the doorways and the corners and the place tells you, in a small tug against your finger, the moment anything crosses it.",
       "sheetSummary": "10 min: wire up to a 30-ft square for 8 h — know instantly when a Small or larger creature enters. Optional snare: first trigger, Dex save vs {{control DC|8 + proficiency bonus + Wisdom modifier}} or restrained until cut free (action).",
       "meta": {

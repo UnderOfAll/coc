@@ -14,6 +14,12 @@
     "Prop (a length of black silk)"
   ],
   "duration": "1 round",
+  "board": {
+    "verb": "move",
+    "anchor": "self",
+    "range": 0,
+    "distance": 10
+  },
   "description": "You vanish behind a snap of silk and misdirection, becoming invisible until the start of your next turn or until you make an attack roll, force a saving throw, or force an ability check, whichever comes first. As part of casting this, you may also move up to 10 feet without provoking opportunity attacks — the last thing anyone saw of you was already the wrong direction. This is misdirection, not true invisibility, and it can be beaten by simply watching you properly: each creature that can see you at the moment you cast it makes a Wisdom (Perception) check against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. **If any one of them succeeds, the trick ends immediately for everybody** — they call out where you went, the room's eyes follow, and you are simply standing there. One person seeing through it is enough; there is never a state where you are hidden from some creatures and not others.",
   "narration": "The curtain drops for exactly one second. When it lifts you are not where anyone is looking — until somebody who was watching your feet instead of your hands points and shouts, and then the whole room is looking at you again.",
   "sheetSummary": "Invisible until the start of your next turn or until you attack or force a save or check; may move 10 ft without provoking as part of the trick. Each creature that can SEE you cast it makes a Wisdom (Perception) check vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} — ANY success ends it for everyone. Never partial: you are hidden from all of them or none.",

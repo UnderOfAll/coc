@@ -118,6 +118,11 @@
       "level": 1,
       "name": "Iron Grip",
       "description": "When you hit a creature no larger than Mighty Build allows with a melee attack, you can immediately try to grab it — no extra action or attack, it rides the same hit. The target must succeed on a Strength saving throw against your {{save DC|8 + proficiency bonus + Strength modifier}} or be caught: while held it is grappled by you (its speed becomes 0) and has disadvantage on attack rolls it makes against you — pinned against your own frame, its swings at you go wide (its attacks against other creatures are unaffected). The hold has no time limit — the creature does not slip free on its own. It stays grabbed until you cash the hold in by Crushing it (see Crushing Grip) or Heaving it, until you let go or are incapacitated, or until it escapes on its turn by using its action to make a Strength (Athletics) or Dexterity (Acrobatics) check against your save DC. When a creature escapes this way it shakes free entirely and can't be caught by your Iron Grip again until the end of its next turn — so you can't chain-grab the same target, though you're free to set your hands on a different one in the meantime. (Ending the hold yourself by Crushing or Heaving the creature does not grant it this reprieve.) You can hold only one creature in your Iron Grip at a time — catching a new target releases the last. A creature held this way counts as grappled by you, so it is a valid target for Heave. Forced movement you cause with your own features (such as a Juggernaut's Bulldozer Charge) never breaks this hold — the creature is dragged with you rather than shoved free.",
+      "board": {
+        "verb": "lock",
+        "anchor": "creature",
+        "range": 5
+      },
       "narration": "You catch it. Not a hold — a decision — and once your hand closes, the fight it was having with everyone else is over and the fight it is having with you has started. It can swing at you all it likes from there, pressed against your chest with nothing behind the punches.",
       "sheetSummary": "Strength save vs your {{save DC|8 + proficiency bonus + Strength modifier}} or grappled (speed 0) with disadvantage on attacks against you. No time limit; it ends when you Crush or Heave it, let go, are incapacitated, or it escapes with an action (Athletics or Acrobatics vs {{save DC|8 + proficiency bonus + Strength modifier}}). An escapee can't be re-caught until the end of its next turn. Your own forced movement never breaks the hold.",
       "meta": {
@@ -131,6 +136,12 @@
       "level": 1,
       "name": "Heave",
       "description": "You grab something heavy — a creature you have grappled, or an object you're holding like a bench, a barrel, or a cage bar — and hurl it. This is used in place of one of your attacks when you take the Attack action (so at 1st level it replaces your single attack; with Extra Attack you can Heave and still swing). Spend 1 to 3 Grit: the thrown target flies 10 feet per point of Grit spent in a direction of your choice and lands in the nearest unoccupied space. What happens on landing depends on the target:",
+      "board": {
+        "verb": "move",
+        "anchor": "creature",
+        "range": 5,
+        "distance": 30
+      },
       "narration": "You pick it up and you throw it. A man, a bench, a cage bar, a friend who agreed to this — it goes up, it goes out, and it lands somewhere the fight was not expecting a body to land.",
       "sheetSummary": "Throw a grappled creature or a held object 10 ft per Grit spent; it lands in the nearest unoccupied space. Landing effects depend on the target.",
       "options": [
@@ -200,6 +211,13 @@
       "level": 5,
       "name": "Earthshaker",
       "description": "As an action, spend 3 Grit to slam a weapon, fist, or heavy object into the ground and send a shockwave through every creature of your choice within 15 feet of you. Each must succeed on a Strength saving throw against your {{save DC|8 + proficiency bonus + Strength modifier}} or be pushed 5 feet directly away from you and knocked prone. Earthshaker deals no damage on its own — it's forced movement and control, a battlefield reset, not another source of hurt. You can use Earthshaker once per turn.",
+      "board": {
+        "verb": "shape",
+        "anchor": "self",
+        "range": 0,
+        "shape": "radius",
+        "size": 15
+      },
       "narration": "You bring everything you have down into the floor. The boards jump, the dust comes off the rafters, and everyone standing near you discovers they are no longer standing.",
       "sheetSummary": "15-ft radius, creatures of your choice. Strength save vs your {{save DC|8 + proficiency bonus + Strength modifier}} or pushed 5 ft away from you and knocked prone. No damage.",
       "meta": {

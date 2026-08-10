@@ -1151,6 +1151,28 @@ body:has(.vtt) { height: 100dvh; overflow: hidden; }
 .vtt-side { width: min(400px, 32vw); flex-shrink: 0; max-height: 100%; min-height: 0; overflow-y: auto;
   background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
   padding: 0.8rem; }
+
+/* IT ARRIVES, it does not appear. A panel that pops in and out is the one place this app still felt like
+ * markup being swapped rather than a thing being opened, and Kayki asked for the phone's slide on the
+ * desktop too.
+ *
+ * What is animated is the panel ALONE — it slides its own width in from the right and fades up, while
+ * the slot it lands in opens instantly. Animating the width instead would be the obvious reading of
+ * "sliding open" and is the wrong one: the board and every line of text inside the panel would reflow on
+ * every frame of it, which is expensive and reads as juddering rather than as smooth.
+ *
+ * `.hidden` is `display: none !important`, which cannot animate at all, so a closed panel keeps its box
+ * and is collapsed to nothing instead — the same override the roll overlay uses. `visibility` is delayed
+ * by exactly the length of the slide so a panel on its way out is not tabbable half way there. */
+@media (min-width: 761px) {
+  .vtt-side, .vtt-dock {
+    transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.18s ease; }
+  .vtt-side.hidden, .vtt-dock.hidden {
+    display: block !important; width: 0; min-width: 0; padding-left: 0; padding-right: 0;
+    border-width: 0; overflow: hidden; visibility: hidden; opacity: 0; transform: translateX(1.5rem);
+    transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.18s ease,
+      visibility 0s linear 0.18s; }
+}
 .vtt-side .panel { background: none; border: none; padding: 0; margin: 0 0 0.9rem; }
 .vtt-turn { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center;
   background: rgba(201,165,78,0.1); border: 1px solid var(--gold); border-radius: var(--radius);
@@ -1219,6 +1241,10 @@ body:has(.vtt) { height: 100dvh; overflow: hidden; }
   /* `.hidden` is display:none !important, which cannot slide. Overridden here the same way the roll
      overlay overrides it, so the panel keeps its box and leaves the screen by moving off it. */
   .vtt-side.hidden { display: block !important; transform: translateX(100%); visibility: hidden;
+    /* Everything the desktop's collapse sets, put back: a panel leaving a phone slides off the side at
+       full size, it does not shrink to nothing on the spot. */
+    width: 100%; opacity: 1; overflow-y: auto; border-width: 0;
+    padding: 0.6rem 0.9rem calc(1.2rem + env(safe-area-inset-bottom, 0px));
     transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s linear 0.22s; }
   /* Back to the board, and the name of what you are looking at. Sticky, because a long panel scrolls
      and the way out must not scroll away with it. */
@@ -1665,7 +1691,7 @@ body:has(.vtt) { height: 100dvh; overflow: hidden; }
   .vtt-dock { display: block; width: min(330px, 26vw); flex-shrink: 0; max-height: 100%; min-height: 0;
     overflow-y: auto; background: var(--panel); border: 1px solid var(--border);
     border-radius: var(--radius); padding: 0.8rem; }
-  .vtt-dock.hidden { display: none; }
+  /* Collapsed rather than removed, so it slides — see the note above `.vtt-side.hidden`. */
   .vtt-dock .panel { background: none; border: none; padding: 0; margin: 0 0 0.9rem; }
   .vtt-dock .roll-log { max-height: 46dvh; }
 }

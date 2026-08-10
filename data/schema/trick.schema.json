@@ -94,6 +94,10 @@
       "type": "string",
       "description": "Optional. The saving throw a target makes, e.g. 'Wisdom'. Rendered as a chip."
     },
+    "board": {
+      "$ref": "#/definitions/board",
+      "description": "Optional. What this puts on the map, for the virtual table — an area, a figure that appears, a figure that is moved. See data/schema/board.schema.json. OMIT it for a trick that only targets a creature you can see: that target is already a figure on the board."
+    },
     "description": {
       "type": "string",
       "description": "Player-facing prose. Damage dice use the Scaling Die ([[XdY]] / [[XdY+Abil]]); every derived number is a {{Label|formula}} token - both are build-lint enforced."

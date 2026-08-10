@@ -15,6 +15,13 @@
     "Prop (a folding fan or opera mask)"
   ],
   "duration": "Concentration, up to 1 minute",
+  "board": {
+    "verb": "shape",
+    "anchor": "point",
+    "range": 90,
+    "shape": "radius",
+    "size": 30
+  },
   "concentration": true,
   "save": "Wisdom",
   "description": "You spend a surge of banked Phantasm to seize the minds of every creature you choose within a 30-foot-radius sphere centred on a point within range, showing each of them their own private, tailored nightmare all at once. Each target must make a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure, a target takes [[5d6]] psychic damage and is frightened of you for the duration; on a success, it takes half as much damage and is not frightened. **The damage happens once, as you cast it — this trick never deals damage again on a later turn.** What lasts for the duration is the fear: a frightened target repeats the saving throw at the end of each of its turns, ending the frightened condition on itself on a success. It requires at least 4 Phantasm banked, spent whether or not any target fails its save.",

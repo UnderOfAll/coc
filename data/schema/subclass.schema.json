@@ -31,6 +31,10 @@
             "type": "string",
             "description": "REQUIRED EVENTUALLY on every feature (backfill before character creation ships). The condensed text shown on a player's character sheet: ONLY what it does — effect, damage + type, conditions applied, cost/uses. Cut all flavor and all 'why/how the class performs it' prose. Features with `options` keep their full options table on the sheet regardless (Wild Card and the like are pertinent info)."
           },
+          "board": {
+            "$ref": "#/definitions/board",
+            "description": "Optional. What this feature puts on the map, for the virtual table — an area, a figure that appears, a figure that is moved. See data/schema/board.schema.json."
+          },
           "meta": {
             "type": "object",
             "description": "At-a-glance combat fields shown as labelled chips below the feature (D&D Beyond style). All optional.",

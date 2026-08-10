@@ -13,6 +13,14 @@
     "Prop (a scrap of silk or a coin)"
   ],
   "duration": "Up to 1 minute",
+  "board": {
+    "verb": "shape",
+    "anchor": "point",
+    "range": 30,
+    "shape": "cube",
+    "size": 5,
+    "rounds": 10
+  },
   "description": "You conjure a harmless sound or image of an object no larger than a 5-foot cube within range - a burst of applause, a shimmering curtain, a shadow that looks like a second performer standing in the wings. The illusion has no substance and cannot deal damage, move on its own, or convincingly imitate a specific creature's voice or appearance beyond a rough silhouette. Any creature that uses its action to inspect the image can determine it is an illusion with a successful Intelligence (Investigation) check against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. The image lasts until you dismiss it (no action required), you move more than 30 feet from it, or its duration ends.",
   "narration": "A little something for the audience to hold on to while the other hand does the real work: a burst of applause from an empty corner, a curtain that is not there, a shadow crossing a doorway nobody is standing in.",
   "sheetSummary": "Harmless illusory sound or image (max 5-ft cube), up to 1 minute or until dismissed/out of range. No damage, no self-movement, no true creature mimicry. Investigation check vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} to see through on close inspection.",

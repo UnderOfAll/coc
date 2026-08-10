@@ -10,6 +10,13 @@
       "name": "Powder Burst",
       "role": "combat",
       "description": "As an action, spend 2 Mayhem to hurl a spray of flash-powder cards that detonate in a 10-foot-radius sphere centered on a point you can see within 60 feet. Each creature in that area must make a Dexterity saving throw against your gambit DC, taking [[2d6]] fire damage on a failed save, or half as much damage on a successful one. You can use Powder Burst only once per turn, and only when you have Mayhem to spend on it — it draws on the same small pool as everything else you do, so it is bounded by how much chaos you've actually generated this fight, not something you can chain turn after turn.",
+      "board": {
+        "verb": "shape",
+        "anchor": "point",
+        "range": 60,
+        "shape": "radius",
+        "size": 10
+      },
       "narration": "You throw a fistful of cards and they go up mid-air — a white crack of flash-powder and heat where the fan opened. For a second afterwards the whole room is negative-coloured and nobody is looking at you, which was rather the idea.",
       "sheetSummary": "10-ft radius within 60 ft. Dexterity save vs {{gambit DC|8 + proficiency bonus + Charisma modifier}}. Fail: [[2d6]] fire. Success: half damage.",
       "meta": {

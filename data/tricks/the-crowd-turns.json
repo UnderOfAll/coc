@@ -14,6 +14,13 @@
     "Flourish"
   ],
   "duration": "Instantaneous",
+  "board": {
+    "verb": "shape",
+    "anchor": "point",
+    "range": 60,
+    "shape": "radius",
+    "size": 15
+  },
   "save": "Wisdom",
   "flavor": "Every performer's nightmare, handed to somebody else: the room decides it does not like you, and you can feel it happen.",
   "description": "You turn the mood of the room against creatures of your choice within a 15-foot radius of a point you can see within range. Each of them that can hear and understand you makes a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure it has disadvantage on attack rolls until the end of its next turn. This deals no damage. Casting this costs 2 Mirth, spent as you cast; like every costed Turn it generates none back.",

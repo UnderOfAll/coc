@@ -10,6 +10,14 @@
       "name": "Two Places at Once",
       "role": "combat",
       "description": "When you use Misdirection to move after casting a trick, you can spend 1 Phantasm to leave a silent, motionless illusory double of yourself standing in the space you left. Until the start of your next turn, the first attack roll made against you is made with **disadvantage** — the attacker commits to the wrong one of you before it can tell which is breathing. The double then vanishes, whether or not anyone swung at it. It is only ever an image: it has no space of its own that matters, it cannot be attacked, and nobody ever has to work out which of the two of you they are targeting.",
+      "board": {
+        "verb": "spawn",
+        "anchor": "self",
+        "range": 0,
+        "figure": "illusory double",
+        "controlledBy": "caster",
+        "rounds": 1
+      },
       "sheetSummary": "Leave a motionless illusory double in the space Misdirection moved you out of: the FIRST attack roll against you before the start of your next turn is made with disadvantage, then the double vanishes. No targeting choice for anyone to make.",
       "narration": "You step away and something stays — the same coat, the same posture, holding perfectly still where you were a moment ago. Whoever swings next has to decide, in the time it takes to swing, and they get it wrong.",
       "meta": {

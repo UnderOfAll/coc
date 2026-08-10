@@ -73,6 +73,13 @@
       "level": 1,
       "name": "Clones",
       "description": "You gain the Clones engine. As a bonus action, you create one Clone — a semi-real mirror-duplicate of yourself, mimicking your appearance and pose — in an unoccupied space you can see within 30 feet (45 at 5th level). At the instant it appears, a Clone copies your exact state: every benefit currently affecting you (advantage, damage riders, a temporary weapon enchantment, and so on) carries onto the Clone and stays for as long as it exists, even after your own version ends; it does not gain anything applied to you later. You can have up to your Clone cap (your proficiency bonus) active at once; creating one beyond the cap drops an existing Clone. A Clone shares your AC but has no hit points — a single hit destroys it — does not move on its own once placed, and drops if it ends more than 30 feet from you or you become incapacitated. Your other features reposition and spend Clones; see your Clone engine for the full detail.",
+      "board": {
+        "verb": "spawn",
+        "anchor": "point",
+        "range": 30,
+        "figure": "clone",
+        "controlledBy": "caster"
+      },
       "narration": "You step sideways and leave someone behind — a second you, wearing your face and frozen in the pose you were just holding. It is not smoke and it is not a picture; it is a sliver of you, breathing, warm, wrong only in that it never blinks. The room stops being sure which one it was watching.",
       "sheetSummary": "30 ft (45 at L5). Create one Clone in an unoccupied space; cap = your Clone cap. A Clone copies every benefit on you at that instant and keeps it, shares your AC, has no hit points (one hit destroys it), never moves on its own, and drops if it ends more than 30 ft from you or you become incapacitated.",
       "meta": {
@@ -109,6 +116,12 @@
       "level": 1,
       "name": "Swap",
       "description": "As a bonus action, you may teleport-swap places with one of your Clones within 30 feet of you: you instantly appear in the Clone's space and it instantly appears in yours, each facing however you choose. Neither of you provokes opportunity attacks from this movement, and the Clone itself is not destroyed — it simply continues existing wherever it ends up, still bound by its normal leash and still able to be hit, redirected onto, or spent like any other Clone. You can use Swap once per turn.",
+      "board": {
+        "verb": "move",
+        "anchor": "clone",
+        "range": 30,
+        "distance": 30
+      },
       "narration": "You and one of your reflections trade places between one heartbeat and the next, with no flash and no sound — just a soft displacement of air and the sudden certainty that you were never standing where the fight thought you were.",
       "sheetSummary": "Teleport-swap places with one of your Clones. Neither provokes opportunity attacks; the Clone is not destroyed.",
       "meta": {
@@ -136,6 +149,13 @@
       "level": 2,
       "name": "Decoy Detonation",
       "description": "As an action, you cause one of your Clones to burst in a flash of shattering reflections, destroying it. Because you choose which Clone, you decide where the blast lands — spawn a Clone into a cluster of enemies, or Swap one there, then detonate it. Each creature within 5 feet of that Clone must make a Dexterity saving throw against your {{save DC|8 + proficiency bonus + Constitution modifier}}. On a failed save a creature takes [[1d6+Con]] psychic damage and is shoved 5 feet straight away from the Clone's space; on a success it takes half as much damage and is not moved. From 3rd level, Splintered Reflexes also lets you trigger Decoy Detonation as a reaction on another creature's turn. You can trigger Decoy Detonation at most once per turn.",
+      "board": {
+        "verb": "shape",
+        "anchor": "clone",
+        "range": 0,
+        "shape": "radius",
+        "size": 5
+      },
       "narration": "You let one of them go. The Clone comes apart all at once, not into smoke but into a bursting sphere of edged reflections, and everything close enough is briefly looking at a hundred small pictures of its own surprised face before the shards go through it.",
       "sheetSummary": "Each creature within 5 ft of the Clone makes a Dexterity save vs your {{save DC|8 + proficiency bonus + Constitution modifier}}. Fail: [[1d6+Con]] psychic and shoved 5 ft from the Clone's space. Success: half damage, not moved. Splintered Reflexes (L3) makes this a reaction instead.",
       "meta": {

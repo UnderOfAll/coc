@@ -15,6 +15,13 @@
     "Flourish"
   ],
   "duration": "Instantaneous",
+  "board": {
+    "verb": "shape",
+    "anchor": "point",
+    "range": 60,
+    "shape": "radius",
+    "size": 15
+  },
   "save": "Wisdom",
   "description": "You spend banked Mirth on a bit that takes the whole room at once. Each creature of your choice within a 15-foot radius of a point you can see within range that can hear and understand you makes a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure it takes [[2d8]] psychic damage; on a success it takes half as much. Casting this costs 3 Mirth, spent whether or not anybody fails, and you may freely exclude your own company from the area — nobody has ever been hurt by a joke they were in on.",
   "narration": "You have the whole room and you know it. Whatever you say next goes through every one of them at the same moment, and the ones who are not in on it come away genuinely hurt.",

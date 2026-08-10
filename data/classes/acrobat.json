@@ -97,6 +97,12 @@
       "level": 1,
       "name": "Wall-Run",
       "description": "As part of your movement, once per turn, you can run up to half your speed along a vertical surface or across something that couldn't normally support your weight (a wall, a taut rope, a row of chairs), provided you end that move on solid ground or something you can grab. This is a signature move: it generates Momentum.",
+      "board": {
+        "verb": "move",
+        "anchor": "self",
+        "range": 0,
+        "distance": "half-speed"
+      },
       "narration": "You hit the wall at a dead sprint and simply do not stop — three, four strides straight up the brickwork, along the rope, across the backs of the chairs, whatever happens to be there. Gravity gets a vote eventually, but not until you have already landed where you meant to be. The crowd gasps a half-second late, every time.",
       "sheetSummary": "Move up to half your speed along a vertical or unsupporting surface; must end on solid footing. Signature move: generates Momentum.",
       "meta": {
@@ -109,6 +115,12 @@
       "level": 2,
       "name": "Trapeze Swing",
       "description": "As a bonus action and a signature move, you conjure your own rigging from nowhere — a bar, rope, or ring that appears exactly where you need it — and swing up to 30 feet in any direction, ignoring difficult terrain, for 5 feet of movement and 1 Momentum. Your aerial style is flashy, not safe: leaving a creature's reach during the swing provokes opportunity attacks as normal. At the end of the swing you can make one melee weapon attack against a creature within 5 feet. As a flourish, you may spend 3 additional Momentum to make that attack against every hostile creature you pass within 5 feet during the swing instead of just one, each targeted once. You can use Trapeze Swing at most once per turn. (See Flow State at 5th level: on a turn where you use Trapeze Swing, you cannot also trigger Flow State's extra attack.)",
+      "board": {
+        "verb": "move",
+        "anchor": "self",
+        "range": 0,
+        "distance": 30
+      },
       "narration": "You reach up and a bar is there — you conjured it out of nothing, and it holds. The room tilts, the floor drops away, and you come down out of the air at a completely different angle from the one everyone was watching. It is not safe and it is not subtle: you go through the fight, not around it, and anything you leave behind gets a free swing at you as you go.",
       "sheetSummary": "Also costs 5 ft of your movement. Swing up to 30 ft in any direction ignoring difficult terrain; provokes opportunity attacks. Then one melee weapon attack within 5 ft. Flourish (+3 Momentum): make that attack against every hostile you pass within 5 ft. Excludes Flow State this turn.",
       "meta": {

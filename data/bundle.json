@@ -591,6 +591,12 @@
           "level": 1,
           "name": "Wall-Run",
           "description": "As part of your movement, once per turn, you can run up to half your speed along a vertical surface or across something that couldn't normally support your weight (a wall, a taut rope, a row of chairs), provided you end that move on solid ground or something you can grab. This is a signature move: it generates Momentum.",
+          "board": {
+            "verb": "move",
+            "anchor": "self",
+            "range": 0,
+            "distance": "half-speed"
+          },
           "narration": "You hit the wall at a dead sprint and simply do not stop — three, four strides straight up the brickwork, along the rope, across the backs of the chairs, whatever happens to be there. Gravity gets a vote eventually, but not until you have already landed where you meant to be. The crowd gasps a half-second late, every time.",
           "sheetSummary": "Move up to half your speed along a vertical or unsupporting surface; must end on solid footing. Signature move: generates Momentum.",
           "meta": {
@@ -603,6 +609,12 @@
           "level": 2,
           "name": "Trapeze Swing",
           "description": "As a bonus action and a signature move, you conjure your own rigging from nowhere — a bar, rope, or ring that appears exactly where you need it — and swing up to 30 feet in any direction, ignoring difficult terrain, for 5 feet of movement and 1 Momentum. Your aerial style is flashy, not safe: leaving a creature's reach during the swing provokes opportunity attacks as normal. At the end of the swing you can make one melee weapon attack against a creature within 5 feet. As a flourish, you may spend 3 additional Momentum to make that attack against every hostile creature you pass within 5 feet during the swing instead of just one, each targeted once. You can use Trapeze Swing at most once per turn. (See Flow State at 5th level: on a turn where you use Trapeze Swing, you cannot also trigger Flow State's extra attack.)",
+          "board": {
+            "verb": "move",
+            "anchor": "self",
+            "range": 0,
+            "distance": 30
+          },
           "narration": "You reach up and a bar is there — you conjured it out of nothing, and it holds. The room tilts, the floor drops away, and you come down out of the air at a completely different angle from the one everyone was watching. It is not safe and it is not subtle: you go through the fight, not around it, and anything you leave behind gets a free swing at you as you go.",
           "sheetSummary": "Also costs 5 ft of your movement. Swing up to 30 ft in any direction ignoring difficult terrain; provokes opportunity attacks. Then one melee weapon attack within 5 ft. Flourish (+3 Momentum): make that attack against every hostile you pass within 5 ft. Excludes Flow State this turn.",
           "meta": {
@@ -778,6 +790,13 @@
           "level": 1,
           "name": "Clones",
           "description": "You gain the Clones engine. As a bonus action, you create one Clone — a semi-real mirror-duplicate of yourself, mimicking your appearance and pose — in an unoccupied space you can see within 30 feet (45 at 5th level). At the instant it appears, a Clone copies your exact state: every benefit currently affecting you (advantage, damage riders, a temporary weapon enchantment, and so on) carries onto the Clone and stays for as long as it exists, even after your own version ends; it does not gain anything applied to you later. You can have up to your Clone cap (your proficiency bonus) active at once; creating one beyond the cap drops an existing Clone. A Clone shares your AC but has no hit points — a single hit destroys it — does not move on its own once placed, and drops if it ends more than 30 feet from you or you become incapacitated. Your other features reposition and spend Clones; see your Clone engine for the full detail.",
+          "board": {
+            "verb": "spawn",
+            "anchor": "point",
+            "range": 30,
+            "figure": "clone",
+            "controlledBy": "caster"
+          },
           "narration": "You step sideways and leave someone behind — a second you, wearing your face and frozen in the pose you were just holding. It is not smoke and it is not a picture; it is a sliver of you, breathing, warm, wrong only in that it never blinks. The room stops being sure which one it was watching.",
           "sheetSummary": "30 ft (45 at L5). Create one Clone in an unoccupied space; cap = your Clone cap. A Clone copies every benefit on you at that instant and keeps it, shares your AC, has no hit points (one hit destroys it), never moves on its own, and drops if it ends more than 30 ft from you or you become incapacitated.",
           "meta": {
@@ -814,6 +833,12 @@
           "level": 1,
           "name": "Swap",
           "description": "As a bonus action, you may teleport-swap places with one of your Clones within 30 feet of you: you instantly appear in the Clone's space and it instantly appears in yours, each facing however you choose. Neither of you provokes opportunity attacks from this movement, and the Clone itself is not destroyed — it simply continues existing wherever it ends up, still bound by its normal leash and still able to be hit, redirected onto, or spent like any other Clone. You can use Swap once per turn.",
+          "board": {
+            "verb": "move",
+            "anchor": "clone",
+            "range": 30,
+            "distance": 30
+          },
           "narration": "You and one of your reflections trade places between one heartbeat and the next, with no flash and no sound — just a soft displacement of air and the sudden certainty that you were never standing where the fight thought you were.",
           "sheetSummary": "Teleport-swap places with one of your Clones. Neither provokes opportunity attacks; the Clone is not destroyed.",
           "meta": {
@@ -841,6 +866,13 @@
           "level": 2,
           "name": "Decoy Detonation",
           "description": "As an action, you cause one of your Clones to burst in a flash of shattering reflections, destroying it. Because you choose which Clone, you decide where the blast lands — spawn a Clone into a cluster of enemies, or Swap one there, then detonate it. Each creature within 5 feet of that Clone must make a Dexterity saving throw against your {{save DC|8 + proficiency bonus + Constitution modifier}}. On a failed save a creature takes [[1d6+Con]] psychic damage and is shoved 5 feet straight away from the Clone's space; on a success it takes half as much damage and is not moved. From 3rd level, Splintered Reflexes also lets you trigger Decoy Detonation as a reaction on another creature's turn. You can trigger Decoy Detonation at most once per turn.",
+          "board": {
+            "verb": "shape",
+            "anchor": "clone",
+            "range": 0,
+            "shape": "radius",
+            "size": 5
+          },
           "narration": "You let one of them go. The Clone comes apart all at once, not into smoke but into a bursting sphere of edged reflections, and everything close enough is briefly looking at a hundred small pictures of its own surprised face before the shards go through it.",
           "sheetSummary": "Each creature within 5 ft of the Clone makes a Dexterity save vs your {{save DC|8 + proficiency bonus + Constitution modifier}}. Fail: [[1d6+Con]] psychic and shoved 5 ft from the Clone's space. Success: half damage, not moved. Splintered Reflexes (L3) makes this a reaction instead.",
           "meta": {
@@ -1956,6 +1988,13 @@
           "level": 1,
           "name": "Manipulate",
           "description": "As an action, choose any number of creatures you currently have a String attached to, each within 60 feet of you. For each one, you pull or push it up to 15 feet in a direction of your choice; this forced movement doesn't provoke opportunity attacks and can drag a creature over or around minor obstacles it could normally cross, but never through solid objects or off a fall it can't survive without consent. An unwilling creature resists: it makes a Strength saving throw against your control DC, and on a success it isn't moved. A willing creature — typically an ally — is simply moved, no save required, letting you yank a friend out of danger or into position exactly as freely as you yank a foe into a wall. Manipulate deals no damage on its own.",
+          "board": {
+            "verb": "move",
+            "anchor": "creature",
+            "range": 60,
+            "distance": 15,
+            "targets": "many"
+          },
           "narration": "You lift a hand and they go where you point. Not thrown — walked, dragged, tipped, their own feet betraying them a step at a time while they fight the wire the whole way. An ally you can simply move; an enemy has to be worth the effort.",
           "sheetSummary": "Any number of Stringed creatures. Pull or push each up to 15 ft; no opportunity attacks provoked. Unwilling: Strength save vs {{control DC|8 + proficiency bonus + Wisdom modifier}} to resist. Willing: moved automatically. No damage.",
           "meta": {
@@ -2008,6 +2047,12 @@
           "level": 3,
           "name": "Guiding Pull",
           "description": "When a creature you have a String attached to and that is willing to be moved (typically an ally) is targeted by an attack you can see, you can use your reaction to yank it up to 10 feet toward you or to another space within your leash range, before the attack roll is made. If this pulls the target out of the attacker's reach (for a melee attack) or breaks the attacker's line of sight or range (for a ranged attack), the attack automatically misses; otherwise it resolves normally against the target's new position. This draws on the same reaction as Parry, Disrupting Pull, and opportunity attacks — you still get only one reaction per round.",
+          "board": {
+            "verb": "move",
+            "anchor": "ally",
+            "range": 60,
+            "distance": 10
+          },
           "narration": "You see it coming before your ally does, and you pull. They are yanked half a step sideways with an undignified stumble and the strike closes on empty air behind them, and afterwards they will complain about the bruise on their collarbone.",
           "sheetSummary": "Before an attack roll against a willing Stringed creature, pull it up to 10 ft toward you or elsewhere in leash. If that puts it out of reach, line of sight, or range, the attack misses automatically. Uses the same single reaction as Parry.",
           "meta": {
@@ -2020,6 +2065,12 @@
           "level": 5,
           "name": "Grand Marionette",
           "description": "As an action, choose one hostile creature you have a String attached to within 60 feet. It must make a Strength saving throw against your control DC. On a failure, you seize its body for this turn: you may move it up to its speed (its movement can provoke opportunity attacks as normal) and force it to make a single weapon attack, using its own statistics and weapon, against a target of your choice within its reach or range. Resolve that attack normally, with the creature rolling its own attack and damage. This is your only 'puppet an action' effect at these levels — it grants exactly one forced attack, not a full turn's worth of actions, and the controlled creature otherwise loses the rest of its action and its bonus action for the turn (it keeps its reaction). You can use Grand Marionette once per turn, and only on a creature you already have a String on.",
+          "board": {
+            "verb": "move",
+            "anchor": "creature",
+            "range": 60,
+            "distance": "speed"
+          },
           "narration": "You take the whole body. The wires go rigid, the head comes up, and for one horrible moment it walks and strikes exactly as you decide — fighting you the entire time, screaming behind a face that is doing what you told it to.",
           "sheetSummary": "One hostile Stringed creature. Strength save vs {{control DC|8 + proficiency bonus + Wisdom modifier}}. On a failure, move it up to its speed (provoking as normal) and force one weapon attack with its own statistics against a target you choose. It loses the rest of its action and its bonus action, keeping its reaction.",
           "meta": {
@@ -2181,6 +2232,11 @@
           "level": 1,
           "name": "Iron Grip",
           "description": "When you hit a creature no larger than Mighty Build allows with a melee attack, you can immediately try to grab it — no extra action or attack, it rides the same hit. The target must succeed on a Strength saving throw against your {{save DC|8 + proficiency bonus + Strength modifier}} or be caught: while held it is grappled by you (its speed becomes 0) and has disadvantage on attack rolls it makes against you — pinned against your own frame, its swings at you go wide (its attacks against other creatures are unaffected). The hold has no time limit — the creature does not slip free on its own. It stays grabbed until you cash the hold in by Crushing it (see Crushing Grip) or Heaving it, until you let go or are incapacitated, or until it escapes on its turn by using its action to make a Strength (Athletics) or Dexterity (Acrobatics) check against your save DC. When a creature escapes this way it shakes free entirely and can't be caught by your Iron Grip again until the end of its next turn — so you can't chain-grab the same target, though you're free to set your hands on a different one in the meantime. (Ending the hold yourself by Crushing or Heaving the creature does not grant it this reprieve.) You can hold only one creature in your Iron Grip at a time — catching a new target releases the last. A creature held this way counts as grappled by you, so it is a valid target for Heave. Forced movement you cause with your own features (such as a Juggernaut's Bulldozer Charge) never breaks this hold — the creature is dragged with you rather than shoved free.",
+          "board": {
+            "verb": "lock",
+            "anchor": "creature",
+            "range": 5
+          },
           "narration": "You catch it. Not a hold — a decision — and once your hand closes, the fight it was having with everyone else is over and the fight it is having with you has started. It can swing at you all it likes from there, pressed against your chest with nothing behind the punches.",
           "sheetSummary": "Strength save vs your {{save DC|8 + proficiency bonus + Strength modifier}} or grappled (speed 0) with disadvantage on attacks against you. No time limit; it ends when you Crush or Heave it, let go, are incapacitated, or it escapes with an action (Athletics or Acrobatics vs {{save DC|8 + proficiency bonus + Strength modifier}}). An escapee can't be re-caught until the end of its next turn. Your own forced movement never breaks the hold.",
           "meta": {
@@ -2194,6 +2250,12 @@
           "level": 1,
           "name": "Heave",
           "description": "You grab something heavy — a creature you have grappled, or an object you're holding like a bench, a barrel, or a cage bar — and hurl it. This is used in place of one of your attacks when you take the Attack action (so at 1st level it replaces your single attack; with Extra Attack you can Heave and still swing). Spend 1 to 3 Grit: the thrown target flies 10 feet per point of Grit spent in a direction of your choice and lands in the nearest unoccupied space. What happens on landing depends on the target:",
+          "board": {
+            "verb": "move",
+            "anchor": "creature",
+            "range": 5,
+            "distance": 30
+          },
           "narration": "You pick it up and you throw it. A man, a bench, a cage bar, a friend who agreed to this — it goes up, it goes out, and it lands somewhere the fight was not expecting a body to land.",
           "sheetSummary": "Throw a grappled creature or a held object 10 ft per Grit spent; it lands in the nearest unoccupied space. Landing effects depend on the target.",
           "options": [
@@ -2263,6 +2325,13 @@
           "level": 5,
           "name": "Earthshaker",
           "description": "As an action, spend 3 Grit to slam a weapon, fist, or heavy object into the ground and send a shockwave through every creature of your choice within 15 feet of you. Each must succeed on a Strength saving throw against your {{save DC|8 + proficiency bonus + Strength modifier}} or be pushed 5 feet directly away from you and knocked prone. Earthshaker deals no damage on its own — it's forced movement and control, a battlefield reset, not another source of hurt. You can use Earthshaker once per turn.",
+          "board": {
+            "verb": "shape",
+            "anchor": "self",
+            "range": 0,
+            "shape": "radius",
+            "size": 15
+          },
           "narration": "You bring everything you have down into the floor. The boards jump, the dust comes off the rafters, and everyone standing near you discovers they are no longer standing.",
           "sheetSummary": "15-ft radius, creatures of your choice. Strength save vs your {{save DC|8 + proficiency bonus + Strength modifier}} or pushed 5 ft away from you and knocked prone. No damage.",
           "meta": {
@@ -2315,6 +2384,13 @@
           "name": "Powder Burst",
           "role": "combat",
           "description": "As an action, spend 2 Mayhem to hurl a spray of flash-powder cards that detonate in a 10-foot-radius sphere centered on a point you can see within 60 feet. Each creature in that area must make a Dexterity saving throw against your gambit DC, taking [[2d6]] fire damage on a failed save, or half as much damage on a successful one. You can use Powder Burst only once per turn, and only when you have Mayhem to spend on it — it draws on the same small pool as everything else you do, so it is bounded by how much chaos you've actually generated this fight, not something you can chain turn after turn.",
+          "board": {
+            "verb": "shape",
+            "anchor": "point",
+            "range": 60,
+            "shape": "radius",
+            "size": 10
+          },
           "narration": "You throw a fistful of cards and they go up mid-air — a white crack of flash-powder and heat where the fan opened. For a second afterwards the whole room is negative-coloured and nobody is looking at you, which was rather the idea.",
           "sheetSummary": "10-ft radius within 60 ft. Dexterity save vs {{gambit DC|8 + proficiency bonus + Charisma modifier}}. Fail: [[2d6]] fire. Success: half damage.",
           "meta": {
@@ -2443,6 +2519,14 @@
           "name": "Guardian's Wall",
           "role": "combat",
           "description": "You make yourself the obstacle nothing gets past. Its protection works three ways:",
+          "board": {
+            "verb": "shape",
+            "anchor": "self",
+            "range": 0,
+            "shape": "radius",
+            "size": 10,
+            "aura": true
+          },
           "narration": "You plant yourself and become architecture. People who wanted to go somewhere discover that the somewhere is behind you, and the blow aimed past your shoulder finds your shoulder instead because you put it there.",
           "sheetSummary": "Passive and free. Three separate protections, listed in the table below: a 10-ft taunt, an intercept usable once per turn on an ally within 5 ft, and the wall's standing benefit.",
           "options": [
@@ -3299,6 +3383,14 @@
           "name": "Snare Weave",
           "role": "combat",
           "description": "As an action, you weave loose wire across the ground in a 15-foot square within 60 feet of you, filling it with a low, near-invisible lattice that lasts for 1 minute or until you dismiss it (no action required). The area is difficult terrain to any creature without a String attached to you. Any creature other than you that enters the area for the first time on a turn or starts its turn there must succeed on a Strength saving throw against your control DC or become restrained by the wire. A creature restrained this way can repeat the save at the end of each of its turns, ending the restrained condition on itself on a success, or use its action to make a Strength or Dexterity check (its choice) against your control DC to tear free instead. You can use Snare Weave {{uses per combat|1 at levels 1-4, 2 at 5-10, 3 at 11-16, 4 at 17+ — the same breakpoints the Scaling Die uses}} times per combat.",
+          "board": {
+            "verb": "mark",
+            "anchor": "point",
+            "range": 60,
+            "shape": "cube",
+            "size": 15,
+            "rounds": 10
+          },
           "narration": "You lay wire across the floor in a low, glittering lattice nobody notices until their ankle finds it. Crossing it is a decision; standing in it is a mistake that tightens.",
           "sheetSummary": "15-ft square within 60 ft, 1 minute. Difficult terrain for anyone without your String. Entering it for the first time on a turn or starting a turn there forces a Strength save vs {{control DC|8 + proficiency bonus + Wisdom modifier}} or restrained; repeat at the end of each turn, or use an action for a Strength or Dexterity check to tear free.",
           "meta": {
@@ -3326,6 +3418,13 @@
           "name": "Wired Room",
           "role": "roleplay",
           "description": "You never sleep anywhere you haven't strung first. Over 10 minutes, you can rig an area up to a 30-foot square — a room, a campsite, a corridor — with a lattice of near-invisible trip-lines that lasts 8 hours or until you dismantle it. You know instantly when a Small or larger creature enters the area (and roughly where). When you rig the area, you can include one snare: the first creature to trigger it must succeed on a Dexterity saving throw against your Control DC or be caught, restrained until it or an ally uses an action to cut it free.",
+          "board": {
+            "verb": "mark",
+            "anchor": "self",
+            "range": 0,
+            "shape": "cube",
+            "size": 30
+          },
           "narration": "You have not slept in an unstrung room in years. Ten minutes with the doorways and the corners and the place tells you, in a small tug against your finger, the moment anything crosses it.",
           "sheetSummary": "10 min: wire up to a 30-ft square for 8 h — know instantly when a Small or larger creature enters. Optional snare: first trigger, Dex save vs {{control DC|8 + proficiency bonus + Wisdom modifier}} or restrained until cut free (action).",
           "meta": {
@@ -3437,6 +3536,14 @@
           "name": "Two Places at Once",
           "role": "combat",
           "description": "When you use Misdirection to move after casting a trick, you can spend 1 Phantasm to leave a silent, motionless illusory double of yourself standing in the space you left. Until the start of your next turn, the first attack roll made against you is made with **disadvantage** — the attacker commits to the wrong one of you before it can tell which is breathing. The double then vanishes, whether or not anyone swung at it. It is only ever an image: it has no space of its own that matters, it cannot be attacked, and nobody ever has to work out which of the two of you they are targeting.",
+          "board": {
+            "verb": "spawn",
+            "anchor": "self",
+            "range": 0,
+            "figure": "illusory double",
+            "controlledBy": "caster",
+            "rounds": 1
+          },
           "sheetSummary": "Leave a motionless illusory double in the space Misdirection moved you out of: the FIRST attack roll against you before the start of your next turn is made with disadvantage, then the double vanishes. No targeting choice for anyone to make.",
           "narration": "You step away and something stays — the same coat, the same posture, holding perfectly still where you were a moment ago. Whoever swings next has to decide, in the time it takes to swing, and they get it wrong.",
           "meta": {
@@ -3744,6 +3851,13 @@
         "Prop (a pinch of flash powder)"
       ],
       "duration": "Instantaneous",
+      "board": {
+        "verb": "shape",
+        "anchor": "point",
+        "range": 30,
+        "shape": "radius",
+        "size": 10
+      },
       "save": "Dexterity",
       "description": "You throw a pinch of flash powder that bursts into a searing white flash in a 10-foot radius centered on a point you choose within range. Each creature in that area makes a Dexterity saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure, a creature is blinded until the end of its next turn. On a success, it is unaffected. The burst is light and noise, not fire — it deals no damage; it just takes the crowd's eyes away for a beat.",
       "narration": "A pinch between two fingers, a snap of the wrist, and the world goes white and orange for exactly as long as it takes you to be somewhere else.",
@@ -3793,6 +3907,14 @@
         "Prop (a scrap of silk or a coin)"
       ],
       "duration": "Up to 1 minute",
+      "board": {
+        "verb": "shape",
+        "anchor": "point",
+        "range": 30,
+        "shape": "cube",
+        "size": 5,
+        "rounds": 10
+      },
       "description": "You conjure a harmless sound or image of an object no larger than a 5-foot cube within range - a burst of applause, a shimmering curtain, a shadow that looks like a second performer standing in the wings. The illusion has no substance and cannot deal damage, move on its own, or convincingly imitate a specific creature's voice or appearance beyond a rough silhouette. Any creature that uses its action to inspect the image can determine it is an illusion with a successful Intelligence (Investigation) check against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. The image lasts until you dismiss it (no action required), you move more than 30 feet from it, or its duration ends.",
       "narration": "A little something for the audience to hold on to while the other hand does the real work: a burst of applause from an empty corner, a curtain that is not there, a shadow crossing a doorway nobody is standing in.",
       "sheetSummary": "Harmless illusory sound or image (max 5-ft cube), up to 1 minute or until dismissed/out of range. No damage, no self-movement, no true creature mimicry. Investigation check vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} to see through on close inspection.",
@@ -3818,6 +3940,13 @@
         "Flourish"
       ],
       "duration": "Instantaneous",
+      "board": {
+        "verb": "shape",
+        "anchor": "point",
+        "range": 60,
+        "shape": "radius",
+        "size": 15
+      },
       "save": "Wisdom",
       "description": "You spend banked Mirth on a bit that takes the whole room at once. Each creature of your choice within a 15-foot radius of a point you can see within range that can hear and understand you makes a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure it takes [[2d8]] psychic damage; on a success it takes half as much. Casting this costs 3 Mirth, spent whether or not anybody fails, and you may freely exclude your own company from the area — nobody has ever been hurt by a joke they were in on.",
       "narration": "You have the whole room and you know it. Whatever you say next goes through every one of them at the same moment, and the ones who are not in on it come away genuinely hurt.",
@@ -3870,6 +3999,14 @@
         "Prop (a length of wire)"
       ],
       "duration": "Up to 1 minute",
+      "board": {
+        "verb": "spawn",
+        "anchor": "point",
+        "range": 30,
+        "figure": "puppet hand",
+        "controlledBy": "caster",
+        "rounds": 10
+      },
       "description": "You conjure a near-invisible puppet hand, hung on wires, in an unoccupied space you can see within range. It lasts for the duration, until you dismiss it (no action required), or until it ends up more than 30 feet from you. As a bonus action on your turn you can direct the hand: it flies up to 30 feet and manipulates one object — open an unlocked door or container, stow or retrieve an item, pour a flask, pull a lever, or carry an object weighing up to 10 pounds. The hand cannot attack, cannot activate magic items, and cannot wield a weapon or move a creature or anything a creature is holding.",
       "narration": "A hand that is not there, hung on wires you never quite show the audience, doing the small work at a distance — lifting a latch, sliding a bolt, carrying a cup — while both of yours stay visibly, innocently empty.",
       "sheetSummary": "Conjure a spectral puppet hand (up to 1 min, dismiss free). Bonus action to move it up to 30 ft and manipulate an object: open/carry (max 10 lb), stow/retrieve, pour, pull a lever. No attacks, no magic items, cannot affect creatures or held items.",
@@ -3919,6 +4056,12 @@
         "Prop (a length of wire)"
       ],
       "duration": "Until the start of your next turn",
+      "board": {
+        "verb": "move",
+        "anchor": "creature",
+        "range": 60,
+        "distance": 15
+      },
       "save": "Strength",
       "description": "You haul on the String fixed to a creature you have a String attached to within range, dragging its body where you want it and pinning it there as a living barricade. The target makes a Strength saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure, you drag it up to 15 feet — through spaces it could normally move through, without provoking opportunity attacks — to an unoccupied space of your choice, where it is restrained until the start of your next turn. While it is pinned this way its body is a shield: any creature has half cover against an attack or effect whose path passes through the meat shield's space. On a success, the wire snaps — the String detaches and nothing else happens. You must already have a String attached to the target to use this trick.",
       "narration": "Why stop a blade when you can stand someone else in front of it? You haul on the wire and drag the nearest unwilling volunteer into the space you did not want to occupy, and there they stay.",
@@ -3973,6 +4116,12 @@
         "Prop (a length of black silk)"
       ],
       "duration": "1 round",
+      "board": {
+        "verb": "move",
+        "anchor": "self",
+        "range": 0,
+        "distance": 10
+      },
       "description": "You vanish behind a snap of silk and misdirection, becoming invisible until the start of your next turn or until you make an attack roll, force a saving throw, or force an ability check, whichever comes first. As part of casting this, you may also move up to 10 feet without provoking opportunity attacks — the last thing anyone saw of you was already the wrong direction. This is misdirection, not true invisibility, and it can be beaten by simply watching you properly: each creature that can see you at the moment you cast it makes a Wisdom (Perception) check against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. **If any one of them succeeds, the trick ends immediately for everybody** — they call out where you went, the room's eyes follow, and you are simply standing there. One person seeing through it is enough; there is never a state where you are hidden from some creatures and not others.",
       "narration": "The curtain drops for exactly one second. When it lifts you are not where anyone is looking — until somebody who was watching your feet instead of your hands points and shouts, and then the whole room is looking at you again.",
       "sheetSummary": "Invisible until the start of your next turn or until you attack or force a save or check; may move 10 ft without provoking as part of the trick. Each creature that can SEE you cast it makes a Wisdom (Perception) check vs {{trick save DC|8 + proficiency bonus + your trick ability modifier}} — ANY success ends it for everyone. Never partial: you are hidden from all of them or none.",
@@ -4022,6 +4171,13 @@
         "Flourish"
       ],
       "duration": "Instantaneous",
+      "board": {
+        "verb": "shape",
+        "anchor": "clone",
+        "range": 0,
+        "shape": "radius",
+        "size": 5
+      },
       "save": "Constitution",
       "description": "When a Clone of yours is destroyed — by an attack, by Mirror Image, by Decoy Detonation, or by any other means — you can flood the space it occupied with a last flare of false light. Each creature within 5 feet of the Clone's former space must succeed on a Constitution saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}} or be blinded until the end of its next turn. If several of your Clones are destroyed at the same instant — a failed Mirror Image gamble takes every Clone you committed — this still triggers only once, and you choose which of their spaces flares. This trick does not create, spend, or restore any Clones on its own — it only triggers off a Clone that is already being destroyed some other way.",
       "narration": "The Clone does not just fall. It goes out in a last hard flare of stagelight, and whoever put it down is left blinking at a white afterimage where a person used to be.",
@@ -4113,6 +4269,13 @@
         "Patter"
       ],
       "duration": "Instantaneous",
+      "board": {
+        "verb": "move",
+        "anchor": "ally",
+        "range": 30,
+        "distance": 15,
+        "targets": "many"
+      },
       "flavor": "The call every company knows. Wherever they were standing, they are standing somewhere better one second later.",
       "description": "You call the company to their marks. Each ally of your choice within range may immediately use its reaction to move up to half its speed without provoking opportunity attacks. An ally with no reaction available simply does not move. Casting this costs 1 Mirth, spent as you cast; like every costed Turn it generates none back.",
       "narration": "One word, pitched to carry, in the voice that means it. Nobody argues with it and nobody is where they were.",
@@ -4141,6 +4304,14 @@
         "Prop (a smoke charge)"
       ],
       "duration": "1 minute",
+      "board": {
+        "verb": "shape",
+        "anchor": "point",
+        "range": 60,
+        "shape": "cube",
+        "size": 15,
+        "rounds": 100
+      },
       "description": "You detonate a charge of colored smoke, filling a 15-foot cube within range with a thick, drifting haze that heavily obscures the area for the duration or until a strong wind (such as one created by a Strength check or a trick) disperses it. You can see through this smoke without penalty; every other creature treats it as any other heavily obscuring smoke.",
       "narration": "One second you are standing there. The next there is a great deal of coloured smoke and a faint, receding laugh.",
       "sheetSummary": "15-ft cube. Heavily obscures the area for everyone except you. Dispersible by strong wind.",
@@ -4313,6 +4484,14 @@
         "Prop (a fistful of flash powder)"
       ],
       "duration": "Concentration, up to 10 minutes",
+      "board": {
+        "verb": "shape",
+        "anchor": "point",
+        "range": 60,
+        "shape": "cube",
+        "size": 20,
+        "rounds": 100
+      },
       "concentration": true,
       "description": "You fill a 20-foot cube within range with a bank of illusory smoke and drifting false reflections. The area becomes heavily obscured for as long as you concentrate on this trick. The smoke has no substance - it doesn't impede movement and can't be dispersed by wind - and creatures relying on darkvision see only more illusory smoke, not through it. You may designate any number of creatures, including yourself, that see the area normally instead, letting you use the cloud as cover for yourself and your allies while it blinds everyone else.",
       "narration": "Fog rolls in and mirrors unfold out of nowhere, and suddenly nobody in the room — including the people you brought — is sure what they are looking at.",
@@ -4412,6 +4591,12 @@
         "Flourish"
       ],
       "duration": "Instantaneous",
+      "board": {
+        "verb": "move",
+        "anchor": "creature",
+        "range": 30,
+        "distance": 30
+      },
       "description": "You and one willing creature you can see within range instantly trade places, each appearing in the space the other just left and facing however you choose. Neither of you provokes opportunity attacks from the exchange, and neither of you can be moved into a space that would not hold you. This is the Trickster's answer to a companion standing in the wrong place: pull the wounded one out of reach and put yourself, or somebody better armoured, where the trouble already is.",
       "narration": "Two quick gestures and a step that goes nowhere, and the pair of you are simply standing where the other one was. Nobody sees the move, including the person you moved.",
       "sheetSummary": "You and one willing creature you can see instantly swap places. Neither provokes opportunity attacks; neither can arrive in a space that wouldn't hold them.",
@@ -4466,6 +4651,13 @@
         "Flourish"
       ],
       "duration": "Instantaneous",
+      "board": {
+        "verb": "shape",
+        "anchor": "point",
+        "range": 60,
+        "shape": "radius",
+        "size": 15
+      },
       "save": "Wisdom",
       "flavor": "Every performer's nightmare, handed to somebody else: the room decides it does not like you, and you can feel it happen.",
       "description": "You turn the mood of the room against creatures of your choice within a 15-foot radius of a point you can see within range. Each of them that can hear and understand you makes a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure it has disadvantage on attack rolls until the end of its next turn. This deals no damage. Casting this costs 2 Mirth, spent as you cast; like every costed Turn it generates none back.",
@@ -4496,6 +4688,13 @@
         "Prop (a folding fan or opera mask)"
       ],
       "duration": "Concentration, up to 1 minute",
+      "board": {
+        "verb": "shape",
+        "anchor": "point",
+        "range": 90,
+        "shape": "radius",
+        "size": 30
+      },
       "concentration": true,
       "save": "Wisdom",
       "description": "You spend a surge of banked Phantasm to seize the minds of every creature you choose within a 30-foot-radius sphere centred on a point within range, showing each of them their own private, tailored nightmare all at once. Each target must make a Wisdom saving throw against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}}. On a failure, a target takes [[5d6]] psychic damage and is frightened of you for the duration; on a success, it takes half as much damage and is not frightened. **The damage happens once, as you cast it — this trick never deals damage again on a later turn.** What lasts for the duration is the fear: a frightened target repeats the saving throw at the end of each of its turns, ending the frightened condition on itself on a success. It requires at least 4 Phantasm banked, spent whether or not any target fails its save.",
@@ -4552,6 +4751,14 @@
         "Prop (a miniature stage set)"
       ],
       "duration": "Up to 10 minutes",
+      "board": {
+        "verb": "shape",
+        "anchor": "point",
+        "range": 120,
+        "shape": "cube",
+        "size": 60,
+        "rounds": 100
+      },
       "save": "Wisdom",
       "description": "A 60-foot cube within range becomes a fully realised illusory environment — sight, sound, temperature and scent — of anything you can picture. It requires no concentration and holds for the duration. It has no substance: it deals no damage, supports no weight, and does not impede anything that does not rely on sight. Any creature may spend its action to attempt an Intelligence (Investigation) check against your {{trick save DC|8 + proficiency bonus + your trick ability modifier}} to see through it, and a creature shoving through the cube may attempt that check as part of the movement; on any success the illusion collapses immediately and entirely, for every creature at once.",
       "narration": "The tent is gone. In its place is a rockfall, or a wall of fire, or a drop into nothing — cold on your face, loud in your ears, and entirely in the way. Nobody caught inside it can think straight, because nobody fights well in the middle of a disaster they believe in. It holds until one person stops, really looks, and says so out loud — and then there was never anything there at all.",
@@ -4603,6 +4810,12 @@
         "Flourish"
       ],
       "duration": "Instantaneous",
+      "board": {
+        "verb": "move",
+        "anchor": "self",
+        "range": 30,
+        "distance": 30
+      },
       "description": "The blow lands. You drop. The crowd screams — and then you walk back out from somewhere else in the room, unmarked, while the thing on the floor turns out to have been a Clone all along. You can cast this trick only if you have at least 2 Clones active when the triggering blow lands. It resolves before you are reduced to 0 hit points, so you never become incapacitated and your Clones do not drop: you fall to 1 hit point instead and spend 2 of them — the first collapses in your space wearing your wounds, and the second is the one that walks away. You teleport to an unoccupied space you can see within 30 feet, and until the end of your next turn every creature that watched you fall has disadvantage on attack rolls against you — they are still looking at the body. Both Clones are spent whether or not anyone is fooled.",
       "narration": "The blow lands. You drop. The crowd screams — and then you walk back out from somewhere else in the room entirely, unmarked, while the thing crumpled on the floor turns out to have been wearing your face all along.",
       "sheetSummary": "Reaction when reduced to 0 HP. Requires and spends 2 active Clones; resolves before you drop, so your Clones never fall with you. Drop to 1 HP instead; a Clone collapses in your space wearing your wounds; teleport up to 30 ft. Creatures that saw you fall have disadvantage on attacks against you until end of your next turn.",

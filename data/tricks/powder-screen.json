@@ -14,6 +14,14 @@
     "Prop (a smoke charge)"
   ],
   "duration": "1 minute",
+  "board": {
+    "verb": "shape",
+    "anchor": "point",
+    "range": 60,
+    "shape": "cube",
+    "size": 15,
+    "rounds": 100
+  },
   "description": "You detonate a charge of colored smoke, filling a 15-foot cube within range with a thick, drifting haze that heavily obscures the area for the duration or until a strong wind (such as one created by a Strength check or a trick) disperses it. You can see through this smoke without penalty; every other creature treats it as any other heavily obscuring smoke.",
   "narration": "One second you are standing there. The next there is a great deal of coloured smoke and a faint, receding laugh.",
   "sheetSummary": "15-ft cube. Heavily obscures the area for everyone except you. Dispersible by strong wind.",

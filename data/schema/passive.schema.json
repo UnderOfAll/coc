@@ -9,6 +9,10 @@
     "type": { "type": "string", "enum": ["Feat", "Racial Trait", "Class Feature", "Passive"], "description": "kind of passive ability" },
     "source": { "type": "string", "default": "5e SRD" },
     "prerequisite": { "type": ["string", "null"] },
-    "description": { "type": "string" }
+    "description": { "type": "string" },
+    "board": {
+      "$ref": "#/definitions/board",
+      "description": "Optional. What this puts on the map, for the virtual table. See data/schema/board.schema.json."
+    }
   }
 }
