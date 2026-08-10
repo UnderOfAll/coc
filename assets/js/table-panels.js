@@ -1832,3 +1832,24 @@ async function tblDropCharacterEverywhere(code) {
     if (typeof paintBar === "function") { paintBar(); paintHeader(); paintSide(); }
   }
 }
+
+
+/* THE DM'S FIGHT IS THE FIGHT.
+ *
+ * A sheet used to keep its own private idea of whether combat was on, behind a button on itself — so the
+ * engine sat dead and every pip greyed out while the order bar was running at the top of the same screen,
+ * and Kayki reasonably reported the engine as broken. It was gated, not broken, on a switch nobody had
+ * told him about. The other half of the same fault was a trick flipping that switch on when the DM had
+ * not started anything.
+ *
+ * So at a table it follows the order: the fight starts and every open sheet is in combat, the fight ends
+ * and they all clear down — cooldowns, once-per-combat, the engine, the lot, through the same transition
+ * the button always used. Away from a table the button is still the only thing that says. */
+function tblSyncSheetCombat() {
+  if (typeof syncCombatFromTable !== "function") return;
+  const turn = (tbl.data.meta || {}).turn;
+  const fighting = !!(turn && Array.isArray(turn.order) && turn.order.length);
+  if (!syncCombatFromTable(fighting)) return;
+  if (typeof renderSheet === "function") renderSheet();
+  if (typeof persist === "function") persist();
+}

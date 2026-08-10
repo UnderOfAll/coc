@@ -1069,7 +1069,13 @@ function renderSheet() {
         </div>
         <div class="sheet-level"><span class="lv-k">Level</span><span class="lv-v">${esc(d.level)}</span></div>
       </div>
-      <button class="btn ${p.inCombat ? "btn-hot" : ""}" data-act="combat">${p.inCombat ? "End combat" : "Start combat"}</button>
+      ${/* At a table the DM starts and ends fights, and this button would only ever be fighting the
+            order bar — press it and the next stream event puts it back. So it says who is in charge
+            instead of pretending to be. */""}
+      ${atATable()
+        ? `<span class="at-table-combat muted">${p.inCombat ? "In combat" : "Out of combat"} —
+            the DM starts the fight</span>`
+        : `<button class="btn ${p.inCombat ? "btn-hot" : ""}" data-act="combat">${p.inCombat ? "End combat" : "Start combat"}</button>`}
     </div>
     ${ui.levelUp ? levelUpPanel(d) : ""}
     ${vitals(d, p)}
@@ -1711,6 +1717,35 @@ async function deleteCharacter() {
   }
 }
 
+/* IN OR OUT OF A FIGHT, and everything that follows from it. Pulled out of the button so the TABLE can
+   drive it: at a table the DM's fight is the fight, and a sheet with its own private idea of whether one
+   is on is a sheet whose engine is dead while the order bar is running. See tblSyncSheetCombat. */
+/* Is this sheet being read at a table, as opposed to on its own page? The table is a separate thing that
+   may not be loaded at all, so it is asked for rather than assumed. */
+function atATable() {
+  return typeof tbl !== "undefined" && !!tbl && !!paintTarget;
+}
+
+function setCombat(p, d, on) {
+  if (!!p.inCombat === !!on) return false;
+  p.inCombat = !!on;
+  if (p.inCombat && d.cls.play?.autoRefill === "turn") p.engine = d.engineCap ?? 0;
+  if (!p.inCombat) {
+    // Everything per-combat resets: the engine empties, cooldowns clear, uses refresh.
+    p.engine = 0; p.cooldowns = {}; p.usedOncePerCombat = {}; p.uses = {}; p.round = 1;
+    p.flags = {}; p.turnTriggers = {}; p.prompt = null;
+  }
+  return true;
+}
+
+/* The table's fight, applied to the sheet open in its drawer. Called on every stream event. */
+function syncCombatFromTable(fighting) {
+  if (!sheet || !sheet.ch) return false;
+  const d = derive(sheet.ch);
+  if (!d) return false;
+  return setCombat(sheet.ch.play, d, fighting);
+}
+
 /* ---------------------------------------------------------------- sheet actions */
 
 /* Actions that only move the interface around — expanding a feature, opening the level-up preview
@@ -1734,13 +1769,7 @@ function sheetAction(e) {
     return;
   }
   if (act === "combat") {
-    p.inCombat = !p.inCombat;
-    if (p.inCombat && d.cls.play?.autoRefill === "turn") p.engine = d.engineCap ?? 0;
-    if (!p.inCombat) {
-      // Everything per-combat resets: the engine empties, cooldowns clear, uses refresh.
-      p.engine = 0; p.cooldowns = {}; p.usedOncePerCombat = {}; p.uses = {}; p.round = 1;
-      p.flags = {}; p.turnTriggers = {}; p.prompt = null;
-    }
+    setCombat(p, d, !p.inCombat);
   } else if (act === "endturn") {
     p.round += 1;
     for (const k of Object.keys(p.cooldowns)) {

@@ -659,6 +659,8 @@ function paintEverything() {
   paintHeader();
   paintBoard();      // paintTokens is called from here
   paintTurnBar();
+  // The DM's fight is the fight: an open sheet follows the order bar in or out of combat.
+  tblSyncSheetCombat();
   paintPeek();
   paintLog();
   paintWho();

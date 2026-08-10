@@ -329,6 +329,40 @@ console.log("\n— 393px, as a player, by touch —");
   ok(panned.x !== panFrom2 && !panned.card,
     `and dragging from inside it pans the map instead (${panFrom2} -> ${panned.x})`);
 
+  /* THE DM'S FIGHT IS THE FIGHT. A sheet used to keep its own private idea of whether combat was on,
+     behind a button on itself — so the engine sat dead and every pip greyed while the order bar ran at
+     the top of the same screen, and Kayki reported the engine as broken. It was gated, not broken. */
+  await page.evaluate(() => { document.querySelector('[data-tbl="panel"][data-val="sheet"]').click(); });
+  await new Promise((r) => setTimeout(r, 1200));
+  const gated = await page.evaluate(() => ({
+    inCombat: !!(sheet && sheet.ch && sheet.ch.play.inCombat),
+    pips: [...document.querySelectorAll('#vtt-side [data-act="engine-set"]')].filter((b) => !b.disabled).length,
+    button: !!document.querySelector('#vtt-side [data-act="combat"]'),
+  }));
+  ok(!gated.inCombat && !gated.button,
+    "at a table the sheet does not offer its own Start combat button");
+  await page.evaluate(async () => {
+    await CocLive.put("tables/482910/meta/turn", { order: ["t1"], idx: 0, round: 1, startedAt: Date.now() });
+  });
+  await new Promise((r) => setTimeout(r, 700));
+  const fighting = await page.evaluate(() => ({
+    inCombat: !!(sheet && sheet.ch && sheet.ch.play.inCombat),
+    pips: [...document.querySelectorAll('#vtt-side [data-act="engine-set"]')].filter((b) => !b.disabled).length,
+  }));
+  ok(fighting.inCombat && fighting.pips > gated.pips,
+    `the DM starting a fight wakes the sheet's engine (${gated.pips} pips live -> ${fighting.pips})`);
+  await page.evaluate(async () => {
+    sheet.ch.play.engine = 2; sheet.ch.play.cooldowns = { x: 2 };
+    await CocLive.put("tables/482910/meta/turn", null);
+  });
+  await new Promise((r) => setTimeout(r, 700));
+  const done = await page.evaluate(() => ({
+    inCombat: !!(sheet && sheet.ch && sheet.ch.play.inCombat),
+    engine: sheet.ch.play.engine, cds: Object.keys(sheet.ch.play.cooldowns || {}).length,
+  }));
+  ok(!done.inCombat && done.engine === 0 && done.cds === 0,
+    "and ending it clears the engine and the cooldowns with it");
+
   ok(errs.length === 0, "no errors on the console" + (errs.length ? ": " + errs[0] : ""));
   await page.close();
 }

@@ -1782,3 +1782,7 @@ body:has(.vtt) { height: 100dvh; overflow: hidden; }
 .field-what { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
 .field-what strong { font-family: var(--serif); color: var(--gold); }
 .field-what .muted { font-size: 0.82rem; }
+
+/* At a table the DM owns the fight, so the sheet says whose it is rather than offering a button that
+   the next stream event would undo. */
+.at-table-combat { font-size: 0.85rem; text-align: right; max-width: 12rem; }

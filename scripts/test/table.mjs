@@ -1547,6 +1547,18 @@ ok(/Reflected Wound — 60 feet \(Turn · back in 2 rounds\)/.test(said),
   "and a Turn says when it comes back: " + said.split(" // ")[1]);
 peek(`tbl.data.tokens.tRig.owner = window.__wasOwner; tbl.ui.peek = ""; paintPeek();`);
 
+/* THE DM'S FIGHT IS THE FIGHT. A sheet kept its own private idea of whether combat was on, behind a
+   button on itself — so the engine sat dead and every pip greyed out while the order bar was running at
+   the top of the same screen, and Kayki reported the engine as broken. It was gated, not broken. */
+ok(peek(`(function(){ const p = { inCombat: false, engine: 0, cooldowns: { x: 2 } };
+  const d = { cls: { play: {} }, engineCap: 3 };
+  const started = setCombat(p, d, true);
+  const ended = setCombat(p, d, false);
+  return started && ended && !p.inCombat && p.engine === 0 && Object.keys(p.cooldowns).length === 0;
+})()`) === true, "a fight ending clears the engine, the cooldowns and the rest");
+ok(peek(`setCombat({ inCombat: true }, { cls: { play: {} } }, true)`) === false,
+  "and being told what it already is changes nothing");
+
 console.log("\n— YOUR SHEET, OVER THE BOARD —");
 /* Still the player holding Rig's figure from the turn-order section — and now actually holding it. The
    figure had no `owner`, so this browser held nothing, and the heartbeat's one-time "choose a
