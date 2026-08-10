@@ -50,7 +50,7 @@ for m in re.finditer(r'class="([^"]+)"', HTML):
 used.update(["on", "blocked", "btn-hot", "down", "hurt", "primary", "spent", "warn", "good", "bad",
              "hidden", "active", "empty", "over", "prof", "resolved", "inplay-tip", "wide", "caption",
              "who-dm", "mine", "movable", "npc", "turn", "dragging", "dropped", "half", "low",
-             "rolling", "landed", "nat20", "nat1", "crit-high", "crit-low"])
+             "rolling", "landed", "nat20", "nat1", "crit-high", "crit-low", "now"])
 # dynamic families the linter cannot resolve statically
 DYNAMIC = ("tier-", "badge-", "shape-")
 used.update(c for c in re.findall(r'\.([a-z][a-z0-9-]+)', CSS) if c.startswith(DYNAMIC))

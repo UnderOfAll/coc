@@ -1176,18 +1176,62 @@ body:has(.vtt) { height: 100dvh; overflow: hidden; }
   .vtt-side { width: 100%; max-height: 44dvh; }
 }
 
+/* THE ORDER, AS FACES. A row of portraits along the top, in the order they act, with whoever is up
+   raised out of the line. It scrolls sideways INSIDE itself rather than growing the bar, because the
+   table's whole column has to keep fitting the screen — a strip that pushes the board down is the same
+   bug the roll bar was.
+   No hit points here, ever: RULES.md keeps those private to a player's own sheet. Conditions are public
+   and are marked, because they change what a figure can do. */
+.turn-strip { display: flex; gap: 0.4rem; align-items: flex-end; width: 100%; overflow-x: auto;
+  overflow-y: hidden; padding: 0.15rem 0.1rem 0.25rem; scrollbar-width: thin; }
+.turn-face { position: relative; flex: 0 0 auto; width: 3.4rem; display: grid; justify-items: center;
+  gap: 0.15rem; padding: 0; background: none; border: none; color: inherit; cursor: pointer;
+  font: inherit; opacity: 0.72; transition: opacity 0.15s ease, transform 0.2s cubic-bezier(0.16,1,0.3,1); }
+.turn-face:hover, .turn-face:focus-visible { opacity: 1; }
+.turn-art { display: grid; place-items: center; width: 2.7rem; height: 2.7rem; border-radius: 50%;
+  background: var(--panel-2) center/cover no-repeat; border: 2px solid var(--border);
+  font-family: var(--serif); font-size: 1.1rem; color: var(--muted); }
+.turn-face.npc .turn-art { border-radius: var(--radius); }
+/* Whose turn it is: bigger, gold, and lifted clear of the line. */
+.turn-face.now { opacity: 1; transform: translateY(-2px); }
+.turn-face.now .turn-art { border-color: var(--gold); width: 3rem; height: 3rem;
+  box-shadow: 0 0 0 3px rgba(201,165,78,0.22); }
+.turn-init { position: absolute; top: -0.15rem; right: 0.15rem; min-width: 1.15rem; padding: 0 0.2rem;
+  font-size: 0.78rem; line-height: 1.3; text-align: center; font-variant-numeric: tabular-nums;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 999px; color: var(--muted); }
+.turn-face.now .turn-init { color: var(--bg); background: var(--gold); border-color: var(--gold); }
+.turn-cond { position: absolute; top: -0.15rem; left: 0.15rem; width: 1.15rem; height: 1.15rem;
+  font-size: 0.78rem; line-height: 1.15rem; text-align: center; border-radius: 50%;
+  background: var(--accent); color: #fff; }
+.turn-label { max-width: 3.4rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 0.78rem; color: var(--muted); }
+.turn-face.now .turn-label { color: var(--text); }
+/* A phone does NOT get smaller faces. Shrinking them to fit eight figures on a narrow screen makes
+   every one of them unreadable, which defeats the point of showing faces at all — so they keep their
+   size and the strip scrolls sideways instead. It already scrolls; it just needed to be allowed to. */
+@media (max-width: 760px) {
+  .turn-strip { scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; }
+  .turn-face { scroll-snap-align: center; }
+}
+
 /* Rolling for initiative. Every screen shows the same bar, but each shows only what THAT device owes —
    the DM a row per creature, a player the one figure they hold — plus a tally so the table can see who
    it is waiting for without asking. */
 .init-rows { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; min-width: 0; }
 .init-ask { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.15rem 0.35rem;
-  background: var(--panel-2); border: 1px solid var(--border); border-radius: var(--radius); }
-.init-name { font-family: var(--serif); color: var(--gold); font-size: 0.95rem; }
-.init-num { width: 6.5rem; }
+  min-width: 0; background: var(--panel-2); border: 1px solid var(--border); border-radius: var(--radius); }
+.init-name { font-family: var(--serif); color: var(--gold); font-size: 0.95rem;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.init-num { width: 6.5rem; min-width: 0; }
 @media (max-width: 760px) {
-  .init-rows { width: 100%; }
-  .init-ask { flex: 1 1 100%; }
-  .init-num { flex: 1; width: auto; min-width: 0; }
+  /* One row per figure, each fitting the screen — a DM with seven creatures had them running off the
+     right-hand edge, and the list itself pushing the board off the bottom. It scrolls inside itself
+     instead, like everything else in this column. */
+  .init-rows { width: 100%; flex-direction: column; align-items: stretch;
+    max-height: 34dvh; overflow-y: auto; }
+  .init-ask { width: 100%; }
+  .init-name { flex: 0 1 auto; }
+  .init-num { flex: 1 1 4rem; width: auto; }
 }
 
 /* The DM's map list: one row per scene, the one on everyone's screen marked. */

@@ -1158,6 +1158,16 @@ ok(turn.idx === 0 && turn.round === 1, "starting at the top of round 1");
 ok((await aget(`CocLive.get("tables/482910/tokens/tOrc/init")`)) === 21, "each figure keeps the number it rolled");
 const initLine = Object.values(await aget(`CocLive.get("tables/482910/log")`)).map(e => e.text).find(t => /^Initiative/.test(t));
 ok(/Orc 21/.test(initLine || "") && /Rig 5/.test(initLine || ""), "and the order is read out into the log: " + initLine);
+/* THE ORDER AS FACES. The thing you want at a glance is who is up, and a sentence is bad at it. */
+ok($$(".turn-face").length === 2, "everyone in the fight is a face along the top");
+ok($$(".turn-face")[0].dataset.val === "tOrc", "in the order they act");
+ok($$(".turn-face")[0].classList.contains("now"), "with whoever is up marked");
+ok(!$$(".turn-face")[1].classList.contains("now"), "and nobody else");
+ok($$(".turn-face .turn-init").map((n) => n.textContent).join(",") === "21,5",
+  "each carrying the number it rolled");
+// RULES.md: hit points are NOT public. A player must not read them off the strip.
+ok(!/30|44|15/.test($(".turn-strip").textContent), "and no hit points, which are nobody else's business");
+ok($$(".turn-face")[0].dataset.tbl === "ed-open", "tapping a face opens that figure");
 ok(/Round 1/.test($("#vtt-turn").textContent), "the bar says the round");
 ok(/Orc/.test($("#vtt-turn").textContent), "and whose turn it is");
 ok(/next: Rig/.test($("#vtt-turn").textContent), "and who is up after them");

@@ -433,12 +433,12 @@ async function tblInitSet(id, value) {
 
 /* Roll it here, with the dice everybody else can see. The modifier is the figure's own, so what goes in
    is the total — the same number a player reading their own dice would type. */
-async function tblInitRoll(id) {
+async function tblInitRoll(id, quiet) {
   const t = tblTokens()[id];
   if (!t) return;
   const mod = Number(t.initMod) || 0;
   const res = tblRollAndPost({ terms: [{ count: 1, sides: 20, sign: 1 }], mod },
-    "Initiative", "normal", t.name || "Someone");
+    "Initiative", "normal", t.name || "Someone", quiet);
   if (res) await tblInitSet(id, res.total);
 }
 
@@ -478,7 +478,8 @@ async function tblInitRollMine() {
   const init = (tbl.data.meta || {}).init;
   if (!init) return;
   const owed = tblInitMine(init.need || []).filter((id) => (init.have || {})[id] == null);
-  for (const id of owed) await tblInitRoll(id);
+  // Quiet: the log gets every roll, the screen does not get seven throws in a row.
+  for (const id of owed) await tblInitRoll(id, owed.length > 1);
 }
 
 async function tblTurnStep(delta) {
@@ -533,6 +534,36 @@ function initBarHTML(init) {
     </span>`;
 }
 
+/* THE ORDER, AS FACES. Everyone in the fight along the top, in the order they act, with the figure
+ * whose turn it is raised out of the line — which is the one thing you want to know at a glance and the
+ * one thing a sentence is bad at.
+ *
+ * What it may show is decided by RULES.md and not by what would look good: **hit points are not public**,
+ * so no bar and no numbers here — a player reads their own on their sheet and the DM reads them on the
+ * figure. **Conditions ARE public**, because they change what a figure can do, so they are marked.
+ * The initiative each one rolled is public too — it is the reason the order is what it is.
+ *
+ * Tapping a face opens that figure, which is the same thing tapping it on the board does. */
+function turnStripHTML(order, tokens, currentId) {
+  if (order.length < 2) return "";
+  return `<div class="turn-strip" role="list">${order.map((id) => {
+    const t = tokens[id] || {};
+    const now = id === currentId;
+    const conds = Array.isArray(t.conditions) ? t.conditions : [];
+    const initials = String(t.name || "?").trim().slice(0, 1).toUpperCase();
+    return `<button class="turn-face ${now ? "now" : ""} ${t.kind === "npc" ? "npc" : "pc"}"
+      role="listitem" data-tbl="ed-open" data-val="${esc(id)}"
+      title="${esc(t.name || "Figure")}${conds.length ? " — " + conds.map((c) => esc(TBL_CONDITION_NAMES[c] || c)).join(", ") : ""}"
+      aria-current="${now}">
+      <span class="turn-art"${t.image ? ` style="background-image:url('${esc(t.image)}')"` : ""}>${
+        t.image ? "" : esc(initials)}</span>
+      <span class="turn-init">${t.init == null ? "" : esc(t.init)}</span>
+      ${conds.length ? `<span class="turn-cond" aria-hidden="true">${esc(conds.length)}</span>` : ""}
+      <span class="turn-label">${esc(t.name || "Figure")}</span>
+    </button>`;
+  }).join("")}</div>`;
+}
+
 function paintTurnBar() {
   const bar = $("#vtt-turn");
   if (!bar) return;
@@ -565,7 +596,10 @@ function paintTurnBar() {
   const mine = !!t.charCode && t.charCode === tbl.me.charCode;
   const canStep = tbl.role === "dm" || mine;
   const upNext = order[(order.indexOf(currentId) + 1) % order.length];
-  bar.innerHTML = `<span class="turn-round">Round ${esc(turn.round || 1)}</span>
+  const stripWas = bar.querySelector(".turn-strip");
+  const scrollWas = stripWas ? stripWas.scrollLeft : 0;
+  bar.innerHTML = `${turnStripHTML(order, tokens, currentId)}
+    <span class="turn-round">Round ${esc(turn.round || 1)}</span>
     <strong class="turn-who">${esc(t.name || "?")}${mine ? " — you" : ""}</strong>
     ${budget ? `<span class="turn-move ${budget.left ? "" : "spent"}">${esc(budget.left)} of ${esc(budget.speed)} ft left</span>` : ""}
     ${upNext && upNext !== currentId ? `<span class="muted">next: ${esc((tokens[upNext] || {}).name || "?")}</span>` : ""}
@@ -575,6 +609,20 @@ function paintTurnBar() {
         <button class="btn-quiet" data-tbl="init-roll">Reroll</button>
         <button class="btn-quiet" data-tbl="turn-end">End</button>` : ""}
     </span>`;
+  /* Keep the line where it was through a repaint — the bar is rebuilt on every stream event, and a
+     strip that jumps back to the start each time is unusable with eight figures in it. Then bring
+     whoever is up into view, which is the only reason to move it at all. */
+  const strip = bar.querySelector(".turn-strip");
+  if (!strip) return;
+  strip.scrollLeft = scrollWas;
+  const face = strip.querySelector(".turn-face.now");
+  if (face && face.scrollIntoView) {
+    const r = face.getBoundingClientRect(), s = strip.getBoundingClientRect();
+    if (r.left < s.left || r.right > s.right) {
+      try { face.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" }); }
+      catch { face.scrollIntoView(); }
+    }
+  }
 }
 
 /* ---------------------------------------------------------------- your sheet, over the board */

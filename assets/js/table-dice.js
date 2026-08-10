@@ -147,7 +147,7 @@ function tblRollLine(who, label, res) {
 
 /* Roll, and put it where the table can see it. Away from a table the same click still works — it just
    answers on your own screen, because a sheet is useful on its own. */
-function tblRollAndPost(spec, label, mode, whoOverride) {
+function tblRollAndPost(spec, label, mode, whoOverride, quiet) {
   const parsed = typeof spec === "string" ? tblParseRoll(spec) : spec;
   if (!parsed) return null;
   const res = tblDoRoll(parsed, mode || "normal");
@@ -169,9 +169,12 @@ function tblRollAndPost(spec, label, mode, whoOverride) {
   if (tbl) {
     // Shown here at once, and marked as seen so the stream's echo does not roll it a second time.
     tbl.lastRollAt = entry.t;
-    tblShowRoll(entry);
+    /* `quiet` still LOGS the roll — everyone can read it — but throws no dice for it. Rolling initiative
+       for seven creatures is seven rolls in a row, and seven throws back to back is not a moment, it is
+       a wait. The one roll you make yourself still gets its dice. */
+    if (!quiet) tblShowRoll(entry);
     CocLive.push(tblPath("log"), entry).catch(() => {});
-  } else {
+  } else if (!quiet) {
     tblShowRoll(entry);
   }
   return res;
