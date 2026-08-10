@@ -302,7 +302,10 @@ console.log("\n— 393px, as a player, by touch —");
     const r = t.getBoundingClientRect();
     return { x: r.left + r.width / 2, y: r.top + r.height / 2, w: Math.round(r.width) };
   });
-  ok(!!label && label.w > 20, `an area's label is a target you can hit (${label ? label.w : 0}px wide)`);
+  /* A one-square area cannot hold a finger-sized handle without spilling over its neighbours, and not
+     spilling is the rule. So the handle is as big as the area allows and no bigger — small on a 5-foot
+     illusion — and the On the field panel is the way in when it is too small to want to aim at. */
+  ok(!!label && label.w >= 10, `an area's handle is inside it and hittable (${label ? label.w : 0}px wide)`);
   if (label) await page.mouse.click(label.x, label.y);
   await new Promise((r) => setTimeout(r, 200));
   const opened = await page.evaluate(() => !!document.querySelector('[data-tbl="area-clear"]'));

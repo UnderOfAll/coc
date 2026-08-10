@@ -1205,26 +1205,57 @@ function paintAreas() {
  * Its size is divided by the zoom so it stays the same on SCREEN however far the board is pulled back —
  * everything else in the world grows and shrinks with the camera, but a label you cannot read is not a
  * label and a handle you cannot hit is not a handle. */
-function areaTagHTML(a, cell, id, cx, top) {
+/* THE HANDLE LIVES INSIDE THE AREA IT BELONGS TO.
+ *
+ * It used to sit above the shape, and above a 5-foot cube is the square to the north — so a label wider
+ * than the area it names hung over ground that belongs to somebody else, and a figure standing there was
+ * a misclick waiting to happen. Kayki: "it's invading the bottom part of the upper square, that goes out
+ * of scope." Nothing an area draws may reach outside the area.
+ *
+ * Which means it has to survive being too small for its own name. The full chip is drawn when it fits
+ * inside the shape; when it does not, it becomes a round handle in the corner — still a press, still the
+ * same card, and the name is in the card where there is room for it. A one-square illusion on a
+ * zoomed-out board simply cannot hold the words "Idle Image · 10 rounds", and pretending otherwise is
+ * how it ended up over the neighbours.
+ *
+ * A CHIP, not bare letters, either way: SVG text is hit-tested on the painted glyphs, so a tap between
+ * two letters lands on nothing. The plate behind it is the button; the text sits on it.
+ */
+function areaTagHTML(a, cell, id, cx, top, r) {
   const left = tblAreaLeft(a);
   const tag = [a.name || "", left != null ? left + (left === 1 ? " round" : " rounds") : ""]
     .filter(Boolean).join(" · ");
   if (!tag) return "";
   const z = (tbl.view && tbl.view.z) || 1;
-  const px = Math.min(cell * 0.5, 15 / z);
-  /* A CHIP, not bare letters. SVG text is hit-tested on the painted glyphs themselves, so a tap that
-     lands between two letters lands on nothing — which is why pressing the label "did nothing" on a real
-     screen while a synthetic click straight at the element worked perfectly in the test. The plate behind
-     it is the button; the text just sits on it. Its width is estimated from the string rather than
-     measured, because measuring means laying out the SVG first and this is redrawn on every camera move. */
-  const w = Math.max(px * 3, tag.length * px * 0.56) + px;
-  const h = px * 1.5;
-  const y = top - px * 0.6;
   const hit = id ? `data-tbl="area-peek" data-val="${esc(id)}"` : "";
-  return `<rect x="${(cx - w / 2).toFixed(1)}" y="${(y - h * 0.78).toFixed(1)}" width="${w.toFixed(1)}"
-      height="${h.toFixed(1)}" rx="${(h / 2).toFixed(1)}" class="area-plate" ${hit} />
-    <text x="${cx.toFixed(1)}" y="${y.toFixed(1)}" class="area-tag" font-size="${px.toFixed(1)}"
-      text-anchor="middle" ${hit}>${esc(tag)}</text>`;
+  const room = r * 2 - Math.min(6, r * 0.12);          // the shape's own width, less a hair of margin
+  const px = Math.min(cell * 0.42, 15 / z);
+  // Estimated rather than measured: measuring means laying the SVG out first, and this is redrawn on
+  // every camera move.
+  const widthOf = (s) => Math.max(px * 3, s.length * px * 0.56) + px;
+  /* It gives up its words one at a time rather than all at once. The whole label first, then the name
+     alone, then the count alone — a 15-foot cube can hold "Powder Screen" even when it cannot hold
+     "Powder Screen · 10 rounds", and a name is worth more on the board than a number you can read off
+     the card. */
+  const fit = [tag, a.name || "", left != null ? String(left) : ""].filter(Boolean)
+    .find((s) => widthOf(s) <= room);
+  if (fit) {
+    const w = widthOf(fit), h = px * 1.5;
+    const y = top + h * 0.85;                          // inside the top edge, not above it
+    return `<rect x="${(cx - w / 2).toFixed(1)}" y="${(y - h * 0.78).toFixed(1)}" width="${w.toFixed(1)}"
+        height="${h.toFixed(1)}" rx="${(h / 2).toFixed(1)}" class="area-plate" ${hit} />
+      <text x="${cx.toFixed(1)}" y="${y.toFixed(1)}" class="area-tag" font-size="${px.toFixed(1)}"
+        text-anchor="middle" ${hit}>${esc(fit)}</text>`;
+  }
+  /* Too small even for that: a handle in the corner. Its size is a constant on SCREEN, capped by the
+     shape — a 20-foot cube does not want a 60-pixel button in it, and the first version gave it one. */
+  const rad = Math.min(r * 0.34, Math.max(6, 11 / z));
+  const hx = cx - r + rad + Math.min(3, r * 0.06), hy = top + rad + Math.min(3, r * 0.06);
+  const mark = left != null ? String(left) : "●";
+  return `<circle cx="${hx.toFixed(1)}" cy="${hy.toFixed(1)}" r="${rad.toFixed(1)}"
+      class="area-plate" ${hit} />
+    <text x="${hx.toFixed(1)}" y="${(hy + rad * 0.38).toFixed(1)}" class="area-tag"
+      font-size="${(rad * 1.1).toFixed(1)}" text-anchor="middle" ${hit}>${esc(mark)}</text>`;
 }
 
 function areaShapeHTML(a, cell, id) {
@@ -1241,7 +1272,7 @@ function areaShapeHTML(a, cell, id) {
   // alternative is the DM keeping it in their head.
   return `<g class="area${id ? "" : " ghost"}" data-area="${esc(id || "")}">
     ${body}
-    ${areaTagHTML(a, cell, id, cx, cy - r)}
+    ${areaTagHTML(a, cell, id, cx, cy - r, r)}
   </g>`;
 }
 

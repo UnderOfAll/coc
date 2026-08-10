@@ -1370,6 +1370,31 @@ ok(!/Rig/.test(caught || ""), "and only who is inside — Rig is eight squares a
 ok(!/damage|save|DC/i.test(caught || ""), "it counts squares and judges nothing");
 ok($$("#vtt-areas .area").length === 1, "it is drawn on the board");
 ok($$('[data-tbl="area-peek"]').length > 0, "with a label that opens its card");
+/* NOTHING AN AREA DRAWS MAY REACH OUTSIDE THE AREA. The label used to sit ABOVE the shape — and above a
+   5-foot cube is the square to the north, so a label wider than the thing it named hung over ground
+   belonging to somebody else and a figure standing there was a misclick waiting to happen. Kayki: "it's
+   invading the bottom part of the upper square, that goes out of scope." */
+const strays = peek(`(function(){
+  const cell = tblScene().cell, out = [];
+  for (const [id, a] of Object.entries(tbl.data.areas || {})) {
+    const half = tblSquares(a.size) / 2 * cell;
+    const b = { l: a.x*cell - half, r: a.x*cell + half, t: a.y*cell - half, bo: a.y*cell + half };
+    const g = [...document.querySelectorAll("#vtt-areas .area")].find((n) => n.dataset.area === id);
+    if (!g) continue;
+    for (const n of g.children) {
+      let box = null;
+      if (n.tagName === "rect") box = { l: +n.getAttribute("x"), t: +n.getAttribute("y"),
+        r: +n.getAttribute("x") + +n.getAttribute("width"), bo: +n.getAttribute("y") + +n.getAttribute("height") };
+      else if (n.tagName === "circle") { const cx = +n.getAttribute("cx"), cy = +n.getAttribute("cy"),
+        rr = +n.getAttribute("r"); box = { l: cx-rr, r: cx+rr, t: cy-rr, bo: cy+rr }; }
+      if (!box) continue;
+      if (box.l < b.l - 0.5 || box.r > b.r + 0.5 || box.t < b.t - 0.5 || box.bo > b.bo + 0.5)
+        out.push(id + " " + n.getAttribute("class"));
+    }
+  }
+  return out.join(", ");
+})()`);
+ok(strays === "", "and nothing it draws reaches outside its own squares" + (strays ? ": " + strays : ""));
 // Who is inside is geometry, so it is asserted as geometry rather than through the UI.
 ok(peek(`tblInsideArea({ x: 10.5, y: 10.5, shape: "radius", size: 10 }).join(",")`) === "tOrc",
   "a 10 ft radius reaches one square out");
