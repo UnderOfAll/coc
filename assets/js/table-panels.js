@@ -1785,6 +1785,7 @@ function paintHandout() {
 function paintPlacing() {
   const bar = $("#vtt-placing");
   if (!bar) return;
+  if (tbl.picking) { bar.classList.remove("hidden"); bar.innerHTML = pickingBarHTML(tbl.picking); return; }
   const p = tbl.placing;
   bar.classList.toggle("hidden", !p);
   if (!p) { bar.innerHTML = ""; return; }
@@ -1863,4 +1864,18 @@ function tblSyncSheetCombat() {
   if (!syncCombatFromTable(fighting)) return;
   if (typeof renderSheet === "function") renderSheet();
   if (typeof persist === "function") persist();
+}
+
+
+/* Picking a figure to move or to hold — the same bar, in the same place, saying which of the two beats
+   you are on. A mode that swallows the next tap has to announce itself and offer a way out. */
+function pickingBarHTML(pick) {
+  const t = pick.pickedId ? tblTokens()[pick.pickedId] : null;
+  const feet = t ? tblMoveFeet(pick, t) : 0;
+  return `<strong>${esc(pick.name || (pick.verb === "lock" ? "Hold" : "Move"))}</strong>
+    ${t
+      ? `<span class="muted">${esc(t.name || "It")} &middot; up to ${esc(feet)} ft</span>
+         <strong class="turn-who">Tap where it goes</strong>`
+      : `<strong class="turn-who">Tap the figure to ${pick.verb === "lock" ? "hold" : "move"}</strong>`}
+    <span class="turn-acts"><button class="btn-quiet" data-tbl="pick-cancel">Cancel</button></span>`;
 }

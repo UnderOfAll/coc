@@ -1408,6 +1408,7 @@ function featuresPanel(d, p) {
       ${metaRow(f.meta)}
       <div class="feat-text">${fmtDesc(f.sheetSummary || f.description || "")} ${inPlayTip(f.narration)}</div>
       ${optionsBlock(f, key)}
+      ${boardCtl(f)}
       ${ctl}
     </div>`;
   }).join("");
@@ -1799,6 +1800,18 @@ function sheetAction(e) {
         });
       }
     }
+  } else if (act === "board-use") {
+    // The feature says what it does to the board; the board does it. Nothing here decides an outcome.
+    const f = (d.features || []).find((x) => x.name === val);
+    const b = f && f.board;
+    if (b && b.verb === "move" && typeof tblMoveOnBoard === "function") {
+      tblMoveOnBoard({ verb: "move", name: f.name, of: ch.name, distance: b.distance,
+        targets: b.targets, range: b.range });
+    } else if (b && b.verb === "lock" && typeof tblMoveOnBoard === "function") {
+      tblMoveOnBoard({ verb: "lock", name: f.name, of: ch.name, range: b.range });
+    } else if (b && typeof tblCastOnBoard === "function") {
+      tblCastOnBoard({ name: f.name, board: b });
+    }
   } else if (act === "prompt") {
     // Answering the "did it land?" question the sheet asked after a cast.
     const [tid, answer] = String(val).split("|");
@@ -1844,7 +1857,13 @@ function sheetAction(e) {
          so this asks rather than calls, and does nothing at all when there is no board to place on. */
       // Said out loud at the table, whatever the tier — see tblAnnounceCast.
       if (typeof tblAnnounceCast === "function") tblAnnounceCast(t, ch.name);
-      if (typeof tblCastOnBoard === "function") tblCastOnBoard(t);
+      const tb = t.board || {};
+      if (tb.verb === "move" && typeof tblMoveOnBoard === "function") {
+        tblMoveOnBoard({ verb: "move", name: t.name, of: ch.name, distance: tb.distance,
+          targets: tb.targets, range: tb.range });
+      } else if (tb.verb === "lock" && typeof tblMoveOnBoard === "function") {
+        tblMoveOnBoard({ verb: "lock", name: t.name, of: ch.name, range: tb.range });
+      } else if (typeof tblCastOnBoard === "function") tblCastOnBoard(t);
     }
   } else if (act === "clear-cd") delete p.cooldowns[val];
   else if (act === "use") p.uses[val] = (p.uses[val] || 0) + 1;
@@ -1990,3 +2009,21 @@ document.addEventListener("keydown", (e) => {
   if (e.key !== "Enter") return;
   if (evTarget(e).id === "open-code") { e.preventDefault(); openByCode(); }
 });
+
+
+/* A FEATURE THAT PUTS SOMETHING ON THE MAP GETS A BUTTON. Tricks have had Cast since the beginning;
+   features have only ever been prose, so half the things that touch the board — Manipulate hauling a
+   stringed creature, Heave throwing one, Iron Grip holding one, a Trapeze Swing — could be read and not
+   used. The button appears only where the data says there is something to do, and only at a table, since
+   away from one there is no board to do it on. */
+function boardCtl(f) {
+  const b = f && f.board;
+  if (!b || !atATable()) return "";
+  const verb = b.verb === "spawn" ? "" : b.verb;   // spawning is the engine's own button, not a second one
+  if (!verb) return "";
+  const label = verb === "lock" ? "Hold a figure"
+    : verb === "move" ? "Move a figure"
+    : "Put it on the map";
+  return `<div class="feat-ctl"><button class="btn-quiet" data-act="board-use"
+    data-val="${esc(f.name)}">${label}</button></div>`;
+}

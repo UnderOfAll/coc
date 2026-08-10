@@ -231,12 +231,13 @@ function paintTokens() {
        tells the players exactly how close the fight is. But the DM runs the fight, and opening a panel
        per goblin to see who is nearly down is slower than the fight is — so the DM gets the bar, with
        the numbers, and nobody else sees anything. */
+    /* THE NUMBERS, WITHOUT THE BAR. The strip was a second way of saying the same thing in the same inch
+       of screen, and on a board full of figures it read as clutter rather than information — Kayki's
+       call. "14/22" says how hurt something is precisely, and it is the DM reading it, who can do the
+       arithmetic. The bar survives on the figure's card, where there is room for it. */
     const hp = node.querySelector(".tok-hp");
     if (tbl.role === "dm" && t.hpMax) {
-      const pct = Math.max(0, Math.min(100, Math.round((Number(t.hp) || 0) / t.hpMax * 100)));
-      const hurt = pct <= 25 ? " low" : pct <= 60 ? " half" : "";
-      hp.innerHTML = `<span class="tok-bar${hurt}"><span style="width:${pct}%"></span></span>` +
-        `<span class="tok-num">${esc(t.hp)}/${esc(t.hpMax)}</span>`;
+      hp.innerHTML = `<span class="tok-num">${esc(t.hp)}/${esc(t.hpMax)}</span>`;
     } else if (hp.innerHTML) hp.innerHTML = "";
     // Conditions are different: they change what a figure can DO, so they stay visible to everyone.
     const cond = node.querySelector(".tok-cond");
@@ -686,6 +687,18 @@ function onPointerDown(e) {
   if (tbl.placing) {
     const at = toSquares(p.sx, p.sy);
     tblAimAt(at.x, at.y);
+    return;
+  }
+  /* Picking a figure to move or hold takes the gesture the same way placing does: the first tap is the
+     figure, the second is where it goes. */
+  if (tbl.picking) {
+    const hit = evTarget(e).closest("[data-token]");
+    if (!tbl.picking.pickedId) {
+      if (hit) tblPickFigure(hit.dataset.token).catch(tblFail);
+      return;
+    }
+    const at = toSquares(p.sx, p.sy);
+    tblMoveTo(at.x, at.y).catch(tblFail);
     return;
   }
   // Drawing takes the gesture entirely: while the pen is out, the board is a sheet of paper. That is also
@@ -1257,6 +1270,17 @@ function areaShapeHTML(a, cell, id) {
    DRAWN AND NOT ENFORCED — it turns red outside and lets you do it anyway, the same rule the board
    already holds for movement (RULES.md). */
 function placingGhostHTML(cell) {
+  /* Moving something draws its reach from where IT is, not from the caster — "up to 15 feet" is measured
+     off the thing being moved. Red outside, and it goes there anyway: the same rule as everything else. */
+  const pick = tbl.picking;
+  if (pick && pick.pickedId) {
+    const t = tblTokens()[pick.pickedId];
+    if (!t) return "";
+    const size = Math.max(1, Number(t.size) || 1);
+    const cx = (pick.fromX + size / 2) * cell, cy = (pick.fromY + size / 2) * cell;
+    const r = tblSquares(tblMoveFeet(pick, t) * 2) / 2 * cell;
+    return `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r.toFixed(1)}" class="area-reach" />`;
+  }
   const p = tbl.placing;
   if (!p || p.x == null) return "";
   const from = tblTokens()[p.fromId];
@@ -1630,4 +1654,103 @@ async function tblSpawnsSettle() {
     if (!t || !t.spawn) continue;
     if (!fighting || Number(t.hp) <= 0) await CocLive.put(tblPath("tokens/" + id), null);
   }
+}
+
+
+/* ---------------------------------------------------------------- `move` and `lock`
+ *
+ * PICK A FIGURE, THEN SAY WHERE — the same two beats as an area, aimed at a creature instead of a patch
+ * of ground. Twelve things in the data move a figure and one locks one, and they divide into two kinds
+ * that the board does not need to tell apart: some move YOU (Trapeze Swing, The Prestige), some move
+ * SOMEBODY ELSE (Manipulate hauls a stringed creature 15 feet; Heave throws one 30; Swap the Cards trades
+ * places with a willing ally). What they have in common is the only thing this needs: a figure, a
+ * distance, and a destination.
+ *
+ * Two rules follow from what forced movement IS, and both are the point of doing it here rather than by
+ * hand:
+ *   - it does NOT cost the figure its own movement. Being thrown is not walking, and the mover pays for
+ *     it out of their action, not the target out of its legs.
+ *   - and the reach is drawn from where the figure STARTED, not from the caster — "up to 15 feet" is
+ *     measured off the thing being moved.
+ *
+ * `lock` is the same gesture with no second beat: pick the figure, and it is held. The board already has
+ * `grappled` as a public condition and a figure already shows its conditions, so being held is said in
+ * the vocabulary the table already reads rather than in a new one.
+ */
+function tblMoveOnBoard(spec) {
+  if (!tbl || !spec) return false;
+  tbl.picking = {
+    verb: spec.verb === "lock" ? "lock" : "move",
+    name: spec.name || "", of: spec.of || "",
+    distance: spec.distance, targets: spec.targets === "many" ? "many" : "one",
+    range: Number(spec.range) || 0, fromId: tblCasterToken(), pickedId: "",
+  };
+  tblClosePanelSoon();
+  paintPlacing();
+  paintAreas();
+  return true;
+}
+
+/* How far this may go, in feet — a number, or measured off the figure's own legs. */
+function tblMoveFeet(pick, token) {
+  const d = pick.distance;
+  const speed = Math.max(0, Number((token || {}).speed) || 30);
+  if (d === "speed") return speed;
+  if (d === "half-speed") return Math.floor(speed / 2 / 5) * 5;
+  return Math.max(0, Number(d) || 0);
+}
+
+/* The first beat: which figure. */
+async function tblPickFigure(id) {
+  const pick = tbl.picking;
+  const t = tblTokens()[id];
+  if (!pick || !t) return;
+  if (pick.verb === "lock") {
+    const had = Array.isArray(t.conditions) ? t.conditions : [];
+    if (!had.includes("grappled")) await tblTokenField(id, "conditions", had.concat("grappled"));
+    await CocLive.push(tblPath("log"), {
+      t: Date.now(), who: pick.of || tbl.me.name || "Someone", kind: "system",
+      text: `${t.name || "Someone"} is held${pick.name ? " — " + pick.name : ""}`,
+    });
+    tbl.picking = null;
+    paintPlacing();
+    paintAreas();
+    return;
+  }
+  pick.pickedId = id;
+  pick.fromX = Number(t.x) || 0;
+  pick.fromY = Number(t.y) || 0;
+  paintPlacing();
+  paintAreas();
+}
+
+/* The second beat: where it lands. */
+async function tblMoveTo(x, y) {
+  const pick = tbl.picking;
+  if (!pick || !pick.pickedId) return;
+  const t = tblTokens()[pick.pickedId];
+  if (!t) { tbl.picking = null; paintPlacing(); return; }
+  const size = Math.max(1, Number(t.size) || 1);
+  const spot = tblFreeSquare(pick.pickedId, Math.round(x - size / 2), Math.round(y - size / 2),
+    size, pick.fromX, pick.fromY);
+  const feet = tblFeetBetween(pick.fromX, pick.fromY, spot.x, spot.y);
+  await tblTokenField(pick.pickedId, "x", spot.x);
+  await tblTokenField(pick.pickedId, "y", spot.y);
+  /* NOT CHARGED TO THE FIGURE'S OWN MOVEMENT. Being hauled, thrown or swapped is not walking, and the
+     turn bar's "20 of 30 ft left" is about walking. */
+  await CocLive.push(tblPath("log"), {
+    t: Date.now(), who: pick.of || tbl.me.name || "Someone", kind: "system",
+    text: `${t.name || "Someone"} is moved ${feet} ft${pick.name ? " — " + pick.name : ""}`,
+  });
+  // "Any number of creatures" keeps the gesture open for the next one; one target ends it.
+  if (pick.targets === "many") { pick.pickedId = ""; pick.fromX = 0; pick.fromY = 0; }
+  else tbl.picking = null;
+  paintPlacing();
+  paintAreas();
+}
+
+function tblPickCancel() {
+  tbl.picking = null;
+  paintPlacing();
+  paintAreas();
 }

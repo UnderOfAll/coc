@@ -206,7 +206,11 @@ ok(tok.style.left === "210px" && tok.style.top === "280px", "at its square (3,4 
 ok(/Rig/.test(tok.querySelector(".tok-name").textContent), "carrying its name");
 // Hit points on the board are the DM's alone: they run the fight, and opening a panel per goblin is
 // slower than the fight. A player sees none of this — their own are on their sheet.
-ok(tok.querySelector(".tok-bar"), "the DM gets a hit-point bar on a figure");
+/* THE NUMBERS, WITHOUT THE BAR. The strip said the same thing as the numbers beside it, in the same inch
+   of screen, and on a full board it read as clutter — Kayki's call. The bar survives on the figure's
+   card, where there is room for it. */
+ok(tok.querySelector(".tok-num"), "the DM gets the hit points on a figure");
+ok(!tok.querySelector(".tok-bar"), "as numbers, without a bar saying it again beside them");
 ok(/30\/44/.test(tok.textContent), "with the numbers, so nothing has to be opened mid-fight");
 await peek(`CocLive.put("tables/482910/tokens/tRig/x", 8)`);
 await wait(40);
@@ -597,9 +601,9 @@ peek(`tbl.role = "player"; tbl.me.charCode = "123456"; tbl.me.clientId = "thisBr
 ok($('[data-token="tRig"]').classList.contains("mine"), "your own figure is marked as yours");
 ok($('[data-token="tRig"]').classList.contains("movable"), "and is movable");
 ok(!$('[data-token="tOrc"]').classList.contains("movable"), "the DM's monster is not");
-ok(!$('[data-token="tOrc"] .tok-bar'), "a player is sent no bar at all");
+ok(!$('[data-token="tOrc"] .tok-num'), "a player is sent no hit points at all");
 ok(!/15\/15/.test($('[data-token="tOrc"]').textContent), "nor any numbers");
-ok(!$('[data-token="tRig"] .tok-bar'), "not even on their own figure — that is what the sheet is for");
+ok(!$('[data-token="tRig"] .tok-num'), "not even on their own figure — that is what the sheet is for");
 // A player can still look at a monster — what it is and what it is suffering from — but not how close
 // to dead it is.
 peek(`tblOpenToken("tOrc");`);
@@ -1572,6 +1576,48 @@ for (const [id] of Object.entries(await aget(`CocLive.get("tables/482910/tokens"
 }
 peek(`CocLive.flush();`);
 await wait(250);
+
+console.log("\n— MOVING SOMEBODY ELSE, AND HOLDING THEM —");
+/* The last two verbs. Pick a figure, then say where — the same two beats as an area, aimed at a creature
+   instead of a patch of ground. Twelve things in the data move a figure and one holds one; what they have
+   in common is a figure, a distance and a destination, which is all this needs. */
+await peek(`CocLive.patch("tables/482910/tokens/tOrc", { x: 10, y: 10, moved: 25 })`);
+await wait(80);
+peek(`tblMoveOnBoard({ verb: "move", name: "Manipulate", of: "Rig", distance: 15, range: 60 })`);
+ok(peek(`tbl.picking.verb`) === "move", "using it asks for a figure");
+ok(/Tap the figure to move/.test($("#vtt-placing").textContent), "and says so: "
+  + $("#vtt-placing").textContent.replace(/\s+/g, " ").trim());
+await peek(`tblPickFigure("tOrc")`);
+ok(peek(`tbl.picking.pickedId`) === "tOrc", "picking one moves on to the second beat");
+ok(/up to 15 ft/.test($("#vtt-placing").textContent), "naming how far it may go: "
+  + $("#vtt-placing").textContent.replace(/\s+/g, " ").trim());
+await peek(`tblMoveTo(12, 10)`);
+await until(async () => (await aget(`CocLive.get("tables/482910/tokens/tOrc/x")`)) === 12);
+ok(true, "and tapping a square puts it there");
+/* FORCED MOVEMENT IS NOT WALKING. Being hauled, thrown or swapped does not come out of the figure's own
+   legs, and the turn bar's "20 of 30 ft left" is about walking. */
+ok((await aget(`CocLive.get("tables/482910/tokens/tOrc/moved")`)) === 25,
+  "without costing the figure a foot of its own movement");
+const moveLine = Object.values(await aget(`CocLive.get("tables/482910/log")`)).map((e) => e.text)
+  .find((t) => /is moved/.test(t || ""));
+ok(/Orc is moved 10 ft — Manipulate/.test(moveLine || ""), "and the table is told: " + moveLine);
+ok(peek(`tbl.picking`) === null, "one target ends the gesture");
+// Distances measured off the figure's own legs, for the moves that are written that way.
+ok(peek(`tblMoveFeet({ distance: "speed" }, { speed: 30 })`) === 30, "a move 'up to its speed' is its speed");
+ok(peek(`tblMoveFeet({ distance: "half-speed" }, { speed: 30 })`) === 15, "and half of it is half");
+ok(peek(`tblMoveFeet({ distance: "half-speed" }, { speed: 25 })`) === 10,
+  "rounded down to a whole square, because half a square is not a place");
+// LOCK: one beat, no destination. Said in the vocabulary the table already reads.
+peek(`tblMoveOnBoard({ verb: "lock", name: "Iron Grip", of: "Rig", range: 5 })`);
+ok(/Tap the figure to hold/.test($("#vtt-placing").textContent), "holding one asks for a figure too");
+await peek(`tblPickFigure("tOrc")`);
+await until(async () => ((await aget(`CocLive.get("tables/482910/tokens/tOrc/conditions")`)) || [])
+  .indexOf("grappled") >= 0);
+ok(true, "and it is held, as a condition the whole table can read");
+ok(peek(`tbl.picking`) === null, "with nothing left to tap");
+await peek(`CocLive.put("tables/482910/tokens/tOrc/conditions", null)`);
+peek(`CocLive.flush();`);
+await wait(200);
 
 console.log("\n— A PLAYER ENDS THEIR OWN TURN —");
 peek(`tbl.role = "player"; tbl.me.charCode = "123456"; renderTableShell(); paintTokens(); paintTurnBar(); paintWho();`);

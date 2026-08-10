@@ -1071,6 +1071,7 @@ document.addEventListener("click", (e) => {
   else if (act === "init-out") tblJoinOut(val).catch(tblFail);
   // Placing an area: anybody may cancel their own, and the DM may clear one that has landed.
   else if (act === "place-cancel") tblPlaceCancel();
+  else if (act === "pick-cancel") tblPickCancel();
   else if (act === "place-go") {
     const p = tbl.placing;
     if (p && p.aimed) tblPlaceAt(p.x, p.y).catch(tblFail);

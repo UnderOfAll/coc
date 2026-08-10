@@ -1786,3 +1786,6 @@ body:has(.vtt) { height: 100dvh; overflow: hidden; }
 /* At a table the DM owns the fight, so the sheet says whose it is rather than offering a button that
    the next stream event would undo. */
 .at-table-combat { font-size: 0.85rem; text-align: right; max-width: 12rem; }
+
+/* A feature that puts something on the map carries the button that does it, under its own text. */
+.feat-ctl { margin-top: 0.5rem; }
