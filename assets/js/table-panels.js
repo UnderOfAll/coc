@@ -1390,12 +1390,18 @@ function seatPanelHTML() {
       <label class="field"><span>Circus of Chaos code <span class="muted">optional</span></span>
         <input id="seat-code" class="text code-input" type="text" inputmode="numeric" maxlength="6"
           placeholder="123456" autocomplete="off" /></label>
-      <label class="field"><span>Their picture <span class="muted">from this device, optional</span></span>
-        <input id="seat-file" class="text" type="file" accept="image/*" /></label>
-      ${tblRepoMaps && tblRepoMaps.length ? `<p class="panel-sub">Or one from the repo</p>
-        <div class="chips">${tblRepoMaps.map((f) =>
-          `<button class="chip ${tbl.ui.seatPic === "maps/" + f ? "on" : ""}" data-tbl="seat-pic"
-            data-val="${esc(f)}">${esc(f)}</button>`).join("")}</div>` : ""}
+      <!-- A Circus of Chaos character already HAS a picture: the one on its sheet, which is the one that
+           follows it everywhere. Offering a second one here is offering to disagree with the sheet, so
+           the whole block folds away the moment a code is typed. -->
+      <div id="seat-pic-block">
+        <label class="field"><span>Their picture <span class="muted">from this device, optional</span></span>
+          <input id="seat-file" class="text" type="file" accept="image/*" /></label>
+        ${tblRepoMaps && tblRepoMaps.length ? `<p class="panel-sub">Or one from the repo</p>
+          <div class="chips">${tblRepoMaps.map((f) =>
+            `<button class="chip ${tbl.ui.seatPic === "maps/" + f ? "on" : ""}" data-tbl="seat-pic"
+              data-val="${esc(f)}">${esc(f)}</button>`).join("")}</div>` : ""}
+      </div>
+      <p id="seat-pic-note" class="muted hidden">Their picture comes from the sheet.</p>
       <p id="seat-pic-msg" class="save-msg"></p>
       <button class="btn" data-tbl="seat-new">Put them on the board</button>
       <p id="seat-msg" class="save-msg"></p>
@@ -1773,10 +1779,22 @@ function paintPlacing() {
   const p = tbl.placing;
   bar.classList.toggle("hidden", !p);
   if (!p) { bar.innerHTML = ""; return; }
+  // What it will catch, before it catches it — the same count the log gets afterwards, so nobody has to
+  // place it to find out.
+  const caught = p.aimed
+    ? tblInsideArea({ x: p.x, y: p.y, shape: p.shape, size: p.size })
+        .map((id) => (tblTokens()[id] || {}).name || "someone")
+    : [];
   bar.innerHTML = `<strong>${esc(p.name)}</strong>
     <span class="muted">${esc(p.size)} ft ${p.shape === "cube" ? "cube" : "radius"}${
       p.range ? " · within " + esc(p.range) + " ft" : ""}${
       p.rounds ? " · " + esc(p.rounds) + " rounds" : ""}</span>
-    <strong class="turn-who">Tap the board to place it</strong>
-    <span class="turn-acts"><button class="btn-quiet" data-tbl="place-cancel">Cancel</button></span>`;
+    ${p.aimed
+      ? `<strong class="turn-who">${caught.length
+          ? "Catches " + esc(caught.join(", ")) : "Catches nobody"}</strong>`
+      : `<strong class="turn-who">Tap the board to aim it</strong>`}
+    <span class="turn-acts">
+      ${p.aimed ? `<button class="btn" data-tbl="place-go">Place it here</button>` : ""}
+      <button class="btn-quiet" data-tbl="place-cancel">Cancel</button>
+    </span>`;
 }

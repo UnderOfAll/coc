@@ -603,6 +603,13 @@ function onPointerDown(e) {
   if (!tbl) return;
   const stage = $("#vtt-stage");
   if (!stage || !stage.contains(e.target)) return;   // the window hears everything; the board owns only itself
+  /* A CONTROL DRAWN ON THE BOARD IS A CONTROL, not a patch of map. Everything below takes the gesture
+     over: it preventDefaults, and it calls setPointerCapture on the stage — and a captured pointer
+     delivers the eventual `click` to the STAGE rather than to the thing under the finger, so a button
+     inside the board can never be pressed. That is why the × on an area did nothing. Anything carrying
+     `data-tbl` is left entirely alone here and reaches the ordinary click handler like every other
+     button in the app. */
+  if (evTarget(e).closest("[data-tbl]")) return;
   /* THE bug behind five reports of "I can't drag until I double-click".
      A pointerdown on an <img> or on text starts the BROWSER's own drag-and-drop — a native gesture that
      swallows every pointermove that follows, so the board simply stops hearing the hand. It is
@@ -626,7 +633,7 @@ function onPointerDown(e) {
      put down, the next tap on the board is where it goes and nothing is dragged or panned on the way. */
   if (tbl.placing) {
     const at = toSquares(p.sx, p.sy);
-    tblPlaceAt(at.x, at.y).catch(tblFail);
+    tblAimAt(at.x, at.y);
     return;
   }
   // Drawing takes the gesture entirely: while the pen is out, the board is a sheet of paper. That is also
@@ -692,6 +699,8 @@ function onPointerMove(e) {
     const at = toSquares(stagePoint(e).sx, stagePoint(e).sy);
     tbl.placing.x = Math.round(at.x * 2) / 2;
     tbl.placing.y = Math.round(at.y * 2) / 2;
+    tbl.placing.aimed = true;
+    paintPlacing();
     paintAreas();
     return;
   }
@@ -1133,10 +1142,13 @@ function paintAreas() {
 function areaShapeHTML(a, cell, id) {
   const r = tblSquares(a.size) / 2 * cell;
   const cx = a.x * cell, cy = a.y * cell;
-  const body = a.shape === "cube"
+  // Drawn twice: a dark halo under a gold edge, so the outline reads on a bright map and a dark one
+  // without either being loud enough to hide what is standing in it.
+  const geom = a.shape === "cube"
     ? `<rect x="${(cx - r).toFixed(1)}" y="${(cy - r).toFixed(1)}" width="${(r * 2).toFixed(1)}"
-         height="${(r * 2).toFixed(1)}" class="area-body" />`
-    : `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r.toFixed(1)}" class="area-body" />`;
+         height="${(r * 2).toFixed(1)}"`
+    : `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r.toFixed(1)}"`;
+  const body = `${geom} class="area-edge" />${geom} class="area-body" />`;
   // The rounds left are on the area itself: "how long is that cloud there for" is asked every round, and
   // the alternative is the DM keeping it in their head.
   const tag = [a.name || "", a.left != null ? a.left + (a.left === 1 ? " round" : " rounds") : ""]
@@ -1145,9 +1157,9 @@ function areaShapeHTML(a, cell, id) {
     ${body}
     ${tag ? `<text x="${cx.toFixed(1)}" y="${(cy - r - cell * 0.12).toFixed(1)}"
       class="area-tag" text-anchor="middle">${esc(tag)}</text>` : ""}
-    ${id && tbl.role === "dm" ? `<circle cx="${(cx + r).toFixed(1)}" cy="${(cy - r).toFixed(1)}"
-      r="${(cell * 0.22).toFixed(1)}" class="area-x" data-tbl="area-clear" data-val="${esc(id)}" />
-      <text x="${(cx + r).toFixed(1)}" y="${(cy - r + cell * 0.08).toFixed(1)}" class="area-x-mark"
+    ${id && tblCanClearArea(a) ? `<circle cx="${(cx + r).toFixed(1)}" cy="${(cy - r).toFixed(1)}"
+      r="${(cell * 0.24).toFixed(1)}" class="area-x" data-tbl="area-clear" data-val="${esc(id)}" />
+      <text x="${(cx + r).toFixed(1)}" y="${(cy - r + cell * 0.09).toFixed(1)}" class="area-x-mark"
         text-anchor="middle" data-tbl="area-clear" data-val="${esc(id)}">&times;</text>` : ""}
   </g>`;
 }
@@ -1183,8 +1195,12 @@ function tblCastOnBoard(trick) {
     name: trick.name || "Area", shape: b.shape === "cube" ? "cube" : "radius",
     size: Number(b.size) || 5, range: Number(b.range) || 0,
     rounds: b.rounds == null ? null : Number(b.rounds),
-    fromId: tblCasterToken(), x: null, y: null,
+    fromId: tblCasterToken(), x: null, y: null, aimed: false,
   };
+  /* GET OUT OF THE WAY. You cast it from your sheet, which on a phone IS the screen and on a desktop
+     covers a third of the board — and then you are asked to tap a map you cannot see. Casting closes the
+     drawer, every time: the next thing you have to do is on the board. */
+  if (tbl.ui.panel) { tbl.ui.panel = ""; paintSide(); }
   paintPlacing();
   paintAreas();
   return true;
@@ -1202,6 +1218,23 @@ function tblCasterToken() {
 
 function tblPlaceCancel() {
   tbl.placing = null;
+  paintPlacing();
+  paintAreas();
+}
+
+/* AIM, THEN PLACE. A tap on the board moves the outline; it does not commit anything.
+ *
+ * The first version placed it on the tap, and Kayki's first misclick put an illusion somewhere he did not
+ * want it with no way to take it back. A trick costs a cooldown or a slice of the engine — it is not an
+ * action that should be one stray finger away. So the tap aims and a second, deliberate press on "Place
+ * it here" commits. It also fixes the phone, where there is no pointer to hover with and the outline had
+ * nowhere to appear before it landed. */
+function tblAimAt(x, y) {
+  const p = tbl.placing;
+  if (!p) return;
+  p.x = Math.round(x * 2) / 2;
+  p.y = Math.round(y * 2) / 2;
+  p.aimed = true;
   paintPlacing();
   paintAreas();
 }
@@ -1228,8 +1261,17 @@ async function tblPlaceAt(x, y) {
   });
 }
 
+/* WHOEVER PUT IT THERE CAN TAKE IT AWAY, and so can the DM. The first version was DM-only, which meant a
+   player who dropped an illusion had to ask somebody else to tidy it up — and half of these tricks say
+   "until you dismiss it (no action required)" in their own text, so dismissing it is the player's right
+   and not a favour. */
+function tblCanClearArea(a) {
+  return tbl.role === "dm" || (!!a && a.by === tbl.me.clientId);
+}
+
 async function tblAreaClear(id) {
-  if (tbl.role !== "dm") return;
+  const a = (tbl.data.areas || {})[id];
+  if (!a || !tblCanClearArea(a)) return;
   await CocLive.put(tblPath("areas/" + id), null);
 }
 

@@ -545,6 +545,11 @@ async function tblEnsureToken() {
     return;
   }
   if (tbl.me.left) return;          // you took your figure off on purpose; it does not come back by itself
+  /* NOT OVER SOMETHING YOU ARE ALREADY LOOKING AT. This runs on the heartbeat, so "once" is not once at a
+     predictable moment — it is once at whatever moment the beat happens to land, and if that is while
+     your sheet is open, your sheet vanishes and a form you did not ask for takes its place. Wait for a
+     quiet screen; "Choose a character" is sitting in the bar the whole time either way. */
+  if (tbl.ui.panel) return;
   // Asked ONCE, because reopening it every twenty seconds would shove aside whatever they had opened
   // instead. It is not a trap any more: while you hold no figure, "Choose a character" sits in the bar.
   if (!tbl.ui.askedSeat) {
@@ -693,6 +698,11 @@ function paintBar() {
   const holding = tblMyTokens().length;
   if (tbl.role !== "dm" && !holding) want("seat", "Choose a character", " on"); else drop("seat");
   if (tbl.role === "dm" || tbl.me.charCode) want("sheet", "My sheet"); else drop("sheet");
+  /* "Character" is the tracker — a place to keep a character this app does not understand. Beside "My
+     sheet" it is two buttons for one thing, and the wrong one is the one that looks like it holds your
+     character. So a player with a real Circus of Chaos code does not get it; everybody else still does,
+     because for them it IS their sheet. */
+  if (tbl.role !== "dm" && tbl.me.charCode) drop("mine"); else want("mine", "Character");
 }
 
 function paintHeader() {
@@ -895,6 +905,15 @@ document.addEventListener("focusout", (e) => {
 
 document.addEventListener("input", (e) => {
   if (!tbl) return;
+  /* Typing a character code folds away the picture picker, because the sheet's photo is the picture and
+     two answers to one question is how you get a figure whose face does not match its sheet. Toggled
+     rather than repainted: repainting the panel would take the focus out of the box being typed in. */
+  if (evTarget(e).id === "seat-code") {
+    const has = String(evTarget(e).value || "").replace(/\D/g, "").length > 0;
+    const block = $("#seat-pic-block"), note = $("#seat-pic-note");
+    if (block) block.classList.toggle("hidden", has);
+    if (note) note.classList.toggle("hidden", !has);
+  }
   if (evTarget(e).id === "close-confirm") {
     tbl.ui.closeText = String(evTarget(e).value || "").replace(/\D/g, "").slice(0, 6);
     // Only the button's state changes, so the panel is not rebuilt — that would take the focus out of
@@ -1022,6 +1041,10 @@ document.addEventListener("click", (e) => {
   else if (act === "init-out") tblJoinOut(val).catch(tblFail);
   // Placing an area: anybody may cancel their own, and the DM may clear one that has landed.
   else if (act === "place-cancel") tblPlaceCancel();
+  else if (act === "place-go") {
+    const p = tbl.placing;
+    if (p && p.aimed) tblPlaceAt(p.x, p.y).catch(tblFail);
+  }
   else if (act === "area-clear") tblAreaClear(val).catch(tblFail);
   else if (act === "claim") tblClaimFromPanel();
   // Dismissing a handout is each person's own business, so it is not a DM-only action.

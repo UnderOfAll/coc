@@ -1312,8 +1312,15 @@ ok(/Flash Powder/.test($("#vtt-placing").textContent) && /Tap the board/.test($(
   "naming it and saying what to do: " + $("#vtt-placing").textContent.replace(/\s+/g, " ").trim());
 ok(!!$('[data-tbl="place-cancel"]'), "with a way out, because it swallows the next tap");
 ok(peek(`tblCastOnBoard({ name: "Vicious Jibe" })`) === false, "a trick with no board block places nothing");
+/* AIM, THEN PLACE. A tap on the board moves the outline and commits nothing — a trick costs a cooldown
+   or a slice of the engine, and Kayki's first misclick put an illusion somewhere he did not want it. */
+await peek(`tblAimAt(10.5, 10.5)`);
+ok((await aget(`CocLive.get("tables/482910/areas")`)) == null, "aiming it writes nothing at all");
+ok(!!$('[data-tbl="place-go"]'), "and offers the deliberate press that does");
+ok(/Catches Orc/.test($("#vtt-placing").textContent),
+  "saying what it will catch before it catches it: " + $("#vtt-placing").textContent.replace(/\s+/g, " ").trim());
 // A 10-foot radius is 2 squares across: dropped on the Orc it catches the Orc and nobody else.
-await peek(`tblPlaceAt(10.5, 10.5)`);
+click($('[data-tbl="place-go"]'));
 await until(async () => Object.keys((await aget(`CocLive.get("tables/482910/areas")`)) || {}).length === 1);
 ok($("#vtt-placing").classList.contains("hidden"), "placing it leaves the mode");
 const areaId = Object.keys(await aget(`CocLive.get("tables/482910/areas")`))[0];
@@ -1361,11 +1368,26 @@ ok(true, "and at zero it clears itself, for everyone");
 await peek(`tblPlaceAt(10.5, 10.5)`);          // nothing is being placed, so this does nothing
 await peek(`tblCastOnBoard({ name: "Powder Screen", board:
   { verb: "shape", anchor: "point", range: 60, shape: "cube", size: 15, rounds: 10 } })`);
-await peek(`tblPlaceAt(4, 4)`);
+ok(peek(`tbl.ui.panel`) === "", "casting closes the drawer — the next thing you do is on the board");
+await peek(`tblAimAt(4, 4); tblPlaceAt(4, 4)`);
 await until(async () => Object.keys((await aget(`CocLive.get("tables/482910/areas")`)) || {}).length === 1);
 const second = Object.keys(await aget(`CocLive.get("tables/482910/areas")`))[0];
 ok((await aget(`CocLive.get("tables/482910/areas/${second}/left")`)) === 10,
   "an area authored with rounds arrives carrying them");
+/* A CONTROL DRAWN ON THE BOARD IS A CONTROL. The × did nothing at all at first: the stage captures the
+   pointer, and a captured pointer delivers the click to the stage rather than to the thing under the
+   finger. Anything with data-tbl is left alone by the board's gestures now, so a real press reaches it. */
+ok(!!$(`[data-tbl="area-clear"][data-val="${second}"]`), "the area carries a way to take it off");
+ok(peek(`onPointerDown({ target: document.querySelector('[data-tbl="area-clear"]'),
+  cancelable: true, isPrimary: true, pointerId: 9, clientX: 10, clientY: 10,
+  preventDefault(){ window.__prevented = true; } }), window.__prevented === true`) === false,
+  "and the board does not take the gesture off it");
+/* Whoever put it there may take it away, not only the DM — half these tricks say "until you dismiss it"
+   in their own text, so dismissing it is the caster's right and not a favour. */
+ok(peek(`(function(){ const was = tbl.role; tbl.role = "player";
+  const yes = tblCanClearArea({ by: tbl.me.clientId }), no = tblCanClearArea({ by: "somebody-else" });
+  tbl.role = was; return yes && !no; })()`) === true,
+  "a player may clear their own area and nobody else's");
 await peek(`tblAreaClear("${second}")`);
 await until(async () => (await aget(`CocLive.get("tables/482910/areas")`)) == null);
 ok(true, "and the DM can take it off early");
@@ -1387,7 +1409,12 @@ function paintTurnBarCheck() {
 }
 
 console.log("\n— YOUR SHEET, OVER THE BOARD —");
-// Still the player holding Rig's figure from the turn-order section.
+/* Still the player holding Rig's figure from the turn-order section — and now actually holding it. The
+   figure had no `owner`, so this browser held nothing, and the heartbeat's one-time "choose a
+   character" prompt was free to land in the middle of the section and wipe the drawer. That is fixed in
+   tblEnsureToken (it waits for a quiet screen), but the fiction here should be true as well. */
+await peek(`CocLive.put("tables/482910/tokens/tRig/owner", tbl.me.clientId)`);
+await wait(60);
 openPanel("sheet");
 /* Waited for, not slept through. The drawer LOADS the character before it can draw it, so 150ms is a
    coin toss on a busy machine — and when it lost, every assertion below fell over on an empty drawer. */

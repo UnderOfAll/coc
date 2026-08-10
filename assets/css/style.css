@@ -1745,9 +1745,14 @@ body:has(.vtt) { height: 100dvh; overflow: hidden; }
    goblin standing in one is still a goblin you can see and drag. Shaded rather than solid for the same
    reason: the map has to read through it. */
 .vtt-areas { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
-.area-body { fill: var(--gold); fill-opacity: 0.16; stroke: var(--gold); stroke-width: 2;
-  stroke-opacity: 0.75; }
-.area.ghost .area-body { fill-opacity: 0.10; stroke-dasharray: 6 5; }
+/* Strong enough to SEE. The first pass was 0.16 with a thin edge, and Kayki's 5-foot Idle Image — one
+   square — was "a near invisible square in the map". A thing on the board you have to hunt for is not on
+   the board. It still has to be read THROUGH, so the fill stays translucent and the weight goes into the
+   edge instead: a solid 3px line and a dark halo under it, so it reads on light maps and dark ones. */
+.area-body { fill: var(--gold); fill-opacity: 0.30; stroke: var(--gold); stroke-width: 3;
+  stroke-opacity: 1; paint-order: stroke; }
+.area-edge { fill: none; stroke: rgba(11,11,10,0.55); stroke-width: 6; }
+.area.ghost .area-body { fill-opacity: 0.18; stroke-dasharray: 7 5; }
 .area-tag { fill: var(--gold); font-family: var(--serif); font-size: 15px; paint-order: stroke;
   stroke: rgba(11,11,10,0.85); stroke-width: 3px; }
 /* The reach it is being cast from: shown, never enforced — red outside it, and you may still place it
