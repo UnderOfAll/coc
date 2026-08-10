@@ -667,8 +667,6 @@ async function tblTurnStep(delta) {
   if (idx >= n) { idx = 0; round += 1; }
   if (idx < 0) { idx = n - 1; round = Math.max(1, round - 1); }
   await CocLive.patch(tblPath("meta/turn"), { idx, round });
-  // A round has gone by, so everything on the board that was counting rounds loses one.
-  if (round !== (turn.round || 1)) await tblAreasTick();
   // A turn starts with your movement unspent. Reset on ARRIVAL rather than on departure, so someone
   // who steps back through the order does not find a spent budget waiting for them.
   const id = turn.order[idx];

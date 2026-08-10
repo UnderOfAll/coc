@@ -1116,7 +1116,12 @@ body:has(.vtt) { height: 100dvh; overflow: hidden; }
 .vtt-grid { position: absolute; inset: 0; pointer-events: none;
   background-image: linear-gradient(to right, rgba(233,228,218,0.17) 1px, transparent 1px),
                     linear-gradient(to bottom, rgba(233,228,218,0.17) 1px, transparent 1px); }
-.vtt-tokens { position: absolute; inset: 0; }
+/* The figures' layer covers the WHOLE world, so with pointer events on it swallowed every press meant
+   for anything drawn beneath it — which is the layer the areas are on. That is why an area's handle
+   "appeared but did nothing" however it was drawn: the click never reached it. The layer is transparent
+   to a finger; the figures on it are not. */
+.vtt-tokens { position: absolute; inset: 0; pointer-events: none; }
+.tok { pointer-events: auto; }
 .vtt-ruler { position: absolute; inset: 0; overflow: visible; pointer-events: none; }
 
 /* One node per token, positioned in world pixels. The art is a circle so a square portrait still
@@ -1756,9 +1761,12 @@ body:has(.vtt) { height: 100dvh; overflow: hidden; }
 /* The label is the handle: the only part of an area that takes a press, because a corner handle sits
    under a figure half the time. Its size is set inline, divided by the zoom, so it stays the same on
    screen however far the board is pulled back. */
-.area-tag { fill: var(--gold); font-family: var(--serif); paint-order: stroke;
-  stroke: rgba(11,11,10,0.85); stroke-width: 3px; pointer-events: auto; cursor: pointer; }
-.area-tag:hover { fill: var(--text); }
+.area-tag { fill: var(--gold); font-family: var(--serif); pointer-events: auto; cursor: pointer; }
+/* The plate IS the button. Bare SVG text is hit-tested glyph by glyph, so a tap between two letters
+   misses everything — the label looked pressable and was not. */
+.area-plate { fill: rgba(11,11,10,0.82); stroke: var(--gold); stroke-width: 1; stroke-opacity: 0.7;
+  pointer-events: auto; cursor: pointer; }
+.area-plate:hover { fill: rgba(11,11,10,0.95); stroke-opacity: 1; }
 /* The reach it is being cast from: shown, never enforced — red outside it, and you may still place it
    there. The same rule the ruler holds for movement. */
 .area-reach { fill: none; stroke: var(--gold); stroke-opacity: 0.5; stroke-width: 2;
@@ -1770,3 +1778,8 @@ body:has(.vtt) { height: 100dvh; overflow: hidden; }
 .vtt-placing { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center;
   background: rgba(201,165,78,0.14); border: 1px dashed var(--gold); border-radius: var(--radius);
   padding: 0.45rem 0.7rem; }
+
+/* The list of what you have on the field: what it is on the left, the way to take it away on the right. */
+.field-what { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
+.field-what strong { font-family: var(--serif); color: var(--gold); }
+.field-what .muted { font-size: 0.82rem; }

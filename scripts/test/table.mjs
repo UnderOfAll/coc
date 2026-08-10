@@ -1388,18 +1388,22 @@ ok(peek(`tblInsideArea({ x: 10.5, y: 10.5, shape: "radius", size: 80 }).join(","
    assertion fails the moment anyone changes it to measure from the centre. */
 ok(peek(`tblInsideArea({ x: 11.9, y: 10.5, shape: "radius", size: 10 }).join(",")`) === "tOrc",
   "a figure with only its edge inside is inside");
-// Rounds tick with the order and clear themselves.
-await peek(`CocLive.put("tables/482910/areas/${areaId}/left", 2)`);
-await peek(`CocLive.put("tables/482910/meta/turn", { order: ["tOrc", "tRig"], idx: 1, round: 1 })`);
+/* HOW LONG IT HAS LEFT IS A SUM, NOT A COUNTDOWN. The first version decremented from inside the function
+   that whoever presses Next or Done runs — and the decrement was DM-only, so a PLAYER ending their own
+   turn advanced the round and nothing ticked, which is why Kayki's Idle Image outlived its ten rounds.
+   Stepping Back would have counted it down a second time, too. An area stores the round it lasts UNTIL,
+   so every browser agrees without being told and Back is simply the same sum again. */
+await peek(`CocLive.put("tables/482910/meta/turn", { order: ["tOrc", "tRig"], idx: 1, round: 4 })`);
+await peek(`CocLive.patch("tables/482910/areas/${areaId}", { rounds: 3, until: 6 })`);
 await wait(80);
-click($('[data-tbl="turn"][data-val="1"]'));   // past the last one: round 2
-await until(async () => (await aget(`CocLive.get("tables/482910/areas/${areaId}/left")`)) === 1);
-ok(true, "a round going by takes a round off it");
-click($('[data-tbl="turn"][data-val="1"]'));
-await wait(120);
-click($('[data-tbl="turn"][data-val="1"]'));   // round 3
+ok(peek(`tblAreaLeft({ rounds: 3, until: 6 })`) === 3, "in round 4, an area lasting until 6 has 3 rounds left");
+ok(peek(`tblAreaLeft({ rounds: 3, until: 4 })`) === 1, "and one lasting until 4 has its last round");
+ok(peek(`tblAreaLeft({ rounds: 3 })`) === null, "one with no clock yet is counting nothing");
+// A PLAYER ends the turn that rolls the round over; the DM's browser is what sweeps up.
+await peek(`CocLive.patch("tables/482910/areas/${areaId}", { until: 4 })`);
+await peek(`CocLive.put("tables/482910/meta/turn/round", 5)`);
 await until(async () => (await aget(`CocLive.get("tables/482910/areas/${areaId}")`)) == null);
-ok(true, "and at zero it clears itself, for everyone");
+ok(true, "and once the round passes the one it lasts until, it goes — for everyone");
 // The DM's early clear.
 await peek(`tblPlaceAt(10.5, 10.5)`);          // nothing is being placed, so this does nothing
 await peek(`tblCastOnBoard({ name: "Powder Screen", board:
@@ -1412,7 +1416,7 @@ ok(true, "casting closes the drawer — the next thing you do is on the board");
 await peek(`tblAimAt(4, 4); tblPlaceAt(4, 4)`);
 await until(async () => Object.keys((await aget(`CocLive.get("tables/482910/areas")`)) || {}).length === 1);
 const second = Object.keys(await aget(`CocLive.get("tables/482910/areas")`))[0];
-ok((await aget(`CocLive.get("tables/482910/areas/${second}/left")`)) === 10,
+ok((await aget(`CocLive.get("tables/482910/areas/${second}/rounds")`)) === 10,
   "an area authored with rounds arrives carrying them");
 /* A CONTROL DRAWN ON THE BOARD IS A CONTROL. The × did nothing at all at first: the stage captures the
    pointer, and a captured pointer delivers the click to the stage rather than to the thing under the

@@ -292,13 +292,21 @@ console.log("\n— 393px, as a player, by touch —");
         name: "Idle Image", by: tbl.me.clientId, left: 10 });
   });
   await new Promise((r) => setTimeout(r, 200));
-  const opened = await page.evaluate(() => {
+  /* PRESSED WITH A REAL FINGER, at the point on the screen where the label is. Dispatching a click
+     straight at the element proves the wiring and nothing else: SVG text is hit-tested on the painted
+     glyphs, so a tap that lands between two letters lands on nothing — which is exactly why the label
+     "did nothing" for Kayki while the old test was perfectly happy. The plate behind it is the button. */
+  const label = await page.evaluate(() => {
     const t = document.querySelector('[data-tbl="area-peek"]');
-    if (!t) return false;
-    t.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-    return true;
+    if (!t) return null;
+    const r = t.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2, w: Math.round(r.width) };
   });
-  ok(opened, "an area is opened by its label, not by a corner a figure can sit on");
+  ok(!!label && label.w > 20, `an area's label is a target you can hit (${label ? label.w : 0}px wide)`);
+  if (label) await page.mouse.click(label.x, label.y);
+  await new Promise((r) => setTimeout(r, 200));
+  const opened = await page.evaluate(() => !!document.querySelector('[data-tbl="area-clear"]'));
+  ok(opened, "and pressing it opens the area's card, not a corner a figure can sit on");
   const areaCard = await fits();
   ok(areaCard.open && areaCard.inside, "and its card stays on the board too");
   ok(await page.evaluate(() => /Remove it/.test(document.querySelector("#vtt-peek").textContent)),

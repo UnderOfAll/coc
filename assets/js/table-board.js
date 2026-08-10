@@ -388,7 +388,7 @@ function paintAreaPeek(host) {
       <button class="btn-quiet" data-tbl="peek-close">&times;</button>
     </div>
     <p class="peek-foot">${esc(a.size)} ft ${a.shape === "cube" ? "cube" : "radius"}${
-      a.left != null ? ` &middot; ${esc(a.left)} round${a.left === 1 ? "" : "s"} left` : ""}</p>
+      areaLeftText(a)}</p>
     <p class="muted">${inside.length ? "Inside: " + esc(inside.join(", ")) : "Nobody is inside it."}</p>
     ${tblCanClearArea(a)
       ? `<button class="btn-quiet" data-tbl="area-clear" data-val="${esc(id)}">Remove it</button>`
@@ -1206,14 +1206,25 @@ function paintAreas() {
  * everything else in the world grows and shrinks with the camera, but a label you cannot read is not a
  * label and a handle you cannot hit is not a handle. */
 function areaTagHTML(a, cell, id, cx, top) {
-  const tag = [a.name || "", a.left != null ? a.left + (a.left === 1 ? " round" : " rounds") : ""]
+  const left = tblAreaLeft(a);
+  const tag = [a.name || "", left != null ? left + (left === 1 ? " round" : " rounds") : ""]
     .filter(Boolean).join(" · ");
   if (!tag) return "";
   const z = (tbl.view && tbl.view.z) || 1;
   const px = Math.min(cell * 0.5, 15 / z);
-  return `<text x="${cx.toFixed(1)}" y="${(top - px * 0.5).toFixed(1)}" class="area-tag"
-    font-size="${px.toFixed(1)}" text-anchor="middle"
-    ${id ? `data-tbl="area-peek" data-val="${esc(id)}"` : ""}>${esc(tag)}</text>`;
+  /* A CHIP, not bare letters. SVG text is hit-tested on the painted glyphs themselves, so a tap that
+     lands between two letters lands on nothing — which is why pressing the label "did nothing" on a real
+     screen while a synthetic click straight at the element worked perfectly in the test. The plate behind
+     it is the button; the text just sits on it. Its width is estimated from the string rather than
+     measured, because measuring means laying out the SVG first and this is redrawn on every camera move. */
+  const w = Math.max(px * 3, tag.length * px * 0.56) + px;
+  const h = px * 1.5;
+  const y = top - px * 0.6;
+  const hit = id ? `data-tbl="area-peek" data-val="${esc(id)}"` : "";
+  return `<rect x="${(cx - w / 2).toFixed(1)}" y="${(y - h * 0.78).toFixed(1)}" width="${w.toFixed(1)}"
+      height="${h.toFixed(1)}" rx="${(h / 2).toFixed(1)}" class="area-plate" ${hit} />
+    <text x="${cx.toFixed(1)}" y="${y.toFixed(1)}" class="area-tag" font-size="${px.toFixed(1)}"
+      text-anchor="middle" ${hit}>${esc(tag)}</text>`;
 }
 
 function areaShapeHTML(a, cell, id) {
@@ -1342,7 +1353,12 @@ async function tblPlaceAt(x, y) {
     scene: tblSceneId(), x: spot.x, y: spot.y,
     shape: p.shape, size: p.size, name: p.name, by: tbl.me.clientId, at: Date.now(),
   };
-  if (p.rounds) area.left = p.rounds;
+  if (p.rounds) {
+    area.rounds = p.rounds;
+    // Cast during a fight, it knows when it ends; cast out of one, it picks up its clock when one starts.
+    const round = tblRoundNow();
+    if (round) area.until = round + p.rounds - 1;
+  }
   tbl.placing = null;
   paintPlacing();
   const inside = tblInsideArea(area).map((id) => (tblTokens()[id] || {}).name || "someone");
@@ -1370,14 +1386,83 @@ async function tblAreaClear(id) {
   await CocLive.put(tblPath("areas/" + id), null);
 }
 
-/* Every area on this scene loses a round. Called when the order comes back round to the top, by the DM's
-   browser only — the same rule the rest of the tracker follows. */
-async function tblAreasTick() {
+/* HOW LONG IT HAS LEFT IS A SUM, NOT A COUNTDOWN.
+ *
+ * The first version decremented every area whenever the round changed, from inside `tblTurnStep` — the
+ * function that whoever presses Next or Done runs. Two things were wrong with that and Kayki hit both:
+ * the decrement was DM-only, so a player ending their own turn advanced the round and nothing ticked, and
+ * stepping BACK through the order would have counted an area down a second time.
+ *
+ * So an area stores the round it lasts UNTIL, and how long it has left is arithmetic against the round
+ * showing on the bar. Nobody has to tick anything, every browser agrees without being told, and pressing
+ * Back is simply the same sum again. Only the sweeping-up is a write, and only the DM's browser does it.
+ */
+function tblRoundNow() {
+  const turn = (tbl.data.meta || {}).turn;
+  return turn && Array.isArray(turn.order) && turn.order.length ? Number(turn.round) || 1 : 0;
+}
+
+function tblAreaLeft(a) {
+  const round = tblRoundNow();
+  if (!a || a.until == null || !round) return null;
+  return Number(a.until) - round + 1;
+}
+
+/* Areas that have run out go, and one placed before the fight started picks up its clock when it does.
+   The DM's browser, on every stream event, alongside the other settling. */
+async function tblAreasSettle() {
   if (tbl.role !== "dm") return;
+  const round = tblRoundNow();
   for (const [id, a] of tblAreas()) {
-    if (a.left == null) continue;
-    const left = Number(a.left) - 1;
-    if (left > 0) await CocLive.put(tblPath("areas/" + id + "/left"), left);
-    else await CocLive.put(tblPath("areas/" + id), null);
+    if (!a.rounds) continue;                       // it stays until somebody takes it away
+    if (a.until == null) {
+      if (round) await CocLive.put(tblPath("areas/" + id + "/until"), round + Number(a.rounds) - 1);
+      continue;
+    }
+    if (round && round > Number(a.until)) await CocLive.put(tblPath("areas/" + id), null);
   }
+}
+
+
+/* How long an area has to run, in words, or nothing at all when it is not counting. */
+function areaLeftText(a) {
+  const left = tblAreaLeft(a);
+  if (left == null) return a.rounds ? ` &middot; ${esc(a.rounds)} rounds, once a fight starts` : "";
+  return ` &middot; ${esc(left)} round${left === 1 ? "" : "s"} left`;
+}
+
+/* WHAT YOU HAVE ON THE FIELD, in a list, away from the board.
+ *
+ * Kayki's ask, and the reasoning is his: "that way we don't have to worry about the trick being on top of
+ * some other creature or player and us not having access to the trick itself." Hunting for a handle on a
+ * crowded board is a bad way to reach something you own — so everything you have put out there is also
+ * here, in one place, with the same Remove on each. The board is for seeing; this is for managing.
+ *
+ * Yours if you are a player, everybody's if you are the DM, because the DM tidies up after the table. */
+function tblMyAreas() {
+  return tblAreas().filter(([, a]) => tbl.role === "dm" || a.by === tbl.me.clientId);
+}
+
+function fieldPanelHTML() {
+  const mine = tblMyAreas();
+  if (!mine.length) {
+    return `<section class="panel"><h2>On the field</h2>
+      <p class="muted">Nothing of yours is out there. Cast something that covers ground and it appears
+        here, so you never have to go hunting for it on a crowded board.</p></section>`;
+  }
+  const rows = mine.map(([id, a]) => {
+    const inside = tblInsideArea(a).map((tid) => (tblTokens()[tid] || {}).name || "someone");
+    return `<div class="scene-row">
+      <div class="field-what">
+        <strong>${esc(a.name || "Area")}</strong>
+        <span class="muted">${esc(a.size)} ft ${a.shape === "cube" ? "cube" : "radius"}${areaLeftText(a)}</span>
+        <span class="muted">${inside.length ? "Inside: " + esc(inside.join(", ")) : "Nobody inside"}</span>
+      </div>
+      <button class="btn-quiet" data-tbl="area-clear" data-val="${esc(id)}">Remove</button>
+    </div>`;
+  }).join("");
+  return `<section class="panel"><h2>On the field</h2>
+    <p class="muted">${tbl.role === "dm" ? "Everything the table has put out." : "Everything you have put out."}
+      Taking one away here is the same as taking it away on the board.</p>
+    <div class="scene-list">${rows}</div></section>`;
 }

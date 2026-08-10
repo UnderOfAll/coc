@@ -648,7 +648,10 @@ function paintEverything() {
   if (tbl.gotData && !(tbl.data && tbl.data.meta)) { tblTableGone(); return; }
   paintDrawings();
   paintAreas();
+  tblAreasSettle();
   paintPlacing();
+  // The list of what you have out there follows the board, so an area that expires leaves it by itself.
+  if (tbl.ui.panel === "field") paintSide();
   paintDock();
   paintHeader();
   paintBoard();      // paintTokens is called from here
@@ -703,6 +706,10 @@ function paintBar() {
      character. So a player with a real Circus of Chaos code does not get it; everybody else still does,
      because for them it IS their sheet. */
   if (tbl.role !== "dm" && tbl.me.charCode) drop("mine"); else want("mine", "Character");
+  /* "On the field" arrives only when there IS something of yours on it, and goes when there is not. A
+     button for an empty list is clutter on a phone, and this row is already the tightest thing there. */
+  const out = tblMyAreas().length;
+  if (out) want("field", "On the field (" + out + ")"); else drop("field");
 }
 
 function paintHeader() {
@@ -774,6 +781,7 @@ function tblPanel(which) {
 const TBL_PANEL_NAMES = {
   dm: "DM screen", dice: "Dice", claim: "The DM's chair", figure: "Figure", notes: "Notes",
   draw: "Draw", mine: "Your character", seat: "Choose a character", debug: "Debug", sheet: "Your sheet",
+  field: "On the field",
 };
 
 /* The way back to the board, and the name of what you are in. Rendered always and shown only on a phone,
@@ -815,6 +823,7 @@ function paintSide() {
   else if (which === "mine") body = trackerHTML();
   else if (which === "seat") body = seatPanelHTML();
   else if (which === "debug") body = tblDebugOn() ? debugPanelHTML() : "";
+  else if (which === "field") body = fieldPanelHTML();
   else if (which === "sheet") body = `<p class="muted">Opening your sheet…</p>`;
   side.innerHTML = sideHeadHTML(which) + body;
   // The DM's panel is re-rendered on every stream event and compared against what is on screen, so what
@@ -1059,7 +1068,8 @@ document.addEventListener("click", (e) => {
   else if (act === "area-clear") {
     tbl.ui.peekArea = "";
     paintPeek();
-    tblAreaClear(val).catch(tblFail);
+    // Repainted after, so the list you removed it from stops showing it and the button's count follows.
+    tblAreaClear(val).then(() => { paintSide(); paintBar(); }).catch(tblFail);
   }
   else if (act === "claim") tblClaimFromPanel();
   // Dismissing a handout is each person's own business, so it is not a DM-only action.
