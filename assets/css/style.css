@@ -1156,16 +1156,46 @@ body:has(.vtt) { height: 100dvh; overflow: hidden; }
   background: rgba(201,165,78,0.1); border: 1px solid var(--gold); border-radius: var(--radius);
   padding: 0.5rem 0.7rem; }
 
+/* ---------------------------------------------------------------- the table on a phone
+ *
+ * A phone does not get a smaller version of the desktop table. It gets a different one, because the two
+ * layouts are answering different questions. A desktop has room to put the board and a panel side by
+ * side and the answer is "both at once". A phone has one screen, and every row spent on chrome is a row
+ * the map does not get — Kayki's photo of it showed the site header, a Leave row, a title row, a button
+ * row, the turn bar and an open panel, with the board a small letterboxed window in the middle of a page
+ * that scrolled. Seven things sharing one screen is not seven things you can use.
+ *
+ * So on a phone: the board owns everything left over, and a panel is a SCREEN that slides in over it and
+ * goes away again. His words: "if I press character, a screen comes from left to right to show my
+ * character and I can go back after that." */
+
+/* On a desktop the panel is a column beside the board and needs no way "back" — it is already beside
+   what it belongs to. Declared before the phone rules so the phone rules win. */
+.side-head { display: none; }
+
 @media (max-width: 760px) {
+  /* The site header is for the compendium. At a table it is 60px of brand and a search box you cannot
+     use, above a map you can barely see. Leave is right there in the bar below it. */
+  body:has(.vtt) .topbar { display: none; }
+  .content:has(.vtt) { padding: 0.5rem 0.6rem; }
+  .vtt { gap: 0.4rem; }
+  /* Leave, the name and who is here on ONE line. The name gives way first — it is the thing you already
+     know, and the room code beside it is the thing people ask you to read out. */
+  .vtt-bar { gap: 0.3rem 0.5rem; }
+  .vtt-exit { flex: 0 0 auto; }
+  .vtt-title { flex: 1 1 8rem; flex-wrap: nowrap; overflow: hidden; white-space: nowrap; }
+  /* The name gives way, the room code never does — the code is the thing people ask you to read out,
+     and half a code is worse than no code. */
+  .vtt-title strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 1rem;
+    min-width: 4rem; }
+  .vtt-title .muted { flex: 0 0 auto; }
+  /* Your own name, in a badge, on your own device. It was the widest thing on the row and the least
+     news on it — and being last it was the thing the row cut in half. Who ELSE is here still shows. */
+  .vtt-title .role-badge { display: none; }
   /* On a phone the board takes whatever is left rather than a fixed fraction of the screen: the bars
      above it come and go (a roll, a turn running, a handout), and a fixed 56dvh either left dead space
      below the board or pushed it past the bottom of the screen depending on which of them were up. */
   .vtt-stage { flex: 1; min-height: 200px; }
-  /* With the drawer open the two share the screen: enough board to see where you are, enough sheet to
-     use. */
-  .vtt-side:not(.hidden) ~ .vtt-stage, .vtt-body:has(.vtt-side:not(.hidden)) .vtt-stage {
-    flex: 0 0 34dvh; min-height: 34dvh; }
-  .vtt-side { width: 100%; max-height: 52dvh; }
   /* ONE row, scrolled sideways — not three rows of buttons stacked. Seven buttons at `flex: 1` wrapped
      onto three lines and took 182px off the top of a phone before a fight had even started, which is
      what "claustrophobic, cannot see the full screen" was: the board had less than half the screen. The
@@ -1177,9 +1207,33 @@ body:has(.vtt) { height: 100dvh; overflow: hidden; }
   .join-row { flex-direction: column; align-items: stretch; }
   .join-row .code-input { width: 100%; }
   .join-row .btn { width: 100%; }
-  /* The panel stops being a column and becomes the lower half of the screen. */
   .vtt-body { flex-direction: column; }
-  .vtt-side { width: 100%; max-height: 44dvh; }
+  /* THE PANEL IS A SCREEN. Not a share of one: it covers the board, it scrolls inside itself, and it
+     slides away to the right when you press Back. The board keeps its full size the whole time, so
+     coming back from a panel does not re-fit the camera or move anything. */
+  .vtt-side { position: fixed; inset: 0; z-index: 60; width: 100%; max-height: none;
+    margin: 0; border: none; border-radius: 0; background: var(--bg);
+    padding: 0.6rem 0.9rem calc(1.2rem + env(safe-area-inset-bottom, 0px));
+    overflow-y: auto; overscroll-behavior: contain;
+    transform: translateX(0); transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1); }
+  /* `.hidden` is display:none !important, which cannot slide. Overridden here the same way the roll
+     overlay overrides it, so the panel keeps its box and leaves the screen by moving off it. */
+  .vtt-side.hidden { display: block !important; transform: translateX(100%); visibility: hidden;
+    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s linear 0.22s; }
+  /* Back to the board, and the name of what you are looking at. Sticky, because a long panel scrolls
+     and the way out must not scroll away with it. */
+  .side-head { position: sticky; top: -0.6rem; z-index: 1; display: flex; gap: 0.6rem;
+    align-items: center; margin: -0.6rem -0.9rem 0.7rem; padding: 0.6rem 0.9rem;
+    background: var(--bg); border-bottom: 1px solid var(--border); }
+  /* The way out is the first thing on the screen and the biggest target on it. */
+  .side-back { flex: 0 0 auto; }
+  .side-head strong { font-family: var(--serif); color: var(--gold); font-size: 1.05rem;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* The sheet's own head says "Sheet · Close" — which is what the back bar above it now says, better. */
+  .sheet-drawer-bar { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vtt-side { transition: none !important; }
 }
 
 /* THE ORDER, AS FACES. A row of portraits along the top, in the order they act, with whoever is up

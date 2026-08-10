@@ -777,10 +777,16 @@ function paintTurnBar() {
   const upNext = order[(order.indexOf(currentId) + 1) % order.length];
   const stripWas = bar.querySelector(".turn-strip");
   const scrollWas = stripWas ? stripWas.scrollLeft : 0;
+  /* A phone says the same things in fewer words. The line has to hold the round, whose turn it is, what
+     they have left to walk AND the button that ends the turn — and on 393px the long forms of the first
+     three push the button onto a row of its own, which costs 50px of map for one word. So: "R1", and
+     "30/30 ft" instead of "30 of 30 ft left". Nothing is dropped; the same four things are there. */
+  const tight = !tblWide();
   bar.innerHTML = `${turnStripHTML(order, tokens, currentId)}
-    <span class="turn-round">Round ${esc(turn.round || 1)}</span>
+    <span class="turn-round">${tight ? "R" : "Round "}${esc(turn.round || 1)}</span>
     <strong class="turn-who">${esc(t.name || "?")}${mine ? " — you" : ""}</strong>
-    ${budget ? `<span class="turn-move ${budget.left ? "" : "spent"}">${esc(budget.left)} of ${esc(budget.speed)} ft left</span>` : ""}
+    ${budget ? `<span class="turn-move ${budget.left ? "" : "spent"}">${esc(budget.left)}${
+      tight ? "/" + esc(budget.speed) + " ft" : " of " + esc(budget.speed) + " ft left"}</span>` : ""}
     ${upNext && upNext !== currentId ? `<span class="muted turn-next">next: ${esc((tokens[upNext] || {}).name || "?")}</span>` : ""}
     <span class="turn-acts">
       ${canStep ? `<button class="btn-quiet" data-tbl="turn" data-val="1">${mine && tbl.role !== "dm" ? "Done" : "Next"} &rarr;</button>` : ""}
@@ -818,7 +824,7 @@ function paintSheetPanel() {
   // The DM has no character of their own, but often wants one open — an NPC with a real sheet, or a
   // player's, read out over their shoulder. So they get a box instead of a refusal.
   if (!code || tbl.role === "dm") {
-    side.innerHTML = `<section class="panel">
+    side.innerHTML = sideHeadHTML("sheet") + `<section class="panel">
         <h2>Open a sheet</h2>
         <p class="muted">${tbl.role === "dm"
           ? "Any character, by code — an NPC you run from a real sheet, or a player's while you talk them through it."
@@ -839,7 +845,9 @@ function paintSheetPanel() {
 
 function tblShowSheet(code) {
   const side = $("#vtt-side");
-  side.innerHTML = `<div class="sheet-drawer-bar">
+  // Two bars, one for each shape the panel takes: the drawer's own head beside the board on a desktop,
+  // and the phone's back bar when the panel IS the screen. Each is hidden where the other applies.
+  side.innerHTML = sideHeadHTML("sheet") + `<div class="sheet-drawer-bar">
       <span class="muted">Sheet</span>
       <button class="btn-quiet" data-tbl="sheet-close">Close</button>
     </div>

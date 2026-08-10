@@ -180,6 +180,8 @@ if (typeof window !== "undefined") {
       // Crossing the width where the dice change homes has to move them, or they end up in neither.
       paintDock();
       if (tbl.ui.panel === "dice" && tblWide()) { tbl.ui.panel = ""; paintSide(); }
+      // The turn bar says less on a narrow screen, and which it is, is decided when it is written.
+      paintTurnBar();
       if (!tbl.cameraIsYours) tblFit();
     }, 120);
   });
@@ -733,6 +735,23 @@ function tblPanel(which) {
   if (wasSheet && tbl.ui.panel !== "sheet") closeSheetPanel();
   paintSide();
 }
+/* What each panel is called, for the phone's back bar. A panel that fills the screen has to say what it
+   is: on a desktop the board beside it answers that, and on a phone there is nothing else on screen. */
+const TBL_PANEL_NAMES = {
+  dm: "DM screen", dice: "Dice", claim: "The DM's chair", figure: "Figure", notes: "Notes",
+  draw: "Draw", mine: "Your character", seat: "Choose a character", debug: "Debug", sheet: "Your sheet",
+};
+
+/* The way back to the board, and the name of what you are in. Rendered always and shown only on a phone,
+   where the panel covers the board — pressing it toggles the panel that is already open, which is the
+   same thing pressing its button in the bar does. */
+function sideHeadHTML(which) {
+  return `<div class="side-head">
+    <button class="btn-quiet side-back" data-tbl="panel" data-val="${esc(which)}">&larr; Board</button>
+    <strong>${esc(TBL_PANEL_NAMES[which] || "Panel")}</strong>
+  </div>`;
+}
+
 function paintSide() {
   const side = $("#vtt-side");
   if (!side) return;
@@ -741,22 +760,25 @@ function paintSide() {
   document.querySelectorAll("[data-tbl='panel']").forEach((b) =>
     b.classList.toggle("on", asEl(b).dataset.val === which));
   if (!which) { side.innerHTML = ""; return; }
-  if (which === "dm") { const html = dmPanelHTML(); side.innerHTML = html; side.dataset.rendered = html; }
-  else if (which === "dice") {
-    side.innerHTML = dicePanelHTML();
-    // The log lives in this panel and is filled by the stream, so a freshly opened panel would sit
-    // empty until the next roll — showing "nothing rolled yet" under four rolls.
-    paintLog();
-  }
-  else if (which === "claim") side.innerHTML = claimPanelHTML();
-  else if (which === "figure") side.innerHTML = figureInfoHTML(tbl.ui.lookAt);
-  else if (which === "notes") side.innerHTML = notesPanelHTML();
-  else if (which === "draw") side.innerHTML = drawPanelHTML();
-  else if (which === "mine") side.innerHTML = trackerHTML();
-  else if (which === "seat") side.innerHTML = seatPanelHTML();
-  else if (which === "debug") side.innerHTML = tblDebugOn() ? debugPanelHTML() : "";
-
-  else if (which === "sheet") { side.innerHTML = `<p class="muted">Opening your sheet…</p>`; paintSheetPanel(); }
+  let body = "";
+  if (which === "dm") body = dmPanelHTML();
+  else if (which === "dice") body = dicePanelHTML();
+  else if (which === "claim") body = claimPanelHTML();
+  else if (which === "figure") body = figureInfoHTML(tbl.ui.lookAt);
+  else if (which === "notes") body = notesPanelHTML();
+  else if (which === "draw") body = drawPanelHTML();
+  else if (which === "mine") body = trackerHTML();
+  else if (which === "seat") body = seatPanelHTML();
+  else if (which === "debug") body = tblDebugOn() ? debugPanelHTML() : "";
+  else if (which === "sheet") body = `<p class="muted">Opening your sheet…</p>`;
+  side.innerHTML = sideHeadHTML(which) + body;
+  // The DM's panel is re-rendered on every stream event and compared against what is on screen, so what
+  // is stored has to be the whole thing, header and all.
+  if (which === "dm") side.dataset.rendered = side.innerHTML;
+  // The log lives in the dice panel and is filled by the stream, so a freshly opened panel would sit
+  // empty until the next roll — showing "nothing rolled yet" under four rolls.
+  else if (which === "dice") paintLog();
+  else if (which === "sheet") paintSheetPanel();
 }
 /* Re-render the DM's panel, keeping what is half-typed in it.
  *
@@ -777,7 +799,7 @@ function paintDmPanel() {
   // panel is left alone — a few seconds, and losing the file would be worse than a stale list.
   const file = side.querySelector('input[type="file"]');
   if (file && file.files && file.files.length) return;
-  const next = dmPanelHTML();
+  const next = sideHeadHTML("dm") + dmPanelHTML();
   if (next === side.dataset.rendered) return;
   const active = document.activeElement;
   const focusId = active && side.contains(active) && asEl(active).id ? asEl(active).id : "";

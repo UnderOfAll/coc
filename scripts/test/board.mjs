@@ -207,14 +207,27 @@ console.log("\n— 393px, as a player, by touch —");
     const sb = side.getBoundingClientRect(), st = stage.getBoundingClientRect();
     return {
       hasSheet: !!side.querySelector(".ab-box"),
-      below: sb.top >= st.top,                 // on a phone it is the lower half, not a column
+      // On a phone a panel is a SCREEN, not a share of one: it covers the board top to bottom and the
+      // board keeps its own size behind it, so coming back does not move the camera.
+      covers: sb.top <= st.top + 0.5 && sb.bottom >= st.bottom - 0.5,
+      boardKept: st.height > 200,
+      back: !!side.querySelector(".side-back") &&
+        getComputedStyle(side.querySelector(".side-head")).display !== "none",
       fits: sb.right <= document.documentElement.clientWidth + 0.5,
       scrolls: getComputedStyle(side).overflowY,
     };
   });
   ok(drawer.hasSheet, "your sheet opens in the drawer");
-  ok(drawer.below, "which on a phone is the lower half of the screen, not a squeezed column");
+  ok(drawer.covers, "which on a phone is the whole screen, not a squeezed column");
+  ok(drawer.boardKept, "the board keeps its size behind it, so coming back moves nothing");
+  ok(drawer.back, "with a way back to the board at the top of it");
   ok(drawer.fits && drawer.scrolls === "auto", "it fits the width and scrolls on its own");
+  // Back to the board: a panel over it means the finger belongs to the panel, so everything below here
+  // would be dragging the sheet.
+  await page.evaluate(() => { document.querySelector(".side-back").click(); });
+  await new Promise((r) => setTimeout(r, 400));
+  ok(await page.evaluate(() => document.querySelector("#vtt-side").classList.contains("hidden")),
+    "and pressing it puts the board back");
 
   // Panning has to actually go somewhere. The first clamp pinned the map's edges to the window, and on a
   // map smaller than the screen that left an inch of travel before it stopped dead.
