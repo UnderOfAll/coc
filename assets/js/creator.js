@@ -29,6 +29,11 @@ const POINT_COST = { 8: 0, 9: 1, 10: 2, 11: 3, 12: 4, 13: 5, 14: 7, 15: 9 };
 const POINT_BUDGET = 27;
 
 function abilMod(score) { return Math.floor((Number(score) - 10) / 2); }
+/* AS HIGH AS THE CONTENT GOES. Every class is written to 5th level and no further, so a 6th-level
+   character would be a sheet with holes in it — a level-up that grants nothing and a proficiency bonus
+   the features have never been balanced against. Kayki's call while the ladder is still being built.
+   Raise this when the classes are written past it; nothing else needs to change. */
+const MAX_LEVEL = 5;
 function profBonus(level) { return 2 + Math.floor((Math.max(1, Math.min(20, level)) - 1) / 4); }
 /* Average of a die, rounded up: d6→4, d8→5, d10→6, d12→7 (MECHANICS §2.4). */
 function dieAverage(die) { return Math.floor(Number(die) / 2) + 1; }
@@ -435,7 +440,7 @@ function stepBasics(cls) {
     <div class="stepper">
       <button class="step-btn" data-pick="level" data-val="-1" ${draft.level <= 1 ? "disabled" : ""} aria-label="Lower">&minus;</button>
       <input id="lvl" class="num step-val" type="text" inputmode="numeric" maxlength="2" value="${esc(draft.levelText ?? draft.level)}" />
-      <button class="step-btn" data-pick="level" data-val="1" ${draft.level >= 20 ? "disabled" : ""} aria-label="Raise">+</button>
+      <button class="step-btn" data-pick="level" data-val="1" ${draft.level >= MAX_LEVEL ? "disabled" : ""} aria-label="Raise">+</button>
     </div>
     <label class="field-label">Size</label><div class="chips">${sizes}</div>
     ${subPick}</section>`;
@@ -696,7 +701,7 @@ function creatorClick(e) {
   else if (pick === "subclass") draft.subclassId = draft.subclassId === val ? "" : val;
   else if (pick === "sub-open") { ui.openSubs.has(val) ? ui.openSubs.delete(val) : ui.openSubs.add(val); }
   else if (pick === "level") {
-    draft.level = Math.max(1, Math.min(20, draft.level + Number(val)));
+    draft.level = Math.max(1, Math.min(MAX_LEVEL, draft.level + Number(val)));
     draft.levelText = String(draft.level);
     if (draft.level < (idx.classes.get(draft.classId)?.subclassLevel || 3)) draft.subclassId = "";
   } else if (pick === "abil") {
@@ -731,10 +736,10 @@ function creatorInput(e) {
     // An empty box is a legal thing to be holding mid-edit: you have to be able to clear "12"
     // before typing "3". The TEXT is what you typed; the LEVEL only follows once it is a number.
     let raw = t.value.replace(/[^0-9]/g, "").slice(0, 2);
-    if (raw !== "" && Number(raw) > 20) raw = "20";
+    if (raw !== "" && Number(raw) > MAX_LEVEL) raw = String(MAX_LEVEL);
     draft.levelText = raw;
     if (raw !== "") {
-      draft.level = Math.max(1, Number(raw));
+      draft.level = Math.max(1, Math.min(MAX_LEVEL, Number(raw)));
       if (draft.level < (idx.classes.get(draft.classId)?.subclassLevel || 3)) draft.subclassId = "";
     }
     renderCreator();
@@ -1526,13 +1531,14 @@ function asiSpent(asi) { return Object.values(asi || {}).reduce((n, v) => n + v,
 
 function progressPanel(d) {
   const nextLv = d.level + 1;
-  const atMax = d.level >= 20;
+  const atMax = d.level >= MAX_LEVEL;
   return `<section class="panel">
     <p class="muted">Level ${esc(d.level)} · proficiency ${esc(sign(d.prof))} ·
       ${esc(d.features.length)} feature${d.features.length === 1 ? "" : "s"}${d.tricks.length ? ` · ${esc(d.tricks.length)} tricks` : ""}.
-      ${atMax ? "This is the ceiling." : `Level ${esc(nextLv)} is next${ASI_LEVELS.includes(nextLv) ? " — and it carries an ability score increase" : ""}.`}</p>
+      ${atMax ? `Level ${esc(MAX_LEVEL)} is as far as the circus is written so far.`
+        : `Level ${esc(nextLv)} is next${ASI_LEVELS.includes(nextLv) ? " — and it carries an ability score increase" : ""}.`}</p>
     <div class="hp-controls">
-      <button class="btn" data-act="levelup" ${atMax ? "disabled" : ""}>Level up to ${esc(Math.min(20, nextLv))}</button>
+      <button class="btn" data-act="levelup" ${atMax ? "disabled" : ""}>Level up to ${esc(Math.min(MAX_LEVEL, nextLv))}</button>
       ${d.level > 1 ? `<button class="btn-quiet" data-act="leveldown">Undo a level</button>` : ""}
     </div>
   </section>`;
@@ -1817,7 +1823,7 @@ function sheetAction(e) {
     ch.coins = Math.max(0, (Number(ch.coins) || 0) + n * Number(val));
   }
   else if (act === "levelup") {
-    ui.levelUp = { to: Math.min(20, d.level + 1), subclassId: "", asi: {} };
+    ui.levelUp = { to: Math.min(MAX_LEVEL, d.level + 1), subclassId: "", asi: {} };
     ui.scrollTop = true;   // the panel opens above the fold; take the reader to it
   }
   else if (act === "lu-cancel") ui.levelUp = null;

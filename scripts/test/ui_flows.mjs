@@ -35,10 +35,14 @@ type($("#lvl"),"");
 ok($("#lvl").value==="" ,"level box can be emptied while typing");
 type($("#lvl"),"5");
 ok(peek("draft.level")===5,"typed level 5 -> draft.level 5");
+/* Level 5 is the ceiling while the classes are only written that far — a 6th-level character would be a
+   sheet with holes in it. Kayki's call; `MAX_LEVEL` in creator.js is the one place it lives. */
 type($("#lvl"),"99");
-ok($("#lvl").value==="20"&&peek("draft.level")===20,"over-20 clamps to 20 as you type");
+ok($("#lvl").value==="5"&&peek("draft.level")===5,"past the ceiling clamps to it as you type");
+ok($$('[data-pick="level"]').find(b=>b.dataset.val==="1").disabled,
+  "and the + stepper is spent once you are there");
 click($$('[data-pick="level"]').find(b=>b.dataset.val==="-1"));
-ok(peek("draft.level")===19,"minus stepper works");
+ok(peek("draft.level")===4,"minus stepper works");
 type($("#lvl"),"5"); blur($("#lvl"));
 ok(peek("draft.level")===5,"level 5 after blur");
 
