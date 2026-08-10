@@ -752,7 +752,16 @@ function creatorInput(e) {
   else if (t.id === "notes") draft.notes = t.value;
   else if (t.id === "code") { draft._code = t.value.replace(/\D/g, "").slice(0, 6); delete draft._overwrite; }
   else if (t.id === "hp-amt") ui.hpAmt = Math.max(1, Number(t.value) || 1);
-  else if (t.id === "del-confirm" && sheet) { ui.deleteText = t.value; renderSheet(); }
+  else if (t.id === "del-confirm" && sheet) {
+    /* NO REPAINT WHILE YOU ARE TYPING IN IT. Redrawing the sheet on every keystroke replaces this very
+       input, and a phone keyboard that has just had its element swapped out from under it drops back to
+       lowercase — so typing CONFIRM in capitals became: shift, C, shift, O, shift, N… Kayki hit this on
+       every letter. The only thing that changes as you type is whether the button is live, so that is the
+       only thing touched. The table's own close-confirm box already works this way. */
+    ui.deleteText = t.value;
+    const go = $('[data-act="delete-go"]');
+    if (go) go.disabled = ui.deleteText !== "CONFIRM";
+  }
 }
 
 /* Leaving a half-typed box puts it back to something legal, so an abandoned edit can never leave
@@ -1673,7 +1682,7 @@ function dangerPanel() {
       <strong>CONFIRM</strong> — capitals and all — to unlock the button.</p>
     <div class="danger-row">
       <input id="del-confirm" class="text" type="text" autocomplete="off" spellcheck="false"
-        placeholder="CONFIRM" value="${esc(ui.deleteText)}" />
+        autocapitalize="characters" autocorrect="off" placeholder="CONFIRM" value="${esc(ui.deleteText)}" />
       <button class="btn btn-hot" data-act="delete-go" ${ui.deleteText === "CONFIRM" ? "" : "disabled"}>Delete permanently</button>
       <button class="btn-quiet" data-act="delete-cancel">Cancel</button>
     </div>

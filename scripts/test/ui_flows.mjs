@@ -424,8 +424,14 @@ type($("#del-confirm"),"confirm");
 ok($('[data-act="delete-go"]').disabled,"lowercase does not unlock it");
 type($("#del-confirm"),"CONFIRM ");
 ok($('[data-act="delete-go"]').disabled,"nor a trailing space");
-type($("#del-confirm"),"CONFIRM");
+/* And the box must SURVIVE being typed in. Redrawing the sheet on every keystroke replaced this input,
+   and a phone keyboard whose element is swapped out from under it drops back to lowercase — so typing
+   CONFIRM in capitals meant reaching for shift on every letter. The node you started typing in has to
+   still be the node you are typing in. */
+const box = $("#del-confirm");
+type(box,"CONFIRM");
 ok(!$('[data-act="delete-go"]').disabled,"exactly CONFIRM unlocks it");
+ok($("#del-confirm") === box, "and the box you typed into is the one still there, keyboard and all");
 click($('[data-act="delete-cancel"]'));
 ok(!$("#del-confirm")&&$('[data-act="delete-arm"]'),"cancel puts it away again");
 // The real backend is the cloud, which this harness cannot reach, so record the calls instead.
