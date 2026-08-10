@@ -1199,8 +1199,14 @@ function tblCastOnBoard(trick) {
   };
   /* GET OUT OF THE WAY. You cast it from your sheet, which on a phone IS the screen and on a desktop
      covers a third of the board — and then you are asked to tap a map you cannot see. Casting closes the
-     drawer, every time: the next thing you have to do is on the board. */
-  if (tbl.ui.panel) { tbl.ui.panel = ""; paintSide(); }
+     drawer, every time: the next thing you have to do is on the board.
+   *
+   * AFTERWARDS, though, not now. This runs inside the sheet's own click handler, which still has to
+   * redraw itself and SAVE the cooldown or the engine it has just spent — and closing the drawer is what
+   * lets go of the sheet, so doing it here pulled the ground out from under the rest of that handler:
+   * a null dereference, and the spent cooldown never written. One tick later the sheet has finished with
+   * itself and the drawer can go. */
+  setTimeout(() => { if (tbl && tbl.placing) tblClosePanel(); }, 0);
   paintPlacing();
   paintAreas();
   return true;

@@ -1312,6 +1312,23 @@ ok(/Flash Powder/.test($("#vtt-placing").textContent) && /Tap the board/.test($(
   "naming it and saying what to do: " + $("#vtt-placing").textContent.replace(/\s+/g, " ").trim());
 ok(!!$('[data-tbl="place-cancel"]'), "with a way out, because it swallows the next tap");
 ok(peek(`tblCastOnBoard({ name: "Vicious Jibe" })`) === false, "a trick with no board block places nothing");
+/* CASTING MUST NOT PULL THE GROUND OUT FROM UNDER THE SHEET. It happens inside the sheet's own click
+   handler, and closing the drawer is what lets go of the sheet — so closing it there meant the handler
+   came back to a sheet that was gone: a null dereference, the table replaced by a full-page sheet (the
+   paint target fell back to the whole tool view), and the cooldown it had just spent never written,
+   because the save is debounced and its timer reached for `sheet` 400ms later. Three separate faults,
+   one cause. The drawer closes a tick later now, and the save decides what it is writing up front. */
+ok(peek(`(function(){ let closed = false; const wasFn = tblClosePanel, wasPlacing = tbl.placing;
+  tblClosePanel = () => { closed = true; };
+  tblCastOnBoard({ name: "Probe", board: { verb: "shape", shape: "cube", size: 5, range: 10 } });
+  const during = closed;
+  tblClosePanel = wasFn; tbl.placing = wasPlacing; paintPlacing(); paintAreas();
+  return during; })()`) === false,
+  "casting does not close the drawer inside the sheet's own handler");
+ok(peek(`typeof paintHost === "function" && (function(){ const was = paintTarget;
+  paintTarget = "#a-node-that-is-not-there"; const host = paintHost(); paintTarget = was;
+  return host; })()`) === null,
+  "and a sheet whose drawer has gone paints nowhere, rather than over the whole table");
 /* AIM, THEN PLACE. A tap on the board moves the outline and commits nothing — a trick costs a cooldown
    or a slice of the engine, and Kayki's first misclick put an illusion somewhere he did not want it. */
 await peek(`tblAimAt(10.5, 10.5)`);
@@ -1368,7 +1385,11 @@ ok(true, "and at zero it clears itself, for everyone");
 await peek(`tblPlaceAt(10.5, 10.5)`);          // nothing is being placed, so this does nothing
 await peek(`tblCastOnBoard({ name: "Powder Screen", board:
   { verb: "shape", anchor: "point", range: 60, shape: "cube", size: 15, rounds: 10 } })`);
-ok(peek(`tbl.ui.panel`) === "", "casting closes the drawer — the next thing you do is on the board");
+// A tick later, not this instant — see the note above about the sheet finishing with itself first.
+await peek(`tbl.ui.panel = "notes"; tblCastOnBoard({ name: "Powder Screen", board:
+  { verb: "shape", anchor: "point", range: 60, shape: "cube", size: 15, rounds: 10 } })`);
+await until(() => peek(`tbl.ui.panel`) === "");
+ok(true, "casting closes the drawer — the next thing you do is on the board");
 await peek(`tblAimAt(4, 4); tblPlaceAt(4, 4)`);
 await until(async () => Object.keys((await aget(`CocLive.get("tables/482910/areas")`)) || {}).length === 1);
 const second = Object.keys(await aget(`CocLive.get("tables/482910/areas")`))[0];

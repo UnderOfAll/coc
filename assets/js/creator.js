@@ -279,7 +279,13 @@ function toolEl() { return $("#tool"); }
    stops updating. */
 let paintTarget = null;
 function paintHost() {
-  return (paintTarget && document.querySelector(paintTarget)) || toolEl();
+  /* AND IF THE DRAWER HAS GONE, PAINT NOTHING. Falling back to the tool view here looks harmless and is
+     not: the drawer lives INSIDE the tool view, so the moment its node disappears the sheet renders over
+     the whole table — board, bars and all — while the address bar still says you are at a table. That is
+     what Kayki hit when casting closed the drawer without telling the sheet: press Cast, lose the table,
+     press back, end up in the compendium. A sheet with nowhere to go should stop, not take the page. */
+  if (paintTarget) return document.querySelector(paintTarget);
+  return toolEl();
 }
 
 /* Repaint the tool view, keeping the things a full innerHTML swap would throw away: where the page
@@ -288,6 +294,7 @@ function paintHost() {
    focus after every keystroke — which is exactly why the level box could not be cleared. */
 function paint(html) {
   const host = paintHost();
+  if (!host) return;                 // the drawer went; see paintHost
   const page = pageScroller();
   const top = page.scrollTop;
   const active = document.activeElement;
@@ -987,14 +994,20 @@ function routeSheet(code) {
 let saveTimer = null;
 function persist() {
   clearTimeout(saveTimer);
+  if (!sheet) return;                // let go of mid-action; nothing to save and nothing to say about it
   const badge = $("#save-state");
   if (badge) badge.textContent = "saving…";
   // A player who takes damage on their sheet expects the bar under their figure to drop, for
   // everyone. The table owns that; the sheet just says what happened.
   if (typeof tblSyncTokenFromSheet === "function") tblSyncTokenFromSheet(sheet.code, sheet.ch);
+  /* WHAT IS BEING SAVED IS DECIDED NOW, not in four hundred milliseconds. The write is debounced, and
+     `sheet` can be let go of inside that window — casting a trick that puts something on the board closes
+     the drawer, which is exactly what letting go means — so a timer that reached for `sheet` when it
+     fired reached for nothing, and the cooldown it had just spent was never written. */
+  const code = sheet.code, ch = sheet.ch;
   saveTimer = setTimeout(async () => {
     try {
-      await CocStore.save(sheet.code, sheet.ch);
+      await CocStore.save(code, ch);
       if ($("#save-state")) $("#save-state").textContent = "saved";
     } catch (err) {
       if ($("#save-state")) $("#save-state").textContent = "not saved — " + err.message;
@@ -1003,6 +1016,10 @@ function persist() {
 }
 
 function renderSheet() {
+  /* The sheet can be let go of DURING an action taken on it: casting a trick that puts something on the
+     board closes the drawer, and the drawer closing is what lets the sheet go. The action handler then
+     comes back here to redraw a sheet that is not there any more. Nothing to draw is not an error. */
+  if (!sheet) return;
   // A sheet is covered in numbers you can throw, so the dice physics is fetched here too rather than on
   // the first throw — see dice3dPreload.
   if (typeof dice3dPreload === "function") dice3dPreload();
@@ -1751,7 +1768,12 @@ function sheetAction(e) {
       if (t.engineCost) p.engine = Math.max(0, p.engine - t.engineCost);
       if (t.cooldown) p.cooldowns[val] = t.cooldown;
       if (t.tier === "prestige") p.usedOncePerCombat[val] = true;
-      if (!p.inCombat) p.inCombat = true;
+      /* Casting starts a fight only when the cast needs one. A Pledge is at-will — no cooldown, no
+         engine, nothing to count in rounds — so conjuring an Idle Image out of combat should leave the
+         sheet exactly where it was, and Kayki's did not: it came back saying he was fighting when the DM
+         had not started anything. A cooldown and an engine cost ARE measured in rounds, so those still
+         start it. */
+      if (!p.inCombat && (t.cooldown || t.engineCost || t.tier === "prestige")) p.inCombat = true;
       // The app never sees the roll, so it asks. Only worth asking when the answer changes
       // something: a failed save feeds a full caster's engine.
       const asks = t.save && (d.cls.play?.triggers || []).some((x) => x.id === "failed-save");

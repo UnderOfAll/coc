@@ -786,6 +786,17 @@ function sideHeadHTML(which) {
   </div>`;
 }
 
+/* Shut whatever is open, properly. There is exactly one right way to close the sheet drawer — the sheet
+   has to be told, or it goes on holding a selector for a node that no longer exists — and anything that
+   closes a panel for its own reasons (casting a trick, for one) has to come through here rather than
+   setting the field and hoping. */
+function tblClosePanel() {
+  if (!tbl || !tbl.ui.panel) return;
+  if (tbl.ui.panel === "sheet" && typeof closeSheetPanel === "function") closeSheetPanel();
+  tbl.ui.panel = "";
+  paintSide();
+}
+
 function paintSide() {
   const side = $("#vtt-side");
   if (!side) return;
