@@ -1761,12 +1761,11 @@ body:has(.vtt) { height: 100dvh; overflow: hidden; }
 /* The label is the handle: the only part of an area that takes a press, because a corner handle sits
    under a figure half the time. Its size is set inline, divided by the zoom, so it stays the same on
    screen however far the board is pulled back. */
-.area-tag { fill: var(--gold); font-family: var(--serif); pointer-events: auto; cursor: pointer; }
-/* The plate IS the button. Bare SVG text is hit-tested glyph by glyph, so a tap between two letters
-   misses everything — the label looked pressable and was not. */
-.area-plate { fill: rgba(11,11,10,0.82); stroke: var(--gold); stroke-width: 1; stroke-opacity: 0.7;
-  pointer-events: auto; cursor: pointer; }
-.area-plate:hover { fill: rgba(11,11,10,0.95); stroke-opacity: 1; }
+/* An area is named the way a figure is — the same `.tok-name` plate, on a box the size of the shape, in
+   a layer of its own. Nothing here takes a press: the whole shape opens the card. */
+.vtt-area-tags { position: absolute; inset: 0; pointer-events: none; }
+.area-tok { position: absolute; display: flex; align-items: flex-end; justify-content: center; }
+.area-tok .tok-name { color: var(--gold); }
 /* The reach it is being cast from: shown, never enforced — red outside it, and you may still place it
    there. The same rule the ruler holds for movement. */
 .area-reach { fill: none; stroke: var(--gold); stroke-opacity: 0.5; stroke-width: 2;

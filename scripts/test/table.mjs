@@ -994,19 +994,30 @@ ok($$(".roll-line").length === 1, "and listed in the log");
 click($('[data-tbl="panel"][data-val="dice"]')); click($('[data-tbl="panel"][data-val="dice"]'));
 await wait(40);
 ok($$(".roll-line").length === 1, "and the log is still there when the panel is reopened");
-// A natural 20 and a natural 1 are what a table reacts to, so they are marked.
-peek(`window.__seq = [0.999];`);
-peek(`tbl.ui.dice = { pool: { 20: 1 }, mod: 0, mode: "normal" }; paintDice();`);
-armed(() => click($('[data-tbl="roll-pool"]')));
+/* A natural 20 and a natural 1 are what a table reacts to, so they are marked.
+ *
+ * Asserted by handing the board a ROLL, not by seeding a random and clicking. `Math.random` is mocked
+ * page-wide and CocLive mints the id of a pushed log entry from it, so anything else writing while a face
+ * is seeded takes that face instead — which is [[test-random-is-shared]], and it came back the moment
+ * the board grew another thing to paint on every stream event. The nat rule itself is arithmetic and is
+ * proved as arithmetic below; what these check is the OVERLAY's reaction to a roll, so the roll is
+ * constructed and handed straight to it. Nothing is left to a coin toss. */
+const flash = async (v, sides) => {
+  // Shown AND logged, because the assertions below count what the log kept.
+  await peek(`(async () => { const e = { t: Date.now(), who: "DM", kind: "roll",
+    text: "DM rolled d${sides} → ${v}", nat: ${v === 20 && sides === 20 ? 20 : v === 1 ? 1 : 0},
+    dice: [{ s: ${sides}, v: ${v} }], mod: 0, mode: "normal", total: ${v}, spec: "1d${sides}" };
+    tbl.lastRollAt = e.t; tblShowRoll(e); await CocLive.push(tblPath("log"), e); })()`);
+};
+await flash(20, 20);
 await wait(60);
 ok($("#vtt-lastroll").classList.contains("nat20"), "a natural 20 marks itself");
 // A straight single die IS its own total — printing both is how you get "DM 18 18".
 ok($$("#vtt-lastroll .pip-die").length === 0, "and a straight single die prints once, not twice");
 ok($("#vtt-lastroll .roll-card-total").textContent === "20",
   "as the total on its own: " + $("#vtt-lastroll").textContent.trim());
-peek(`window.__seq = [0.0];`);
-armed(() => click($('[data-tbl="roll-pool"]')));
-await wait(60);
+await flash(1, 20);
+await wait(80);
 ok($("#vtt-lastroll").classList.contains("nat1"), "and so does a natural 1");
 
 /* Five seconds and it takes itself away. Anyone who wants it back opens the Dice panel, where every roll
@@ -1369,7 +1380,7 @@ ok(/catches Orc/.test(caught || ""), "and the table is told who is inside: " + c
 ok(!/Rig/.test(caught || ""), "and only who is inside — Rig is eight squares away");
 ok(!/damage|save|DC/i.test(caught || ""), "it counts squares and judges nothing");
 ok($$("#vtt-areas .area").length === 1, "it is drawn on the board");
-ok($$('[data-tbl="area-peek"]').length > 0, "with a label that opens its card");
+ok($$("#vtt-area-tags .area-tok").length > 0, "and named the way a figure is, in the same label");
 /* NOTHING AN AREA DRAWS MAY REACH OUTSIDE THE AREA. The label used to sit ABOVE the shape — and above a
    5-foot cube is the square to the north, so a label wider than the thing it named hung over ground
    belonging to somebody else and a figure standing there was a misclick waiting to happen. Kayki: "it's
@@ -1449,9 +1460,21 @@ ok((await aget(`CocLive.get("tables/482910/areas/${second}/rounds")`)) === 10,
 /* THE AREA GETS A CARD, like a figure. The way to take it off used to be a small × at the shape's
    top-right corner — which is exactly where a figure standing beside it is, so half the time it was under
    a goblin and could not be pressed at all. The label opens the card instead; the card holds the button. */
-ok(!!$(`[data-tbl="area-peek"][data-val="${second}"]`), "an area's label opens its card");
-ok(!$('[data-tbl="area-clear"]'), "and there is no corner handle for a figure to sit on");
-click($(`[data-tbl="area-peek"][data-val="${second}"]`));
+/* THE WHOLE SHAPE OPENS THE CARD. Kayki: "the window opening when I click wherever is in the square
+   field" — which is how a figure already behaves. It is worked out by arithmetic on the way up rather
+   than by making the shape take presses, because a shape that TOOK presses would eat panning: a 60-foot
+   illusion covers most of the screen and dragging the map from inside it has to keep working. */
+ok(peek(`tblPointInArea({ x: 4, y: 4, shape: "cube", size: 15 }, 4.9, 4.9)`) === true,
+  "a point inside a 15 ft cube is inside it");
+ok(peek(`tblPointInArea({ x: 4, y: 4, shape: "cube", size: 15 }, 5.6, 4)`) === false,
+  "and a point past its edge is not");
+/* 20 ft is two squares of radius: the corner of its bounding box is 2.55 squares out and therefore
+   outside the burst, while the same point in a cube of the same size would be inside it. */
+ok(peek(`tblPointInArea({ x: 4, y: 4, shape: "radius", size: 20 }, 5.8, 5.8)`) === false,
+  "a burst is round, so the corners of its box are outside it");
+ok(peek(`tblPointInArea({ x: 4, y: 4, shape: "cube", size: 20 }, 5.8, 5.8)`) === true,
+  "and a cube of the same size takes them in");
+peek(`tbl.ui.peekArea = "${second}"; paintPeek();`);
 await wait(60);
 ok(!$("#vtt-peek").classList.contains("hidden"), "the card opens");
 ok(/Powder Screen/.test($("#vtt-peek").textContent), "naming the area");
@@ -1473,7 +1496,12 @@ await peek(`tblAreaClear("${second}")`);
 await until(async () => (await aget(`CocLive.get("tables/482910/areas")`)) == null);
 ok(true, "and the DM can take it off early");
 await peek(`CocLive.put("tables/482910/meta/turn", { order: ["tOrc", "tRig"], idx: 1, round: 1 })`);
-await wait(80);
+/* LEAVE THE TABLE QUIET. `Math.random` is mocked page-wide and CocLive mints the id of a pushed log
+   entry from it, so a write still in flight when a later section seeds a roll steals the face it seeded —
+   which is the whole of [[test-random-is-shared]], and this section pushes several. Flush, then wait, so
+   the dice tests below start on a table with nothing outstanding. */
+await peek(`tbl.ui.peekArea = ""; paintPeek(); CocLive.flush();`);
+await wait(300);
 
 console.log("\n— A PLAYER ENDS THEIR OWN TURN —");
 peek(`tbl.role = "player"; tbl.me.charCode = "123456"; renderTableShell(); paintTokens(); paintTurnBar(); paintWho();`);

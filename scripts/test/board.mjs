@@ -292,28 +292,42 @@ console.log("\n— 393px, as a player, by touch —");
         name: "Idle Image", by: tbl.me.clientId, left: 10 });
   });
   await new Promise((r) => setTimeout(r, 200));
-  /* PRESSED WITH A REAL FINGER, at the point on the screen where the label is. Dispatching a click
-     straight at the element proves the wiring and nothing else: SVG text is hit-tested on the painted
-     glyphs, so a tap that lands between two letters lands on nothing — which is exactly why the label
-     "did nothing" for Kayki while the old test was perfectly happy. The plate behind it is the button. */
+  // Named the way a figure is: the same label element, in a layer of its own.
   const label = await page.evaluate(() => {
-    const t = document.querySelector('[data-tbl="area-peek"]');
+    const t = document.querySelector("#vtt-area-tags .area-tok .tok-name");
     if (!t) return null;
     const r = t.getBoundingClientRect();
-    return { x: r.left + r.width / 2, y: r.top + r.height / 2, w: Math.round(r.width) };
+    return { w: Math.round(r.width), text: t.textContent.trim() };
   });
-  /* A one-square area cannot hold a finger-sized handle without spilling over its neighbours, and not
-     spilling is the rule. So the handle is as big as the area allows and no bigger — small on a 5-foot
-     illusion — and the On the field panel is the way in when it is too small to want to aim at. */
-  ok(!!label && label.w >= 10, `an area's handle is inside it and hittable (${label ? label.w : 0}px wide)`);
-  if (label) await page.mouse.click(label.x, label.y);
+  ok(!!label && label.w > 10, `an area is named the way a figure is ("${label ? label.text : ""}")`);
+  /* TAPPED IN THE MIDDLE OF IT, with a real mouse. The whole shape opens the card — no handle to find —
+     and it is worked out on the way up so that DRAGGING from inside a big area still pans the map. */
+  const centre = await page.evaluate(() => {
+    const s = document.querySelector("#vtt-stage").getBoundingClientRect();
+    const a = Object.values(tbl.data.areas)[0], cell = tblScene().cell;
+    return { x: s.left + tbl.view.x + a.x * cell * tbl.view.z,
+             y: s.top + tbl.view.y + a.y * cell * tbl.view.z };
+  });
+  await page.mouse.click(centre.x, centre.y);
   await new Promise((r) => setTimeout(r, 200));
-  const opened = await page.evaluate(() => !!document.querySelector('[data-tbl="area-clear"]'));
-  ok(opened, "and pressing it opens the area's card, not a corner a figure can sit on");
+  ok(await page.evaluate(() => !!document.querySelector('[data-tbl="area-clear"]')),
+    "tapping anywhere inside an area opens its card");
   const areaCard = await fits();
-  ok(areaCard.open && areaCard.inside, "and its card stays on the board too");
+  ok(areaCard.open && areaCard.inside, "and that card stays on the board too");
   ok(await page.evaluate(() => /Remove it/.test(document.querySelector("#vtt-peek").textContent)),
     "carrying the way to take it away");
+  // And a DRAG from inside the same area still moves the camera rather than opening anything.
+  await page.evaluate(() => { document.querySelector('[data-tbl="peek-close"]').click(); });
+  const panFrom2 = await page.evaluate(() => tbl.view.x);
+  await page.mouse.move(centre.x, centre.y);
+  await page.mouse.down();
+  for (let i = 1; i <= 6; i++) await page.mouse.move(centre.x + i * 15, centre.y);
+  await page.mouse.up();
+  await new Promise((r) => setTimeout(r, 200));
+  const panned = await page.evaluate(() => ({ x: tbl.view.x,
+    card: !!document.querySelector('[data-tbl="area-clear"]') }));
+  ok(panned.x !== panFrom2 && !panned.card,
+    `and dragging from inside it pans the map instead (${panFrom2} -> ${panned.x})`);
 
   ok(errs.length === 0, "no errors on the console" + (errs.length ? ": " + errs[0] : ""));
   await page.close();

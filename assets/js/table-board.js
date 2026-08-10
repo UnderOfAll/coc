@@ -720,6 +720,7 @@ function onPointerDown(e) {
   } else {
     tblTrace("pan start");
     tbl.drag = { pan: true, sx: p.sx, sy: p.sy, ox: tbl.view.x, oy: tbl.view.y };
+    tbl.tapFrom = { sx: p.sx, sy: p.sy };   // to tell a tap from a drag when the hand comes up
   }
   if (stage.setPointerCapture) { try { stage.setPointerCapture(e.pointerId); } catch { /* fine */ } }
 }
@@ -843,7 +844,7 @@ function onPointerUp(e) {
   const d = tbl.drag;
   if (!d) return;
   tbl.drag = null;
-  if (d.pan) return;
+  if (d.pan) { tblTapOnBoard(e); return; }
   const node = $("#vtt-tokens").querySelector(`[data-token="${d.id}"]`);
   if (node) node.classList.remove("dragging");
   tblLandDrag(d);
@@ -1193,6 +1194,9 @@ function paintAreas() {
   svg.setAttribute("height", h);
   const drawn = tblAreas().map(([id, a]) => areaShapeHTML(a, cell, id)).join("");
   svg.innerHTML = drawn + placingGhostHTML(cell);
+  // The names live in their own layer, as HTML, so they are the same element a figure's name is.
+  const tags = $("#vtt-area-tags");
+  if (tags) tags.innerHTML = tblAreas().map(([id, a]) => areaLabelHTML(id, a, cell)).join("");
 }
 
 /* The label is the AREA'S HANDLE, and the only part of it that takes a press.
@@ -1205,57 +1209,28 @@ function paintAreas() {
  * Its size is divided by the zoom so it stays the same on SCREEN however far the board is pulled back —
  * everything else in the world grows and shrinks with the camera, but a label you cannot read is not a
  * label and a handle you cannot hit is not a handle. */
-/* THE HANDLE LIVES INSIDE THE AREA IT BELONGS TO.
+/* AN AREA IS NAMED THE WAY A FIGURE IS: the same label, in the same place, in the same type.
  *
- * It used to sit above the shape, and above a 5-foot cube is the square to the north — so a label wider
- * than the area it names hung over ground that belongs to somebody else, and a figure standing there was
- * a misclick waiting to happen. Kayki: "it's invading the bottom part of the upper square, that goes out
- * of scope." Nothing an area draws may reach outside the area.
+ * Everything before this was a special case — a chip, then a chip that shrank, then a chip that gave up
+ * and became a dot — invented because the label was drawn INTO the shape's SVG and had to be measured
+ * against it. Kayki: "why don't you just put the text like all other creatures, and the window opening
+ * when I click wherever is in the square field." He is right twice. A figure's name is a small plate
+ * along its bottom edge that has read perfectly well since the day it was written, at every zoom and on
+ * every screen; an area is a box on the same grid and wants the same thing. So it is the same element,
+ * with the same class, positioned the same way — and every rule about fitting, shrinking and degrading
+ * goes in the bin.
  *
- * Which means it has to survive being too small for its own name. The full chip is drawn when it fits
- * inside the shape; when it does not, it becomes a round handle in the corner — still a press, still the
- * same card, and the name is in the card where there is room for it. A one-square illusion on a
- * zoomed-out board simply cannot hold the words "Idle Image · 10 rounds", and pretending otherwise is
- * how it ended up over the neighbours.
- *
- * A CHIP, not bare letters, either way: SVG text is hit-tested on the painted glyphs, so a tap between
- * two letters lands on nothing. The plate behind it is the button; the text sits on it.
- */
-function areaTagHTML(a, cell, id, cx, top, r) {
+ * And with the whole shape opening the card, the label does not have to be a target at all. */
+function areaLabelHTML(id, a, cell) {
+  const half = tblSquares(a.size) / 2;
   const left = tblAreaLeft(a);
-  const tag = [a.name || "", left != null ? left + (left === 1 ? " round" : " rounds") : ""]
+  const tag = [a.name || "Area", left != null ? left + (left === 1 ? " round" : " rounds") : ""]
     .filter(Boolean).join(" · ");
-  if (!tag) return "";
-  const z = (tbl.view && tbl.view.z) || 1;
-  const hit = id ? `data-tbl="area-peek" data-val="${esc(id)}"` : "";
-  const room = r * 2 - Math.min(6, r * 0.12);          // the shape's own width, less a hair of margin
-  const px = Math.min(cell * 0.42, 15 / z);
-  // Estimated rather than measured: measuring means laying the SVG out first, and this is redrawn on
-  // every camera move.
-  const widthOf = (s) => Math.max(px * 3, s.length * px * 0.56) + px;
-  /* It gives up its words one at a time rather than all at once. The whole label first, then the name
-     alone, then the count alone — a 15-foot cube can hold "Powder Screen" even when it cannot hold
-     "Powder Screen · 10 rounds", and a name is worth more on the board than a number you can read off
-     the card. */
-  const fit = [tag, a.name || "", left != null ? String(left) : ""].filter(Boolean)
-    .find((s) => widthOf(s) <= room);
-  if (fit) {
-    const w = widthOf(fit), h = px * 1.5;
-    const y = top + h * 0.85;                          // inside the top edge, not above it
-    return `<rect x="${(cx - w / 2).toFixed(1)}" y="${(y - h * 0.78).toFixed(1)}" width="${w.toFixed(1)}"
-        height="${h.toFixed(1)}" rx="${(h / 2).toFixed(1)}" class="area-plate" ${hit} />
-      <text x="${cx.toFixed(1)}" y="${y.toFixed(1)}" class="area-tag" font-size="${px.toFixed(1)}"
-        text-anchor="middle" ${hit}>${esc(fit)}</text>`;
-  }
-  /* Too small even for that: a handle in the corner. Its size is a constant on SCREEN, capped by the
-     shape — a 20-foot cube does not want a 60-pixel button in it, and the first version gave it one. */
-  const rad = Math.min(r * 0.34, Math.max(6, 11 / z));
-  const hx = cx - r + rad + Math.min(3, r * 0.06), hy = top + rad + Math.min(3, r * 0.06);
-  const mark = left != null ? String(left) : "●";
-  return `<circle cx="${hx.toFixed(1)}" cy="${hy.toFixed(1)}" r="${rad.toFixed(1)}"
-      class="area-plate" ${hit} />
-    <text x="${hx.toFixed(1)}" y="${(hy + rad * 0.38).toFixed(1)}" class="area-tag"
-      font-size="${(rad * 1.1).toFixed(1)}" text-anchor="middle" ${hit}>${esc(mark)}</text>`;
+  return `<div class="area-tok" data-area-tag="${esc(id)}"
+    style="left:${((a.x - half) * cell).toFixed(1)}px; top:${((a.y - half) * cell).toFixed(1)}px;
+      width:${(half * 2 * cell).toFixed(1)}px; height:${(half * 2 * cell).toFixed(1)}px">
+    <span class="tok-name">${esc(tag)}</span>
+  </div>`;
 }
 
 function areaShapeHTML(a, cell, id) {
@@ -1270,10 +1245,7 @@ function areaShapeHTML(a, cell, id) {
   const body = `${geom} class="area-edge" />${geom} class="area-body" />`;
   // The rounds left are on the label: "how long is that cloud there for" is asked every round, and the
   // alternative is the DM keeping it in their head.
-  return `<g class="area${id ? "" : " ghost"}" data-area="${esc(id || "")}">
-    ${body}
-    ${areaTagHTML(a, cell, id, cx, cy - r, r)}
-  </g>`;
+  return `<g class="area${id ? "" : " ghost"}" data-area="${esc(id || "")}">${body}</g>`;
 }
 
 /* What you are about to place, following the cursor, plus the reach it is being placed from. The reach is
@@ -1496,4 +1468,48 @@ function fieldPanelHTML() {
     <p class="muted">${tbl.role === "dm" ? "Everything the table has put out." : "Everything you have put out."}
       Taking one away here is the same as taking it away on the board.</p>
     <div class="scene-list">${rows}</div></section>`;
+}
+
+
+/* A TAP ON THE BOARD, as opposed to a drag of it.
+ *
+ * The whole of an area opens its card — "the window opening when I click wherever is in the square
+ * field", which is how a figure already behaves and is the obvious thing. It is done here, on the way
+ * up, and by arithmetic rather than by hit-testing, for two reasons that both matter:
+ *
+ *   - a shape that TOOK presses would eat panning. A 60-foot illusion covers most of the screen, and
+ *     dragging the map from inside it has to keep working. Down-then-up in the same spot is a tap;
+ *     anything further is a drag and belongs to the camera.
+ *   - and nothing has to be layered, or made to take pointer events, or kept above or below anything
+ *     else. The areas are numbers; asking which one a point is in is a sum.
+ *
+ * The topmost one wins, the way a stack of things on a table does, so an area dropped on top of another
+ * is the one you get. */
+const TBL_TAP_SLOP = 6;   // pixels of travel still counted as a tap rather than a drag
+function tblTapOnBoard(e) {
+  const stage = $("#vtt-stage");
+  if (!stage || !stage.contains(e.target) || tbl.placing) return;
+  const p = stagePoint(e);
+  if (Math.abs(p.sx - d0(e).sx) > TBL_TAP_SLOP || Math.abs(p.sy - d0(e).sy) > TBL_TAP_SLOP) return;
+  const at = toSquares(p.sx, p.sy);
+  const hit = tblAreas().filter(([, a]) => tblPointInArea(a, at.x, at.y)).pop();
+  if (!hit) return;
+  tbl.ui.peek = "";
+  tbl.ui.peekArea = hit[0];
+  paintPeek();
+}
+
+/* Where the finger went down, kept by the pan state the gesture started with. */
+function d0(e) {
+  const box = $("#vtt-stage").getBoundingClientRect();
+  const start = tbl.tapFrom || { sx: e.clientX - box.left, sy: e.clientY - box.top };
+  return start;
+}
+
+function tblPointInArea(a, x, y) {
+  const half = tblSquares(a.size) / 2;
+  if (a.shape === "cube") {
+    return x >= a.x - half && x <= a.x + half && y >= a.y - half && y <= a.y + half;
+  }
+  return Math.hypot(x - a.x, y - a.y) <= half;
 }

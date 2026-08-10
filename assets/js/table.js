@@ -601,8 +601,11 @@ function renderTableShell() {
             <img id="vtt-map" class="vtt-map hidden" alt="" draggable="false" />
             <div id="vtt-grid" class="vtt-grid"></div>
             <svg id="vtt-ink" class="vtt-ink" aria-hidden="true"></svg>
-            <!-- Areas sit UNDER the figures: a cloud a goblin is standing in must not hide the goblin. -->
+            <!-- Areas sit UNDER the figures: a cloud a goblin is standing in must not hide the goblin.
+                 Their names are a layer of their own, drawn as HTML so they are the very same label a
+                 figure gets rather than a second thing that has to be kept looking like it. -->
             <svg id="vtt-areas" class="vtt-areas"></svg>
+            <div id="vtt-area-tags" class="vtt-area-tags"></div>
             <div id="vtt-tokens" class="vtt-tokens"></div>
             <svg id="vtt-ruler" class="vtt-ruler" aria-hidden="true"></svg>
           </div>
