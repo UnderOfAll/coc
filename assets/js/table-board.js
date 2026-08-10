@@ -1295,7 +1295,7 @@ function tblCastOnBoard(trick) {
    * lets go of the sheet, so doing it here pulled the ground out from under the rest of that handler:
    * a null dereference, and the spent cooldown never written. One tick later the sheet has finished with
    * itself and the drawer can go. */
-  setTimeout(() => { if (tbl && tbl.placing) tblClosePanel(); }, 0);
+  tblClosePanelSoon();
   paintPlacing();
   paintAreas();
   return true;
@@ -1356,6 +1356,7 @@ function tblSnapArea(x, y, shape, size) {
 async function tblPlaceAt(x, y) {
   const p = tbl.placing;
   if (!p) return;
+  if (p.verb === "spawn") { await tblSpawnAt(x, y); return; }
   const spot = tblSnapArea(x, y, p.shape, p.size);
   const area = {
     scene: tblSceneId(), x: spot.x, y: spot.y,
@@ -1539,4 +1540,87 @@ function tblAnnounceCast(trick, who) {
     t: Date.now(), who: who || tbl.me.name || "Someone", kind: "system",
     text: `${who || "Someone"} casts ${trick.name}${trick.range ? " — " + trick.range : ""} (${cost})`,
   }).catch(() => {});
+}
+
+
+/* ---------------------------------------------------------------- the `spawn` verb
+ *
+ * A figure that appears because somebody made it. Today that is the Doppelganger's Clones, and the rules
+ * of the thing come from the class rather than from here (data/classes/doppelganger.json):
+ *
+ *   - it wears your face and stands in its own space;
+ *   - it shares your AC and has NO hit points — a single hit destroys it. On a board that has hit points
+ *     in it, "no hit points, one hit kills" is said as ONE hit point. Kayki's call, and it means the
+ *     figure behaves like every other figure: hurt it and it is gone;
+ *   - it does not move once placed. You position it as you put it down and that is the last time it
+ *     moves. This is a deliberate exception to "the app shows and never blocks", asked for by name;
+ *   - and you may never have more than your cap, so making one beyond it drops your oldest.
+ *
+ * It reuses the placing machinery the areas use — aim, then place — because it is the same gesture and
+ * the same question: where does this go, and is it within reach.
+ */
+function tblSpawnOnBoard(spec) {
+  if (!tbl || !spec) return false;
+  tbl.placing = {
+    verb: "spawn",
+    name: `${spec.of || "Someone"}'s ${spec.name || "figure"}`,
+    of: spec.of || "", image: spec.image || "", ofCode: spec.ofCode || "",
+    cap: Math.max(0, Number(spec.cap) || 0),
+    size: 5 * Math.max(1, Number(spec.size) || 1),   // drawn as a square of its own size, in feet
+    shape: "cube", range: Number(spec.range) || 0, rounds: null,
+    fromId: tblCasterToken(), x: null, y: null, aimed: false,
+  };
+  tblClosePanelSoon();
+  paintPlacing();
+  paintAreas();
+  return true;
+}
+
+/* Shared with casting: the drawer gets out of the way a tick later, after the sheet has finished with
+   itself. See the long note on tblCastOnBoard. */
+function tblClosePanelSoon() {
+  setTimeout(() => { if (tbl && tbl.placing) tblClosePanel(); }, 0);
+}
+
+/* Down it goes as a figure, not an area. */
+async function tblSpawnAt(x, y) {
+  const p = tbl.placing;
+  if (!p) return;
+  const size = Math.max(1, Math.round(tblSquares(p.size)));
+  const spot = tblFreeSquare("", Math.round(x - size / 2), Math.round(y - size / 2), size, 0, 0);
+  tbl.placing = null;
+  paintPlacing();
+  // Over the cap: the oldest of yours drops, which is what the class says happens.
+  const mine = tblClonesOf(p.ofCode);
+  if (p.cap && mine.length >= p.cap) {
+    const oldest = mine.sort((a, b) => (Number(a[1].at) || 0) - (Number(b[1].at) || 0))[0];
+    if (oldest) await CocLive.put(tblPath("tokens/" + oldest[0]), null);
+  }
+  const id = CocLive.newId();
+  await CocLive.put(tblPath("tokens/" + id), {
+    name: p.name, image: p.image || "", x: spot.x, y: spot.y, size, kind: "pc", shape: "square",
+    hp: 1, hpMax: 1, speed: 0, initMod: 0, owner: tbl.me.clientId,
+    spawn: true, spawnOf: p.ofCode || "", at: Date.now(),
+  });
+  await CocLive.push(tblPath("log"), {
+    t: Date.now(), who: p.of || "Someone", kind: "system",
+    text: `${p.name} appears${p.cap ? ` (${Math.min(p.cap, mine.length + 1)} of ${p.cap})` : ""}`,
+  });
+}
+
+/* Everything one character has standing on this scene. */
+function tblClonesOf(code) {
+  const scene = tblSceneId();
+  return Object.entries(tblTokens())
+    .filter(([, t]) => t && t.spawn && t.spawnOf === code && (!t.scene || t.scene === scene));
+}
+
+/* A spawned figure that has been hurt at all is a spawned figure that is gone — it only ever had the one
+   hit point, which is how "a single hit destroys it" is said on a board. Swept by the DM's browser,
+   alongside the areas, so it happens once however many people are looking. */
+async function tblSpawnsSettle() {
+  if (tbl.role !== "dm") return;
+  for (const [id, t] of Object.entries(tblTokens())) {
+    if (t && t.spawn && Number(t.hp) <= 0) await CocLive.put(tblPath("tokens/" + id), null);
+  }
 }

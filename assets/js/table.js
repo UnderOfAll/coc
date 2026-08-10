@@ -131,7 +131,11 @@ function tblTokens() { return tbl.data.tokens || {}; }
 /* The DM moves anything. A player moves the token their own character code owns, and nothing else. */
 function tblCanMove(token) {
   if (!token) return false;
-  if (tbl.role === "dm") return true;
+  if (tbl.role === "dm") return true;   // the referee moves anything, including to fix a misplacement
+  /* A SPAWNED FIGURE DOES NOT MOVE. You position it as you put it down and that is the last time — the
+     class says a Clone does not move on its own once placed, and Kayki asked for that honoured rather
+     than merely drawn. It is the one place the board refuses a drag instead of counting it. */
+  if (token.spawn) return false;
   return tblIsMine(token);
 }
 /* Whose figure this is. A Circus of Chaos player is identified by their character code; anyone playing
@@ -652,6 +656,7 @@ function paintEverything() {
   paintDrawings();
   paintAreas();
   tblAreasSettle();
+  tblSpawnsSettle();
   paintPlacing();
   // The list of what you have out there follows the board, so an area that expires leaves it by itself.
   if (tbl.ui.panel === "field") paintSide();

@@ -1784,6 +1784,20 @@ function sheetAction(e) {
     if (t) {
       p.engine = Math.max(0, Math.min(d.engineCap ?? 0, p.engine + t.gain));
       if (t.oncePerTurn) p.turnTriggers[t.id] = true;
+      /* AND IT APPEARS ON THE BOARD. For a class whose engine IS a count of things standing on the map —
+         `resourceType: "tokens"`, which today means the Doppelganger's Clones — the meter going up and a
+         figure appearing are the same event, so the button that does one does the other. Everything the
+         board needs to draw it comes from here, because the sheet is the only side that knows the
+         character's picture, its size and what its cap is. */
+      if (d.engine?.resourceType === "tokens" && typeof tblSpawnOnBoard === "function") {
+        const from = (d.features || []).find((f) => (f.board || {}).verb === "spawn");
+        tblSpawnOnBoard({
+          name: (from && from.board.figure) || "clone",
+          of: ch.name || "Someone", image: ch.photo || "",
+          range: (from && from.board.range) || 30,
+          cap: d.engineCap ?? 0, ofCode: sheet.code, size: ch.size === "Large" ? 2 : 1,
+        });
+      }
     }
   } else if (act === "prompt") {
     // Answering the "did it land?" question the sheet asked after a cast.

@@ -1503,6 +1503,52 @@ await peek(`CocLive.put("tables/482910/meta/turn", { order: ["tOrc", "tRig"], id
 await peek(`tbl.ui.peekArea = ""; paintPeek(); CocLive.flush();`);
 await wait(300);
 
+console.log("\n— A FIGURE THAT SOMEBODY MADE —");
+/* THE `spawn` VERB, which today means the Doppelganger's Clones. The rules come from the class, not from
+   here: it wears your face, it shares your AC and has no hit points (said as ONE on a board that counts
+   them, so a hit removes it), it does not move once placed, and making one beyond your cap drops your
+   oldest. Placed with the same aim-then-place gesture an area uses. */
+peek(`tblSpawnOnBoard({ name: "clone", of: "Rig", image: "", range: 30, cap: 2, ofCode: "123456", size: 1 })`);
+ok(peek(`tbl.placing.verb`) === "spawn", "making one puts the board into place-it mode");
+ok(/Rig's clone/.test(peek(`tbl.placing.name`)), "named for whoever made it: " + peek(`tbl.placing.name`));
+await peek(`tblPlaceAt(4, 8)`);
+await until(async () => Object.values((await aget(`CocLive.get("tables/482910/tokens")`)) || {})
+  .filter((t) => t && t.spawn).length === 1);
+const firstClone = Object.entries(await aget(`CocLive.get("tables/482910/tokens")`))
+  .find(([, t]) => t && t.spawn);
+ok(firstClone[1].hp === 1 && firstClone[1].hpMax === 1,
+  "it has the one hit point that says a single hit destroys it");
+ok(firstClone[1].speed === 0, "and no speed, because it does not move");
+ok(peek(`(function(){ const was = tbl.role; tbl.role = "player";
+  const r = tblCanMove(${JSON.stringify(firstClone[1])}); tbl.role = was; return r; })()`) === false,
+  "which the board enforces rather than merely draws — the one place it refuses a drag");
+ok(peek(`(function(){ const was = tbl.role; tbl.role = "dm";
+  const r = tblCanMove(${JSON.stringify(firstClone[1])}); tbl.role = was; return r; })()`) === true,
+  "though the DM may still move one, to put right a misplacement");
+// The cap: a third against a cap of two drops the oldest, which is what the class says happens.
+peek(`tblSpawnOnBoard({ name: "clone", of: "Rig", image: "", range: 30, cap: 2, ofCode: "123456", size: 1 })`);
+await peek(`tblPlaceAt(6, 8)`);
+await until(async () => Object.values((await aget(`CocLive.get("tables/482910/tokens")`)) || {})
+  .filter((t) => t && t.spawn).length === 2);
+peek(`tblSpawnOnBoard({ name: "clone", of: "Rig", image: "", range: 30, cap: 2, ofCode: "123456", size: 1 })`);
+await peek(`tblPlaceAt(8, 8)`);
+await wait(200);
+const capped = Object.values(await aget(`CocLive.get("tables/482910/tokens")`)).filter((t) => t && t.spawn);
+ok(capped.length === 2, `a third against a cap of two leaves two (${capped.length})`);
+ok(!capped.some((t) => t.x === 4 && t.y === 8), "and it is the OLDEST that dropped");
+// One hit: hurt at all and it is gone, swept by the DM's browser like everything else.
+const alive = Object.entries(await aget(`CocLive.get("tables/482910/tokens")`)).find(([, t]) => t && t.spawn);
+await peek(`CocLive.put("tables/482910/tokens/${alive[0]}/hp", 0)`);
+await until(async () => Object.values((await aget(`CocLive.get("tables/482910/tokens")`)) || {})
+  .filter((t) => t && t.spawn).length === 1);
+ok(true, "and one that has been hit at all is gone");
+// Tidy up, and leave the table quiet for the sections below.
+for (const [id] of Object.entries(await aget(`CocLive.get("tables/482910/tokens")`)).filter(([, t]) => t && t.spawn)) {
+  await peek(`CocLive.put("tables/482910/tokens/${id}", null)`);
+}
+peek(`CocLive.flush();`);
+await wait(250);
+
 console.log("\n— A PLAYER ENDS THEIR OWN TURN —");
 peek(`tbl.role = "player"; tbl.me.charCode = "123456"; renderTableShell(); paintTokens(); paintTurnBar(); paintWho();`);
 ok(/Rig — you/.test($("#vtt-turn").textContent), "the bar tells you it is your turn");

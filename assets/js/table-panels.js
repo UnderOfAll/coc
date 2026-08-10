@@ -904,7 +904,12 @@ function tblShowSheet(code) {
       <button class="btn-quiet" data-tbl="sheet-close">Close</button>
     </div>
     <div id="vtt-sheet"><p class="muted">Loading…</p></div>`;
-  openSheetIn("#vtt-sheet", code).catch((err) => {
+  openSheetIn("#vtt-sheet", code).then(() => {
+    /* AND CATCH UP WITH THE FIGHT. The sync runs on stream events, and opening the drawer is not one —
+       so a sheet opened in the middle of a fight sat out of combat with a dead engine until somebody
+       happened to move a figure. It asks as it arrives. */
+    tblSyncSheetCombat();
+  }).catch((err) => {
     const host = $("#vtt-sheet");
     if (host) host.innerHTML = `<p class="warn">${esc(err.message)}</p>`;
   });
