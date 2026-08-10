@@ -501,8 +501,41 @@ async function tblInitSettle(force) {
    walking into a fight together. */
 async function tblInitRollMine() {
   const owed = tblInitOwed();
-  // Quiet: the log gets every roll, the screen does not get seven throws in a row.
-  for (const id of owed) await tblInitRoll(id, owed.length > 1);
+  if (!owed.length) return;
+  if (owed.length === 1) { await tblInitRoll(owed[0]); return; }
+  /* ONE HANDFUL, NOT SEVEN THROWS AND NOT NONE.
+   *
+   * The first version rolled each creature separately and QUIETLY — seven animations back to back is not
+   * a moment, it is a wait — so the DM pressed "Roll all 5" and the order simply appeared, with the phone
+   * catching one stray die out of the log. Kayki: "it doesn't show the animation… and it puts it all
+   * instantly, doesn't wait till animation ends."
+   *
+   * So they are thrown together: one d20 per creature, in one hand, landing at the same time. That is
+   * what rolling initiative for a room of goblins looks like at a real table, it is one animation rather
+   * than seven, and the order is written when the dice stop.
+   *
+   * There is no total — five independent initiatives do not add up to anything — so the roll says so and
+   * the overlay leaves the number off. The line under the dice names who got what instead. */
+  const tokens = tblTokens();
+  const rolls = owed.map((id) => {
+    const t = tokens[id] || {};
+    const one = tblDoRoll({ terms: [{ count: 1, sides: 20, sign: 1 }], mod: 0 }, "normal");
+    return { id, name: t.name || "Someone", face: one.dice[0].v, mod: Number(t.initMod) || 0 };
+  });
+  const said = rolls.map((r) => `${r.name} ${r.face + r.mod}`).join(", ");
+  const who = tbl.me.name || (tbl.role === "dm" ? "DM" : "Player");
+  const entry = {
+    t: Date.now(), who, kind: "roll", label: "Initiative",
+    text: `${who} rolled Initiative — ${said}`,
+    dice: rolls.map((r) => ({ s: 20, v: r.face })),
+    mod: 0, mode: "normal", keptIdx: -1, total: 0, noTotal: true,
+    nat: 0, spec: said,
+  };
+  tbl.lastRollAt = entry.t;
+  const settled = tblShowRoll(entry);
+  await CocLive.push(tblPath("log"), entry).catch(() => {});
+  await settled;                       // the order is the result of the dice, so it waits for them
+  for (const r of rolls) await tblInitApply(r.id, r.face + r.mod);
 }
 
 /* What THIS device is still being asked for, in whichever of the two moments the table is in. */

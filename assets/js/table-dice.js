@@ -587,7 +587,8 @@ function tblShowRoll(entry) {
     <p class="roll-sum">
       <span class="roll-spec">${esc(spec)}${
         entry.mode === "adv" ? " · advantage" : entry.mode === "dis" ? " · disadvantage" : ""}</span>
-      ${dice.length > 1 || mod ? `<span class="roll-total">${esc(entry.total)}</span>`
+      ${entry.noTotal ? ""
+        : dice.length > 1 || mod ? `<span class="roll-total">${esc(entry.total)}</span>`
         // A lone d20 with no modifier would otherwise have no number in the box at all — and that is
         // the commonest roll in the game. It gets one, for the 3D case only.
         : `<span class="roll-total only-3d">${esc(entry.total)}</span>`}

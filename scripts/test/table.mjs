@@ -1157,6 +1157,28 @@ const gather = await aget(`CocLive.get("tables/482910/meta/init")`);
 ok(gather.need.length === 2, "everyone on the scene is asked (" + gather.need.join(", ") + ")");
 ok(/Initiative/.test($("#vtt-turn").textContent), "and the bar says so");
 ok($$('[data-tbl="init-roll-one"]').length === 2, "the DM holds neither figure, so is asked for both");
+ok(!!$('[data-tbl="init-roll-mine"]'), "with one press for the lot of them");
+/* ONE HANDFUL, NOT SEVEN THROWS AND NOT NONE. Rolling each separately and quietly meant the DM pressed
+   "Roll all 5" and the order simply appeared, with the phone catching one stray die out of the log.
+   They are thrown together now: one d20 per creature, in one hand, and the order is written when the
+   dice stop. Five independent initiatives do not add up to anything, so there is no total. */
+// Not armed: nothing is seeded here, and arming would hand this throw a face meant for a later one.
+click($('[data-tbl="init-roll-mine"]'));
+await until(async () => !!(await aget(`CocLive.get("tables/482910/meta/turn")`)), 8000);
+const handful = Object.values(await aget(`CocLive.get("tables/482910/log")`))
+  .sort((a, b) => (b.t || 0) - (a.t || 0)).find((e) => /rolled Initiative/.test(e.text || ""));
+ok((handful.dice || []).length === 2, "one die per creature, thrown in one hand: " + JSON.stringify(handful.dice));
+ok(handful.noTotal === true, "and no total, because five initiatives do not add up to anything");
+ok(/Orc \d+/.test(handful.text) && /Rig \d+/.test(handful.text),
+  "the line names who got what: " + handful.text);
+const bothIn = await aget(`CocLive.get("tables/482910/meta/turn")`);
+ok(bothIn.order.length === 2, "and the order forms from it");
+// Back to a gather, for the assertions below that walk through it one at a time.
+await peek(`CocLive.put("tables/482910/meta/turn", null);
+  CocLive.put("tables/482910/tokens/tOrc/init", null);
+  CocLive.put("tables/482910/tokens/tRig/init", null);
+  CocLive.put("tables/482910/meta/init", { at: Date.now(), need: ["tRig", "tOrc"], have: {} })`);
+await until(() => $$('[data-tbl="init-roll-one"]').length === 2, 4000);
 ok($$("[data-init-for]").length === 2, "each with a box for a number off their own dice");
 // One rolled in the app, one typed off a real die — the two ways Kayki asked for.
 peek(`window.__seq = [0.95];`);   // Orc 20 + 1 = 21
@@ -1183,7 +1205,9 @@ ok(turn && turn.order.length === 2, "everyone on the scene is in the order");
 ok(turn.order[0] === "tOrc" && turn.order[1] === "tRig", "highest first (" + turn.order.join(" then ") + ")");
 ok(turn.idx === 0 && turn.round === 1, "starting at the top of round 1");
 ok((await aget(`CocLive.get("tables/482910/tokens/tOrc/init")`)) === 21, "each figure keeps the number it rolled");
-const initLine = Object.values(await aget(`CocLive.get("tables/482910/log")`)).map(e => e.text).find(t => /^Initiative/.test(t));
+// The NEWEST such line: there is an earlier one from the handful rolled a few assertions above.
+const initLine = Object.values(await aget(`CocLive.get("tables/482910/log")`))
+  .sort((a, b) => (b.t || 0) - (a.t || 0)).map((e) => e.text).find((t) => /^Initiative/.test(t || ""));
 ok(/Orc 21/.test(initLine || "") && /Rig 5/.test(initLine || ""), "and the order is read out into the log: " + initLine);
 /* A DEVICE THAT HOLDS NOTHING IS TOLD SO. It used to be shown "You are in — waiting for the rest", which
    is the opposite of true: it is in nothing, it will be asked for nothing, and the DM is quietly being
