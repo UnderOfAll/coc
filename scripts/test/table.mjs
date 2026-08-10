@@ -1187,6 +1187,46 @@ await wait(80);
 const t3 = await aget(`CocLive.get("tables/482910/meta/turn")`);
 ok(t3.idx === 1 && t3.round === 1, "and Back steps into the previous round");
 
+console.log("\n— WALKING INTO A FIGHT ALREADY RUNNING —");
+/* The order is [Orc, Rig] and Rig is up. A creature put on the board now is NOT quietly in the fight and
+   is NOT quietly out of it: whoever holds it is asked for a number, and it slots in where the number
+   puts it — the same tiebreak the gather used. */
+await peek(`CocLive.put("tables/482910/tokens/tZog", { name: "Zog", x: 4, y: 4, size: 1, kind: "npc", hp: 9, hpMax: 9, speed: 30, initMod: 5 })`);
+await until(() => !!$('[data-token="tZog"]'));
+ok($$(".turn-face").length === 2, "a figure added mid-fight is not silently in the order");
+ok(/Joining/.test($("#vtt-turn").textContent), "the bar asks for its initiative instead");
+ok(/Round 1/.test($("#vtt-turn").textContent) && /Rig/.test($("#vtt-turn").textContent),
+  "and the fight carries on around it — nothing is blocked");
+const jbox = $$("[data-init-for]").find((n) => n.dataset.initFor === "tZog");
+ok(jbox, "with the same box the gather used, for a number off your own dice");
+jbox.value = "25";                                     // beats Orc's 21, so it goes to the front
+jbox.dispatchEvent(new window.Event("focusout", { bubbles: true }));
+await until(async () => ((await aget(`CocLive.get("tables/482910/meta/turn/order")`)) || []).length === 3);
+const tj = await aget(`CocLive.get("tables/482910/meta/turn")`);
+ok(tj.order.join(",") === "tZog,tOrc,tRig", "it slots in where the number puts it: " + tj.order.join(" then "));
+ok(tj.idx === 2, "and the figure who was up is still up, not skipped past");
+ok(tj.round === 1, "the round does not move");
+ok((await aget(`CocLive.get("tables/482910/meta/turn/late")`)) === null, "nothing is left waiting to be placed");
+await until(() => $$(".turn-face").length === 3);
+ok(/Rig/.test($("#vtt-turn").textContent), "and the bar still says whose turn it is");
+ok(!/Joining/.test($("#vtt-turn").textContent), "the bar stops asking once it is in");
+const joinLine = Object.values(await aget(`CocLive.get("tables/482910/log")`)).map((e) => e.text)
+  .find((t) => /joins the fight/.test(t || ""));
+ok(/Zog joins the fight at 25/.test(joinLine || ""), "and the table is told: " + joinLine);
+// Not everything put on the board mid-fight is IN the fight — a barrel is not a combatant.
+await peek(`CocLive.put("tables/482910/tokens/tKeg", { name: "Keg", x: 1, y: 6, size: 1, kind: "npc", hp: 1, hpMax: 1, speed: 0, initMod: 0 })`);
+await until(() => !!$('[data-tbl="init-out"][data-val="tKeg"]'));
+click($('[data-tbl="init-out"][data-val="tKeg"]'));
+await until(() => !$('[data-tbl="init-out"][data-val="tKeg"]'));
+ok(((await aget(`CocLive.get("tables/482910/meta/turn/order")`)) || []).length === 3,
+  "the DM can wave one off, and it stays out of the order");
+ok(!/Joining/.test($("#vtt-turn").textContent), "and stops being asked about");
+// Back to two in the order, for the sections below.
+await peek(`CocLive.put("tables/482910/tokens/tZog", null)`);
+await peek(`CocLive.put("tables/482910/tokens/tKeg", null)`);
+await peek(`CocLive.put("tables/482910/meta/turn", { order: ["tOrc", "tRig"], idx: 1, round: 1 })`);
+await until(() => $$(".turn-face").length === 2);
+
 console.log("\n— HOW FAR CAN I WALK —");
 // It is Rig's turn (idx 1). A turn arrives with the movement unspent.
 await peek(`CocLive.put("tables/482910/tokens/tRig/moved", 25)`);

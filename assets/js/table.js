@@ -838,13 +838,13 @@ document.addEventListener("keydown", (e) => {
   const box = evTarget(e).closest("[data-init-for]");
   if (!box) return;
   e.preventDefault();
-  if (String(box.value).trim() !== "") tblInitSet(box.dataset.initFor, box.value).catch(tblFail);
+  if (String(box.value).trim() !== "") tblInitApply(box.dataset.initFor, box.value).catch(tblFail);
 });
 document.addEventListener("focusout", (e) => {
   if (!tbl) return;
   const box = evTarget(e).closest("[data-init-for]");
   if (!box || String(box.value).trim() === "") return;
-  tblInitSet(box.dataset.initFor, box.value).catch(tblFail);
+  tblInitApply(box.dataset.initFor, box.value).catch(tblFail);
 });
 
 document.addEventListener("input", (e) => {
@@ -972,6 +972,8 @@ document.addEventListener("click", (e) => {
   else if (act === "init-roll-mine") tblInitRollMine().catch(tblFail);
   else if (act === "sheet-open") tblOpenSheetByCode();
   else if (act === "init-go") tblInitSettle(true).catch(tblFail);
+  // Not everything dropped on the board mid-fight belongs in the order. The DM's call, and only theirs.
+  else if (act === "init-out") tblJoinOut(val).catch(tblFail);
   else if (act === "claim") tblClaimFromPanel();
   // Dismissing a handout is each person's own business, so it is not a DM-only action.
   else if (act === "hand-dismiss") { tbl.ui.dismissed = val; paintHandout(); }

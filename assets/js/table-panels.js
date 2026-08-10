@@ -425,10 +425,21 @@ async function tblInitOpen() {
 /* One figure's number, however it was arrived at. Written to the gather AND onto the figure, so the
    board can show it without reading the gather. */
 async function tblInitSet(id, value) {
-  const n = Math.max(-20, Math.min(99, Math.round(Number(value) || 0)));
+  const n = tblInitNumber(value);
   await CocLive.put(tblPath("meta/init/have/" + id), n);
   await CocLive.put(tblPath("tokens/" + id + "/init"), n);
-  await tblInitSettle();
+  tblSettleSoon();
+}
+
+function tblInitNumber(value) {
+  return Math.max(-20, Math.min(99, Math.round(Number(value) || 0)));
+}
+
+/* A number arrives through the same button and the same box at two different moments: the gather before
+   a fight, and a latecomer walking into one that is already running. Which one it is decides where the
+   number goes, and nothing above this line has to care. */
+function tblInitApply(id, value) {
+  return (tbl.data.meta || {}).init ? tblInitSet(id, value) : tblJoinSet(id, value);
 }
 
 /* Roll it here, with the dice everybody else can see. The modifier is the figure's own, so what goes in
@@ -439,7 +450,7 @@ async function tblInitRoll(id, quiet) {
   const mod = Number(t.initMod) || 0;
   const res = tblRollAndPost({ terms: [{ count: 1, sides: 20, sign: 1 }], mod },
     "Initiative", "normal", t.name || "Someone", quiet);
-  if (res) await tblInitSet(id, res.total);
+  if (res) await tblInitApply(id, res.total);
 }
 
 /* Everyone in? Then the order forms. Only the DM's browser builds it — two clients racing to write the
@@ -473,13 +484,125 @@ async function tblInitSettle(force) {
 }
 
 /* Everything this device still owes, rolled at once. The DM has a screenful of creatures and should not
-   have to press a button per goblin. */
+   have to press a button per goblin. Works for both moments — the gather, and a handful of reinforcements
+   walking into a fight together. */
 async function tblInitRollMine() {
-  const init = (tbl.data.meta || {}).init;
-  if (!init) return;
-  const owed = tblInitMine(init.need || []).filter((id) => (init.have || {})[id] == null);
+  const owed = tblInitOwed();
   // Quiet: the log gets every roll, the screen does not get seven throws in a row.
   for (const id of owed) await tblInitRoll(id, owed.length > 1);
+}
+
+/* What THIS device is still being asked for, in whichever of the two moments the table is in. */
+function tblInitOwed() {
+  const meta = tbl.data.meta || {};
+  if (meta.init) {
+    const have = meta.init.have || {};
+    return tblInitMine(meta.init.need || []).filter((id) => have[id] == null);
+  }
+  return tblInitMine(tblJoinNeed(meta.turn));
+}
+
+/* ---------------------------------------------------------------- joining a fight in progress
+ *
+ * A creature that walks in halfway through does not wait for the next fight. It rolls, and it slots into
+ * the order where the number puts it — the same way BG3 does it, and the same way a table does.
+ *
+ * It reuses the gather's machinery rather than repeating it: the same row, the same button, the same box,
+ * the same "you roll for what you hold". Only the destination differs. `meta/turn/late` holds a number
+ * that has been rolled but not yet placed (only the DM's browser rewrites the order); `meta/turn/out`
+ * holds the figures the DM has said are not in this fight, so a prop dropped on the board mid-combat
+ * stops asking. Both go when the fight does, because both live inside `meta/turn`. */
+
+/* Who is being asked to join: on this scene, not in the order, not already rolled, not waved off. */
+function tblJoinNeed(turn) {
+  if (!turn || !Array.isArray(turn.order) || !turn.order.length) return [];
+  const inOrder = new Set(turn.order);
+  const late = turn.late || {}, out = turn.out || {};
+  return tblInitCandidates().filter((id) => !inOrder.has(id) && late[id] == null && !out[id]);
+}
+
+async function tblJoinSet(id, value) {
+  const turn = (tbl.data.meta || {}).turn;
+  if (!turn || !Array.isArray(turn.order) || !turn.order.length) return;
+  const n = tblInitNumber(value);
+  await CocLive.put(tblPath("tokens/" + id + "/init"), n);
+  await CocLive.put(tblPath("meta/turn/late/" + id), n);
+  tblSettleSoon();
+}
+
+/* Not everything put on the board mid-fight is IN the fight. */
+async function tblJoinOut(id) {
+  if (tbl.role !== "dm") return;
+  await CocLive.put(tblPath("meta/turn/out/" + id), true);
+}
+
+/* Place whoever has rolled. The DM's browser only, for the same reason the gather settles there: two
+   clients splicing the same array is two different orders. */
+async function tblJoinSettle() {
+  if (tbl.role !== "dm") return;
+  const turn = (tbl.data.meta || {}).turn;
+  if (!turn || !Array.isArray(turn.order) || !turn.order.length) return;
+  const late = turn.late || {};
+  const tokens = tblTokens();
+  const waiting = Object.keys(late).filter((id) => tokens[id] && turn.order.indexOf(id) < 0);
+  if (!waiting.length) {
+    if (Object.keys(late).length) await CocLive.put(tblPath("meta/turn/late"), null);
+    return;
+  }
+  const order = turn.order.slice();
+  let idx = Math.min(Math.max(0, turn.idx || 0), order.length - 1);
+  // The number for someone already in the order is on their figure; for the ones arriving it is in
+  // `late`, which the local copy of the figure may not have caught up with yet.
+  const rank = (id) => {
+    const t = tokens[id] || {};
+    return [late[id] != null ? Number(late[id]) : Number(t.init) || 0,
+      Number(t.initMod) || 0, String(t.name || "")];
+  };
+  // Ahead of somebody: higher total, then higher modifier, then the name — the gather's tiebreak, so a
+  // latecomer lands exactly where they would have landed had they been there from the start.
+  const ahead = (a, b) => (a[0] !== b[0] ? a[0] > b[0]
+    : a[1] !== b[1] ? a[1] > b[1] : a[2].localeCompare(b[2]) < 0);
+  for (const id of waiting) {
+    const mine = rank(id);
+    let at = order.findIndex((other) => ahead(mine, rank(other)));
+    if (at < 0) at = order.length;
+    order.splice(at, 0, id);
+    // Whoever was up stays up: an insertion at or before them shifts them one to the right.
+    if (at <= idx) idx += 1;
+    await CocLive.put(tblPath("tokens/" + id + "/moved"), 0);
+  }
+  await CocLive.patch(tblPath("meta/turn"), { order, idx });
+  await CocLive.put(tblPath("meta/turn/late"), null);
+  await CocLive.push(tblPath("log"), {
+    t: Date.now(), who: "DM", kind: "system",
+    text: waiting.map((id) => `${(tokens[id] || {}).name || "Someone"} joins the fight at ${late[id]}`)
+      .join(", "),
+  });
+}
+
+/* The one place either kind of settle is asked for.
+ *
+ * The last number in may have been typed on somebody else's device, and only the DM's browser is allowed
+ * to build the order — so the check belongs on every stream event, not only on the roll this device made.
+ * Without it, a fight where the DM rolls before the players never starts: the bar sits at "you are in",
+ * waiting for a settle nobody will run.
+ *
+ * Deferred and guarded, and both for the same reason: a write does not land in this browser's own copy
+ * until the stream brings it back, so the settle has to read the freshest state it can rather than the
+ * state at the moment it was asked for — and two of them running at once would splice the same order
+ * twice. Settling writes, and writing brings the event that lands back here, so nothing is ever left
+ * un-settled by a skipped call. */
+let tblSettlePending = false;
+function tblSettleSoon() {
+  if (tblSettlePending || tbl.role !== "dm") return;
+  tblSettlePending = true;
+  Promise.resolve().then(() => {
+    const meta = tbl.data.meta || {};
+    const late = (meta.turn || {}).late;
+    if (meta.init) return tblInitSettle();
+    if (late && Object.keys(late).length) return tblJoinSettle();
+    return null;
+  }).catch(tblFail).then(() => { tblSettlePending = false; });
 }
 
 async function tblTurnStep(delta) {
@@ -501,9 +624,22 @@ async function tblTurnEnd() {
   await CocLive.put(tblPath("meta/turn"), null);
 }
 
-/* The bar above the board: whose turn it is, what round, and what they have left to walk. Everyone
-   sees it; the DM can move it along, and so can whoever's turn it is — pressing "Done" on your own
-   turn is the one piece of the tracker a player should not have to ask for. */
+/* One figure being asked for a number: roll it here, or type what the dice on your table said. The same
+   row serves the gather and a latecomer — only the DM's "not in it" is particular to joining, because
+   only mid-fight can something land on the board that was never meant to be in the order. */
+function initAskHTML(id, tokens, joining) {
+  const t = tokens[id] || {};
+  return `<span class="init-ask">
+    <span class="init-name">${esc(t.name || "Figure")}</span>
+    <button class="btn-quiet" data-tbl="init-roll-one" data-val="${esc(id)}">Roll ${
+      Number(t.initMod) ? (Number(t.initMod) > 0 ? "+" + esc(t.initMod) : esc(t.initMod)) : "d20"}</button>
+    <input class="num init-num" data-init-for="${esc(id)}" type="number" inputmode="numeric"
+      placeholder="or type it" aria-label="Initiative for ${esc(t.name || "figure")}" />
+    ${joining && tbl.role === "dm" ? `<button class="btn-quiet" data-tbl="init-out" data-val="${esc(id)}"
+      title="Keep ${esc(t.name || "this figure")} out of this fight">Out</button>` : ""}
+  </span>`;
+}
+
 /* The gather, on every screen at once. You are shown what YOU owe; everyone else's is a tally, so the
    table can see who it is waiting for without anybody having to ask. */
 function initBarHTML(init) {
@@ -512,16 +648,7 @@ function initBarHTML(init) {
   const have = init.have || {};
   const mine = tblInitMine(need).filter((id) => have[id] == null);
   const waiting = need.filter((id) => have[id] == null);
-  const row = (id) => {
-    const t = tokens[id] || {};
-    return `<span class="init-ask">
-      <span class="init-name">${esc(t.name || "Figure")}</span>
-      <button class="btn-quiet" data-tbl="init-roll-one" data-val="${esc(id)}">Roll ${
-        Number(t.initMod) ? (Number(t.initMod) > 0 ? "+" + esc(t.initMod) : esc(t.initMod)) : "d20"}</button>
-      <input class="num init-num" data-init-for="${esc(id)}" type="number" inputmode="numeric"
-        placeholder="or type it" aria-label="Initiative for ${esc(t.name || "figure")}" />
-    </span>`;
-  };
+  const row = (id) => initAskHTML(id, tokens, false);
   return `<span class="turn-round">Initiative</span>
     ${mine.length ? `<span class="init-rows">${mine.map(row).join("")}</span>
       ${mine.length > 1 ? `<button class="btn-quiet" data-tbl="init-roll-mine">Roll all ${mine.length}</button>` : ""}`
@@ -532,6 +659,28 @@ function initBarHTML(init) {
       ${tbl.role === "dm" ? `<button class="btn-quiet" data-tbl="init-go" ${waiting.length ? "" : "disabled"}>Start without them</button>
         <button class="btn-quiet" data-tbl="turn-end">Cancel</button>` : ""}
     </span>`;
+}
+
+/* Somebody walked in. A line under the running fight, on its own row so the turn above it does not move
+   when a creature is dropped on the board: what THIS device is asked to roll, and a note about anyone
+   else the order is waiting on. It is not a modal and it blocks nothing — the fight carries on around
+   whoever is still finding their dice. */
+function joinLineHTML(turn, tokens) {
+  const need = tblJoinNeed(turn);
+  const mine = tblInitMine(need);
+  const others = need.filter((id) => mine.indexOf(id) < 0);
+  const placing = Object.keys(turn.late || {}).filter((id) => tokens[id]);
+  if (!mine.length && !others.length && !placing.length) return "";
+  const nameOf = (id) => (tokens[id] || {}).name || "?";
+  return `<div class="turn-joining">
+    <span class="turn-round">Joining</span>
+    ${mine.length ? `<span class="init-rows">${
+      mine.map((id) => initAskHTML(id, tokens, true)).join("")}</span>` : ""}
+    ${mine.length > 1 ? `<button class="btn-quiet" data-tbl="init-roll-mine">Roll all ${mine.length}</button>` : ""}
+    ${others.length ? `<span class="muted">waiting for ${
+      esc(others.slice(0, 4).map(nameOf).join(", "))}${others.length > 4 ? "…" : ""}</span>` : ""}
+    ${placing.length ? `<span class="muted">placing ${esc(placing.map(nameOf).join(", "))}</span>` : ""}
+  </div>`;
 }
 
 /* THE ORDER, AS FACES. Everyone in the fight along the top, in the order they act, with the figure
@@ -564,9 +713,13 @@ function turnStripHTML(order, tokens, currentId) {
   }).join("")}</div>`;
 }
 
+/* The bar above the board: whose turn it is, what round, and what they have left to walk. Everyone
+   sees it; the DM can move it along, and so can whoever's turn it is — pressing "Done" on your own
+   turn is the one piece of the tracker a player should not have to ask for. */
 function paintTurnBar() {
   const bar = $("#vtt-turn");
   if (!bar) return;
+  tblSettleSoon();
   const init = (tbl.data.meta || {}).init;
   if (init) {
     // Nothing is anybody's turn yet, so no figure wears the ring.
@@ -608,7 +761,8 @@ function paintTurnBar() {
       ${tbl.role === "dm" ? `<button class="btn-quiet" data-tbl="turn" data-val="-1">&larr; Back</button>
         <button class="btn-quiet" data-tbl="init-roll">Reroll</button>
         <button class="btn-quiet" data-tbl="turn-end">End</button>` : ""}
-    </span>`;
+    </span>
+    ${joinLineHTML(turn, tokens)}`;
   /* Keep the line where it was through a repaint — the bar is rebuilt on every stream event, and a
      strip that jumps back to the start each time is unusable with eight figures in it. Then bring
      whoever is up into view, which is the only reason to move it at all. */

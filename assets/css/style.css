@@ -1223,6 +1223,10 @@ body:has(.vtt) { height: 100dvh; overflow: hidden; }
 .init-name { font-family: var(--serif); color: var(--gold); font-size: 0.95rem;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .init-num { width: 6.5rem; min-width: 0; }
+/* Somebody joining a fight already running: its own row under the turn, so the line telling you whose
+   turn it is never moves because a goblin arrived. */
+.turn-joining { width: 100%; display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center;
+  padding-top: 0.4rem; border-top: 1px solid var(--border); }
 @media (max-width: 760px) {
   /* One row per figure, each fitting the screen — a DM with seven creatures had them running off the
      right-hand edge, and the list itself pushing the board off the bottom. It scrolls inside itself
