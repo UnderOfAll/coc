@@ -1056,7 +1056,11 @@ document.addEventListener("click", (e) => {
     const p = tbl.placing;
     if (p && p.aimed) tblPlaceAt(p.x, p.y).catch(tblFail);
   }
-  else if (act === "area-clear") tblAreaClear(val).catch(tblFail);
+  else if (act === "area-clear") {
+    tbl.ui.peekArea = "";
+    paintPeek();
+    tblAreaClear(val).catch(tblFail);
+  }
   else if (act === "claim") tblClaimFromPanel();
   // Dismissing a handout is each person's own business, so it is not a DM-only action.
   else if (act === "hand-dismiss") { tbl.ui.dismissed = val; paintHandout(); }
@@ -1141,8 +1145,11 @@ document.addEventListener("click", (e) => {
   else if (act === "ink-shape") { tblInkState().shape = val; paintSide(); }
   else if (act === "ink-fill") { tblInkState().fill = val || false; paintSide(); }
   else if (act === "ink-undo") tblUndoInk().catch(tblFail);
-  else if (act === "peek-close") { tbl.ui.peek = ""; paintPeek(); }
-  else if (act === "peek-edit") { tbl.ui.peek = ""; paintPeek(); tblOpenToken(val); }
+  else if (act === "peek-close") { tbl.ui.peek = ""; tbl.ui.peekArea = ""; paintPeek(); }
+  else if (act === "peek-edit") { tbl.ui.peek = ""; tbl.ui.peekArea = ""; paintPeek(); tblOpenToken(val); }
+  // An area's card, opened from its label — the one part of it that takes a press, because a corner
+  // handle is under a figure half the time.
+  else if (act === "area-peek") { tbl.ui.peek = ""; tbl.ui.peekArea = val; paintPeek(); }
   else if (act === "ink-color") { tblInkState().color = val; paintSide(); }
   else if (act === "ink-width") { tblInkState().width = Number(val); paintSide(); }
   else if (act === "ink-clear-mine") {

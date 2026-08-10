@@ -1753,18 +1753,17 @@ body:has(.vtt) { height: 100dvh; overflow: hidden; }
   stroke-opacity: 1; paint-order: stroke; }
 .area-edge { fill: none; stroke: rgba(11,11,10,0.55); stroke-width: 6; }
 .area.ghost .area-body { fill-opacity: 0.18; stroke-dasharray: 7 5; }
-.area-tag { fill: var(--gold); font-family: var(--serif); font-size: 15px; paint-order: stroke;
-  stroke: rgba(11,11,10,0.85); stroke-width: 3px; }
+/* The label is the handle: the only part of an area that takes a press, because a corner handle sits
+   under a figure half the time. Its size is set inline, divided by the zoom, so it stays the same on
+   screen however far the board is pulled back. */
+.area-tag { fill: var(--gold); font-family: var(--serif); paint-order: stroke;
+  stroke: rgba(11,11,10,0.85); stroke-width: 3px; pointer-events: auto; cursor: pointer; }
+.area-tag:hover { fill: var(--text); }
 /* The reach it is being cast from: shown, never enforced — red outside it, and you may still place it
    there. The same rule the ruler holds for movement. */
 .area-reach { fill: none; stroke: var(--gold); stroke-opacity: 0.5; stroke-width: 2;
   stroke-dasharray: 3 7; }
 .area-reach.far { stroke: var(--accent); stroke-opacity: 0.9; }
-/* The DM's way to take one off early. Pointer events are off for the whole overlay so a shape never eats
-   a drag; only this handle takes them back. */
-.area-x { fill: var(--panel); stroke: var(--gold); stroke-width: 1.5; pointer-events: auto;
-  cursor: pointer; }
-.area-x-mark { fill: var(--gold); font-size: 20px; pointer-events: auto; cursor: pointer; }
 
 /* Waiting for a tap on the board. Its own bar because it swallows the next tap, and a mode you cannot
    see is a mode you cannot leave. */

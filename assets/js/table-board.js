@@ -338,6 +338,7 @@ function toSquares(sx, sy) {
 function paintPeek() {
   const host = $("#vtt-peek");
   if (!host) return;
+  if (tbl.ui.peekArea) { paintAreaPeek(host); return; }
   const id = tbl.ui.peek;
   const t = id ? tblTokens()[id] : null;
   if (!t) { host.classList.add("hidden"); host.innerHTML = ""; return; }
@@ -351,8 +352,6 @@ function paintPeek() {
   const conds = Array.isArray(t.conditions) ? t.conditions : [];
   const pct = t.hpMax ? Math.max(0, Math.min(100, Math.round((Number(t.hp) || 0) / t.hpMax * 100))) : 0;
   host.classList.remove("hidden");
-  host.style.left = Math.round(sx + 8) + "px";
-  host.style.top = Math.round(Math.max(0, sy)) + "px";
   host.innerHTML = `<div class="peek-head">
       <strong>${esc(t.name || "Figure")}</strong>
       <button class="btn-quiet" data-tbl="peek-close">&times;</button>
@@ -368,6 +367,54 @@ function paintPeek() {
     ${tbl.role === "dm"
       ? `<button class="btn-quiet" data-tbl="peek-edit" data-val="${esc(id)}">Edit this figure</button>`
       : tblIsMine(t) ? `<button class="btn-quiet" data-tbl="panel" data-val="${tbl.me.charCode ? "sheet" : "mine"}">Open ${tbl.me.charCode ? "my sheet" : "my character"}</button>` : ""}`;
+  tblFitPeek(host, sx, sy);
+}
+
+/* AN AREA'S CARD, the same card a figure gets: what it is, how long it has left, who is standing in it,
+   and — for whoever put it there, and for the DM — the way to take it away. */
+function paintAreaPeek(host) {
+  const id = tbl.ui.peekArea;
+  const a = (tbl.data.areas || {})[id];
+  if (!a) { tbl.ui.peekArea = ""; host.classList.add("hidden"); host.innerHTML = ""; return; }
+  const scene = tblScene();
+  const cell = Number(scene.cell) || 70;
+  const half = tblSquares(a.size) / 2;
+  const sx = tbl.view.x + (a.x + half) * cell * tbl.view.z;
+  const sy = tbl.view.y + (a.y - half) * cell * tbl.view.z;
+  const inside = tblInsideArea(a).map((tid) => (tblTokens()[tid] || {}).name || "someone");
+  host.classList.remove("hidden");
+  host.innerHTML = `<div class="peek-head">
+      <strong>${esc(a.name || "Area")}</strong>
+      <button class="btn-quiet" data-tbl="peek-close">&times;</button>
+    </div>
+    <p class="peek-foot">${esc(a.size)} ft ${a.shape === "cube" ? "cube" : "radius"}${
+      a.left != null ? ` &middot; ${esc(a.left)} round${a.left === 1 ? "" : "s"} left` : ""}</p>
+    <p class="muted">${inside.length ? "Inside: " + esc(inside.join(", ")) : "Nobody is inside it."}</p>
+    ${tblCanClearArea(a)
+      ? `<button class="btn-quiet" data-tbl="area-clear" data-val="${esc(id)}">Remove it</button>`
+      : `<p class="muted">Whoever cast it can take it away, and so can the DM.</p>`}`;
+  tblFitPeek(host, sx, sy);
+}
+
+/* KEEP THE CARD ON THE BOARD. It is pinned beside the thing it describes, and the stage clips whatever
+   leaves it — so a figure near the right-hand edge got a card with its right half cut off, which on a
+   phone is most of the figures. Kayki photographed it twice. Put it on the other side when there is no
+   room on this one, and clamp it either way. */
+function tblFitPeek(host, sx, sy) {
+  const stage = $("#vtt-stage");
+  if (!stage || !host.getBoundingClientRect) return;
+  const box = stage.getBoundingClientRect();
+  if (!box.width) return;
+  host.style.left = "0px";
+  host.style.top = "0px";
+  const card = host.getBoundingClientRect();
+  const pad = 8;
+  let left = sx + pad;
+  if (left + card.width > box.width - pad) left = sx - card.width - pad;   // flip to the other side
+  left = Math.max(pad, Math.min(left, box.width - card.width - pad));
+  const top = Math.max(pad, Math.min(sy, box.height - card.height - pad));
+  host.style.left = Math.round(left) + "px";
+  host.style.top = Math.round(top) + "px";
 }
 
 /* Where a point on the stage falls on the PICTURE, as a fraction of it. */
@@ -1148,6 +1195,27 @@ function paintAreas() {
   svg.innerHTML = drawn + placingGhostHTML(cell);
 }
 
+/* The label is the AREA'S HANDLE, and the only part of it that takes a press.
+ *
+ * It used to be a small × drawn at the shape's top-right corner, which is exactly where a figure standing
+ * beside the area is — so half the time the × was under a goblin and could not be pressed at all. The
+ * label sits above the shape where nothing else is, says what the thing is, and opens its card. Kayki's
+ * ask, and the right one: "put it with its own sheet like the creatures, with the option to remove it."
+ *
+ * Its size is divided by the zoom so it stays the same on SCREEN however far the board is pulled back —
+ * everything else in the world grows and shrinks with the camera, but a label you cannot read is not a
+ * label and a handle you cannot hit is not a handle. */
+function areaTagHTML(a, cell, id, cx, top) {
+  const tag = [a.name || "", a.left != null ? a.left + (a.left === 1 ? " round" : " rounds") : ""]
+    .filter(Boolean).join(" · ");
+  if (!tag) return "";
+  const z = (tbl.view && tbl.view.z) || 1;
+  const px = Math.min(cell * 0.5, 15 / z);
+  return `<text x="${cx.toFixed(1)}" y="${(top - px * 0.5).toFixed(1)}" class="area-tag"
+    font-size="${px.toFixed(1)}" text-anchor="middle"
+    ${id ? `data-tbl="area-peek" data-val="${esc(id)}"` : ""}>${esc(tag)}</text>`;
+}
+
 function areaShapeHTML(a, cell, id) {
   const r = tblSquares(a.size) / 2 * cell;
   const cx = a.x * cell, cy = a.y * cell;
@@ -1158,18 +1226,11 @@ function areaShapeHTML(a, cell, id) {
          height="${(r * 2).toFixed(1)}"`
     : `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r.toFixed(1)}"`;
   const body = `${geom} class="area-edge" />${geom} class="area-body" />`;
-  // The rounds left are on the area itself: "how long is that cloud there for" is asked every round, and
-  // the alternative is the DM keeping it in their head.
-  const tag = [a.name || "", a.left != null ? a.left + (a.left === 1 ? " round" : " rounds") : ""]
-    .filter(Boolean).join(" · ");
+  // The rounds left are on the label: "how long is that cloud there for" is asked every round, and the
+  // alternative is the DM keeping it in their head.
   return `<g class="area${id ? "" : " ghost"}" data-area="${esc(id || "")}">
     ${body}
-    ${tag ? `<text x="${cx.toFixed(1)}" y="${(cy - r - cell * 0.12).toFixed(1)}"
-      class="area-tag" text-anchor="middle">${esc(tag)}</text>` : ""}
-    ${id && tblCanClearArea(a) ? `<circle cx="${(cx + r).toFixed(1)}" cy="${(cy - r).toFixed(1)}"
-      r="${(cell * 0.24).toFixed(1)}" class="area-x" data-tbl="area-clear" data-val="${esc(id)}" />
-      <text x="${(cx + r).toFixed(1)}" y="${(cy - r + cell * 0.09).toFixed(1)}" class="area-x-mark"
-        text-anchor="middle" data-tbl="area-clear" data-val="${esc(id)}">&times;</text>` : ""}
+    ${areaTagHTML(a, cell, id, cx, cy - r)}
   </g>`;
 }
 

@@ -1369,7 +1369,7 @@ ok(/catches Orc/.test(caught || ""), "and the table is told who is inside: " + c
 ok(!/Rig/.test(caught || ""), "and only who is inside — Rig is eight squares away");
 ok(!/damage|save|DC/i.test(caught || ""), "it counts squares and judges nothing");
 ok($$("#vtt-areas .area").length === 1, "it is drawn on the board");
-ok($$('[data-tbl="area-clear"]').length > 0, "with a way for the DM to take it off early");
+ok($$('[data-tbl="area-peek"]').length > 0, "with a label that opens its card");
 // Who is inside is geometry, so it is asserted as geometry rather than through the UI.
 ok(peek(`tblInsideArea({ x: 10.5, y: 10.5, shape: "radius", size: 10 }).join(",")`) === "tOrc",
   "a 10 ft radius reaches one square out");
@@ -1417,7 +1417,19 @@ ok((await aget(`CocLive.get("tables/482910/areas/${second}/left")`)) === 10,
 /* A CONTROL DRAWN ON THE BOARD IS A CONTROL. The × did nothing at all at first: the stage captures the
    pointer, and a captured pointer delivers the click to the stage rather than to the thing under the
    finger. Anything with data-tbl is left alone by the board's gestures now, so a real press reaches it. */
-ok(!!$(`[data-tbl="area-clear"][data-val="${second}"]`), "the area carries a way to take it off");
+/* THE AREA GETS A CARD, like a figure. The way to take it off used to be a small × at the shape's
+   top-right corner — which is exactly where a figure standing beside it is, so half the time it was under
+   a goblin and could not be pressed at all. The label opens the card instead; the card holds the button. */
+ok(!!$(`[data-tbl="area-peek"][data-val="${second}"]`), "an area's label opens its card");
+ok(!$('[data-tbl="area-clear"]'), "and there is no corner handle for a figure to sit on");
+click($(`[data-tbl="area-peek"][data-val="${second}"]`));
+await wait(60);
+ok(!$("#vtt-peek").classList.contains("hidden"), "the card opens");
+ok(/Powder Screen/.test($("#vtt-peek").textContent), "naming the area");
+ok(/15 ft cube/.test($("#vtt-peek").textContent) && /10 rounds left/.test($("#vtt-peek").textContent),
+  "what it is and how long it has left: " + $("#vtt-peek").textContent.replace(/\s+/g, " ").trim());
+ok(/Inside:|Nobody is inside/.test($("#vtt-peek").textContent), "and who is standing in it");
+ok(!!$(`[data-tbl="area-clear"][data-val="${second}"]`), "with the way to take it off, on the card");
 ok(peek(`onPointerDown({ target: document.querySelector('[data-tbl="area-clear"]'),
   cancelable: true, isPrimary: true, pointerId: 9, clientX: 10, clientY: 10,
   preventDefault(){ window.__prevented = true; } }), window.__prevented === true`) === false,

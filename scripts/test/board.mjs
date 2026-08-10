@@ -261,6 +261,49 @@ console.log("\n— 393px, as a player, by touch —");
     return { doc: de.scrollWidth, vw: de.clientWidth };
   });
   ok(wide.doc <= wide.vw, `nothing pushes the page wider than the phone (${wide.doc} in ${wide.vw})`);
+
+  /* A CARD MUST STAY ON THE BOARD. It is pinned beside the thing it describes and the stage clips
+     whatever leaves it, so a figure near the right-hand edge got a card with its right half cut off —
+     which on a phone is most of the figures. Kayki photographed it twice. There is no layout in jsdom,
+     so this can only be asserted here. */
+  const fits = async (what) => {
+    await new Promise((r) => setTimeout(r, 120));
+    return page.evaluate(() => {
+      const host = document.querySelector("#vtt-peek"), stage = document.querySelector("#vtt-stage");
+      if (!host || host.classList.contains("hidden")) return { open: false };
+      const c = host.getBoundingClientRect(), s = stage.getBoundingClientRect();
+      return { open: true, w: Math.round(c.width),
+        inside: c.left >= s.left - 0.5 && c.right <= s.right + 0.5 &&
+                c.top >= s.top - 0.5 && c.bottom <= s.bottom + 0.5 };
+    });
+  };
+  // Hard against the right-hand edge: the case that was clipped.
+  await page.evaluate(async () => {
+    const id = Object.keys(await CocLive.get("tables/482910/tokens"))[0];
+    await CocLive.put("tables/482910/tokens/" + id + "/x", tblScene().cols - 1);
+    tbl.ui.peek = id; tbl.ui.peekArea = ""; tblFit(); paintPeek();
+  });
+  const edge = await fits();
+  ok(edge.open && edge.inside, `a figure's card at the right-hand edge stays on the board (${edge.w}px)`);
+  // And an area's card, opened from its label — the handle that replaced the corner ×.
+  await page.evaluate(async () => {
+    await CocLive.put("tables/482910/areas/a1",
+      { scene: tblSceneId(), x: tblScene().cols - 1.5, y: 2.5, shape: "cube", size: 5,
+        name: "Idle Image", by: tbl.me.clientId, left: 10 });
+  });
+  await new Promise((r) => setTimeout(r, 200));
+  const opened = await page.evaluate(() => {
+    const t = document.querySelector('[data-tbl="area-peek"]');
+    if (!t) return false;
+    t.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    return true;
+  });
+  ok(opened, "an area is opened by its label, not by a corner a figure can sit on");
+  const areaCard = await fits();
+  ok(areaCard.open && areaCard.inside, "and its card stays on the board too");
+  ok(await page.evaluate(() => /Remove it/.test(document.querySelector("#vtt-peek").textContent)),
+    "carrying the way to take it away");
+
   ok(errs.length === 0, "no errors on the console" + (errs.length ? ": " + errs[0] : ""));
   await page.close();
 }
