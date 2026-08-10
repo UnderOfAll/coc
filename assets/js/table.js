@@ -586,6 +586,7 @@ function renderTableShell() {
         </span>
       </div>
       <p id="vtt-error" class="warn hidden"></p>
+      <div id="vtt-placing" class="vtt-placing hidden"></div>
       <div id="vtt-turn" class="vtt-turn hidden"></div>
       <div id="vtt-handout" class="vtt-handout hidden"></div>
       <div class="vtt-body">
@@ -595,6 +596,8 @@ function renderTableShell() {
             <img id="vtt-map" class="vtt-map hidden" alt="" draggable="false" />
             <div id="vtt-grid" class="vtt-grid"></div>
             <svg id="vtt-ink" class="vtt-ink" aria-hidden="true"></svg>
+            <!-- Areas sit UNDER the figures: a cloud a goblin is standing in must not hide the goblin. -->
+            <svg id="vtt-areas" class="vtt-areas"></svg>
             <div id="vtt-tokens" class="vtt-tokens"></div>
             <svg id="vtt-ruler" class="vtt-ruler" aria-hidden="true"></svg>
           </div>
@@ -639,6 +642,8 @@ function paintEverything() {
   // presence into a deleted room and recreate it as a husk.)
   if (tbl.gotData && !(tbl.data && tbl.data.meta)) { tblTableGone(); return; }
   paintDrawings();
+  paintAreas();
+  paintPlacing();
   paintDock();
   paintHeader();
   paintBoard();      // paintTokens is called from here
@@ -1015,6 +1020,9 @@ document.addEventListener("click", (e) => {
   else if (act === "init-go") tblInitSettle(true).catch(tblFail);
   // Not everything dropped on the board mid-fight belongs in the order. The DM's call, and only theirs.
   else if (act === "init-out") tblJoinOut(val).catch(tblFail);
+  // Placing an area: anybody may cancel their own, and the DM may clear one that has landed.
+  else if (act === "place-cancel") tblPlaceCancel();
+  else if (act === "area-clear") tblAreaClear(val).catch(tblFail);
   else if (act === "claim") tblClaimFromPanel();
   // Dismissing a handout is each person's own business, so it is not a DM-only action.
   else if (act === "hand-dismiss") { tbl.ui.dismissed = val; paintHandout(); }

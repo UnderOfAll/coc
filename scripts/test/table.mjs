@@ -1298,6 +1298,80 @@ pointer("pointerup", $("#vtt-stage"), 16 * 70 + 35, 2 * 70 + 35, 1);
 await wait(80);
 ok((await aget(`CocLive.get("tables/482910/tokens/tRig/x")`)) === 16, "but the move still happens");
 
+console.log("\n— AN AREA ON THE MAP —");
+/* The `shape` verb. Cast something with a board block, place it, and the app says who is standing in it
+   — and says nothing whatever about what happens to them, which is the DM's to say. */
+await peek(`CocLive.patch("tables/482910/tokens/tOrc", { x: 10, y: 10, size: 1 })`);
+await peek(`CocLive.patch("tables/482910/tokens/tRig", { x: 2, y: 2, size: 1 })`);
+await wait(80);
+ok(peek(`tblCastOnBoard({ name: "Flash Powder", board:
+  { verb: "shape", anchor: "point", range: 30, shape: "radius", size: 10 } })`) === true,
+  "casting a trick with a board block starts placing it");
+ok(!$("#vtt-placing").classList.contains("hidden"), "and the board says so out loud");
+ok(/Flash Powder/.test($("#vtt-placing").textContent) && /Tap the board/.test($("#vtt-placing").textContent),
+  "naming it and saying what to do: " + $("#vtt-placing").textContent.replace(/\s+/g, " ").trim());
+ok(!!$('[data-tbl="place-cancel"]'), "with a way out, because it swallows the next tap");
+ok(peek(`tblCastOnBoard({ name: "Vicious Jibe" })`) === false, "a trick with no board block places nothing");
+// A 10-foot radius is 2 squares across: dropped on the Orc it catches the Orc and nobody else.
+await peek(`tblPlaceAt(10.5, 10.5)`);
+await until(async () => Object.keys((await aget(`CocLive.get("tables/482910/areas")`)) || {}).length === 1);
+ok($("#vtt-placing").classList.contains("hidden"), "placing it leaves the mode");
+const areaId = Object.keys(await aget(`CocLive.get("tables/482910/areas")`))[0];
+const area = (await aget(`CocLive.get("tables/482910/areas")`))[areaId];
+ok(area.shape === "radius" && area.size === 10, "the area is stored as it was authored");
+ok(area.scene === (await aget(`tblSceneId()`)), "on the scene it was placed on");
+const caught = Object.values(await aget(`CocLive.get("tables/482910/log")`)).map((e) => e.text)
+  .find((t) => /Flash Powder/.test(t || ""));
+ok(/catches Orc/.test(caught || ""), "and the table is told who is inside: " + caught);
+ok(!/Rig/.test(caught || ""), "and only who is inside — Rig is eight squares away");
+ok(!/damage|save|DC/i.test(caught || ""), "it counts squares and judges nothing");
+ok($$("#vtt-areas .area").length === 1, "it is drawn on the board");
+ok($$('[data-tbl="area-clear"]').length > 0, "with a way for the DM to take it off early");
+// Who is inside is geometry, so it is asserted as geometry rather than through the UI.
+ok(peek(`tblInsideArea({ x: 10.5, y: 10.5, shape: "radius", size: 10 }).join(",")`) === "tOrc",
+  "a 10 ft radius reaches one square out");
+ok(peek(`tblInsideArea({ x: 6.5, y: 6.5, shape: "radius", size: 60 }).length`) === 2,
+  "a 60 ft radius dropped between them reaches both");
+ok(peek(`tblInsideArea({ x: 2.5, y: 2.5, shape: "cube", size: 10 }).join(",")`) === "tRig",
+  "and a cube covers the squares under it");
+/* A RADIUS REACHES AS A CIRCLE, unlike movement, which is Chebyshev — see the note on tblInsideArea.
+   These two are the difference, and they are asserted so that changing one metric cannot quietly change
+   the other: eight squares diagonally is 40 feet to WALK, and further than that to be caught by. */
+ok(peek(`tblFeetBetween(2, 2, 10, 10)`) === 40, "eight squares diagonally is 40 feet to walk");
+ok(peek(`tblInsideArea({ x: 10.5, y: 10.5, shape: "radius", size: 80 }).join(",")`) === "tOrc",
+  "but a 40 ft radius on the Orc does not reach the Rig standing there");
+/* A corner in the blast is in the blast. The Orc fills the square from 10 to 11 and its middle is at
+   10.5; a 10 ft radius (one square) centred at 11.9 reaches its EDGE at 11 and not its middle — so this
+   assertion fails the moment anyone changes it to measure from the centre. */
+ok(peek(`tblInsideArea({ x: 11.9, y: 10.5, shape: "radius", size: 10 }).join(",")`) === "tOrc",
+  "a figure with only its edge inside is inside");
+// Rounds tick with the order and clear themselves.
+await peek(`CocLive.put("tables/482910/areas/${areaId}/left", 2)`);
+await peek(`CocLive.put("tables/482910/meta/turn", { order: ["tOrc", "tRig"], idx: 1, round: 1 })`);
+await wait(80);
+click($('[data-tbl="turn"][data-val="1"]'));   // past the last one: round 2
+await until(async () => (await aget(`CocLive.get("tables/482910/areas/${areaId}/left")`)) === 1);
+ok(true, "a round going by takes a round off it");
+click($('[data-tbl="turn"][data-val="1"]'));
+await wait(120);
+click($('[data-tbl="turn"][data-val="1"]'));   // round 3
+await until(async () => (await aget(`CocLive.get("tables/482910/areas/${areaId}")`)) == null);
+ok(true, "and at zero it clears itself, for everyone");
+// The DM's early clear.
+await peek(`tblPlaceAt(10.5, 10.5)`);          // nothing is being placed, so this does nothing
+await peek(`tblCastOnBoard({ name: "Powder Screen", board:
+  { verb: "shape", anchor: "point", range: 60, shape: "cube", size: 15, rounds: 10 } })`);
+await peek(`tblPlaceAt(4, 4)`);
+await until(async () => Object.keys((await aget(`CocLive.get("tables/482910/areas")`)) || {}).length === 1);
+const second = Object.keys(await aget(`CocLive.get("tables/482910/areas")`))[0];
+ok((await aget(`CocLive.get("tables/482910/areas/${second}/left")`)) === 10,
+  "an area authored with rounds arrives carrying them");
+await peek(`tblAreaClear("${second}")`);
+await until(async () => (await aget(`CocLive.get("tables/482910/areas")`)) == null);
+ok(true, "and the DM can take it off early");
+await peek(`CocLive.put("tables/482910/meta/turn", { order: ["tOrc", "tRig"], idx: 1, round: 1 })`);
+await wait(80);
+
 console.log("\n— A PLAYER ENDS THEIR OWN TURN —");
 peek(`tbl.role = "player"; tbl.me.charCode = "123456"; renderTableShell(); paintTokens(); paintTurnBar(); paintWho();`);
 ok(/Rig — you/.test($("#vtt-turn").textContent), "the bar tells you it is your turn");
@@ -1317,7 +1391,11 @@ console.log("\n— YOUR SHEET, OVER THE BOARD —");
 openPanel("sheet");
 /* Waited for, not slept through. The drawer LOADS the character before it can draw it, so 150ms is a
    coin toss on a busy machine — and when it lost, every assertion below fell over on an empty drawer. */
-await until(() => !!$("#vtt-sheet .tab-strip"));
+/* A generous budget, and it earns it: the drawer LOADS the character before it can draw it, and by this
+   point in the file the table has a long log and a busy stream behind it. The default 3s lost that race
+   about one run in three once the board grew areas to paint. Waiting longer costs nothing when it lands
+   promptly, which is nearly always. */
+await until(() => !!$("#vtt-sheet .tab-strip"), 10000);
 ok($("#vtt-sheet"), "a drawer for the sheet");
 ok($("#vtt-sheet .tab-strip"), "holding the REAL sheet, fields and all — not a cut-down copy");
 ok($$("#vtt-sheet .ab-box").length === 6, "with the six abilities");

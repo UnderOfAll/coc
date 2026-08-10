@@ -1756,6 +1756,10 @@ function sheetAction(e) {
       // something: a failed save feeds a full caster's engine.
       const asks = t.save && (d.cls.play?.triggers || []).some((x) => x.id === "failed-save");
       p.prompt = asks ? { trick: val, name: t.name, save: t.save } : null;
+      /* A trick that puts something on the map hands the board the job of placing it. The sheet does not
+         know it is in a table's drawer — it is the same sheet at #/sheet/123456 with nothing around it —
+         so this asks rather than calls, and does nothing at all when there is no board to place on. */
+      if (typeof tblCastOnBoard === "function") tblCastOnBoard(t);
     }
   } else if (act === "clear-cd") delete p.cooldowns[val];
   else if (act === "use") p.uses[val] = (p.uses[val] || 0) + 1;

@@ -622,6 +622,13 @@ function onPointerDown(e) {
   // Two fingers down: this is a pinch, and whatever the first finger had started is abandoned.
   if (tbl.pointers.size === 2) { tbl.drag = null; tbl.pinch = tblPinchState(); return; }
   const p = stagePoint(e);
+  /* Placing an area takes the gesture entirely, exactly as the pen does: while something is waiting to be
+     put down, the next tap on the board is where it goes and nothing is dragged or panned on the way. */
+  if (tbl.placing) {
+    const at = toSquares(p.sx, p.sy);
+    tblPlaceAt(at.x, at.y).catch(tblFail);
+    return;
+  }
   // Drawing takes the gesture entirely: while the pen is out, the board is a sheet of paper. That is also
   // why figures cannot be dragged in this mode — you would smear ink every time you missed one.
   if (tblInkState().on && tblCanDraw()) {
@@ -676,6 +683,16 @@ function onPointerMove(e) {
     const next = tblPinchState();
     tblZoomBy(next.dist / tbl.pinch.dist, next.cx, next.cy);
     tbl.pinch = next;
+    return;
+  }
+  /* The area follows the pointer before it is put down, so you can see what you are about to cover and
+     whether it is within reach. On a phone there is no hovering, so the first tap places it — the
+     preview is a desktop courtesy, not the way it works. */
+  if (tbl.placing) {
+    const at = toSquares(stagePoint(e).sx, stagePoint(e).sy);
+    tbl.placing.x = Math.round(at.x * 2) / 2;
+    tbl.placing.y = Math.round(at.y * 2) / 2;
+    paintAreas();
     return;
   }
   if (tbl.inking) {
@@ -1037,3 +1054,193 @@ function tblCountMove(drag, x, y) {
   tblTokenField(drag.id, "moved", used).catch(() => {});
 }
 
+
+
+/* ---------------------------------------------------------------- areas on the map
+ *
+ * THE `shape` VERB. A trick that says it fills a 10-foot radius now fills one on the board: you cast it,
+ * you place it, everyone sees it, and the app works out who is standing in it and hands that list to the
+ * DM. See docs/MAP-INTERACTION.md.
+ *
+ * What it does NOT do is decide anything. It does not roll the save, it does not apply the damage and it
+ * does not stop anybody walking through. It counts squares — the one part of this a person is bad at and
+ * a program is good at — and then gets out of the way. Kayki's rule for the whole table: the app never
+ * sees your dice, so it never guesses.
+ *
+ * Stored under `areas/<id>`, not on the scene, for the same reason everything else is flat: one stream
+ * watches the whole table (see the note in tblOpen) and a nested branch would need its own.
+ *   { scene, x, y, shape, size, left, name, by, at }
+ * `x`/`y` are the CENTRE in squares, as tokens are. `size` is FEET, as the trick is authored — the
+ * conversion lives in one place, below, rather than at every call site. `left` is rounds remaining and is
+ * absent for an area that stays until it is cleared.
+ *
+ * The name `areas` and not `shapes`: a token already has a `shape` (square, circle, triangle, diamond)
+ * and two things called shape in one file is how the wrong one gets read.
+ */
+
+// Feet to squares, off the same constant the ruler measures with — one scale for the whole board.
+const tblSquares = (feet) => Math.max(1, Number(feet) || 5) / TBL_FEET_PER_SQUARE;
+
+function tblAreas() {
+  const all = tbl.data.areas || {};
+  const scene = tblSceneId();
+  return Object.entries(all).filter(([, a]) => a && (!a.scene || a.scene === scene));
+}
+
+/* Every figure standing in it. A figure is a square of `size` squares from its top-left corner, so this
+   asks whether that square OVERLAPS the area rather than whether its centre is inside — a Large creature
+   with one foot in the blast is in the blast, which is how it is ruled at a table.
+ *
+ * A RADIUS IS MEASURED AS A CIRCLE, which is deliberately NOT how the board measures movement. Walking is
+ * Chebyshev — three squares diagonally costs the same 15 feet as three across, the ordinary grid rule —
+ * because that is how you walk a grid. A burst is not walked: it is a physical thing with a real edge,
+ * and measuring it the same way would make every "radius" a square, which is what the `cube` shape is
+ * already for. So the two metrics differ on purpose, and the drawing matches the measurement in each
+ * case: a circle is drawn as a circle and reaches as one. */
+function tblInsideArea(a) {
+  const half = tblSquares(a.size) / 2;
+  const scene = tblSceneId();
+  return Object.entries(tblTokens()).filter(([, t]) => {
+    if (!t || (t.kind === "npc" && t.scene && t.scene !== scene)) return false;
+    const s = Math.max(1, Number(t.size) || 1);
+    const x = Number(t.x) || 0, y = Number(t.y) || 0;
+    if (a.shape === "cube") {
+      return x < a.x + half && a.x - half < x + s && y < a.y + half && a.y - half < y + s;
+    }
+    // Radius: the nearest point of the figure's square to the centre, which is the centre clamped into
+    // that square. A circle and a box touch when that point is within the radius.
+    const nx = Math.max(x, Math.min(a.x, x + s));
+    const ny = Math.max(y, Math.min(a.y, y + s));
+    return Math.hypot(a.x - nx, a.y - ny) <= half;
+  }).map(([id]) => id);
+}
+
+/* Areas, and the one being placed right now. Drawn in world pixels like the ink, so the camera carries
+   them for free. */
+function paintAreas() {
+  const svg = $("#vtt-areas");
+  if (!svg) return;
+  const scene = tblScene();
+  const cell = Number(scene.cell) || 70;
+  const w = (Number(scene.cols) || 30) * cell, h = (Number(scene.rows) || 20) * cell;
+  svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+  svg.setAttribute("width", w);
+  svg.setAttribute("height", h);
+  const drawn = tblAreas().map(([id, a]) => areaShapeHTML(a, cell, id)).join("");
+  svg.innerHTML = drawn + placingGhostHTML(cell);
+}
+
+function areaShapeHTML(a, cell, id) {
+  const r = tblSquares(a.size) / 2 * cell;
+  const cx = a.x * cell, cy = a.y * cell;
+  const body = a.shape === "cube"
+    ? `<rect x="${(cx - r).toFixed(1)}" y="${(cy - r).toFixed(1)}" width="${(r * 2).toFixed(1)}"
+         height="${(r * 2).toFixed(1)}" class="area-body" />`
+    : `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r.toFixed(1)}" class="area-body" />`;
+  // The rounds left are on the area itself: "how long is that cloud there for" is asked every round, and
+  // the alternative is the DM keeping it in their head.
+  const tag = [a.name || "", a.left != null ? a.left + (a.left === 1 ? " round" : " rounds") : ""]
+    .filter(Boolean).join(" · ");
+  return `<g class="area${id ? "" : " ghost"}" data-area="${esc(id || "")}">
+    ${body}
+    ${tag ? `<text x="${cx.toFixed(1)}" y="${(cy - r - cell * 0.12).toFixed(1)}"
+      class="area-tag" text-anchor="middle">${esc(tag)}</text>` : ""}
+    ${id && tbl.role === "dm" ? `<circle cx="${(cx + r).toFixed(1)}" cy="${(cy - r).toFixed(1)}"
+      r="${(cell * 0.22).toFixed(1)}" class="area-x" data-tbl="area-clear" data-val="${esc(id)}" />
+      <text x="${(cx + r).toFixed(1)}" y="${(cy - r + cell * 0.08).toFixed(1)}" class="area-x-mark"
+        text-anchor="middle" data-tbl="area-clear" data-val="${esc(id)}">&times;</text>` : ""}
+  </g>`;
+}
+
+/* What you are about to place, following the cursor, plus the reach it is being placed from. The reach is
+   DRAWN AND NOT ENFORCED — it turns red outside and lets you do it anyway, the same rule the board
+   already holds for movement (RULES.md). */
+function placingGhostHTML(cell) {
+  const p = tbl.placing;
+  if (!p || p.x == null) return "";
+  const from = tblTokens()[p.fromId];
+  let ring = "";
+  if (from && p.range) {
+    const fs = Math.max(1, Number(from.size) || 1);
+    const fx = (Number(from.x) || 0) + fs / 2, fy = (Number(from.y) || 0) + fs / 2;
+    const far = tblFeetBetween(fx, fy, p.x, p.y) > p.range;
+    ring = `<circle cx="${(fx * cell).toFixed(1)}" cy="${(fy * cell).toFixed(1)}"
+      r="${(tblSquares(p.range * 2) / 2 * cell).toFixed(1)}" class="area-reach ${far ? "far" : ""}" />`;
+  }
+  return ring + areaShapeHTML({ x: p.x, y: p.y, shape: p.shape, size: p.size, name: p.name }, cell, "");
+}
+
+/* ---- placing one ---------------------------------------------------------- */
+
+/* Cast something with a `board` block and the board takes over: the next tap on the map is where it
+   goes. Called from the sheet's Cast button, which is in creator.js and knows nothing about tables —
+   hence the optional hook rather than a direct call. */
+function tblCastOnBoard(trick) {
+  if (!tbl || !trick || !trick.board) return false;
+  const b = trick.board;
+  if (b.verb !== "shape" && b.verb !== "mark") return false;
+  tbl.placing = {
+    name: trick.name || "Area", shape: b.shape === "cube" ? "cube" : "radius",
+    size: Number(b.size) || 5, range: Number(b.range) || 0,
+    rounds: b.rounds == null ? null : Number(b.rounds),
+    fromId: tblCasterToken(), x: null, y: null,
+  };
+  paintPlacing();
+  paintAreas();
+  return true;
+}
+
+/* Which figure is casting: yours if you hold one, else whoever is up (the DM running a creature from its
+   own sheet). Only used to draw the reach from, so being wrong costs a ring and not a rule. */
+function tblCasterToken() {
+  const mine = tblMyTokens()[0];
+  if (mine) return mine;
+  const turn = (tbl.data.meta || {}).turn;
+  if (turn && Array.isArray(turn.order)) return turn.order[turn.idx] || "";
+  return "";
+}
+
+function tblPlaceCancel() {
+  tbl.placing = null;
+  paintPlacing();
+  paintAreas();
+}
+
+/* Down it goes, and the app says who is in it. */
+async function tblPlaceAt(x, y) {
+  const p = tbl.placing;
+  if (!p) return;
+  const area = {
+    scene: tblSceneId(), x: Math.round(x * 2) / 2, y: Math.round(y * 2) / 2,
+    shape: p.shape, size: p.size, name: p.name, by: tbl.me.clientId, at: Date.now(),
+  };
+  if (p.rounds) area.left = p.rounds;
+  tbl.placing = null;
+  paintPlacing();
+  const inside = tblInsideArea(area).map((id) => (tblTokens()[id] || {}).name || "someone");
+  await CocLive.push(tblPath("areas"), area);
+  /* The list, to the log, for the DM to roll against. This is the whole point of the verb: the counting
+     is done and the judgement is not. */
+  await CocLive.push(tblPath("log"), {
+    t: Date.now(), who: tbl.me.name || (tbl.role === "dm" ? "DM" : "Player"), kind: "system",
+    text: `${p.name} — ${p.size} ft ${p.shape === "cube" ? "cube" : "radius"} — ${
+      inside.length ? "catches " + inside.join(", ") : "catches nobody"}`,
+  });
+}
+
+async function tblAreaClear(id) {
+  if (tbl.role !== "dm") return;
+  await CocLive.put(tblPath("areas/" + id), null);
+}
+
+/* Every area on this scene loses a round. Called when the order comes back round to the top, by the DM's
+   browser only — the same rule the rest of the tracker follows. */
+async function tblAreasTick() {
+  if (tbl.role !== "dm") return;
+  for (const [id, a] of tblAreas()) {
+    if (a.left == null) continue;
+    const left = Number(a.left) - 1;
+    if (left > 0) await CocLive.put(tblPath("areas/" + id + "/left"), left);
+    else await CocLive.put(tblPath("areas/" + id), null);
+  }
+}

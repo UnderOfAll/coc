@@ -667,6 +667,8 @@ async function tblTurnStep(delta) {
   if (idx >= n) { idx = 0; round += 1; }
   if (idx < 0) { idx = n - 1; round = Math.max(1, round - 1); }
   await CocLive.patch(tblPath("meta/turn"), { idx, round });
+  // A round has gone by, so everything on the board that was counting rounds loses one.
+  if (round !== (turn.round || 1)) await tblAreasTick();
   // A turn starts with your movement unspent. Reset on ARRIVAL rather than on departure, so someone
   // who steps back through the order does not find a spent budget waiting for them.
   const id = turn.order[idx];
@@ -1760,3 +1762,21 @@ function paintHandout() {
   </div>`;
 }
 
+
+
+/* WHAT YOU ARE ABOUT TO PUT DOWN, said out loud. A mode with no visible state is a mode nobody can get
+   out of — and this one swallows the next tap on the board, so it has to announce itself and it has to
+   offer a way out. [[present-is-not-findable]] */
+function paintPlacing() {
+  const bar = $("#vtt-placing");
+  if (!bar) return;
+  const p = tbl.placing;
+  bar.classList.toggle("hidden", !p);
+  if (!p) { bar.innerHTML = ""; return; }
+  bar.innerHTML = `<strong>${esc(p.name)}</strong>
+    <span class="muted">${esc(p.size)} ft ${p.shape === "cube" ? "cube" : "radius"}${
+      p.range ? " · within " + esc(p.range) + " ft" : ""}${
+      p.rounds ? " · " + esc(p.rounds) + " rounds" : ""}</span>
+    <strong class="turn-who">Tap the board to place it</strong>
+    <span class="turn-acts"><button class="btn-quiet" data-tbl="place-cancel">Cancel</button></span>`;
+}
