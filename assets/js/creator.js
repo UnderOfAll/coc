@@ -1787,6 +1787,8 @@ function sheetAction(e) {
       /* A trick that puts something on the map hands the board the job of placing it. The sheet does not
          know it is in a table's drawer — it is the same sheet at #/sheet/123456 with nothing around it —
          so this asks rather than calls, and does nothing at all when there is no board to place on. */
+      // Said out loud at the table, whatever the tier — see tblAnnounceCast.
+      if (typeof tblAnnounceCast === "function") tblAnnounceCast(t, ch.name);
       if (typeof tblCastOnBoard === "function") tblCastOnBoard(t);
     }
   } else if (act === "clear-cd") delete p.cooldowns[val];

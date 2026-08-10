@@ -1114,7 +1114,10 @@ document.addEventListener("click", (e) => {
       tbl.me.left = true;
       CocLive.del(tblPath("tokens/" + val)).catch(tblFail);
       tbl.ui.panel = "";
+      tbl.ui.peek = "";
       paintSide();
+      paintPeek();
+      paintBar();   // "Choose a character" comes back the moment you are holding nothing
     }
   }
   else if (act === "mine-save" || act === "mine-hp" || act === "mine-cond") {

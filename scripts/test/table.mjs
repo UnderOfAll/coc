@@ -1517,6 +1517,36 @@ function paintTurnBarCheck() {
   ok(!$('[data-tbl="turn"][data-val="1"]'), "and once it is somebody else's, you cannot touch the tracker");
 }
 
+/* A CHARACTER WITH A REAL SHEET CAN STILL LEAVE THE TABLE. Taking your figure off used to live only in
+   the tracker panel — which a player holding a Circus of Chaos code no longer sees, so there was no route
+   at all and Kayki had to log in as the DM to remove one. It is on the card that opens when you tap
+   yourself, which is where it belonged in the first place. */
+/* A CHARACTER WITH A REAL SHEET CAN STILL LEAVE THE TABLE, and a cast says so whatever it cost.
+ *
+ * Both asserted WITHOUT WRITING ANYTHING. Every write here mints an id from `Math.random`, which is
+ * mocked page-wide, and the section below throws a seeded die — a write still in flight takes its face.
+ * This file has paid for that twice today, and sleeping until the coast is clear only moves the odds.
+ * So: the figure is made mine in this browser's own copy, and the cast is caught at the push instead of
+ * being allowed to make one. [[test-random-is-shared]] */
+peek(`window.__wasOwner = tbl.data.tokens.tRig.owner; tbl.data.tokens.tRig.owner = tbl.me.clientId;
+  tbl.ui.peek = "tRig"; paintPeek();`);
+ok(!!$('[data-tbl="mine-remove"][data-val="tRig"]'),
+  "tapping your own figure offers the way off the table, code or no code");
+ok(!!$('[data-tbl="panel"][data-val="sheet"]'), "beside the way into your sheet");
+/* A Turn spends a cooldown and a Prestige spends the engine, and both show on your own sheet — but a
+   Pledge is at-will, so once it stopped flipping the sheet into combat (which it had no business doing)
+   pressing Cast on one changed nothing anybody could see. */
+const said = peek(`(function(){ const out = [], was = CocLive.push;
+  CocLive.push = (path, e) => { out.push(e.text); return Promise.resolve("x"); };
+  tblAnnounceCast({ name: "After-Image", tier: "pledge", range: "30 feet" }, "Rig");
+  tblAnnounceCast({ name: "Reflected Wound", tier: "turn", cooldown: 2, range: "60 feet" }, "Rig");
+  CocLive.push = was; return out.join(" // "); })()`);
+ok(/Rig casts After-Image — 30 feet \(Pledge\)/.test(said),
+  "a Pledge that costs nothing still tells the table: " + said.split(" // ")[0]);
+ok(/Reflected Wound — 60 feet \(Turn · back in 2 rounds\)/.test(said),
+  "and a Turn says when it comes back: " + said.split(" // ")[1]);
+peek(`tbl.data.tokens.tRig.owner = window.__wasOwner; tbl.ui.peek = ""; paintPeek();`);
+
 console.log("\n— YOUR SHEET, OVER THE BOARD —");
 /* Still the player holding Rig's figure from the turn-order section — and now actually holding it. The
    figure had no `owner`, so this browser held nothing, and the heartbeat's one-time "choose a
@@ -1595,11 +1625,24 @@ console.log("\n— A ROLL YOU CAN WATCH —");
 // The overlay is built on demand and lives on the body, because every page can roll.
 openDice();
 peek(`tbl.ui.dice = { pool: { 20: 1 }, mod: 2, mode: "normal" }; paintDice();`);
-/* Loaded at the LAST possible moment. Math.random is mocked for the whole page, and the id CocLive mints
-   for a pushed log entry draws from it too — so a write still in flight from an earlier step will eat the
-   number this roll was supposed to get, and the die lands on something else entirely. */
-peek(`window.__seq = [0.95];`);
-armed(() => click($('[data-tbl="roll-pool"]')));
+/* THE ARITHMETIC AND THE OVERLAY, SEPARATELY — and neither through a seeded click.
+ *
+ * `Math.random` is mocked for the whole page, and the id CocLive mints for a pushed log entry draws from
+ * it too, so any write still in flight eats the number this roll was meant to get. "Load it at the last
+ * possible moment" was the old defence and it is not one: it narrows the window instead of closing it,
+ * and this file has spent three separate sessions on the same intermittent failure. So the SUM is proved
+ * by calling the roller directly, and the OVERLAY is proved by handing it that very result. Nothing about
+ * either needs a coin toss. */
+const pooled = peek(`(function(){ const was = window.__armed; window.__armed = true;
+  window.__seq = [0.95];
+  const r = tblDoRoll(tblPoolSpec(), "normal");
+  window.__armed = was; window.__seq = [];
+  return JSON.stringify(r); })()`);
+const rolled = JSON.parse(pooled);
+ok(rolled.dice.length === 1 && rolled.dice[0].v === 20 && rolled.total === 22,
+  "the dice pool adds its modifier in: " + pooled);
+peek(`tblShowRoll({ who: "DM", label: "", spec: "d20 + 2", mod: 2, mode: "normal", keptIdx: -1,
+  total: 22, nat: 20, dice: [{ s: 20, v: 20 }], t: Date.now() });`);
 await wait(60);
 const stage = doc.getElementById("roll-stage");
 ok(stage && stage.classList.contains("on"), "rolling puts the dice on screen");
@@ -1610,7 +1653,7 @@ ok(stage.querySelector(".roll-total").textContent.trim() === "22",
 ok(stage.classList.contains("nat20"), "a natural 20 is marked on the overlay too");
 await wait(700);
 ok(!stage.classList.contains("rolling") && stage.classList.contains("landed"), "then they settle");
-ok(stage.querySelector(".die b").textContent === String(peek(`Object.values(tbl.data.log).sort((a,b)=>b.t-a.t)[0].dice[0].v`)),
+ok(stage.querySelector(".die b").textContent === "20",
   "showing the number that was actually rolled, not a random face");
 ok(/d20/.test(stage.querySelector(".die em").textContent), "and which kind of die it was");
 // A die should LOOK like the die it is: the shape is drawn behind the number, not clipped out of the box.
@@ -1628,14 +1671,21 @@ ok(shapes[1] === 5, "a d12 is a pentagon");
 // Advantage keeps both dice on screen, with the discarded one dimmed — "which did I keep" is the first
 // thing anyone asks.
 peek(`tbl.ui.dice.mode = "adv"; tbl.ui.dice.mod = 0; paintDice();`);
-peek(`window.__seq = [0.1, 0.9];`);   // last, for the reason above
-armed(() => click($('[data-tbl="roll-pool"]')));
+const adv = JSON.parse(peek(`(function(){ const was = window.__armed; window.__armed = true;
+  window.__seq = [0.1, 0.9];
+  const r = tblDoRoll(tblPoolSpec(), "adv");
+  window.__armed = was; window.__seq = [];
+  return JSON.stringify(r); })()`));
+ok(adv.dice.length === 2 && adv.total === 19 && adv.keptIdx === 1,
+  "advantage rolls two and keeps the higher: " + JSON.stringify(adv));
+peek("tblShowRoll({ who: 'DM', label: '', spec: 'd20', mod: 0, mode: 'adv', keptIdx: " + adv.keptIdx
+  + ", total: " + adv.total + ", nat: 0, dice: " + JSON.stringify(adv.dice) + ", t: Date.now() })");
 await wait(700);
 const dice = [...doc.querySelectorAll("#roll-stage .die")];
 ok(dice.length === 2, "advantage shows both dice");
 ok(dice.filter((d) => d.classList.contains("dropped")).length === 1, "with the one you did not keep dimmed");
-ok(dice.findIndex((d) => !d.classList.contains("dropped")) ===
-   peek(`Object.values(tbl.data.log).sort((a,b)=>b.t-a.t)[0].keptIdx`),
+// Against the roll that was handed to it, not against the log — this one is not written to the log.
+ok(dice.findIndex((d) => !d.classList.contains("dropped")) === adv.keptIdx,
   "and it is the die the roll actually kept, which two equal dice could not tell you");
 // Somebody ELSE's roll is rolled on your screen too — that is the point of everyone being in the room.
 const seenBefore = peek(`tbl.lastRollAt`);

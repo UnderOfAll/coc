@@ -366,7 +366,12 @@ function paintPeek() {
     <p class="peek-foot">${esc(Number(t.speed) || 30)} ft${size > 1 ? ` &middot; ${esc(size)} squares` : ""}</p>
     ${tbl.role === "dm"
       ? `<button class="btn-quiet" data-tbl="peek-edit" data-val="${esc(id)}">Edit this figure</button>`
-      : tblIsMine(t) ? `<button class="btn-quiet" data-tbl="panel" data-val="${tbl.me.charCode ? "sheet" : "mine"}">Open ${tbl.me.charCode ? "my sheet" : "my character"}</button>` : ""}`;
+      /* Your own figure, both things you can do to it. Taking it off used to live in the tracker panel,
+         which a player holding a Circus of Chaos character no longer sees — so a character with a real
+         sheet had no way off the board at all, and Kayki had to log in as the DM to remove one. It
+         belongs here anyway: this card is what opens when you tap yourself. */
+      : tblIsMine(t) ? `<button class="btn-quiet" data-tbl="panel" data-val="${tbl.me.charCode ? "sheet" : "mine"}">Open ${tbl.me.charCode ? "my sheet" : "my character"}</button>
+        <button class="btn-quiet" data-tbl="mine-remove" data-val="${esc(id)}">Take it off the table</button>` : ""}`;
   tblFitPeek(host, sx, sy);
 }
 
@@ -1512,4 +1517,26 @@ function tblPointInArea(a, x, y) {
     return x >= a.x - half && x <= a.x + half && y >= a.y - half && y <= a.y + half;
   }
   return Math.hypot(x - a.x, y - a.y) <= half;
+}
+
+
+/* A CAST SAYS SO, whatever it cost.
+ *
+ * A Turn spends a cooldown and a Prestige spends the engine, and both of those show on your own sheet —
+ * but a Pledge is at-will, so once it stopped flipping the sheet into combat (which it had no business
+ * doing) pressing Cast on one changed nothing anybody could see. Kayki: "the cast button on the tricks
+ * don't do anything whatsoever." It was doing exactly what it was told and saying nothing about it.
+ *
+ * So every cast is announced to the table. That is worth having for its own sake: the DM needs to know a
+ * trick went off, and until now the only person who could tell was the caster, by looking at their own
+ * cooldown pips. */
+function tblAnnounceCast(trick, who) {
+  if (!tbl || !trick) return;
+  const cost = trick.tier === "prestige" ? "Prestige"
+    : trick.cooldown ? "Turn · back in " + trick.cooldown + (trick.cooldown === 1 ? " round" : " rounds")
+    : "Pledge";
+  CocLive.push(tblPath("log"), {
+    t: Date.now(), who: who || tbl.me.name || "Someone", kind: "system",
+    text: `${who || "Someone"} casts ${trick.name}${trick.range ? " — " + trick.range : ""} (${cost})`,
+  }).catch(() => {});
 }
