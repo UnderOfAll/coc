@@ -389,6 +389,12 @@ function tblInitCandidates() {
   const activeScene = tblSceneId();
   return Object.entries(tblTokens())
     .filter(([, t]) => t && !(t.kind === "npc" && t.scene && t.scene !== activeScene))
+    /* A SPAWNED FIGURE HAS NO TURN OF ITS OWN. A Clone never acts by itself — it is a body double, an
+       eye, or somewhere for your own attacks to come from — so it is driven inside its owner's turn and
+       one "Done" ends the lot. Kayki's point, and the decision recorded in docs/MAP-INTERACTION.md.
+       Without this, every Clone made mid-fight stopped the table to ask what it rolled, and four of them
+       would have put four faces in the order bar with nothing to do on any of their turns. */
+    .filter(([, t]) => !t.spawn)
     .map(([id]) => id);
 }
 

@@ -1104,16 +1104,22 @@ await wait(60);
 // The other half of the brief: numbers ON THE SHEET are the roll buttons. The sheet drawer arrives in
 // a later checkpoint; what matters here is that a data-roll control anywhere posts to this table.
 peek(`document.body.insertAdjacentHTML("beforeend",
-  '<button id="sheetroll" class="roll" data-roll="1d20+7" data-label="Dagger to hit"></button>');
-  window.__seq = [0.5];`);
-armed(() => click($("#sheetroll")));
+  '<button id="sheetroll" class="roll" data-roll="1d20+7" data-label="Dagger to hit"></button>');`);
+click($("#sheetroll"));
 /* Asserted on the LOG, which is the durable fact — the bar is a five-second notification and the point
-   of the test is that a data-roll control anywhere reaches the table, by name. */
+   of the test is that a data-roll control anywhere reaches the table, by name.
+ *
+ * And asserted against the roll's OWN dice rather than a seeded face. `Math.random` is mocked page-wide
+ * and CocLive mints a pushed log entry's id from it, so a seeded value here is a value anything else
+ * writing at that moment can take instead — the last surviving instance of the failure this file has
+ * chased for three sessions. What actually needs proving is that the modifier reached the total, and the
+ * entry carries the die it was added to. [[test-random-is-shared]] */
 await until(async () => /Dagger to hit/.test((await lastRoll()).label || ""));
-ok(/Dagger to hit/.test((await lastRoll()).label || ""),
+const thrown = await lastRoll();
+ok(/Dagger to hit/.test(thrown.label || ""),
   "a sheet number posts to the table's log by name");
-ok((await lastRoll()).total === 18,
-  "with your bonus already in it: " + JSON.stringify((await lastRoll()).total));
+ok(thrown.total === (thrown.dice || [{}])[0].v + 7,
+  "with your bonus already in it: " + JSON.stringify(thrown.dice) + " + 7 = " + thrown.total);
 // Shift and alt are the shortcut for advantage and disadvantage.
 peek(`window.__seq = [0.1, 0.9];`);
 $("#sheetroll").dispatchEvent(new window.MouseEvent("click", { bubbles: true, shiftKey: true }));
@@ -1542,6 +1548,24 @@ await peek(`CocLive.put("tables/482910/tokens/${alive[0]}/hp", 0)`);
 await until(async () => Object.values((await aget(`CocLive.get("tables/482910/tokens")`)) || {})
   .filter((t) => t && t.spawn).length === 1);
 ok(true, "and one that has been hit at all is gone");
+/* AND IT HAS NO TURN OF ITS OWN. A Clone never acts by itself, so it is driven inside its owner's turn
+   and one "Done" ends the lot — the decision in docs/MAP-INTERACTION.md, and Kayki's point when he saw
+   one on the board. Without this, every Clone made mid-fight stopped the table to ask what it rolled. */
+const stillOut = Object.entries(await aget(`CocLive.get("tables/482910/tokens")`)).find(([, t]) => t && t.spawn);
+ok(peek(`tblInitCandidates().join(",")`).indexOf(stillOut[0]) < 0,
+  "a spawned figure is never asked to roll initiative");
+ok(peek(`tblJoinNeed({ order: ["tOrc"], idx: 0, round: 1 }).join(",")`).indexOf(stillOut[0]) < 0,
+  "nor prompted to join a fight already running");
+/* AND THEY GO WHEN THE FIGHT DOES. A Clone is the engine — "built during a fight and lost when it ends"
+   — and the sheet already empties the meter when the DM ends it, so figures left standing made the count
+   and the board say different things. */
+await peek(`CocLive.put("tables/482910/meta/turn", null)`);
+await until(async () => Object.values((await aget(`CocLive.get("tables/482910/tokens")`)) || {})
+  .filter((t) => t && t.spawn).length === 0);
+ok(true, "and the fight ending takes every one of them off the board");
+// Put the fight back for the sections below, which expect Rig to be up.
+await peek(`CocLive.put("tables/482910/meta/turn", { order: ["tOrc", "tRig"], idx: 1, round: 1 })`);
+await wait(120);
 // Tidy up, and leave the table quiet for the sections below.
 for (const [id] of Object.entries(await aget(`CocLive.get("tables/482910/tokens")`)).filter(([, t]) => t && t.spawn)) {
   await peek(`CocLive.put("tables/482910/tokens/${id}", null)`);

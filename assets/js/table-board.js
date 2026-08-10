@@ -1620,7 +1620,14 @@ function tblClonesOf(code) {
    alongside the areas, so it happens once however many people are looking. */
 async function tblSpawnsSettle() {
   if (tbl.role !== "dm") return;
+  /* AND THEY GO WHEN THE FIGHT DOES. A Clone is the engine — "built during a fight and lost when it
+     ends", in the class's own words — and the sheet already empties the meter the moment the DM ends it,
+     so leaving the figures standing on the board left the count and the board saying different things.
+     They can only be made during a fight in the first place, so a spawned figure with no fight running is
+     one the fight has finished with. */
+  const fighting = tblRoundNow() > 0;
   for (const [id, t] of Object.entries(tblTokens())) {
-    if (t && t.spawn && Number(t.hp) <= 0) await CocLive.put(tblPath("tokens/" + id), null);
+    if (!t || !t.spawn) continue;
+    if (!fighting || Number(t.hp) <= 0) await CocLive.put(tblPath("tokens/" + id), null);
   }
 }
