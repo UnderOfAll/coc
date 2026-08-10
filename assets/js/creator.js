@@ -1690,6 +1690,9 @@ async function deleteCharacter() {
   if (msg) { msg.textContent = "Deleting…"; msg.className = "save-msg"; }
   try {
     await CocStore.remove(code);
+    /* And off every table this browser knows about. Deleting a character is not the character dying:
+       there is no body to leave standing on a board. See tblDropCharacterEverywhere. */
+    if (typeof tblDropCharacterEverywhere === "function") await tblDropCharacterEverywhere(code);
     localStorage.setItem(RECENT_KEY, JSON.stringify(recentCodes().filter((r) => r.code !== code)));
     sheet = null;
     ui.deleteArmed = false; ui.deleteText = "";

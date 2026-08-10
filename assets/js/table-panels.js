@@ -1796,3 +1796,39 @@ function paintPlacing() {
       <button class="btn-quiet" data-tbl="place-cancel">Cancel</button>
     </span>`;
 }
+
+
+/* A DELETED CHARACTER LEAVES THE TABLES IT WAS STANDING ON.
+ *
+ * Deleting a character is not the character dying — Kayki's distinction, and it is the right one. A dead
+ * character's figure stays on the board because a body is a thing at the table; a deleted one never
+ * existed, and leaving its figure behind meant he had to log in as the DM to sweep up, and then could not
+ * seat the replacement because this browser was still introducing itself with the dead code.
+ *
+ * Every table this device has sat at is checked — that is the honest limit of what one browser can know.
+ * A figure somebody ELSE placed at a table this device has never opened is still the DM's to remove.
+ */
+async function tblDropCharacterEverywhere(code) {
+  if (!code) return;
+  for (const row of tblRecent()) {
+    const at = "tables/" + row.code;
+    try {
+      const tokens = await CocLive.get(at + "/tokens");
+      for (const [id, t] of Object.entries(tokens || {})) {
+        if (t && t.charCode === code) await CocLive.put(at + "/tokens/" + id, null);
+      }
+    } catch { /* a table that has gone is a table with nothing to clean */ }
+    // And stop this browser introducing itself as the character that no longer exists.
+    const me = tblMe(row.code);
+    if (me && me.charCode === code) {
+      tblSaveMe(row.code, { clientId: me.clientId, name: "", charCode: "" });
+    }
+  }
+  // If it is the one on screen, let go of it here too rather than waiting for a reload.
+  if (tbl && tbl.me.charCode === code) {
+    tbl.me.charCode = "";
+    tbl.me.name = "";
+    tbl.me.left = false;      // you did not walk out; the character stopped existing
+    if (typeof paintBar === "function") { paintBar(); paintHeader(); paintSide(); }
+  }
+}

@@ -1923,6 +1923,21 @@ const taken = peek(`JSON.parse(JSON.stringify(tblTokens()[tbl.me.tokenId]))`);
 ok(taken.name === "Rig" && taken.hpMax === 44 && taken.charCode === "123456",
   "named and numbered from the sheet it pulled (" + taken.name + " " + taken.hp + "/" + taken.hpMax + ")");
 
+/* DELETING A CHARACTER TAKES ITS FIGURE WITH IT. Kayki's distinction, and the right one: deleting is not
+   dying. A dead character's figure stays because a body is a thing at the table; a deleted one never
+   existed, and leaving it behind meant logging in as the DM to sweep up — and then being unable to seat
+   the replacement, because this browser was still introducing itself with the dead code. */
+peek(`localStorage.setItem("coc:table:recent", JSON.stringify([{ code: "482910", name: "T" }]));
+  tblSaveMe("482910", { clientId: tbl.me.clientId, name: "Rig", charCode: "123456" });`);
+await peek(`CocLive.put("tables/482910/tokens/tGhostChar", { name: "Rig", charCode: "123456",
+  owner: "someone-else", x: 1, y: 1, size: 1, kind: "pc", hp: 5, hpMax: 5, speed: 30 })`);
+await until(async () => !!(await aget(`CocLive.get("tables/482910/tokens/tGhostChar")`)));
+await peek(`tblDropCharacterEverywhere("123456")`);
+await until(async () => (await aget(`CocLive.get("tables/482910/tokens/tGhostChar")`)) == null);
+ok(true, "deleting a character takes its figure off every table this browser knows");
+ok(peek(`JSON.parse(localStorage.getItem("coc:table:me:482910")).charCode`) === "",
+  "and this browser stops introducing itself with the code that no longer exists");
+
 console.log("\n— LEAVING —");
 // A fresh room, since the one above was deleted on purpose. Two people in it: you, and somebody else.
 const room = "445566";
