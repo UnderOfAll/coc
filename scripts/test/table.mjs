@@ -1329,11 +1329,30 @@ ok(peek(`typeof paintHost === "function" && (function(){ const was = paintTarget
   paintTarget = "#a-node-that-is-not-there"; const host = paintHost(); paintTarget = was;
   return host; })()`) === null,
   "and a sheet whose drawer has gone paints nowhere, rather than over the whole table");
+/* ON THE GRID, NEVER BETWEEN IT. Where the centre may sit follows from the shape, so the edges always
+   land on grid lines: an odd-sided cube on a square's middle, an even-sided one and every radius on a
+   corner. Kayki: "the idle image can be put in between the squares which isn't supposed to." */
+ok(peek(`JSON.stringify(tblSnapArea(3.7, 4.2, "cube", 5))`) === '{"x":3.5,"y":4.5}',
+  "a 5 ft cube — one square — sits in the middle of one");
+ok(peek(`JSON.stringify(tblSnapArea(3.7, 4.2, "cube", 15))`) === '{"x":3.5,"y":4.5}',
+  "and so does a 15 ft cube, three squares across");
+ok(peek(`JSON.stringify(tblSnapArea(3.7, 4.2, "cube", 20))`) === '{"x":4,"y":4}',
+  "a 20 ft cube, four across, sits on a corner instead");
+ok(peek(`JSON.stringify(tblSnapArea(3.7, 4.2, "radius", 10))`) === '{"x":4,"y":4}',
+  "and a burst always goes off on a corner");
 /* AIM, THEN PLACE. A tap on the board moves the outline and commits nothing — a trick costs a cooldown
    or a slice of the engine, and Kayki's first misclick put an illusion somewhere he did not want it. */
 await peek(`tblAimAt(10.5, 10.5)`);
 ok((await aget(`CocLive.get("tables/482910/areas")`)) == null, "aiming it writes nothing at all");
 ok(!!$('[data-tbl="place-go"]'), "and offers the deliberate press that does");
+/* AND THEN IT STOPS FOLLOWING. "Place it here" is in a bar ABOVE the board, so an outline that went on
+   tracking the pointer was re-aimed by the walk up to the button — Kayki aimed at his square, moved to
+   press Place, and it landed off the top of the map. */
+ok(peek(`(function(){ const before = tbl.placing.x + "," + tbl.placing.y;
+  onPointerMove({ target: document.querySelector("#vtt-turn") || document.body,
+    clientX: 5, clientY: 5, pointerId: 3 });
+  return before === tbl.placing.x + "," + tbl.placing.y; })()`) === true,
+  "and once aimed, moving the pointer away does not move it");
 ok(/Catches Orc/.test($("#vtt-placing").textContent),
   "saying what it will catch before it catches it: " + $("#vtt-placing").textContent.replace(/\s+/g, " ").trim());
 // A 10-foot radius is 2 squares across: dropped on the Orc it catches the Orc and nobody else.

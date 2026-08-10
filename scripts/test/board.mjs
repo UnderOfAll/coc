@@ -342,6 +342,53 @@ console.log("\n— 1280px, as the DM, with a mouse —");
   ok(shrunk.ok && shrunk.len <= 680000, "small enough for the database's cap (" + (shrunk.ok ? shrunk.len : "?") + " chars)");
   ok(shrunk.ok && shrunk.w === 3000, "and the original's real size is reported, so the grid can match its shape");
 
+  /* PLACING AN AREA WITH A REAL MOUSE. jsdom cannot see this one at all: it is about where a pointer
+     travels between two clicks. "Place it here" sits in a bar ABOVE the board, so an outline that went on
+     following the pointer was re-aimed by the walk up to the button — Kayki aimed at his square, moved to
+     press Place, and it landed off the top of the map. */
+  await page.evaluate(() => {
+    tbl.cameraIsYours = true; tbl.view = { x: 300, y: 300, z: 0.686, fitted: true }; applyView();
+    tblCastOnBoard({ name: "Idle Image",
+      board: { verb: "shape", anchor: "point", range: 30, shape: "cube", size: 5, rounds: 10 } });
+  });
+  await new Promise((r) => setTimeout(r, 200));
+  const square = await page.evaluate(() => {
+    const s = document.querySelector("#vtt-stage").getBoundingClientRect();
+    const cell = tblScene().cell;
+    return { x: s.left + tbl.view.x + 3.5 * cell * tbl.view.z,
+             y: s.top + tbl.view.y + 2.5 * cell * tbl.view.z };
+  });
+  await page.mouse.move(square.x, square.y);
+  await page.mouse.down(); await page.mouse.up();
+  await new Promise((r) => setTimeout(r, 150));
+  const aimed = await page.evaluate(() => ({ x: tbl.placing.x, y: tbl.placing.y }));
+  ok(aimed.x === 3.5 && aimed.y === 2.5,
+    `a tap aims it at the middle of the square under it (${aimed.x},${aimed.y})`);
+  const btn = await page.evaluate(() => {
+    const b = document.querySelector('[data-tbl="place-go"]');
+    if (!b) return null;
+    const r = b.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  });
+  ok(!!btn, "with a button to commit it");
+  for (let i = 1; i <= 10 && btn; i++) {
+    await page.mouse.move(square.x + (btn.x - square.x) * i / 10, square.y + (btn.y - square.y) * i / 10);
+  }
+  const held = await page.evaluate(() => ({ x: tbl.placing.x, y: tbl.placing.y }));
+  ok(held.x === 3.5 && held.y === 2.5,
+    `and walking the mouse up to it does not drag the outline along (${held.x},${held.y})`);
+  if (btn) await page.mouse.click(btn.x, btn.y);
+  await new Promise((r) => setTimeout(r, 400));
+  const put = await page.evaluate(async () => {
+    const areas = await CocLive.get("tables/482910/areas") || {};
+    const a = areas[Object.keys(areas)[0]];
+    const r = document.querySelector("#vtt-areas rect");
+    return { a, rect: r ? { x: +r.getAttribute("x"), y: +r.getAttribute("y"), w: +r.getAttribute("width") } : null };
+  });
+  ok(put.a && put.a.x === 3.5 && put.a.y === 2.5, "it lands where it was aimed");
+  ok(put.rect && put.rect.x === 210 && put.rect.y === 140 && put.rect.w === 70,
+    `and is drawn exactly over that square, not between four (${JSON.stringify(put.rect)})`);
+
   ok(errs.length === 0, "no errors on the console" + (errs.length ? ": " + errs[0] : ""));
   await page.close();
 }

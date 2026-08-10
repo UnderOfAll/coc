@@ -692,15 +692,24 @@ function onPointerMove(e) {
     tbl.pinch = next;
     return;
   }
-  /* The area follows the pointer before it is put down, so you can see what you are about to cover and
-     whether it is within reach. On a phone there is no hovering, so the first tap places it — the
-     preview is a desktop courtesy, not the way it works. */
-  if (tbl.placing) {
+  /* An outline that follows the pointer UNTIL IT IS AIMED, and then stops dead.
+   *
+   * Both halves of that are load-bearing. It follows so a desktop can see what it is about to cover
+   * before committing; it stops because the button that commits it — "Place it here" — is in a bar ABOVE
+   * the board, and while it went on following, the walk up to that button dragged the outline with it.
+   * Kayki aimed at the square he wanted, moved the mouse to press Place, and watched it land off the top
+   * of the map: "it snaps and goes somewhere else completely unrelated out of the grid." Every pointermove
+   * on the way to the button was another aim.
+   *
+   * It also only listens while the pointer is over the BOARD, for the same reason — this listener is on
+   * the window and hears the whole page. A tap on the board re-aims, which is how you change your mind. */
+  if (tbl.placing && !tbl.placing.aimed) {
+    const stage = $("#vtt-stage");
+    if (!stage || !stage.contains(e.target)) return;
     const at = toSquares(stagePoint(e).sx, stagePoint(e).sy);
-    tbl.placing.x = Math.round(at.x * 2) / 2;
-    tbl.placing.y = Math.round(at.y * 2) / 2;
-    tbl.placing.aimed = true;
-    paintPlacing();
+    const spot = tblSnapArea(at.x, at.y, tbl.placing.shape, tbl.placing.size);
+    tbl.placing.x = spot.x;
+    tbl.placing.y = spot.y;
     paintAreas();
     return;
   }
@@ -1238,19 +1247,38 @@ function tblPlaceCancel() {
 function tblAimAt(x, y) {
   const p = tbl.placing;
   if (!p) return;
-  p.x = Math.round(x * 2) / 2;
-  p.y = Math.round(y * 2) / 2;
+  const spot = tblSnapArea(x, y, p.shape, p.size);
+  p.x = spot.x;
+  p.y = spot.y;
   p.aimed = true;
   paintPlacing();
   paintAreas();
+}
+
+/* ON THE GRID, NEVER BETWEEN IT. An area that lands half a square out covers seven squares of a map when
+ * it should cover four, and no two people reading the board agree about which. Kayki's words: "the idle
+ * image can be put in between the squares which isn't supposed to."
+ *
+ * Where the centre may sit follows from the shape, so the EDGES always land on grid lines:
+ *   - a cube of an ODD number of squares (5 ft = 1, 15 ft = 3) is centred on a square's middle;
+ *   - a cube of an EVEN number (20 ft = 4) is centred on a corner;
+ *   - a radius is always centred on a corner, which is the ordinary rule for a burst — it goes off at a
+ *     point between squares and reaches the same distance every way.
+ */
+function tblSnapArea(x, y, shape, size) {
+  const across = tblSquares(size) * (shape === "cube" ? 1 : 2);   // a radius spans twice itself
+  const toCentre = shape === "cube" && Math.round(across) % 2 === 1;
+  const snap = (v) => (toCentre ? Math.floor(v) + 0.5 : Math.round(v));
+  return { x: snap(x), y: snap(y) };
 }
 
 /* Down it goes, and the app says who is in it. */
 async function tblPlaceAt(x, y) {
   const p = tbl.placing;
   if (!p) return;
+  const spot = tblSnapArea(x, y, p.shape, p.size);
   const area = {
-    scene: tblSceneId(), x: Math.round(x * 2) / 2, y: Math.round(y * 2) / 2,
+    scene: tblSceneId(), x: spot.x, y: spot.y,
     shape: p.shape, size: p.size, name: p.name, by: tbl.me.clientId, at: Date.now(),
   };
   if (p.rounds) area.left = p.rounds;
