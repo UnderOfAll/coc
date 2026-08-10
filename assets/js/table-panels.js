@@ -450,7 +450,14 @@ async function tblInitRoll(id, quiet) {
   const mod = Number(t.initMod) || 0;
   const res = tblRollAndPost({ terms: [{ count: 1, sides: 20, sign: 1 }], mod },
     "Initiative", "normal", t.name || "Someone", quiet);
-  if (res) await tblInitApply(id, res.total);
+  if (!res) return;
+  /* WAIT FOR THE DICE. The number is decided the instant you click, and writing it straight in put the
+     whole order on the screen while the dice were still in the air — Kayki watched it happen on the
+     second roll of the first fight. The roll is not a secret from the table (the log has it), but the
+     ORDER is the result of it, and a result that arrives before its own dice have landed makes the throw
+     pointless. A quiet roll threw no dice and does not wait. */
+  await res.settled;
+  await tblInitApply(id, res.total);
 }
 
 /* Everyone in? Then the order forms. Only the DM's browser builds it — two clients racing to write the
@@ -624,6 +631,21 @@ async function tblTurnEnd() {
   await CocLive.put(tblPath("meta/turn"), null);
 }
 
+/* A player with no figure of their own is not in the fight, and the bar used to tell them the opposite.
+ * "You are in — waiting for the rest" is what a phone showed all through a gather it was never part of,
+ * while the DM was quietly asked for that player's figure as well as the creatures — which is exactly
+ * what happened the first time this was played on two devices. The distinction the code makes is between
+ * "asked for nothing because everyone else is still rolling" and "asked for nothing because you hold
+ * nothing", and the bar has to make it too, with the way out attached. */
+function tblHoldingNothing() {
+  return tbl.role !== "dm" && !tblMyTokens().length;
+}
+
+function seatNudgeHTML(why) {
+  return `<strong class="turn-who">${esc(why)}</strong>
+    <button class="btn-quiet on" data-tbl="panel" data-val="seat">Choose a character</button>`;
+}
+
 /* One figure being asked for a number: roll it here, or type what the dice on your table said. The same
    row serves the gather and a latecomer — only the DM's "not in it" is particular to joining, because
    only mid-fight can something land on the board that was never meant to be in the order. */
@@ -652,6 +674,7 @@ function initBarHTML(init) {
   return `<span class="turn-round">Initiative</span>
     ${mine.length ? `<span class="init-rows">${mine.map(row).join("")}</span>
       ${mine.length > 1 ? `<button class="btn-quiet" data-tbl="init-roll-mine">Roll all ${mine.length}</button>` : ""}`
+      : tblHoldingNothing() ? seatNudgeHTML("You are not holding a figure, so nothing is asking you to roll")
       : `<strong class="turn-who">You are in${waiting.length ? " — waiting for the rest" : ""}</strong>`}
     <span class="muted">${esc(need.length - waiting.length)} of ${esc(need.length)} in${
       waiting.length && !mine.length ? ": " + esc(waiting.map((id) => (tokens[id] || {}).name || "?").slice(0, 4).join(", ")) : ""}</span>
@@ -670,10 +693,13 @@ function joinLineHTML(turn, tokens) {
   const mine = tblInitMine(need);
   const others = need.filter((id) => mine.indexOf(id) < 0);
   const placing = Object.keys(turn.late || {}).filter((id) => tokens[id]);
-  if (!mine.length && !others.length && !placing.length) return "";
+  // Watching a fight you are not in is a legitimate thing to be doing, but not knowing WHY you are not
+  // in it is not — so the same row carries the way in.
+  const adrift = tblHoldingNothing();
+  if (!adrift && !mine.length && !others.length && !placing.length) return "";
   const nameOf = (id) => (tokens[id] || {}).name || "?";
   return `<div class="turn-joining">
-    <span class="turn-round">Joining</span>
+    ${adrift ? seatNudgeHTML("No figure of yours is in this fight") : `<span class="turn-round">Joining</span>`}
     ${mine.length ? `<span class="init-rows">${
       mine.map((id) => initAskHTML(id, tokens, true)).join("")}</span>` : ""}
     ${mine.length > 1 ? `<button class="btn-quiet" data-tbl="init-roll-mine">Roll all ${mine.length}</button>` : ""}
@@ -755,7 +781,7 @@ function paintTurnBar() {
     <span class="turn-round">Round ${esc(turn.round || 1)}</span>
     <strong class="turn-who">${esc(t.name || "?")}${mine ? " — you" : ""}</strong>
     ${budget ? `<span class="turn-move ${budget.left ? "" : "spent"}">${esc(budget.left)} of ${esc(budget.speed)} ft left</span>` : ""}
-    ${upNext && upNext !== currentId ? `<span class="muted">next: ${esc((tokens[upNext] || {}).name || "?")}</span>` : ""}
+    ${upNext && upNext !== currentId ? `<span class="muted turn-next">next: ${esc((tokens[upNext] || {}).name || "?")}</span>` : ""}
     <span class="turn-acts">
       ${canStep ? `<button class="btn-quiet" data-tbl="turn" data-val="1">${mine && tbl.role !== "dm" ? "Done" : "Next"} &rarr;</button>` : ""}
       ${tbl.role === "dm" ? `<button class="btn-quiet" data-tbl="turn" data-val="-1">&larr; Back</button>

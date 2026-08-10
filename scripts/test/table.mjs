@@ -1140,6 +1140,12 @@ ok($$("[data-init-for]").length === 2, "each with a box for a number off their o
 // One rolled in the app, one typed off a real die — the two ways Kayki asked for.
 peek(`window.__seq = [0.95];`);   // Orc 20 + 1 = 21
 armed(() => click($$('[data-tbl="init-roll-one"]').find((b) => b.dataset.val === "tOrc")));
+/* THE ORDER WAITS FOR THE DICE. Both of these are read in the tick the click returns, so they are about
+   sequence and not about timing: the number is known immediately, and must not be written until the
+   throw has landed — otherwise the result is on screen while the dice are still in the air, which is
+   what Kayki saw on the second roll of the first fight. */
+ok(/rolling/.test(($("#roll-stage") || {}).className || ""), "the dice are in the air the moment you click");
+ok($$("[data-init-for]").length === 2, "and the number has not gone in yet — the order waits for them");
 await until(async () => (await aget(`CocLive.get("tables/482910/meta/init/have/tOrc")`)) != null);
 ok((await aget(`CocLive.get("tables/482910/meta/init/have/tOrc")`)) === 21,
   "a roll made in the app goes in");
@@ -1158,6 +1164,16 @@ ok(turn.idx === 0 && turn.round === 1, "starting at the top of round 1");
 ok((await aget(`CocLive.get("tables/482910/tokens/tOrc/init")`)) === 21, "each figure keeps the number it rolled");
 const initLine = Object.values(await aget(`CocLive.get("tables/482910/log")`)).map(e => e.text).find(t => /^Initiative/.test(t));
 ok(/Orc 21/.test(initLine || "") && /Rig 5/.test(initLine || ""), "and the order is read out into the log: " + initLine);
+/* A DEVICE THAT HOLDS NOTHING IS TOLD SO. It used to be shown "You are in — waiting for the rest", which
+   is the opposite of true: it is in nothing, it will be asked for nothing, and the DM is quietly being
+   asked for its player's figure as well. That is exactly how the first two-device fight went. */
+peek(`tbl.role = "player"; window.__wasId = tbl.me.clientId; tbl.me.clientId = "holds-nothing";`);
+const adrift = peek(`initBarHTML({ need: ["tOrc", "tRig"], have: {} })`);
+ok(/not holding a figure/.test(adrift), "a player with no figure is told that is why nothing is asking them");
+ok(/data-val="seat"/.test(adrift), "and the way in is on the same line");
+ok(!/You are in/.test(adrift), "and is not told the opposite");
+peek(`tbl.role = "dm"; tbl.me.clientId = window.__wasId; paintTurnBar();`);
+
 /* THE ORDER AS FACES. The thing you want at a glance is who is up, and a sentence is bad at it. */
 ok($$(".turn-face").length === 2, "everyone in the fight is a face along the top");
 ok($$(".turn-face")[0].dataset.val === "tOrc", "in the order they act");

@@ -172,11 +172,14 @@ function tblRollAndPost(spec, label, mode, whoOverride, quiet) {
     /* `quiet` still LOGS the roll — everyone can read it — but throws no dice for it. Rolling initiative
        for seven creatures is seven rolls in a row, and seven throws back to back is not a moment, it is
        a wait. The one roll you make yourself still gets its dice. */
-    if (!quiet) tblShowRoll(entry);
+    if (!quiet) res.settled = tblShowRoll(entry);
     CocLive.push(tblPath("log"), entry).catch(() => {});
   } else if (!quiet) {
-    tblShowRoll(entry);
+    res.settled = tblShowRoll(entry);
   }
+  /* When the dice have stopped, for the caller that has something to do only once they have. A quiet
+     roll threw none, so it has already stopped. */
+  if (!res.settled) res.settled = Promise.resolve("quiet");
   return res;
 }
 
@@ -537,8 +540,20 @@ function tblRollStage() {
   return node;
 }
 
+/* Shows a roll, and hands back a promise that keeps until the dice have STOPPED — the flat ones when
+ * their tumble ends, the real ones when the physics puts them down. Almost nothing needs it: the number
+ * is decided before any of this runs and the log already carries it. Initiative needs it, because the
+ * order appearing on the screen the instant you click is the answer arriving before the question has
+ * finished being asked, and it makes the dice something to sit through rather than something to watch.
+ *
+ * It always keeps. A backstop resolves it even if a throw is abandoned, because something is waiting on
+ * it to commit a number, and a number that never commits is a fight that never starts. */
 function tblShowRoll(entry) {
-  if (!entry) return;
+  if (!entry) return Promise.resolve("nothing");
+  let landed;
+  const settled = new Promise((r) => { landed = r; });
+  const backstop = setTimeout(() => landed("gave up"), 9000);
+  const land = (how) => { clearTimeout(backstop); landed(how); };
   const node = tblRollStage();
   for (const t of tblRollTimers) clearTimeout(t);
   tblRollTimers = [];
@@ -561,6 +576,9 @@ function tblShowRoll(entry) {
      library is still being fetched, and are hidden only once real dice are actually on the table. Nothing
      waits on the network to see a roll. */
   const solid = dice3dWanted() && dice3dCanShow(dice);
+  // Which set of dice this roll ends up being told by — decided below, and read by the tumble when it
+  // finishes. The flat dice are always thrown; sometimes real ones land on top of them.
+  let flat = !solid;
   node.className = "roll-stage on rolling " + nat;
   node.innerHTML = `<div class="roll-box">
     <p class="roll-head"><strong>${esc(entry.who || "Someone")}</strong>${
@@ -599,17 +617,18 @@ function tblShowRoll(entry) {
       // The flat dice have just turned over, so this is their readable beat. The 3D path fires its own,
       // seconds later, when the real ones settle.
       if (!solid) tblCritMoment(node, entry);
+      if (flat) land("flat");
     }
   }, 55);
   if (tbl) tblFlashRoll(entry);
   const away = () => { node.classList.remove("on"); dice3dRelease(); dice3dClear(); };
   tblRollTimers.push(setTimeout(away, 3200));
 
-  if (!solid) { dice3dClear(); return; }
+  if (!solid) { dice3dClear(); return settled; }
   /* The library is normally already here — it is fetched when the table opens. If a roll gets in first,
      it waits a moment for it rather than falling back immediately: the flat dice are drawn behind this
      the whole time, so if it does not arrive they are simply revealed, and nothing has been lost. */
-  if (!dice3dBox && !dice3dLoading) { dice3dReady(); dice3dClear(); return; }
+  if (!dice3dBox && !dice3dLoading) { flat = true; dice3dReady(); dice3dClear(); return settled; }
 
   // Real dice from here: the flat row is not drawn at all, the total shows at once exactly as it always
   // has, and the dice land underneath it a couple of seconds later.
@@ -621,6 +640,7 @@ function tblShowRoll(entry) {
   for (const t of tblRollTimers) clearTimeout(t);
   tblRollTimers = [];
   dice3dShow(dice, entry.t).then((how) => {
+    land(how);
     if (how !== "stale") dice3dRelease();
     if (how === "solid") tblCritMoment(node, entry);
     // "stale" means a newer roll owns the screen now. Touching anything here would reach into ITS
@@ -633,11 +653,13 @@ function tblShowRoll(entry) {
   }).catch(() => {
     // Nothing above is allowed to leave the overlay stuck on screen with no way down — or, worse, to
     // leave the roll's own numbers withheld from the table for good.
+    land("broke");
     dice3dRelease();
     node.classList.remove("with-3d");
     dice3dClear(true);
     tblRollTimers.push(setTimeout(away, 1600));
   });
+  return settled;
 }
 
 const TBL_DICE = [4, 6, 8, 10, 12, 20, 100];
