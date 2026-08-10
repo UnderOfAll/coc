@@ -1176,6 +1176,20 @@ body:has(.vtt) { height: 100dvh; overflow: hidden; }
   .vtt-side { width: 100%; max-height: 44dvh; }
 }
 
+/* Rolling for initiative. Every screen shows the same bar, but each shows only what THAT device owes —
+   the DM a row per creature, a player the one figure they hold — plus a tally so the table can see who
+   it is waiting for without asking. */
+.init-rows { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; min-width: 0; }
+.init-ask { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.15rem 0.35rem;
+  background: var(--panel-2); border: 1px solid var(--border); border-radius: var(--radius); }
+.init-name { font-family: var(--serif); color: var(--gold); font-size: 0.95rem; }
+.init-num { width: 6.5rem; }
+@media (max-width: 760px) {
+  .init-rows { width: 100%; }
+  .init-ask { flex: 1 1 100%; }
+  .init-num { flex: 1; width: auto; min-width: 0; }
+}
+
 /* The DM's map list: one row per scene, the one on everyone's screen marked. */
 .scene-list { display: flex; flex-direction: column; }
 .scene-row { display: flex; gap: 0.4rem; align-items: center; padding: 0.35rem 0;

@@ -1126,10 +1126,32 @@ await peek(`CocLive.put("tables/482910/tokens/tOrc", { name: "Orc", x: 8, y: 8, 
 await wait(60);
 ok(/No turn order/.test($("#vtt-turn").textContent), "the DM is offered a turn order before there is one");
 ok($('[data-tbl="init-roll"]'), "with a button to roll it");
-// Orc rolls high, Rig rolls low: the order must follow the dice, not the list.
-peek(`window.__seq = [0.05, 0.95];`);   // Rig 2+3 = 5, Orc 20+1 = 21
-await armedFor(() => click($('[data-tbl="init-roll"]')), 200);
+/* Starting a fight OPENS A GATHER rather than deciding it: everyone rolls their own, in the app or off
+   their own dice. Nothing is an order until every figure is in. */
+click($('[data-tbl="init-roll"]'));
+await until(async () => !!(await aget(`CocLive.get("tables/482910/meta/init")`)));
+ok((await aget(`CocLive.get("tables/482910/meta/turn")`)) === null,
+  "pressing it decides nothing yet — it asks");
+const gather = await aget(`CocLive.get("tables/482910/meta/init")`);
+ok(gather.need.length === 2, "everyone on the scene is asked (" + gather.need.join(", ") + ")");
+ok(/Initiative/.test($("#vtt-turn").textContent), "and the bar says so");
+ok($$('[data-tbl="init-roll-one"]').length === 2, "the DM holds neither figure, so is asked for both");
+ok($$("[data-init-for]").length === 2, "each with a box for a number off their own dice");
+// One rolled in the app, one typed off a real die — the two ways Kayki asked for.
+peek(`window.__seq = [0.95];`);   // Orc 20 + 1 = 21
+armed(() => click($$('[data-tbl="init-roll-one"]').find((b) => b.dataset.val === "tOrc")));
+await until(async () => (await aget(`CocLive.get("tables/482910/meta/init/have/tOrc")`)) != null);
+ok((await aget(`CocLive.get("tables/482910/meta/init/have/tOrc")`)) === 21,
+  "a roll made in the app goes in");
+ok((await aget(`CocLive.get("tables/482910/meta/turn")`)) === null,
+  "and the fight still has not started, because somebody is missing");
+const box = $$("[data-init-for]").find((n) => n.dataset.initFor === "tRig");
+box.value = "5";
+box.dispatchEvent(new window.Event("focusout", { bubbles: true }));
+await until(async () => !!(await aget(`CocLive.get("tables/482910/meta/turn")`)));
 const turn = await aget(`CocLive.get("tables/482910/meta/turn")`);
+ok((await aget(`CocLive.get("tables/482910/meta/init")`)) === null,
+  "the last number in closes the gather");
 ok(turn && turn.order.length === 2, "everyone on the scene is in the order");
 ok(turn.order[0] === "tOrc" && turn.order[1] === "tRig", "highest first (" + turn.order.join(" then ") + ")");
 ok(turn.idx === 0 && turn.round === 1, "starting at the top of round 1");

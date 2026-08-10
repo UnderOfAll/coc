@@ -372,31 +372,113 @@ async function tblNudgeGrid(which, delta) {
 
 /* ---------------------------------------------------------------- turn order */
 
-/* Initiative is rolled for everyone at once, by the DM, because that is how it happens at a table:
-   somebody says "roll initiative" and then reads the order out. Each token carries the modifier its
-   character sheet works out, so this is the same number the player would have added by hand. */
-async function tblRollInitiative() {
+/* ---------------------------------------------------------------- initiative
+ *
+ * Everyone rolls their own. The DM used to press one button and the whole table's initiative was
+ * decided for them, which is not how anybody plays: you roll your own die, and half the table rolls a
+ * real one on a real table and reads the number out. So starting a fight OPENS a gather — every figure
+ * on the scene is listed, and whoever holds it puts a number in, either with the dice in the app or by
+ * typing what their own dice said. The order forms when everyone is in.
+ *
+ * `meta/init` exists only while gathering: { at, need: [ids], have: { id: number } }. It is deleted the
+ * moment the order is written, so `meta/turn` remains the single answer to "is there a fight on". */
+
+/* Everything that should be in this fight: the figures on the active scene. A creature parked on
+   another map is not in this one. */
+function tblInitCandidates() {
   const activeScene = tblSceneId();
-  const rolled = [];
-  for (const [id, t] of Object.entries(tblTokens())) {
-    if (!t) continue;
-    if (t.kind === "npc" && t.scene && t.scene !== activeScene) continue;
-    const mod = Number(t.initMod) || 0;
-    const res = tblDoRoll({ count: 1, sides: 20, mod }, "normal");
-    rolled.push({ id, name: t.name || "Someone", total: res.total, mod });
-    await CocLive.put(tblPath("tokens/" + id + "/init"), res.total);
-    await CocLive.put(tblPath("tokens/" + id + "/moved"), 0);
-  }
+  return Object.entries(tblTokens())
+    .filter(([, t]) => t && !(t.kind === "npc" && t.scene && t.scene !== activeScene))
+    .map(([id]) => id);
+}
+
+/* Which of them THIS device is expected to roll for. You roll for what you hold; the DM rolls for
+   everything nobody is holding, which is the creatures and any player figure whose owner has gone. */
+function tblInitMine(need) {
+  const tokens = tblTokens();
+  return need.filter((id) => {
+    const t = tokens[id];
+    if (!t) return false;
+    return tblIsMine(t) || (tbl.role === "dm" && !tblHolderPresent(t));
+  });
+}
+
+/* Is the browser that holds this figure still at the table? Presence answers it, the same way the DM
+   chair does — otherwise a player who closed their laptop mid-fight would stall the whole gather. */
+function tblHolderPresent(t) {
+  if (!t || !t.owner) return false;
+  const who = (tbl.data.presence || {})[t.owner];
+  return !!who && Date.now() - (Number(who.at) || 0) < 60000;
+}
+
+/* The DM opens the gather. Any previous order goes: a fight that is starting is not the old one. */
+async function tblInitOpen() {
+  const need = tblInitCandidates();
+  if (!need.length) { tblFail({ message: "Nothing on this map to put in an order." }); return; }
+  await CocLive.put(tblPath("meta/turn"), null);
+  await CocLive.put(tblPath("meta/init"), { at: Date.now(), need, have: {} });
+  await CocLive.push(tblPath("log"), {
+    t: Date.now(), who: "DM", kind: "system", text: "Roll for initiative.",
+  });
+}
+
+/* One figure's number, however it was arrived at. Written to the gather AND onto the figure, so the
+   board can show it without reading the gather. */
+async function tblInitSet(id, value) {
+  const n = Math.max(-20, Math.min(99, Math.round(Number(value) || 0)));
+  await CocLive.put(tblPath("meta/init/have/" + id), n);
+  await CocLive.put(tblPath("tokens/" + id + "/init"), n);
+  await tblInitSettle();
+}
+
+/* Roll it here, with the dice everybody else can see. The modifier is the figure's own, so what goes in
+   is the total — the same number a player reading their own dice would type. */
+async function tblInitRoll(id) {
+  const t = tblTokens()[id];
+  if (!t) return;
+  const mod = Number(t.initMod) || 0;
+  const res = tblRollAndPost({ terms: [{ count: 1, sides: 20, sign: 1 }], mod },
+    "Initiative", "normal", t.name || "Someone");
+  if (res) await tblInitSet(id, res.total);
+}
+
+/* Everyone in? Then the order forms. Only the DM's browser builds it — two clients racing to write the
+   same order is how you get two different fights. */
+async function tblInitSettle(force) {
+  if (tbl.role !== "dm") return;
+  const init = (tbl.data.meta || {}).init;
+  if (!init) return;
+  const have = init.have || {};
+  const need = (init.need || []).filter((id) => tblTokens()[id]);
+  const inOrder = need.filter((id) => have[id] != null);
+  if (!inOrder.length) return;
+  if (!force && inOrder.length < need.length) return;
+  const tokens = tblTokens();
+  const rolled = inOrder.map((id) => ({
+    id, name: (tokens[id] || {}).name || "Someone",
+    total: Number(have[id]), mod: Number((tokens[id] || {}).initMod) || 0,
+  }));
   // Highest first; a tie is broken by the modifier, then by name, so the order is at least stable
   // rather than whatever key order the database happens to return.
   rolled.sort((a, b) => b.total - a.total || b.mod - a.mod || a.name.localeCompare(b.name));
   await CocLive.put(tblPath("meta/turn"), {
     order: rolled.map((r) => r.id), idx: 0, round: 1, startedAt: Date.now(),
   });
+  await CocLive.put(tblPath("meta/init"), null);
+  for (const r of rolled) await CocLive.put(tblPath("tokens/" + r.id + "/moved"), 0);
   await CocLive.push(tblPath("log"), {
     t: Date.now(), who: "DM", kind: "system",
     text: "Initiative — " + rolled.map((r) => `${r.name} ${r.total}`).join(", "),
   });
+}
+
+/* Everything this device still owes, rolled at once. The DM has a screenful of creatures and should not
+   have to press a button per goblin. */
+async function tblInitRollMine() {
+  const init = (tbl.data.meta || {}).init;
+  if (!init) return;
+  const owed = tblInitMine(init.need || []).filter((id) => (init.have || {})[id] == null);
+  for (const id of owed) await tblInitRoll(id);
 }
 
 async function tblTurnStep(delta) {
@@ -421,9 +503,47 @@ async function tblTurnEnd() {
 /* The bar above the board: whose turn it is, what round, and what they have left to walk. Everyone
    sees it; the DM can move it along, and so can whoever's turn it is — pressing "Done" on your own
    turn is the one piece of the tracker a player should not have to ask for. */
+/* The gather, on every screen at once. You are shown what YOU owe; everyone else's is a tally, so the
+   table can see who it is waiting for without anybody having to ask. */
+function initBarHTML(init) {
+  const tokens = tblTokens();
+  const need = (init.need || []).filter((id) => tokens[id]);
+  const have = init.have || {};
+  const mine = tblInitMine(need).filter((id) => have[id] == null);
+  const waiting = need.filter((id) => have[id] == null);
+  const row = (id) => {
+    const t = tokens[id] || {};
+    return `<span class="init-ask">
+      <span class="init-name">${esc(t.name || "Figure")}</span>
+      <button class="btn-quiet" data-tbl="init-roll-one" data-val="${esc(id)}">Roll ${
+        Number(t.initMod) ? (Number(t.initMod) > 0 ? "+" + esc(t.initMod) : esc(t.initMod)) : "d20"}</button>
+      <input class="num init-num" data-init-for="${esc(id)}" type="number" inputmode="numeric"
+        placeholder="or type it" aria-label="Initiative for ${esc(t.name || "figure")}" />
+    </span>`;
+  };
+  return `<span class="turn-round">Initiative</span>
+    ${mine.length ? `<span class="init-rows">${mine.map(row).join("")}</span>
+      ${mine.length > 1 ? `<button class="btn-quiet" data-tbl="init-roll-mine">Roll all ${mine.length}</button>` : ""}`
+      : `<strong class="turn-who">You are in${waiting.length ? " — waiting for the rest" : ""}</strong>`}
+    <span class="muted">${esc(need.length - waiting.length)} of ${esc(need.length)} in${
+      waiting.length && !mine.length ? ": " + esc(waiting.map((id) => (tokens[id] || {}).name || "?").slice(0, 4).join(", ")) : ""}</span>
+    <span class="turn-acts">
+      ${tbl.role === "dm" ? `<button class="btn-quiet" data-tbl="init-go" ${waiting.length ? "" : "disabled"}>Start without them</button>
+        <button class="btn-quiet" data-tbl="turn-end">Cancel</button>` : ""}
+    </span>`;
+}
+
 function paintTurnBar() {
   const bar = $("#vtt-turn");
   if (!bar) return;
+  const init = (tbl.data.meta || {}).init;
+  if (init) {
+    // Nothing is anybody's turn yet, so no figure wears the ring.
+    document.querySelectorAll("#vtt-tokens .tok").forEach((n) => n.classList.remove("turn"));
+    bar.classList.remove("hidden");
+    bar.innerHTML = initBarHTML(init);
+    return;
+  }
   const turn = (tbl.data.meta || {}).turn;
   const tokens = tblTokens();
   const order = turn && Array.isArray(turn.order) ? turn.order.filter((id) => tokens[id]) : [];

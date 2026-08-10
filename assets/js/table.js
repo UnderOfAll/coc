@@ -830,6 +830,23 @@ document.addEventListener("change", (e) => {
   }
 });
 
+/* A number typed off your own dice. Committed on ENTER or when the box loses focus, never per
+   keystroke: "17" passes through "1" on its way, and a table watching you roll a 1 and then a 17 is
+   a table asking what happened. */
+document.addEventListener("keydown", (e) => {
+  if (!tbl || e.key !== "Enter") return;
+  const box = evTarget(e).closest("[data-init-for]");
+  if (!box) return;
+  e.preventDefault();
+  if (String(box.value).trim() !== "") tblInitSet(box.dataset.initFor, box.value).catch(tblFail);
+});
+document.addEventListener("focusout", (e) => {
+  if (!tbl) return;
+  const box = evTarget(e).closest("[data-init-for]");
+  if (!box || String(box.value).trim() === "") return;
+  tblInitSet(box.dataset.initFor, box.value).catch(tblFail);
+});
+
 document.addEventListener("input", (e) => {
   if (!tbl) return;
   if (evTarget(e).id === "close-confirm") {
@@ -949,7 +966,12 @@ document.addEventListener("click", (e) => {
   // Stepping the turn is the DM's — or yours, on your own turn. paintTurnBar only renders the button
   // for those two, and this is the only way in, so it sits above the DM-only guard below.
   else if (act === "turn") tblTurnStep(Number(val)).catch(tblFail);
+  /* Rolling for a figure you hold is YOURS, not the DM's — which is the whole point of the gather — so
+     these sit above the DM-only guard with the other player-facing actions. */
+  else if (act === "init-roll-one") tblInitRoll(val).catch(tblFail);
+  else if (act === "init-roll-mine") tblInitRollMine().catch(tblFail);
   else if (act === "sheet-open") tblOpenSheetByCode();
+  else if (act === "init-go") tblInitSettle(true).catch(tblFail);
   else if (act === "claim") tblClaimFromPanel();
   // Dismissing a handout is each person's own business, so it is not a DM-only action.
   else if (act === "hand-dismiss") { tbl.ui.dismissed = val; paintHandout(); }
@@ -1059,7 +1081,7 @@ document.addEventListener("click", (e) => {
      The guard stays (a control that is merely unrendered is not a locked one); what changed is that the
      things it was never meant to cover are now on the right side of it. */
   else if (tbl.role !== "dm") return;
-  else if (act === "init-roll") tblRollInitiative().catch(tblFail);
+  else if (act === "init-roll") tblInitOpen().catch(tblFail);
   else if (act === "turn-end") tblTurnEnd().catch(tblFail);
   else if (act === "map-source") { tbl.ui.mapSource = val; paintSide(); }
   else if (act === "repo-pick") { tbl.ui.repoPick = val; paintSide(); }
