@@ -1827,3 +1827,30 @@ body:has(.vtt) { height: 100dvh; overflow: hidden; }
   border: 1px solid var(--border); border-radius: 8px; }
 .atk-edit .grid-row, .note-edit .text { margin-bottom: 0.4rem; }
 .atk-edit > .field:last-of-type, .note-edit > .text:last-of-type { margin-bottom: 0.5rem; }
+
+/* THE BUILDER'S ABILITIES — one row each, a minus and a plus like point buy, and the number it rolls at
+   the end of the row. They were six number boxes plus a separate chip row plus a bonus field: three
+   controls for one idea, and every one of them read as noise. */
+.abil-rows { display: grid; gap: 0.4rem; }
+.abil-row { display: grid; grid-template-columns: 7rem auto 1fr auto; gap: 0.5rem; align-items: center;
+  padding: 0.45rem 0.6rem; background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; }
+.abil-row.on { border-color: var(--gold); }
+.abil-name { font-size: 0.9rem; }
+.abil-val { font-family: var(--serif); color: var(--gold); font-size: 1.05rem; min-width: 2.2rem;
+  text-align: center; }
+.abil-save { font-size: 0.82rem; white-space: nowrap; }
+@media (max-width: 560px) {
+  .abil-row { grid-template-columns: 1fr auto; grid-template-areas: "name step" "good good" "save save"; }
+  .abil-name { grid-area: name; } .abil-row .stepper { grid-area: step; }
+  .abil-row .chip { grid-area: good; justify-self: start; }
+  .abil-save { grid-area: save; }
+}
+
+/* DAMAGE RULES — what you have actually said, plus one list to add from. Three walls of thirteen chips
+   was thirty-nine buttons a normal enemy presses none of. */
+.dmg-rules { display: grid; gap: 0.5rem; }
+.dmg-rule { display: grid; gap: 0.3rem; padding: 0.5rem 0.6rem; background: var(--panel-2);
+  border: 1px solid var(--border); border-radius: 8px; }
+.dmg-k { color: var(--muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.pick-row { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+.pick-add { max-width: 16rem; }

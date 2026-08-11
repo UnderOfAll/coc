@@ -184,7 +184,7 @@ function dmFiguresHTML() {
       <button class="btn-quiet" data-tbl="ed-dup" data-val="${esc(id)}">Copy</button>
     </div>${open ? `<div class="figure-open">${tokenEditorHTML(id)}</div>` : ""}`;
     }).join("");
-  return `<section class="panel" id="dm-figures">
+  return `${dmKeepTableHTML()}<section class="panel" id="dm-figures">
       <p class="panel-sub">Figures on this map</p>
       <div class="scene-list">${rows || `<p class="muted">Nothing on the board.</p>`}</div>
       ${/* FROM THE BESTIARY. The form below is still there — a barrel, a crate, a thing with a name and
@@ -214,6 +214,38 @@ function dmFiguresHTML() {
       <p class="muted">A name, some hit points and a picture — for scenery, a barrel, anything the
         bestiary does not have.</p>
     </section>`;
+}
+
+/* KEEPING THIS ROOM ON YOUR DM CODE, from the chair. The other direction — typing a room code into the
+   DM screen — exists too, but the moment you are actually running a table is the moment you know it is
+   yours, and a list you have to remember to maintain is a list that goes stale.
+   Offered rather than automatic: a browser can have somebody ELSE's DM code open (Kayki opens his
+   friend's), and quietly filing your room under their code is a mess nobody would think to look for. */
+function dmKeepTableHTML() {
+  if (tbl.role !== "dm" || typeof dmCode !== "function") return "";
+  const code = dmCode();
+  if (!code) return `<section class="panel"><p class="muted">You have no DM code open on this device.
+    <a href="#/dm">The DM's screen</a> keeps the tables you run, your notes and the enemies you build —
+    and they survive this room being closed.</p></section>`;
+  if (tbl.ui.keptTable === tbl.code) return "";
+  return `<section class="panel">
+    <p class="panel-sub">Your DM code</p>
+    <button class="btn-quiet" data-tbl="keep-table">Keep this room on ${esc(code)}</button>
+    <p class="muted">So it is on <a href="#/dm/${esc(code)}">your screen</a> from any device, and not only
+      in this browser's list.</p>
+  </section>`;
+}
+
+/* Read, add, write. The record is one document and this must not clear the rest of it. */
+async function tblKeepTableOnDm() {
+  const code = (typeof dmCode === "function") ? dmCode() : "";
+  if (!code || tbl.role !== "dm") return;
+  const rec = (await CocDm.load(code)) || { v: 1, name: "", tables: [], notes: [], enemies: [] };
+  rec.tables = (rec.tables || []).filter((t) => t.code !== tbl.code)
+    .concat({ code: tbl.code, name: String((tbl.data.meta || {}).name || ""), at: Date.now() });
+  await CocDm.save(code, rec);
+  tbl.ui.keptTable = tbl.code;
+  paintSide();
 }
 
 /* ---------------------------------------------------------------- the bestiary, at the table */

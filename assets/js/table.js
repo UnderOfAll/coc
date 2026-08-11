@@ -1339,6 +1339,7 @@ document.addEventListener("click", (e) => {
   else if (act === "ed-dup") tblDuplicate(val).catch(tblFail);
   else if (act === "npc-shape") { tbl.ui.npcShape = val; paintSide(); }
   else if (act === "bestiary") tblDropEnemy(val).catch(tblFail);
+  else if (act === "keep-table") tblKeepTableOnDm().catch(tblFail);
   else if (act === "enemy-card") {
     tbl.ui.enemyId = val;
     // Where to come back to: the panel it was opened from, or the board if it was opened off a figure.

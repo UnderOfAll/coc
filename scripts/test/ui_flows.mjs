@@ -14,7 +14,9 @@ const {window}=dom; const doc=window.document;
 window.fetch=async(u)=>{const f=path.join(REPO,String(u).split("?")[0]);
   if(!fs.existsSync(f))return{ok:false,status:404,json:async()=>({})};
   const t=fs.readFileSync(f,"utf8");return{ok:true,status:200,json:async()=>JSON.parse(t),text:async()=>t};};
-for(const f of ["assets/js/config.js","assets/js/storage.js","assets/js/app.js","assets/js/creator.js", "assets/js/dm.js"]){
+// live.js too: the DM screen looks a room up before it will add it, so the transport is part of
+// this page now rather than only the table's.
+for(const f of ["assets/js/config.js","assets/js/storage.js","assets/js/live.js","assets/js/app.js","assets/js/creator.js", "assets/js/dm.js"]){
   const s=doc.createElement("script"); s.textContent=fs.readFileSync(path.join(REPO,f),"utf8"); doc.body.appendChild(s);}
 window.scrollTo = () => {};   // jsdom has no layout, so smooth scrolling is a no-op here
 const peek=e=>window.eval(e);
@@ -77,23 +79,38 @@ type($("#en-name"),"Rope Ghoul"); type($("#en-ac"),"14"); type($("#en-hp"),"11")
 // One to three attacks, and a weapon fills a row rather than making the DM look it up.
 click($('[data-dm="atk-add"]'));
 ok($$('[data-atk="name|1"]').length===1,"a second attack can be added");
-const wep=$$('[data-dm="atk-from"]')[0];
-click(wep);
-ok($('[data-atk="damage|1"]').value.length>0,"and a weapon fills the row's damage: "+$('[data-atk="damage|1"]').value);
+const wepSel=$('[data-dm-add="weapon"]');
+ok(!!wepSel,"a weapon is picked off a list, not out of nineteen chips");
+wepSel.value=[...wepSel.options].map(o=>o.value).filter(Boolean)[0];
+wepSel.dispatchEvent(new window.Event("change",{bubbles:true}));
+ok($('[data-atk="damage|1"]').value.length>0,"and it fills the row's damage: "+$('[data-atk="damage|1"]').value);
 click($('[data-dm="atk-drop"][data-val="1"]'));
 ok(!$('[data-atk="name|1"]'),"and a row can be taken off again");
 // Resistances come from the system's own damage types, and immunities include its conditions.
-click($$('[data-dm="resist"]').find(b=>/piercing/.test(b.textContent)));
-ok(peek(`dmUi.draft.resist.join(",")`)==="piercing","a resistance is a chip you press");
-ok($$('[data-dm="immune"]').some(b=>/Prone/.test(b.textContent)),"and immunities offer the conditions the board can show");
+/* WHAT IS CHOSEN, PLUS ONE PICKER. This was three walls of thirteen chips — thirty-nine buttons a normal
+   enemy presses none of. Kayki: "the resistances page needs redesign, it's ugly and weird." */
+const resSel=$('[data-dm-add="resist"]');
+ok(!!resSel,"a damage rule is a short list, not a wall of chips");
+resSel.value="piercing"; resSel.dispatchEvent(new window.Event("change",{bubbles:true}));
+ok(peek(`dmUi.draft.resist.join(",")`)==="piercing","picking one records it");
+ok($$('[data-dm="resist"]').length===1,"and it shows as the one thing you have said, with a way off");
+const immSel=$('[data-dm-add="immune"]');
+ok([...immSel.options].some(o=>/Prone/.test(o.textContent)),"immunities offer the conditions the board can show");
 /* THE SIX, AT EVERY TIER — a player forcing a save on a goblin is the commonest thing in a fight, so it
    cannot be gated to the upper weights. Modifiers, not scores: nothing here is rolled against a raw 14.
    Kayki: "yes, normal enemies also have the six stats, just not as high as a player." */
-ok($$('[data-enabil]').length===6,"a normal enemy is asked for all six abilities");
-ok($$('[data-enabil]').every(n=>n.value==="0"),"starting at +0, so a plain one is still no typing");
-type($$('[data-enabil]').find(n=>n.dataset.enabil==="Dexterity"),"2");
-click($$('[data-dm="saveprof"]').find(b=>/Dexterity/.test(b.textContent)));
-ok(/save \+4/.test($("#tool").textContent),"a save it is good at shows the total it actually rolls");
+/* THE SIX, AS STEPPERS. They were number boxes with a "save" caption, a separate chip row and a bonus
+   field — three controls for one idea. Kayki: "the abilities modifier is the most confusing thing I've
+   ever seen; could just put a + - button like in point buy." */
+ok($$('.abil-row').length===6,"a normal enemy is asked for all six abilities");
+ok($$('.abil-val').every(n=>n.textContent.trim()==="+0"),"starting at +0, so a plain one is still no typing");
+click($$('[data-dm="abil"]').find(b=>b.dataset.val==="Dexterity|1"));
+click($$('[data-dm="abil"]').find(b=>b.dataset.val==="Dexterity|1"));
+ok(peek(`dmUi.draft.abilities.Dexterity`)===2,"the plus steps it up");
+/* AND THE ONE EXTRA IDEA IS SAID IN WORDS A DM USES. "Good at these saves" meant nothing to him; "hard
+   to catch" is what a proficient save actually is at the table. */
+click($$('[data-dm="saveprof"]').find(b=>/hard to catch/.test(b.textContent)));
+ok(/rolls \+4/.test($("#tool").textContent),"and a save it shrugs off shows the number it rolls");
 click($('[data-dm="save-enemy"]'));
 await new Promise(r=>setTimeout(r,60));
 ok(peek(`dm.rec.enemies.length`)===1,"saving keeps it");
@@ -120,11 +137,22 @@ type($("#en-name"),"The Understudy"); type($("#en-parry"),"12");
 for(let i=0;i<6;i++){ const add=$('[data-dm="feat-add"]'); if(add) click(add); }
 ok($$('[data-dm="feat-drop"]').length===5,"and it is capped at five features ("+$$('[data-dm="feat-drop"]').length+")");
 ok(!$("#dm-pick"),"and at the cap it stops offering more");
-// A feature can be taken from what the system already describes, as a COPY.
+/* PICKED OUT OF WHAT ALREADY EXISTS, BY SOURCE FIRST. A search box over every class feature, every
+   subclass feature and every trick is four hundred things behind one word. Kayki: "it's a lot to search
+   from like that — could just search by fields like Acrobat, features, or anything like that." */
 click($('[data-dm="feat-drop"][data-val="4"]'));
-type($("#dm-pick"),"mirror");
+ok(!!$("#dm-from"),"the source comes first");
+ok([...$("#dm-from").options].some(o=>/Acrobat/.test(o.textContent)),"listing the classes by name");
+ok($$('.feat-card [data-dm="feat-from"]').length===0,"and nothing is shown until you say where to look");
+$("#dm-from").value="class:Acrobat"; $("#dm-from").dispatchEvent(new window.Event("input",{bubbles:true}));
 await new Promise(r=>setTimeout(r,60));
-ok($$('[data-dm="feat-from"]').length>0,"searching finds features the system already has");
+ok($$('[data-dm="feat-from"]').length>0,"picking a class shows that class, with no typing at all");
+ok(!!$(".feat-card .feat-text"),"as a real card, with its text rendered like every other feature");
+type($("#dm-pick"),"zzz");
+await new Promise(r=>setTimeout(r,60));
+ok($$('[data-dm="feat-from"]').length===0,"and a name narrows it further");
+type($("#dm-pick"),"");
+await new Promise(r=>setTimeout(r,60));
 click($$('[data-dm="feat-from"]')[0]);
 ok(peek(`dmUi.draft.features[4] && dmUi.draft.features[4].from`)!=="","one taken in remembers where it came from");
 // Fill the five THROUGH THE FORM — the draft is read back off the DOM when it saves, so setting the
@@ -138,6 +166,27 @@ ok(boss.tier==="boss"&&boss.parryDC===12,"a boss saves with its Parry ("+boss.pa
 ok(boss.features.length===5,"and no more than five features ("+boss.features.length+")");
 await new Promise(r=>setTimeout(r,600));
 ok(peek(`window.__dms["777001"].enemies.length`)===2,"both are on the code, not in any room");
+
+/* A ROOM SOMEBODY ELSE RUNS, ADDED BY ITS CODE. The recent list is localStorage — rooms THIS device has
+   opened — and the database cannot be listed, so a table a friend runs on his machine was invisible here
+   and there was no way to say "this one is mine". Kayki, opening a shared DM code: "the table that he's
+   the DM of is not added; only shows the rooms this browser knows." */
+click($$('[data-dm="tab"]').find(b=>b.dataset.val==="tables"));
+ok(!!$("#dm-room"),"a room can be added by typing its code");
+peek(`CocLive.setMode("local"); localStorage.setItem("coc:live", "{}");
+  CocLive.put("tables/420421/meta", { name: "His table" });`);
+type($("#dm-room"),"12"); click($('[data-dm="addcode"]'));
+await new Promise(r=>setTimeout(r,60));
+ok(/Six digits/.test($("#dm-room-msg").textContent),"a short code is refused");
+type($("#dm-room"),"111222"); click($('[data-dm="addcode"]'));
+await new Promise(r=>setTimeout(r,150));
+ok(/No table answers/.test($("#dm-room-msg").textContent),
+  "and a code no table answers on is refused rather than left as a dead row");
+type($("#dm-room"),"420421"); click($('[data-dm="addcode"]'));
+await new Promise(r=>setTimeout(r,200));
+ok(peek(`dm.rec.tables.length`)===1,"a real one is added");
+ok(peek(`dm.rec.tables[0].name`)==="His table","under the name the room calls itself");
+click($$('[data-dm="tab"]').find(b=>b.dataset.val==="enemies"));
 
 /* AND THE BOARD READS THE COPY THIS BROWSER KEEPS, so a fight never waits on a fetch to draw a card.
    That the table's bestiary then carries them is asserted in table.mjs, where the table exists. */

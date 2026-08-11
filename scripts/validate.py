@@ -84,8 +84,25 @@ def cross_grade_turn(obj):
             f"(MECHANICS §3.1a), so give each class its own trick")
 
 
+def check_firebase_rules():
+    """The rules live in docs/CLOUD_SETUP.md as prose AND in docs/firebase-rules.json as a file to open
+    and copy. Two copies of anything drift; this makes the drift a failure instead of a surprise the next
+    time somebody pastes the wrong one into the console."""
+    doc = (ROOT / "docs/CLOUD_SETUP.md").read_text(encoding="utf-8")
+    # The doc carries TWO fenced blocks: an early indented one showing just the characters rules, and the
+    # complete one at column 0. Anchor to column 0 and take the last, which is the whole file.
+    blocks = re.findall(r"^```json\n(.*?)\n^```$", doc, re.S | re.M)
+    block = blocks[-1] if blocks else None
+    fil = (ROOT / "docs/firebase-rules.json")
+    if not block or not fil.exists():
+        return ["docs/firebase-rules.json or the rules block in CLOUD_SETUP.md is missing"]
+    if json.loads(block) != json.loads(fil.read_text(encoding="utf-8")):
+        return ["docs/firebase-rules.json and the block in docs/CLOUD_SETUP.md have drifted apart"]
+    return []
+
+
 def main():
-    errors = []
+    errors = check_firebase_rules()
     class_ids = set()
     subclass_parents = []
     subclass_ids = set()

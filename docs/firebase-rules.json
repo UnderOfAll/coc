@@ -1,0 +1,62 @@
+{
+  "rules": {
+    "characters": {
+      "$code": {
+        ".read":  "$code.matches(/^[0-9]{6}$/)",
+        ".write": "$code.matches(/^[0-9]{6}$/)",
+        ".validate": "newData.hasChildren(['name', 'classId', 'level'])",
+        "name":    { ".validate": "newData.isString() && newData.val().length <= 40" },
+        "classId": { ".validate": "newData.isString() && newData.val().length <= 40" },
+        "level":   { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 20" },
+        "photo":   { ".validate": "newData.isString() && newData.val().length <= 80000" },
+        "notes":   { ".validate": "newData.isString() && newData.val().length <= 2000" },
+        "$other":  { ".validate": true }
+      }
+    },
+    "dms": {
+      "$code": {
+        ".read":  "$code.matches(/^[0-9]{6}$/)",
+        ".write": "$code.matches(/^[0-9]{6}$/)",
+        "name":   { ".validate": "newData.isString() && newData.val().length <= 40" },
+        "$other": { ".validate": true }
+      }
+    },
+    "tables": {
+      "$code": {
+        ".read":  "$code.matches(/^[0-9]{6}$/)",
+        ".write": "$code.matches(/^[0-9]{6}$/)",
+        "meta": {
+          "name":   { ".validate": "newData.isString() && newData.val().length <= 60" },
+          "dmHash": { ".validate": "newData.isString() && newData.val().length <= 128" },
+          "$other": { ".validate": true }
+        },
+        "scenes": {
+          "$sceneId": {
+            "name":   { ".validate": "newData.isString() && newData.val().length <= 60" },
+            "image":  { ".validate": "newData.isString() && newData.val().length <= 700000" },
+            "$other": { ".validate": true }
+          }
+        },
+        "tokens": {
+          "$tokenId": {
+            "name":   { ".validate": "newData.isString() && newData.val().length <= 40" },
+            "image":  { ".validate": "newData.isString() && newData.val().length <= 120000" },
+            "x":      { ".validate": "newData.isNumber()" },
+            "y":      { ".validate": "newData.isNumber()" },
+            "$other": { ".validate": true }
+          }
+        },
+        "log": {
+          "$msgId": {
+            "text":   { ".validate": "newData.isString() && newData.val().length <= 500" },
+            "$other": { ".validate": true }
+          }
+        },
+        "art": {
+          "$key": { ".validate": "newData.isString() && newData.val().length <= 200000" }
+        },
+        "$other": { ".validate": true }
+      }
+    }
+  }
+}

@@ -22,7 +22,7 @@ const DM_LAST = "coc:dm:last";          // the code this browser last opened, so
 const DM_RECENT = "coc:dm:recent";      // codes seen on this device
 
 let dm = null;                          // { code, rec } while a DM record is open
-const dmUi = { tab: "enemies", editing: null, draft: null, msg: "", pick: "" };
+const dmUi = { tab: "enemies", editing: null, draft: null, msg: "", pick: "", pickFrom: "" };
 
 function dmBlank() {
   return { v: 1, name: "", tables: [], notes: [], enemies: [] };
@@ -245,6 +245,16 @@ function dmTablesPane() {
   const here = (typeof tblRecent === "function" ? tblRecent() : [])
     .filter((r) => !mine.some((m) => m.code === r.code));
   return `<section class="panel">
+      ${/* BY ITS CODE, because a room somebody else runs is invisible to this browser. The recent list is
+            localStorage — rooms THIS device has opened — and the database cannot be listed (the code is
+            the credential, storage-security-model). So a table your friend runs on his machine could
+            never be added here, which is exactly what Kayki hit opening a shared DM code. */""}
+      <p class="panel-sub">Add a room by its code</p>
+      <div class="save-row">
+        <input id="dm-room" class="code-input" inputmode="numeric" maxlength="6" placeholder="000000" />
+        <button class="btn" data-dm="addcode">Add it</button>
+      </div>
+      <p id="dm-room-msg" class="save-msg"></p>
       <p class="panel-sub">Your tables</p>
       ${mine.length ? `<div class="recent">${mine.map((t) => `<div class="recent-row">
         <a class="recent-open" href="#/table/${esc(t.code)}">
@@ -292,11 +302,22 @@ function dmField(id, label, value, opts) {
       placeholder="${esc(o.placeholder || "")}" value="${esc(value == null ? "" : value)}" /></label>`;
 }
 
-function dmChipRow(act, all, chosen) {
-  const on = new Set((chosen || []).map((x) => String(x).toLowerCase()));
-  return `<div class="chips">${all.map((v) =>
-    `<button class="chip ${on.has(String(v).toLowerCase()) ? "on" : ""}" data-dm="${act}"
-      data-val="${esc(v)}">${esc(v)}</button>`).join("")}</div>`;
+/* WHAT IS CHOSEN, PLUS ONE PICKER. This was three walls of thirteen chips each — thirty-nine buttons, of
+   which a normal enemy presses none — and Kayki: "the resistances page needs redesign, it's ugly and
+   weird." Now the row holds only what you have actually said, each with a way off, and everything else
+   lives behind one small list. Nothing to scan past to reach the next question. */
+function dmPickRow(act, all, chosen, label) {
+  const on = (chosen || []);
+  const left = all.filter((v) => !on.includes(v));
+  return `<div class="pick-row">
+    ${on.length ? `<div class="chips">${on.map((v) =>
+      `<button class="chip on" data-dm="${act}" data-val="${esc(v)}" title="Remove">${esc(v)} &times;</button>`).join("")}</div>`
+      : `<span class="muted">nothing</span>`}
+    ${left.length ? `<select class="text pick-add" data-dm-add="${act}">
+      <option value="">${esc(label)}</option>
+      ${left.map((v) => `<option value="${esc(v)}">${esc(v)}</option>`).join("")}
+    </select>` : ""}
+  </div>`;
 }
 
 function renderDmEnemyForm() {
@@ -329,14 +350,12 @@ function renderDmEnemyForm() {
       </div>
       <div class="grid-row">
         ${dmField("en-acnote", "AC from", e.acNote, { maxlength: 60, placeholder: "a padded coat" })}
-        ${dmField("en-hpdice", "Hit dice", e.hpDice, { maxlength: 20, placeholder: "2d8+2" })}
-        ${dmField("en-other", "Also moves", e.otherSpeeds, { maxlength: 40, placeholder: "climb 30 ft" })}
+        ${dmField("en-kind", "Sort of thing", e.kind, { maxlength: 30, placeholder: "beast" })}
       </div>
       <div class="grid-row">
         <label class="field"><span>Size <span class="muted">— Large is 2 squares</span></span>
           <select id="en-size" class="text">${["Tiny", "Small", "Medium", "Large", "Huge"].map((s) =>
             `<option ${e.size === s ? "selected" : ""}>${s}</option>`).join("")}</select></label>
-        ${dmField("en-kind", "Sort of thing", e.kind, { maxlength: 30, placeholder: "beast" })}
         ${dmField("en-levels", "For levels", e.partyLevel, { maxlength: 10, placeholder: "1-3" })}
       </div>
       ${isNormal ? "" : `<div class="grid-row">
@@ -358,12 +377,17 @@ function renderDmEnemyForm() {
     </section>
 
     <section class="panel">
-      <p class="panel-sub">Takes half from</p>
-      ${dmChipRow("resist", DM_DAMAGE_TYPES, e.resist)}
-      <p class="panel-sub">Takes double from</p>
-      ${dmChipRow("vulnerable", DM_DAMAGE_TYPES, e.vulnerable)}
-      <p class="panel-sub">Ignores <span class="muted">— damage and conditions</span></p>
-      ${dmChipRow("immune", DM_DAMAGE_TYPES.concat(dmConditionNames()), e.immune)}
+      <p class="panel-sub">Damage</p>
+      <div class="dmg-rules">
+        <div class="dmg-rule"><span class="dmg-k">Takes half from</span>
+          ${dmPickRow("resist", DM_DAMAGE_TYPES, e.resist, "add a damage type…")}</div>
+        <div class="dmg-rule"><span class="dmg-k">Takes double from</span>
+          ${dmPickRow("vulnerable", DM_DAMAGE_TYPES, e.vulnerable, "add a damage type…")}</div>
+        <div class="dmg-rule"><span class="dmg-k">Ignores</span>
+          ${dmPickRow("immune", DM_DAMAGE_TYPES.concat(dmConditionNames()), e.immune, "add damage or a condition…")}</div>
+      </div>
+      <p class="muted">Most enemies need none of this. It is the lever that makes a party's odd trick
+        suddenly the right answer.</p>
     </section>
 
     ${dmAbilitiesSection(e)}
@@ -388,31 +412,42 @@ function renderDmEnemyForm() {
   `);
 }
 
-/* THE SIX, AT EVERY TIER. A player forcing a save on a goblin is the commonest thing in a fight, so this
-   is not gated to the upper weights — but everything starts at +0, so a plain enemy is still no typing.
-   Kayki's ladder: a normal sits under a player, a special is nearly one, a boss equals or beats one. */
+/* THE SIX, AS STEPPERS. They were six number boxes with a "save" caption and a separate chip row called
+   "Good at these saves" and a field called "That bonus" — three controls for one idea, and Kayki read all
+   three as noise: "the abilities modifier is the most confusing thing I've ever seen… good at saves, I
+   don't even know what that is for."
+ *
+ * So: one row per ability, a minus and a plus like point buy, and the ONE extra thing said in words a DM
+ * uses — "hard to X" — because that is what a proficient save actually means at the table: the creature
+ * shrugs that off. The number it rolls is printed at the end of the row, so nothing is added up mid-fight.
+ *
+ * A player's best is about +3 at these levels, and the row says so once rather than in a paragraph. */
+const DM_SAVE_WORDS = {
+  Strength: "hard to shove", Dexterity: "hard to catch", Constitution: "hard to wear down",
+  Intelligence: "hard to fool", Wisdom: "hard to charm", Charisma: "hard to rattle",
+};
 function dmAbilitiesSection(e) {
   const ab = e.abilities || {};
   const good = new Set(e.saveProf || []);
-  const prof = Number(e.prof ?? 2);
   return `<section class="panel">
-    <p class="panel-sub">Abilities <span class="muted">— modifiers, not scores</span></p>
-    <div class="ab-grid">${ENEMY_ABILITIES.map((a) => {
+    <p class="panel-sub">Abilities <span class="muted">— a player's best is about +3</span></p>
+    <div class="abil-rows">${ENEMY_ABILITIES.map((a) => {
       const m = Number(ab[a] || 0);
-      return `<div class="ab-box ${good.has(a) ? "prof" : ""}">
-        <span class="ab-name">${esc(a.slice(0, 3).toUpperCase())}</span>
-        <input class="num" data-enabil="${esc(a)}" type="number" min="-5" max="10" value="${esc(m)}" />
-        <span class="ab-save">save ${esc(sign(m + (good.has(a) ? prof : 0)))}</span></div>`;
+      const isGood = good.has(a);
+      return `<div class="abil-row ${isGood ? "on" : ""}">
+        <span class="abil-name">${esc(a)}</span>
+        <span class="stepper">
+          <button class="btn-quiet" data-dm="abil" data-val="${esc(a)}|-1" ${m <= -5 ? "disabled" : ""}>&minus;</button>
+          <span class="abil-val">${esc(sign(m))}</span>
+          <button class="btn-quiet" data-dm="abil" data-val="${esc(a)}|1" ${m >= 10 ? "disabled" : ""}>+</button>
+        </span>
+        <button class="chip ${isGood ? "on" : ""}" data-dm="saveprof" data-val="${esc(a)}"
+          title="It shrugs this off: +2 when something forces it to save">${esc(DM_SAVE_WORDS[a])}</button>
+        <span class="abil-save muted">rolls ${esc(sign(m + (isGood ? 2 : 0)))}</span>
+      </div>`;
     }).join("")}</div>
-    <p class="panel-sub">Good at these saves <span class="muted">— adds ${esc(prof)}</span></p>
-    ${dmChipRow("saveprof", ENEMY_ABILITIES, e.saveProf)}
-    <div class="grid-row">
-      ${dmField("en-prof", "That bonus", prof, { num: true, min: 0, max: 6 })}
-      ${dmField("en-init", "Initiative", e.initMod == null ? "" : e.initMod,
-        { num: true, min: -5, max: 20, hint: "blank = its Dexterity" })}
-    </div>
-    <p class="muted">A player's best is about +3 at these levels. Under that for a normal, near it for a
-      special, at or above it for a boss.</p>
+    <p class="muted">The number on the right is what it rolls when one of you forces a save on it.
+      Initiative is its Dexterity.</p>
   </section>`;
 }
 
@@ -452,11 +487,14 @@ function dmAttacksSection(e) {
     ${atks.length < 3 ? `<button class="btn-quiet" data-dm="atk-add">Add an attack</button>` : ""}
     ${/* THE PRE-MADE ONES. Every weapon in the system already carries a damage die, a type, properties and
           a mastery — Cleave, Vex, Push. Picking one fills the row rather than making the DM look it up. */""}
-    ${weapons.length ? `<p class="panel-sub">Or take one off a weapon</p>
-      <div class="chips">${weapons.map((w) =>
-        `<button class="chip" data-dm="atk-from" data-val="${esc(w.name)}">${esc(w.name)}</button>`).join("")}</div>
-      <p class="muted">Fills the last row with that weapon's damage, type and mastery. The to-hit stays
-        yours — that is the creature's, not the weapon's.</p>` : ""}
+    ${weapons.length ? `<label class="field"><span>Or take one off a weapon</span>
+      <select class="text" data-dm-add="weapon">
+        <option value="">pick a weapon…</option>
+        ${weapons.map((w) => `<option value="${esc(w.name)}">${esc(w.name)} — ${esc(w.damage.die)} ${esc(w.damage.type)}${
+          w.mastery ? " · " + esc(w.mastery) : ""}</option>`).join("")}
+      </select></label>
+      <p class="muted">Fills the last row above with that weapon's damage, type and mastery. The to-hit
+        stays yours — that is the creature's, not the weapon's.</p>` : ""}
     ${(e.attacks || []).length > 1 ? `<label class="field"><span>Multiattack <span class="muted">— how many a turn</span></span>
       <input id="en-multi" class="text" type="text" maxlength="160" value="${esc(e.multiattack || "")}"
         placeholder="It throws two knives on its turn." /></label>` : ""}
@@ -481,12 +519,36 @@ function dmSourceFeatures() {
   return out;
 }
 
+/* PICKING ONE OUT OF WHAT ALREADY EXISTS. A search box over every class feature, every subclass feature
+   and every trick is four hundred things behind one word, and Kayki: "it's nice the search tool but it's
+   a lot to search from like that — could just search by fields like Acrobat, features, or anything."
+   So the source comes first and the search narrows it: pick the Acrobat and you are looking at the
+   Acrobat, with no typing at all. The result is a real card with its text rendered the way every other
+   feature in the app is, rather than a grey line. */
+function dmFeatureSources() {
+  const s = (typeof store !== "undefined") ? store : {};
+  const out = [["", "Everything"]];
+  for (const c of (s.classes || [])) out.push(["class:" + c.name, c.name]);
+  out.push(["trick", "Tricks"]);
+  return out;
+}
+
 function dmFeaturesSection(e) {
   const feats = e.features || [];
   const cap = e.tier === "boss" ? DM_MAX_BOSS_FEATURES : 99;
+  const from = dmUi.pickFrom || "";
   const q = String(dmUi.pick || "").toLowerCase();
-  const found = q.length >= 2
-    ? dmSourceFeatures().filter((f) => f.name.toLowerCase().includes(q)).slice(0, 12) : [];
+  let found = dmSourceFeatures();
+  if (from === "trick") found = found.filter((f) => f.from === "trick");
+  else if (from.startsWith("class:")) {
+    const want = from.slice(6);
+    // A subclass's features are that class's too — its name is the subclass, so match the parent.
+    const subs = new Set(((typeof store !== "undefined" && store.subclasses) || [])
+      .filter((x) => className(x.parentClass) === want).map((x) => x.name));
+    found = found.filter((f) => f.from === want || subs.has(f.from));
+  }
+  if (q.length >= 2) found = found.filter((f) => f.name.toLowerCase().includes(q));
+  const show = (from || q.length >= 2) ? found.slice(0, 15) : [];
   return `<section class="panel">
     <p class="panel-sub">Features${e.tier === "boss"
       ? ` <span class="muted">— up to ${DM_MAX_BOSS_FEATURES}</span>` : ""}</p>
@@ -504,17 +566,26 @@ function dmFeaturesSection(e) {
         changes nothing anywhere else.</p>` : ""}
       <button class="btn-quiet" data-dm="feat-drop" data-val="${i}">Remove this feature</button>
     </div>`).join("")}
-    ${feats.length < cap ? `<button class="btn-quiet" data-dm="feat-add">Write a new one</button>` : `
-      <p class="muted">That is ${DM_MAX_BOSS_FEATURES}, which is as many as a boss should be reading off a
-        card mid-fight. Remove one to add another.</p>`}
-    ${feats.length < cap ? `<p class="panel-sub">Or take one the system already has</p>
-      <label class="field"><span>Search what exists</span>
-        <input id="dm-pick" class="text" type="text" value="${esc(dmUi.pick || "")}" placeholder="mirror, wall, panic…" /></label>
-      ${found.length ? `<div class="scene-list">${found.map((f) => `<div class="scene-row">
-        <button class="scene-pick" data-dm="feat-from" data-val="${esc(f.name)}">
-          <strong>${esc(f.name)}</strong><span class="muted">${esc(f.from)}${f.uses ? " · " + esc(f.uses) : ""}</span>
-        </button></div>`).join("")}</div>`
-        : (q.length >= 2 ? `<p class="muted">Nothing by that name.</p>` : "")}` : ""}
+    ${feats.length >= cap ? `<p class="muted">That is ${DM_MAX_BOSS_FEATURES}, which is as many as a boss
+        should be reading off a card mid-fight. Remove one to add another.</p>`
+      : `<button class="btn-quiet" data-dm="feat-add">Write a new one</button>
+      <p class="panel-sub">Or take one that already exists</p>
+      <div class="grid-row">
+        <label class="field"><span>From</span>
+          <select id="dm-from" class="text">${dmFeatureSources().map(([v, label]) =>
+            `<option value="${esc(v)}" ${from === v ? "selected" : ""}>${esc(label)}</option>`).join("")}</select></label>
+        <label class="field"><span>Name contains</span>
+          <input id="dm-pick" class="text" type="text" value="${esc(dmUi.pick || "")}" placeholder="mirror, wall…" /></label>
+      </div>
+      ${show.length ? `<div class="feat-grid">${show.map((f) => `<div class="feat-card">
+          <div class="feat-title"><span class="feat-name">${esc(f.name)}</span>
+            ${f.uses ? `<span class="role-badge">${esc(f.uses)}</span>` : ""}</div>
+          <p class="feat-from">${esc(f.from === "trick" ? "Trick" : f.from)}</p>
+          <div class="feat-text">${fmtDesc(f.description || "")}</div>
+          <div class="feat-ctl"><button class="btn-quiet" data-dm="feat-from" data-val="${esc(f.name)}">Use this one</button></div>
+        </div>`).join("")}${found.length > show.length
+          ? `<p class="muted">${esc(found.length - show.length)} more — narrow it with a name.</p>` : ""}</div>`
+        : `<p class="muted">${from || q.length >= 2 ? "Nothing by that name." : "Pick where to look."}</p>`}`}
   </section>`;
 }
 
@@ -557,8 +628,6 @@ function dmReadForm() {
   e.hp = Math.max(1, num("en-hp", e.hp) || 1);
   e.speed = Math.max(0, Math.min(200, num("en-speed", e.speed) ?? 30));
   e.acNote = str("en-acnote", e.acNote);
-  e.hpDice = str("en-hpdice", e.hpDice);
-  e.otherSpeeds = str("en-other", e.otherSpeeds);
   e.size = str("en-size", e.size) || "Medium";
   e.kind = str("en-kind", e.kind);
   e.partyLevel = str("en-levels", e.partyLevel);
@@ -575,14 +644,6 @@ function dmReadForm() {
     const c = dmVal("en-class"); if (c !== undefined) e.borrowsClass = c;
     const s = dmVal("en-subclass"); if (s !== undefined) e.borrowsSubclass = s;
   }
-  e.prof = Math.max(0, Math.min(6, num("en-prof", e.prof ?? 2)));
-  const init = dmVal("en-init");
-  e.initMod = (init === undefined || init === "") ? null : Math.max(-5, Math.min(20, Number(init) || 0));
-  for (const node of document.querySelectorAll("[data-enabil]")) {
-    const n = asEl(node);
-    e.abilities = e.abilities || {};
-    e.abilities[n.dataset.enabil] = Math.max(-5, Math.min(10, Number(n.value) || 0));
-  }
   for (const node of document.querySelectorAll("[data-atk]")) {
     const n = asEl(node);
     const [field, i] = n.dataset.atk.split("|");
@@ -598,6 +659,8 @@ function dmReadForm() {
   }
   const pick = dmVal("dm-pick");
   if (pick !== undefined) dmUi.pick = pick;
+  const from = dmVal("dm-from");
+  if (from !== undefined) dmUi.pickFrom = from;
 }
 
 /* Everything a built enemy needs before it can be shown as a card. Kept separate from the form so the
@@ -668,17 +731,19 @@ document.addEventListener("click", (ev) => {
   }
   if (act === "close") { dmUi.editing = null; dmUi.draft = null; renderDm(); return; }
   if (act === "tier") { dmReadForm(); dmUi.draft.tier = val; renderDmEnemyForm(); return; }
-  if (act === "saveprof") {
+  if (act === "abil") {
     dmReadForm();
-    const list = dmUi.draft.saveProf || [];
-    dmUi.draft.saveProf = list.includes(val) ? list.filter((x) => x !== val) : list.concat(val);
+    const [a, by] = val.split("|");
+    const now = Number((dmUi.draft.abilities || {})[a] || 0);
+    dmUi.draft.abilities = Object.assign({}, dmUi.draft.abilities, { [a]: Math.max(-5, Math.min(10, now + Number(by))) });
     renderDmEnemyForm();
     return;
   }
-  if (act === "resist" || act === "immune" || act === "vulnerable") {
+  if (act === "resist" || act === "immune" || act === "vulnerable" || act === "saveprof") {
     dmReadForm();
-    const list = dmUi.draft[act] || [];
-    dmUi.draft[act] = list.includes(val) ? list.filter((x) => x !== val) : list.concat(val);
+    const key = act === "saveprof" ? "saveProf" : act;
+    const list = dmUi.draft[key] || [];
+    dmUi.draft[key] = list.includes(val) ? list.filter((x) => x !== val) : list.concat(val);
     renderDmEnemyForm();
     return;
   }
@@ -694,21 +759,7 @@ document.addEventListener("click", (ev) => {
     renderDmEnemyForm();
     return;
   }
-  if (act === "atk-from") {
-    dmReadForm();
-    const w = ((typeof store !== "undefined" && store.weapons) || []).find((x) => x.name === val);
-    if (w) {
-      const a = dmUi.draft.attacks[dmUi.draft.attacks.length - 1];
-      a.name = w.name;
-      a.damage = w.damage.die;
-      a.damageType = w.damage.type;
-      a.kind = w.range ? "ranged" : "melee";
-      a.reach = w.range ? `${w.range.normal}/${w.range.long} ft` : "5 ft";
-      if (w.mastery) a.note = w.mastery + " — see the weapon's mastery.";
-    }
-    renderDmEnemyForm();
-    return;
-  }
+
   if (act === "feat-add") {
     dmReadForm();
     dmUi.draft.features = (dmUi.draft.features || []).concat({ name: "", uses: "", description: "" });
@@ -742,6 +793,7 @@ document.addEventListener("click", (ev) => {
     dmPersist(); renderDm();
     return;
   }
+  if (act === "addcode") { dmAddRoomByCode(); return; }
   if (act === "addtable") {
     const [code, name] = val.split("|");
     dm.rec.tables = (dm.rec.tables || []).filter((t) => t.code !== code).concat({ code, name: name || "", at: Date.now() });
@@ -764,6 +816,39 @@ function dmReadNotes() {
     const note = (dm.rec.notes || [])[i];
     if (note) note[k[0] === "t" ? "title" : "body"] = n.value;
   }
+}
+
+/* A room, added by typing its code. It is looked up first — a table you cannot reach is a row that will
+   never open, and telling you now is better than a dead link on the list forever. */
+function dmAttackFromWeapon(name) {
+  const w = ((typeof store !== "undefined" && store.weapons) || []).find((x) => x.name === name);
+  if (!w) return;
+  const a = dmUi.draft.attacks[dmUi.draft.attacks.length - 1];
+  a.name = w.name;
+  a.damage = w.damage.die;
+  a.damageType = w.damage.type;
+  a.kind = w.range ? "ranged" : "melee";
+  a.reach = w.range ? `${w.range.normal}/${w.range.long} ft` : "5 ft";
+  if (w.mastery) a.note = w.mastery + " — see the weapon's mastery.";
+  renderDmEnemyForm();
+}
+
+async function dmAddRoomByCode() {
+  const msg = document.querySelector("#dm-room-msg");
+  const say = (t, bad) => { if (msg) { msg.textContent = t; msg.className = "save-msg" + (bad ? " bad" : ""); } };
+  const code = String((dmVal("dm-room") || "")).replace(/\D/g, "");
+  if (!CocDm.validCode(code)) return say("Six digits.", true);
+  if ((dm.rec.tables || []).some((t) => t.code === code)) return say("That one is already on your list.");
+  say("Looking for it…");
+  let name = "";
+  try {
+    const meta = typeof CocLive !== "undefined" ? await CocLive.get("tables/" + code + "/meta") : null;
+    if (!meta) return say("No table answers on " + code + ". Check the room code with whoever runs it.", true);
+    name = String(meta.name || "");
+  } catch (err) { return say(err.message, true); }
+  dm.rec.tables = (dm.rec.tables || []).concat({ code, name, at: Date.now() });
+  dmPersist();
+  renderDm();
 }
 
 async function dmStartNew() {
@@ -802,6 +887,23 @@ document.addEventListener("input", (ev) => {
   if (t.id === "dm-name") { dm.rec.name = String(t.value).slice(0, 40); dmRemember(dm.code, dm.rec.name); dmPersist(); return; }
   if (t.dataset && t.dataset.dmNote) { dmReadNotes(); dmPersist(); return; }
   if (t.id === "dm-pick") { dmUi.pick = t.value; if (dmUi.editing) renderDmEnemyForm(); return; }
+  if (t.id === "dm-from") { dmReadForm(); dmUi.pickFrom = t.value; renderDmEnemyForm(); return; }
+});
+
+/* The small "add one" lists beside a damage rule and beside the weapons. A select is a list you open, not
+   thirty-nine buttons you read past. */
+document.addEventListener("change", (ev) => {
+  const t = evTarget(ev);
+  if (!t || !t.dataset || !t.dataset.dmAdd || !dmUi.draft) return;
+  const act = t.dataset.dmAdd, val = t.value;
+  t.value = "";
+  if (!val) return;
+  dmReadForm();
+  if (act === "weapon") { dmAttackFromWeapon(val); return; }
+  const key = act === "saveprof" ? "saveProf" : act;
+  const list = dmUi.draft[key] || [];
+  if (!list.includes(val)) dmUi.draft[key] = list.concat(val);
+  renderDmEnemyForm();
 });
 
 /* A picture off the phone, shrunk the same way a figure's is. */

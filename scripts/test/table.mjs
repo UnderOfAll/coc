@@ -2095,6 +2095,22 @@ await peek(`CocLive.del("tables/482910/tokens/tGob")`);
 peek(`tbl.role = "dm"; tbl.me.charCode = ""; renderTableShell(); paintTokens();`);
 openPanel("dm");
 await wait(60);
+/* AND THE ROOM CAN BE KEPT ON YOUR DM CODE, from the chair — the moment you are running a table is the
+   moment you know it is yours. Offered rather than automatic: this browser can have somebody ELSE's DM
+   code open, and quietly filing your room under theirs is a mess nobody would think to look for. */
+ok(/no DM code open/.test($("#tool").textContent), "with no DM code open, the chair says where one lives");
+peek(`localStorage.setItem("coc:dm:last", "420420");
+  window.__dmrecs = { "420420": { v: 1, name: "Friend", tables: [], notes: [], enemies: [] } };
+  CocDm.load = async (c) => window.__dmrecs[c] ? JSON.parse(JSON.stringify(window.__dmrecs[c])) : null;
+  CocDm.save = async (c, r) => { window.__dmrecs[c] = JSON.parse(JSON.stringify(r)); return true; };
+  paintSide();`);
+ok(!!$('[data-tbl="keep-table"]'), "with one open, the chair offers to keep the room on it");
+click($('[data-tbl="keep-table"]'));
+await until(() => (peek(`JSON.stringify(window.__dmrecs["420420"].tables)`) || "[]").includes("482910"));
+ok(true, "and pressing it puts the room on the code, not just in this browser's list");
+peek(`paintSide();`);
+ok(!$('[data-tbl="keep-table"]'), "and it stops offering once it is kept");
+peek(`localStorage.removeItem("coc:dm:last"); paintSide();`);
 ok($("#tbl-npc-name"), "the DM can drop a figure");
 ok(/for scenery, a barrel/.test($("#tool").textContent), "which is for the things the bestiary has not got");
 /* THE BESTIARY, AT THE TABLE. Typing "Sawdust Hound / 9" four times a night is the exact work this app
