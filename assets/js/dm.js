@@ -84,9 +84,20 @@ function dmPersist() {
       await CocDm.save(code, rec);
       dmCacheEnemies(code, rec.enemies || []);
       dmSetMsg("saved");
-    } catch (err) { dmSetMsg("not saved — " + err.message, true); }
+    } catch (err) { dmSetMsg("not saved — " + dmWhy(err), true); }
   }, 400);
 }
+/* A 401 HERE MEANS ONE THING, so it should say it. The `dms` branch is newer than most databases this
+   has been pointed at, and until its rules are published every read and write is refused — while the page
+   cheerfully reports "saving to the cloud", which is about config.js and not about permission. Guessing
+   that from "401" costs an evening; it cost one. */
+function dmWhy(err) {
+  const m = String((err && err.message) || err);
+  if (!/401|403|permission/i.test(m)) return m;
+  return m + " — the database is refusing this. The `dms` rules have probably not been published yet: "
+    + "see docs/CLOUD_SETUP.md, paste the whole rules block into the Firebase console and Publish.";
+}
+
 function dmSetMsg(t, bad) {
   dmUi.msg = t;
   const n = document.querySelector("#dm-state");
@@ -113,7 +124,7 @@ async function routeDm(arg) {
   let rec = null;
   try { rec = await CocDm.load(code); } catch (err) {
     paint(`<div class="tool-head"><a class="back" href="#/dm">&larr; Back</a><h1>Could not open ${esc(code)}</h1>
-      <p class="warn">${esc(err.message)}</p></div>`);
+      <p class="warn">${esc(dmWhy(err))}</p></div>`);
     return;
   }
   if (!rec) { dm = null; renderDmDoor(`Nothing is saved under ${code}. Start a new one below.`); return; }
@@ -763,7 +774,7 @@ async function dmStartNew() {
   try {
     if (await CocDm.taken(code)) return say("That code is already in use. Open it, or pick another.", true);
     await CocDm.save(code, dmBlank());
-  } catch (err) { return say(err.message, true); }
+  } catch (err) { return say(dmWhy(err), true); }
   dmRemember(code, "");
   location.hash = "#/dm/" + code;
 }
@@ -809,7 +820,9 @@ document.addEventListener("change", (ev) => {
     renderDmEnemyForm();
     const m2 = document.querySelector("#en-imgmsg");
     if (m2) { m2.textContent = "Picture ready — it is saved with the enemy."; m2.className = "save-msg good"; }
-  }, (err) => say(err, " bad"), 200000);
+    // A figure-sized picture, shrunk the same way a token's is — the budget is an OBJECT, and passing a
+    // bare number here silently used the MAP budget (680,000 characters) for a 40px token.
+  }, (err) => say(err, " bad"), TBL_TOKEN_IMAGE);
 });
 
 COC_ROUTES.dm = routeDm;

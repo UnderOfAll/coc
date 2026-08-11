@@ -53,6 +53,12 @@ ok($("#dm-open")&&$("#dm-new"),"the door asks for a code, or offers to start one
 ok(/not the key to a room/i.test($("#tool").textContent),"and says plainly that it is not the room key");
 type($("#dm-new"),"12"); click($('[data-dm="new"]')); await new Promise(r=>setTimeout(r,60));
 ok(/Six digits/.test($("#dm-msg").textContent),"a short code is refused");
+/* A 401 HERE MEANS ONE THING — the `dms` rules have not been published — and the page says "saving to the
+   cloud" regardless, because that line is about config.js and not about permission. Guessing that from
+   "401" costs an evening; it cost one. */
+ok(/rules/.test(peek(`dmWhy(new Error("cloud save failed: 401"))`)),
+  "a refused write names the likely cause rather than leaving a number on screen");
+ok(peek(`dmWhy(new Error("network down"))`)==="network down","and anything else is left alone");
 type($("#dm-new"),"777001"); click($('[data-dm="new"]'));
 await new Promise(r=>setTimeout(r,200));
 ok(peek(`dm && dm.code`)==="777001","starting one opens it");
