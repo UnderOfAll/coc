@@ -12,6 +12,17 @@
   "hp": 30,
   "hpDice": "5d8+8",
   "speed": 30,
+  "abilities": {
+    "Strength": 1,
+    "Dexterity": 4,
+    "Constitution": 2,
+    "Intelligence": 1,
+    "Wisdom": 3
+  },
+  "saveProf": [
+    "Dexterity",
+    "Wisdom"
+  ],
   "parryDC": 10,
   "senses": "blindsight 30 ft",
   "multiattack": "It throws two knives on its turn, at the same target or at two different ones.",

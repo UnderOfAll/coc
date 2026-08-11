@@ -12,6 +12,11 @@
   "hp": 10,
   "hpDice": "3d8-3",
   "speed": 30,
+  "abilities": {
+    "Dexterity": 2,
+    "Wisdom": 1,
+    "Charisma": 1
+  },
   "attacks": [
     {
       "name": "Lit Club",

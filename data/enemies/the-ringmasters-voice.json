@@ -12,6 +12,18 @@
   "hp": 33,
   "hpDice": "6d8+6",
   "speed": 30,
+  "abilities": {
+    "Strength": 1,
+    "Dexterity": 1,
+    "Constitution": 2,
+    "Intelligence": 2,
+    "Wisdom": 3,
+    "Charisma": 3
+  },
+  "saveProf": [
+    "Wisdom",
+    "Charisma"
+  ],
   "parryDC": 13,
   "senses": "hears everything within 60 ft, even through canvas",
   "attacks": [

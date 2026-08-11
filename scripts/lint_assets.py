@@ -72,6 +72,26 @@ for f in sorted((ROOT / "assets/js").glob("*.js")):
             clashes.append(f"{name} in {top_level[name]} and {f.name}")
         top_level[name] = f.name
 
+# A `data-*` ATTRIBUTE IS A NAMESPACE TOO, and the same trap wearing a different hat. The enemy builder
+# wrote `data-abil` on its ability boxes — which the CREATOR already used for a character's ability
+# scores, on a document-level input listener. Typing a goblin's Dexterity wrote into a character draft
+# and repainted the creator over the page.
+#
+# The signal is a dataset key READ by two different scripts: two document-level handlers deciding what a
+# press or a keystroke meant, from the same word. The generics below are read by more than one on purpose
+# — each is narrowed by that script's OWN key attribute first (`data-tbl`, `data-act`, `data-dm`), so they
+# are companions rather than keys. Anything else sharing a name is a collision waiting for an afternoon.
+SHARED_DATASET_KEYS = {"val", "label", "src", "token", "figure", "pane", "role"}
+attr_read = {}
+for f in sorted((ROOT / "assets/js").glob("*.js")):
+    text = f.read_text(encoding="utf-8")
+    for a in set(re.findall(r'\.dataset\.([a-zA-Z][a-zA-Z0-9]*)', text)):
+        attr_read.setdefault(a, set()).add(f.name)
+attr_clashes = sorted(
+    f"dataset.{a} is read in {', '.join(sorted(files))}"
+    for a, files in attr_read.items()
+    if len(files) > 1 and a not in SHARED_DATASET_KEYS)
+
 declared = set(re.findall(r'\.([a-z][a-z0-9-]+)', CSS))
 missing = sorted(c for c in used if c not in declared)
 unused = sorted(c for c in declared if c not in used)
@@ -94,6 +114,12 @@ if clashes:
     print("ASSET LINT FAILED:")
     print("  - the same top-level name is defined in two scripts (the last one loaded wins):")
     for c in clashes:
+        print("      " + c)
+    sys.exit(1)
+if attr_clashes:
+    print("ASSET LINT FAILED:")
+    print("  - the same dataset key is read by two scripts (two handlers, one word):")
+    for c in attr_clashes:
         print("      " + c)
     sys.exit(1)
 

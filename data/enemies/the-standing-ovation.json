@@ -12,6 +12,16 @@
   "hp": 27,
   "hpDice": "6d10-6",
   "speed": 20,
+  "abilities": {
+    "Strength": 1,
+    "Dexterity": 1,
+    "Constitution": 2,
+    "Intelligence": -4,
+    "Charisma": -2
+  },
+  "saveProf": [
+    "Constitution"
+  ],
   "parryDC": 15,
   "attacks": [
     {

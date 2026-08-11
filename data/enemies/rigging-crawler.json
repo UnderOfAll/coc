@@ -13,6 +13,13 @@
   "hpDice": "2d6",
   "speed": 20,
   "otherSpeeds": "climb 30 ft",
+  "abilities": {
+    "Strength": -1,
+    "Dexterity": 3,
+    "Intelligence": -4,
+    "Wisdom": 1,
+    "Charisma": -3
+  },
   "attacks": [
     {
       "name": "Hooked Bite",

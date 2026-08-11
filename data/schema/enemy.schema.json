@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Enemy",
-  "description": "A creature the party fights. DELIBERATELY THREE WEIGHTS, because a fight made only of full stat blocks is a fight nobody finishes: most enemies are an AC, some hit points and two attacks, and that is the whole of them. Kayki: \"some enemies just have attacks, AC and HP, nothing else; some have 1 feature, some have more, and the bosses will have class and features.\"\n\nNOTHING HERE IS ROLLED BY THE APP. The numbers are what a DM reads off a card — this system's app is a tracker, not a referee (RULES.md). The one thing the app does with an enemy is put it on the board with its hit points already filled in.\n\nWHAT AN ENEMY DOES NOT HAVE: levels, ability score improvements, an engine, tricks with cooldowns, or a character sheet. A boss BORROWS a class's identity and a handful of its features, written out here in full — it never resolves against the class data, because a boss is a one-off and a class is a twenty-level ladder.\n\nDEFENCE, AND IT IS DECIDED BY TIER (Kayki, 2026-08-11): **specials and bosses Parry; normal enemies do not.** Every enemy has an AC and an attack must meet or beat it; a `normal` then simply takes the hit, which is what keeps a room of six moving — six mobs each rolling a Parry is six more d20 rolls a round. A `special` or a `boss` carries a `parryDC` and Parries exactly as a player does (MECHANICS §1): a flat d20 against it, above takes nothing, on it takes half, below takes half again as much.",
+  "description": "A creature the party fights. DELIBERATELY THREE WEIGHTS, because a fight made only of full stat blocks is a fight nobody finishes: most enemies are an AC, some hit points and two attacks, and that is the whole of them. Kayki: \"some enemies just have attacks, AC and HP, nothing else; some have 1 feature, some have more, and the bosses will have class and features.\"\n\nNOTHING HERE IS ROLLED BY THE APP. The numbers are what a DM reads off a card — this system's app is a tracker, not a referee (RULES.md). The one thing the app does with an enemy is put it on the board with its hit points already filled in.\n\nWHAT AN ENEMY DOES NOT HAVE: levels, ability score improvements, an engine, tricks with cooldowns, or a character sheet. A boss BORROWS a class's identity and a handful of its features, written out here in full — it never resolves against the class data, because a boss is a one-off and a class is a twenty-level ladder.\n\nDEFENCE, AND IT IS DECIDED BY TIER (Kayki, 2026-08-11): **specials and bosses Parry; normal enemies do not.** Every enemy has an AC and an attack must meet or beat it; a `normal` then simply takes the hit, which is what keeps a room of six moving — six mobs each rolling a Parry is six more d20 rolls a round. A `special` or a `boss` carries a `parryDC` and Parries exactly as a player does (MECHANICS §1): a flat d20 against it, above takes nothing, on it takes half, below takes half again as much.\n\nIT HAS THE SIX ABILITIES, AT EVERY TIER (Kayki, 2026-08-11). A player forcing a save on a goblin is the commonest thing that happens in a fight, so it cannot be gated to the upper tiers — and the enemies here force saves on players, which would be one-way otherwise. They are MODIFIERS, not scores: nothing in this system rolls against a raw 14, and every use is the modifier (a save, a check, and Dexterity for initiative). The spread is by tier: a `normal` is below a player, a `special` is nearly one, a `boss` equals or beats one — because it is meant to be above their level.",
   "type": "object",
   "required": [
     "name",
@@ -81,6 +81,71 @@
     "otherSpeeds": {
       "type": "string",
       "description": "Anything besides walking: 'climb 30 ft', 'fly 40 ft (rigging only)'."
+    },
+    "abilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "The six, as MODIFIERS. Everything that is rolled uses the modifier — a saving throw, an ability check, and Dexterity for initiative — so a score would be a number to look at and never use. Anything left out is +0, which is what makes a plain enemy plain.",
+      "properties": {
+        "Strength": {
+          "type": "integer",
+          "minimum": -5,
+          "maximum": 10
+        },
+        "Dexterity": {
+          "type": "integer",
+          "minimum": -5,
+          "maximum": 10
+        },
+        "Constitution": {
+          "type": "integer",
+          "minimum": -5,
+          "maximum": 10
+        },
+        "Intelligence": {
+          "type": "integer",
+          "minimum": -5,
+          "maximum": 10
+        },
+        "Wisdom": {
+          "type": "integer",
+          "minimum": -5,
+          "maximum": 10
+        },
+        "Charisma": {
+          "type": "integer",
+          "minimum": -5,
+          "maximum": 10
+        }
+      }
+    },
+    "saveProf": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "Strength",
+          "Dexterity",
+          "Constitution",
+          "Intelligence",
+          "Wisdom",
+          "Charisma"
+        ]
+      },
+      "description": "The saves it is GOOD at: add the proficiency-shaped bonus below to these. The lever that makes a boss shrug off the one trick the party keeps reaching for."
+    },
+    "prof": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 6,
+      "default": 2,
+      "description": "Added to the saves in `saveProf`. Two unless it is meant to be markedly better at them; this is not a level, it is a size."
+    },
+    "initMod": {
+      "type": "integer",
+      "minimum": -5,
+      "maximum": 20,
+      "description": "What it adds to initiative. OMIT IT and the Dexterity modifier is used, which is right for almost everything — this is for the odd creature that acts out of order."
     },
     "parryDC": {
       "type": "integer",

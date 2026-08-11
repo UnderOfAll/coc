@@ -13,6 +13,18 @@
   "hp": 72,
   "hpDice": "11d8+22",
   "speed": 30,
+  "abilities": {
+    "Strength": 1,
+    "Dexterity": 4,
+    "Constitution": 3,
+    "Intelligence": 2,
+    "Wisdom": 2,
+    "Charisma": 5
+  },
+  "saveProf": [
+    "Dexterity",
+    "Charisma"
+  ],
   "parryDC": 11,
   "senses": "",
   "multiattack": "He throws two Razor Cards on his turn, at the same target or at two different ones.",

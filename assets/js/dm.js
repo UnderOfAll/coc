@@ -35,6 +35,7 @@ function dmBlankEnemy(tier) {
     id: "", custom: true, name: "", flavor: "", tier: tier || "normal", size: "Medium", kind: "",
     partyLevel: "", ac: 12, acNote: "", hp: 10, hpDice: "", speed: 30, otherSpeeds: "",
     image: "", parryDC: null, resist: [], immune: [], vulnerable: [], senses: "",
+    abilities: {}, saveProf: [], prof: 2, initMod: null,
     multiattack: "", attacks: [{ name: "Attack", kind: "melee", toHit: 3, reach: "5 ft", damage: "1d6+1", damageType: "bludgeoning", note: "" }],
     features: [], borrowsClass: "", borrowsSubclass: "", tactics: "", narration: "",
   };
@@ -354,6 +355,7 @@ function renderDmEnemyForm() {
       ${dmChipRow("immune", DM_DAMAGE_TYPES.concat(dmConditionNames()), e.immune)}
     </section>
 
+    ${dmAbilitiesSection(e)}
     ${dmAttacksSection(e)}
     ${isNormal ? "" : dmFeaturesSection(e)}
     ${tier === "boss" ? dmClassSection(e) : ""}
@@ -373,6 +375,34 @@ function renderDmEnemyForm() {
       <p id="en-msg" class="save-msg"></p>
     </section>
   `);
+}
+
+/* THE SIX, AT EVERY TIER. A player forcing a save on a goblin is the commonest thing in a fight, so this
+   is not gated to the upper weights — but everything starts at +0, so a plain enemy is still no typing.
+   Kayki's ladder: a normal sits under a player, a special is nearly one, a boss equals or beats one. */
+function dmAbilitiesSection(e) {
+  const ab = e.abilities || {};
+  const good = new Set(e.saveProf || []);
+  const prof = Number(e.prof ?? 2);
+  return `<section class="panel">
+    <p class="panel-sub">Abilities <span class="muted">— modifiers, not scores</span></p>
+    <div class="ab-grid">${ENEMY_ABILITIES.map((a) => {
+      const m = Number(ab[a] || 0);
+      return `<div class="ab-box ${good.has(a) ? "prof" : ""}">
+        <span class="ab-name">${esc(a.slice(0, 3).toUpperCase())}</span>
+        <input class="num" data-enabil="${esc(a)}" type="number" min="-5" max="10" value="${esc(m)}" />
+        <span class="ab-save">save ${esc(sign(m + (good.has(a) ? prof : 0)))}</span></div>`;
+    }).join("")}</div>
+    <p class="panel-sub">Good at these saves <span class="muted">— adds ${esc(prof)}</span></p>
+    ${dmChipRow("saveprof", ENEMY_ABILITIES, e.saveProf)}
+    <div class="grid-row">
+      ${dmField("en-prof", "That bonus", prof, { num: true, min: 0, max: 6 })}
+      ${dmField("en-init", "Initiative", e.initMod == null ? "" : e.initMod,
+        { num: true, min: -5, max: 20, hint: "blank = its Dexterity" })}
+    </div>
+    <p class="muted">A player's best is about +3 at these levels. Under that for a normal, near it for a
+      special, at or above it for a boss.</p>
+  </section>`;
 }
 
 function dmAttacksSection(e) {
@@ -534,6 +564,14 @@ function dmReadForm() {
     const c = dmVal("en-class"); if (c !== undefined) e.borrowsClass = c;
     const s = dmVal("en-subclass"); if (s !== undefined) e.borrowsSubclass = s;
   }
+  e.prof = Math.max(0, Math.min(6, num("en-prof", e.prof ?? 2)));
+  const init = dmVal("en-init");
+  e.initMod = (init === undefined || init === "") ? null : Math.max(-5, Math.min(20, Number(init) || 0));
+  for (const node of document.querySelectorAll("[data-enabil]")) {
+    const n = asEl(node);
+    e.abilities = e.abilities || {};
+    e.abilities[n.dataset.enabil] = Math.max(-5, Math.min(10, Number(n.value) || 0));
+  }
   for (const node of document.querySelectorAll("[data-atk]")) {
     const n = asEl(node);
     const [field, i] = n.dataset.atk.split("|");
@@ -563,6 +601,13 @@ function dmTidyEnemy(e) {
   if (out.tier === "boss") out.features = out.features.slice(0, DM_MAX_BOSS_FEATURES);
   if (out.tier === "normal") { out.parryDC = null; out.features = []; out.borrowsClass = ""; }
   for (const k of ["resist", "immune", "vulnerable"]) out[k] = (out[k] || []).filter(Boolean);
+  // A +0 is the default, so it is not written down: a plain enemy stores nothing it does not use.
+  const ab = {};
+  for (const a of ENEMY_ABILITIES) if (Number((out.abilities || {})[a])) ab[a] = Number(out.abilities[a]);
+  out.abilities = ab;
+  out.saveProf = (out.saveProf || []).filter((a) => ENEMY_ABILITIES.includes(a));
+  out.prof = Math.max(0, Math.min(6, Number(out.prof ?? 2)));
+  if (out.initMod == null) delete out.initMod;
   if (!out.id) {
     const base = (out.name || "enemy").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "enemy";
     out.id = base + "-" + Math.random().toString(36).slice(2, 6);
@@ -612,6 +657,13 @@ document.addEventListener("click", (ev) => {
   }
   if (act === "close") { dmUi.editing = null; dmUi.draft = null; renderDm(); return; }
   if (act === "tier") { dmReadForm(); dmUi.draft.tier = val; renderDmEnemyForm(); return; }
+  if (act === "saveprof") {
+    dmReadForm();
+    const list = dmUi.draft.saveProf || [];
+    dmUi.draft.saveProf = list.includes(val) ? list.filter((x) => x !== val) : list.concat(val);
+    renderDmEnemyForm();
+    return;
+  }
   if (act === "resist" || act === "immune" || act === "vulnerable") {
     dmReadForm();
     const list = dmUi.draft[act] || [];

@@ -262,7 +262,9 @@ async function tblDropEnemy(id) {
   const made = await CocLive.push(tblPath("tokens"), {
     name: e.name, enemyId: e.id, kind: "npc", shape: tbl.ui.npcShape || "square",
     x: spot.x, y: spot.y, size,
-    hp: e.hp, hpMax: e.hp, speed: Number(e.speed) || 30, initMod: 0,
+    // Its own initiative, so a Rigging Crawler does not roll like a Ticketing Usher. Dexterity unless
+    // the creature says otherwise.
+    hp: e.hp, hpMax: e.hp, speed: Number(e.speed) || 30, initMod: enemyInitMod(e),
     // Stored once and shared, so eight of them are one picture. See tblKeepArt.
     image: await tblKeepArt(e.image || ""),
   });
@@ -295,11 +297,17 @@ function enemyReadHTML(t) {
   const atk = (e.attacks || []).map((a) =>
     `<span class="trk-read"><em>${esc(a.name)}</em> ${esc(sign(a.toHit))}, ${esc(a.damage)}${
       a.damageType ? " " + esc(a.damageType) : ""}</span>`).join("");
+  const ab = e.abilities || {};
+  const good = new Set(e.saveProf || []);
+  const prof = Number(e.prof ?? 2);
+  const saves = ENEMY_ABILITIES.map((a) => `${a.slice(0, 3)} ${sign(Number(ab[a] || 0) + (good.has(a) ? prof : 0))}`).join(" · ");
   return `<p class="trk-reads">
       <span class="trk-read"><em>AC</em> ${esc(e.ac)}</span>
       ${e.parryDC != null ? `<span class="trk-read"><em>Parry DC</em> ${esc(e.parryDC)}</span>` : ""}
+      <span class="trk-read"><em>Init</em> ${esc(sign(enemyInitMod(e)))}</span>
       ${atk}
     </p>
+    <p class="muted">Saves: ${esc(saves)}</p>
     ${e.multiattack ? `<p class="muted">${esc(e.multiattack)}</p>` : ""}
     ${(e.features || []).length
       ? `<p class="muted">${e.features.map((f) => esc(f.name) + (f.uses ? ` (${esc(f.uses)})` : "")).join(" · ")}</p>` : ""}

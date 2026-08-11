@@ -80,12 +80,27 @@ ok(!$('[data-atk="name|1"]'),"and a row can be taken off again");
 click($$('[data-dm="resist"]').find(b=>/piercing/.test(b.textContent)));
 ok(peek(`dmUi.draft.resist.join(",")`)==="piercing","a resistance is a chip you press");
 ok($$('[data-dm="immune"]').some(b=>/Prone/.test(b.textContent)),"and immunities offer the conditions the board can show");
+/* THE SIX, AT EVERY TIER — a player forcing a save on a goblin is the commonest thing in a fight, so it
+   cannot be gated to the upper weights. Modifiers, not scores: nothing here is rolled against a raw 14.
+   Kayki: "yes, normal enemies also have the six stats, just not as high as a player." */
+ok($$('[data-enabil]').length===6,"a normal enemy is asked for all six abilities");
+ok($$('[data-enabil]').every(n=>n.value==="0"),"starting at +0, so a plain one is still no typing");
+type($$('[data-enabil]').find(n=>n.dataset.enabil==="Dexterity"),"2");
+click($$('[data-dm="saveprof"]').find(b=>/Dexterity/.test(b.textContent)));
+ok(/save \+4/.test($("#tool").textContent),"a save it is good at shows the total it actually rolls");
 click($('[data-dm="save-enemy"]'));
 await new Promise(r=>setTimeout(r,60));
 ok(peek(`dm.rec.enemies.length`)===1,"saving keeps it");
 const built=peek(`JSON.parse(JSON.stringify(dm.rec.enemies[0]))`);
 ok(built.name==="Rope Ghoul"&&built.ac===14&&built.hp===11,"with what was typed ("+built.name+", AC "+built.ac+", "+built.hp+" hp)");
 ok(built.parryDC===null&&built.features.length===0,"and a normal enemy carries no Parry and no features");
+ok(built.abilities.Dexterity===2&&built.abilities.Strength===undefined,
+  "the six are stored as modifiers, and a +0 is not written down at all");
+ok(built.saveProf.join(",")==="Dexterity","with the saves it is good at");
+/* INITIATIVE IS ITS DEXTERITY unless it says otherwise — a Rigging Crawler should not roll like an
+   Usher, and every enemy dropped on the board used to roll a flat d20. */
+ok(peek(`enemyInitMod(${JSON.stringify(built)})`)===2,"and initiative comes off Dexterity by default");
+ok(peek(`enemyInitMod({ abilities: { Dexterity: 4 }, initMod: -1 })`)===-1,"unless it is overridden");
 ok(/-/.test(built.id),"under an id of its own: "+built.id);
 
 // A special adds the Parry and features; a boss adds a class and caps the features at five.

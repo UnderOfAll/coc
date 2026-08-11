@@ -12,6 +12,9 @@
   "hp": 11,
   "hpDice": "2d8+2",
   "speed": 30,
+  "abilities": {
+    "Constitution": 1
+  },
   "attacks": [
     {
       "name": "Ticket Punch",

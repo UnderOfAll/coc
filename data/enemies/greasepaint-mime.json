@@ -12,6 +12,12 @@
   "hp": 13,
   "hpDice": "3d8",
   "speed": 30,
+  "abilities": {
+    "Dexterity": 2,
+    "Intelligence": 1,
+    "Wisdom": 1,
+    "Charisma": 2
+  },
   "attacks": [
     {
       "name": "Silent Slam",

@@ -1404,6 +1404,28 @@ function enemyAttackRow(a) {
   </tr>`;
 }
 
+/* THE SIX, AS ONE ROW. A player forcing a save on a goblin is the commonest thing in a fight, so every
+   tier carries them — and they are modifiers, because nothing here is rolled against a raw 14. A save the
+   creature is GOOD at shows the total it actually rolls, so the DM adds nothing up mid-fight. */
+const ENEMY_ABILITIES = ["Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma"];
+function enemyAbilityHTML(e) {
+  const ab = e.abilities || {};
+  const prof = Number(e.prof ?? 2);
+  const good = new Set(e.saveProf || []);
+  return `<div class="ab-grid">${ENEMY_ABILITIES.map((a) => {
+    const m = Number(ab[a] || 0);
+    const save = m + (good.has(a) ? prof : 0);
+    return `<div class="ab-box ${good.has(a) ? "prof" : ""}">
+      <span class="ab-name">${esc(a.slice(0, 3).toUpperCase())}</span>
+      <span class="ab-mod">${esc(sign(m))}</span>
+      <span class="ab-save">save ${esc(sign(save))}</span></div>`;
+  }).join("")}</div>`;
+}
+
+function enemyInitMod(e) {
+  return Number(e && e.initMod != null ? e.initMod : ((e && e.abilities) || {}).Dexterity || 0);
+}
+
 function renderEnemy(e) {
   const list = (arr) => (Array.isArray(arr) && arr.length) ? arr.join(", ") : "";
   return head(e.name, e.flavor) +
@@ -1415,6 +1437,7 @@ function renderEnemy(e) {
       ${stat("Size", e.size || "Medium")}
       ${e.partyLevel ? stat("Written for", (/[-–]/.test(e.partyLevel) ? "levels " : "level ") + e.partyLevel) : ""}
       ${e.parryDC != null ? stat("Parry DC", e.parryDC) : ""}
+      ${stat("Initiative", sign(enemyInitMod(e)))}
     </div>
     <div class="detail-body">
       ${e.acNote ? `<p class="muted">Its armour class is ${esc(e.acNote)}.</p>` : ""}
@@ -1430,6 +1453,12 @@ function renderEnemy(e) {
       ${list(e.resist) ? `<p><strong>Takes half from</strong> ${esc(list(e.resist))}.</p>` : ""}
       ${list(e.immune) ? `<p><strong>Ignores</strong> ${esc(list(e.immune))}.</p>` : ""}
       ${list(e.vulnerable) ? `<p><strong>Takes double from</strong> ${esc(list(e.vulnerable))}.</p>` : ""}
+      <h2>Abilities</h2>
+      ${enemyAbilityHTML(e)}
+      <p class="muted">The modifier is what it adds to a check; the save is what it rolls when one of you
+        forces it${(e.saveProf || []).length
+          ? `, and a gold box is one it is <strong>good</strong> at`
+          : ""}. Initiative is its Dexterity unless it says otherwise.</p>
       <h2>Attacks</h2>
       ${e.multiattack ? `<p>${esc(e.multiattack)}</p>` : ""}
       <table class="data-table attack-table">

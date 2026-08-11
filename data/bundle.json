@@ -6134,6 +6134,11 @@
       "hp": 10,
       "hpDice": "3d8-3",
       "speed": 30,
+      "abilities": {
+        "Dexterity": 2,
+        "Wisdom": 1,
+        "Charisma": 1
+      },
       "attacks": [
         {
           "name": "Lit Club",
@@ -6172,6 +6177,12 @@
       "hp": 13,
       "hpDice": "3d8",
       "speed": 30,
+      "abilities": {
+        "Dexterity": 2,
+        "Intelligence": 1,
+        "Wisdom": 1,
+        "Charisma": 2
+      },
       "attacks": [
         {
           "name": "Silent Slam",
@@ -6208,6 +6219,18 @@
       "hp": 72,
       "hpDice": "11d8+22",
       "speed": 30,
+      "abilities": {
+        "Strength": 1,
+        "Dexterity": 4,
+        "Constitution": 3,
+        "Intelligence": 2,
+        "Wisdom": 2,
+        "Charisma": 5
+      },
+      "saveProf": [
+        "Dexterity",
+        "Charisma"
+      ],
       "parryDC": 11,
       "senses": "",
       "multiattack": "He throws two Razor Cards on his turn, at the same target or at two different ones.",
@@ -6284,6 +6307,13 @@
       "hpDice": "2d6",
       "speed": 20,
       "otherSpeeds": "climb 30 ft",
+      "abilities": {
+        "Strength": -1,
+        "Dexterity": 3,
+        "Intelligence": -4,
+        "Wisdom": 1,
+        "Charisma": -3
+      },
       "attacks": [
         {
           "name": "Hooked Bite",
@@ -6320,6 +6350,14 @@
       "hp": 9,
       "hpDice": "2d8",
       "speed": 40,
+      "abilities": {
+        "Strength": 1,
+        "Dexterity": 2,
+        "Constitution": 1,
+        "Intelligence": -4,
+        "Wisdom": 1,
+        "Charisma": -2
+      },
       "attacks": [
         {
           "name": "Bite",
@@ -6355,6 +6393,17 @@
       "hp": 30,
       "hpDice": "5d8+8",
       "speed": 30,
+      "abilities": {
+        "Strength": 1,
+        "Dexterity": 4,
+        "Constitution": 2,
+        "Intelligence": 1,
+        "Wisdom": 3
+      },
+      "saveProf": [
+        "Dexterity",
+        "Wisdom"
+      ],
       "parryDC": 10,
       "senses": "blindsight 30 ft",
       "multiattack": "It throws two knives on its turn, at the same target or at two different ones.",
@@ -6398,6 +6447,18 @@
       "hp": 33,
       "hpDice": "6d8+6",
       "speed": 30,
+      "abilities": {
+        "Strength": 1,
+        "Dexterity": 1,
+        "Constitution": 2,
+        "Intelligence": 2,
+        "Wisdom": 3,
+        "Charisma": 3
+      },
+      "saveProf": [
+        "Wisdom",
+        "Charisma"
+      ],
       "parryDC": 13,
       "senses": "hears everything within 60 ft, even through canvas",
       "attacks": [
@@ -6443,6 +6504,16 @@
       "hp": 27,
       "hpDice": "6d10-6",
       "speed": 20,
+      "abilities": {
+        "Strength": 1,
+        "Dexterity": 1,
+        "Constitution": 2,
+        "Intelligence": -4,
+        "Charisma": -2
+      },
+      "saveProf": [
+        "Constitution"
+      ],
       "parryDC": 15,
       "attacks": [
         {
@@ -6495,6 +6566,9 @@
       "hp": 11,
       "hpDice": "2d8+2",
       "speed": 30,
+      "abilities": {
+        "Constitution": 1
+      },
       "attacks": [
         {
           "name": "Ticket Punch",

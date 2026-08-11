@@ -2118,6 +2118,9 @@ click($('[data-tbl="bestiary"][data-val="rope-ghoul-ab12"]'));
 await until(() => Object.values(peek(`JSON.parse(JSON.stringify(tblTokens()))`)).some((t) => t.enemyId === "rope-ghoul-ab12"));
 const builtTok = Object.entries(peek(`JSON.parse(JSON.stringify(tblTokens()))`)).find(([, t]) => t.enemyId === "rope-ghoul-ab12");
 ok(builtTok[1].hp === 11, "dropping one uses its own hit points");
+/* AND ITS OWN INITIATIVE. Every enemy dropped on the board used to carry initMod 0 and roll a flat d20,
+   so a Rigging Crawler rolled exactly like a Ticketing Usher. It is the creature's Dexterity now. */
+ok(builtTok[1].initMod === 0, "a built enemy with no Dexterity rolls flat");
 ok(/Claw/.test(peek(`enemyReadHTML(${JSON.stringify(builtTok[1])})`)), "and its card reads off what was built");
 await peek(`CocLive.del("tables/482910/tokens/" + ${JSON.stringify(builtTok[0])})`);
 peek(`localStorage.removeItem("coc:dm:enemies:777001"); localStorage.removeItem("coc:dm:last"); paintSide();`);
@@ -2130,6 +2133,13 @@ const dropped = Object.values(peek(`JSON.parse(JSON.stringify(tblTokens()))`)).f
 ok(!!dropped, "pressing it puts one on the board");
 ok(dropped.hp === 9 && dropped.hpMax === 9 && dropped.speed === 40,
   `with its own hit points and speed already right (${dropped.hp}/${dropped.hpMax}, ${dropped.speed} ft)`);
+/* AND ITS OWN INITIATIVE, off its Dexterity. Every enemy used to be dropped with initMod 0, so a Rigging
+   Crawler rolled exactly like a Ticketing Usher — and nothing in the data said what a creature's
+   Dexterity even was. Kayki found both: "they have initiative? and what about the stats to roll in checks
+   and saving throws?" */
+ok(dropped.initMod === 2, `and its initiative off its own Dexterity (${dropped.initMod})`);
+ok(/Saves: Str/.test(peek(`enemyReadHTML(${JSON.stringify(dropped)})`)),
+  "and its card carries the saves a player will force it to make");
 /* THE STAT BLOCK IS NOT COPIED INTO THE DATABASE. The figure stores WHICH creature it is and reads the
    rest back out of the data, so fixing an enemy reaches every figure of it at once. */
 ok(dropped.ac === undefined && dropped.attacks === undefined,
