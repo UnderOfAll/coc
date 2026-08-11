@@ -2139,6 +2139,17 @@ peek(`paintSide();`);
 ok(peek(`tblEnemies().some(e => e.name === "Rope Ghoul")`), "a built enemy joins the bestiary");
 ok(!peek(`tblEnemies().some(e => e.name === "Sawdust Hound")`),
   "and on a code the authored nine are not on, it is the ONLY thing there");
+/* AND WHAT ANOTHER DM HAS LENT THIS CODE, in a group of its own — it is theirs, it can be taken back, and
+   a DM should be able to see at a glance which half of the cast travels with their own code. */
+peek(`localStorage.setItem("coc:dm:shared:777001", JSON.stringify([{ id: "sawdust-hound",
+  name: "Sawdust Hound", tier: "normal", ac: 13, hp: 9, speed: 40, size: "Medium", sharedFrom: "130820",
+  attacks: [{ name: "Bite", kind: "melee", toHit: 4, reach: "5 ft", damage: "1d6+2", damageType: "piercing" }],
+  features: [] }])); paintSide();`);
+ok(peek(`tblEnemies().some(e => e.name === "Sawdust Hound")`), "one lent to this code reaches the bestiary");
+ok(/Lent to you/.test($("#tool").textContent), "under a heading that says whose it is");
+ok(!!$('[data-tbl="bestiary"][data-val="sawdust-hound"]'), "and drops on the board like any other");
+peek(`localStorage.removeItem("coc:dm:shared:777001"); paintSide();`);
+ok(!peek(`tblEnemies().some(e => e.name === "Sawdust Hound")`), "and taking the loan back takes it away");
 ok(!!$('[data-tbl="bestiary"][data-val="rope-ghoul-ab12"]'), "and is one press away like the rest");
 click($('[data-tbl="bestiary"][data-val="rope-ghoul-ab12"]'));
 await until(() => Object.values(peek(`JSON.parse(JSON.stringify(tblTokens()))`)).some((t) => t.enemyId === "rope-ghoul-ab12"));

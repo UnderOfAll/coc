@@ -207,7 +207,8 @@ ok(peek(`dmCachedEnemies().some(e => e.name === "Rope Ghoul")`),"holding what wa
    that I have or created, for spoiler reasons… they will need to create their own enemies." */
 ok($$('[data-dm="clone"]').length===0,"a code the bestiary is not on has nothing of the system's to take");
 ok(/not<\/strong> on this code/.test($("#tool").innerHTML),"and the pane says so rather than staying silent");
-ok(/Another DM never sees yours/.test($("#tool").textContent),"and says an enemy belongs to the code that built it");
+ok(/no other DM sees these unless you lend/.test($("#tool").textContent),
+  "and says an enemy belongs to the code that built it, unless it is lent");
 /* AND ON THE CODE IT DOES BELONG TO, an authored creature can be TAKEN. Kayki: "the creatures the DM
    creates can at any time be cloned or edited by himself — that applies to those prefab creatures too."
    The file in data/enemies/ is never written to: the copy is yours, under an id of its own. */
@@ -232,9 +233,70 @@ await new Promise(r=>setTimeout(r,60));
 ok(peek(`dm.rec.enemies[0].name`)==="Rope Hound","changing the copy is ordinary editing");
 ok(peek(`store.enemies.find(e => e.id === "sawdust-hound").name`)==="Sawdust Hound",
   "and the authored one it was taken from is untouched");
+
+/* LENDING, WHICH IS THE ONLY WAY ONE DM'S CREATURE REACHES ANOTHER. Kayki asked for it in the app rather
+   than in a line of code I have to republish: their code, the creatures you pick, and Stop whenever you
+   like. PUSHED, never pulled — what is lent is written onto THEIR record, so they never learn the
+   lender's code, which here is the whole credential (storage-security-model). */
+click($$('[data-dm="tab"]').find(b=>b.dataset.val==="sharing"));
+ok(!!$("#dm-share"),"the screen has a Sharing tab that asks for a DM code");
+type($("#dm-share"),"12"); click($('[data-dm="share-add"]'));
+await new Promise(r=>setTimeout(r,80));
+ok(/Six digits/.test($("#dm-share-msg").textContent),"a short code is refused");
+type($("#dm-share"),"999888"); click($('[data-dm="share-add"]'));
+await new Promise(r=>setTimeout(r,150));
+/* REFUSED WHEN NOBODY IS THERE. Writing onto a code that has never been opened would CREATE that record —
+   the ghost-table bug in another costume — and a mistyped digit would lend the bestiary to a stranger. */
+ok(/No DM screen answers/.test($("#dm-share-msg").textContent),"and so is a code no DM screen answers on");
+ok(peek(`Object.keys(window.__dms).includes("999888")`)===false,"which never creates that record");
+type($("#dm-share"),"777001"); click($('[data-dm="share-add"]'));
+await new Promise(r=>setTimeout(r,250));
+ok(Object.keys(peek(`JSON.parse(JSON.stringify(dm.rec.sharesTo))`)).join()==="777001","a real DM code goes on the list");
+ok(peek(`(window.__dms["777001"].shared || {})[COC_BESTIARY_CODES[0]] != null`),
+  "and the arrangement is written onto THEIR record, not read out of yours");
+ok(peek(`window.__dms["777001"].shared[COC_BESTIARY_CODES[0]].enemies.length`)===0,"with nothing lent yet");
+ok(peek(`window.__dms["777001"].enemies.length`)===2,"and their own enemies untouched by the write");
+/* AND THE CREATURES ARE PICKED ONE BY ONE — including the authored ones, since "let you run my monsters"
+   is exactly what a friend asks for. */
+click($('[data-dm="share-pick"][data-val="777001|sawdust-hound"]'));
+await new Promise(r=>setTimeout(r,250));
+const lent=peek(`JSON.parse(JSON.stringify(window.__dms["777001"].shared[COC_BESTIARY_CODES[0]].enemies))`);
+ok(lent.length===1&&lent[0].name==="Sawdust Hound","pressing one lends it, whole, not as an id they cannot resolve");
+ok(lent[0].features.length===1,"with everything on its card");
+click($('[data-dm="share-all"][data-val="777001"]'));
+await new Promise(r=>setTimeout(r,250));
+ok(peek(`window.__dms["777001"].shared[COC_BESTIARY_CODES[0]].enemies.length`)>=10,
+  "Lend everything lends the built one and the authored nine");
+/* THE BORROWER'S SIDE: it shows up on their screen, it reaches their table, and Keep a copy makes it
+   theirs for good — after which taking the loan back cannot reach it. */
+await go("#/dm/777001");
+await new Promise(r=>setTimeout(r,120));
+click($$('[data-dm="tab"]').find(b=>b.dataset.val==="sharing"));
+ok(/From code/.test($("#tool").textContent),"the borrower's screen names who lent to them");
+ok(peek(`dmCachedShared().length`)>=10,"and this device keeps a copy for the board to read");
+ok(peek(`dmCachedShared().every(e => e.sharedFrom === COC_BESTIARY_CODES[0])`),"marked as theirs, not yours");
+ok(peek(`dmCachedEnemies().length`)===2,"without ever mixing into what this code built");
+click($('[data-dm="share-keep"][data-val="'+peek(`COC_BESTIARY_CODES[0]`)+'|sawdust-hound"]'));
+await new Promise(r=>setTimeout(r,120));
+ok(peek(`dm.rec.enemies.length`)===3,"Keep a copy makes it their own");
+ok(peek(`dm.rec.enemies[2].id`)!=="sawdust-hound","under an id of its own: "+peek(`dm.rec.enemies[2].id`));
+ok(peek(`dm.rec.enemies[2].sharedFrom`)===undefined,"with the lender's mark taken off it");
+/* AND STOP MEANS STOP — deleted off their record rather than emptied on the lender's, or their browser
+   would go on showing the last thing it cached. */
+await go("#/dm/"+peek(`COC_BESTIARY_CODES[0]`));
+await new Promise(r=>setTimeout(r,120));
+click($$('[data-dm="tab"]').find(b=>b.dataset.val==="sharing"));
+click($('[data-dm="share-stop"][data-val="777001"]'));
+await new Promise(r=>setTimeout(r,250));
+ok(peek(`Object.keys(dm.rec.sharesTo).length`)===0,"Stop takes them off your list");
+ok(peek(`(window.__dms["777001"].shared || {})[COC_BESTIARY_CODES[0]] === undefined`),
+  "and off their record, so the loan is genuinely gone");
+ok(peek(`window.__dms["777001"].enemies.length`)===3,"while the copy they kept stays theirs");
+
+click($$('[data-dm="tab"]').find(b=>b.dataset.val==="enemies"));
 click($$('[data-dm="drop"]')[0]);
 await new Promise(r=>setTimeout(r,60));
-ok(peek(`dm.rec.enemies.length`)===0,"and it can be thrown away like anything else built");
+ok(peek(`dm.rec.enemies.length`)===0,"and a built enemy can be thrown away like anything else");
 await go("#/dm/777001");
 await new Promise(r=>setTimeout(r,80));
 

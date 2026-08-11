@@ -262,8 +262,14 @@ function tblShippedEnemies() {
   if (typeof dmHasBestiary !== "function" || !dmHasBestiary()) return [];
   return (typeof store !== "undefined" && Array.isArray(store.enemies)) ? store.enemies : [];
 }
+/* And what another DM has LENT this code, off the same kind of local copy. Deduped against your own, so a
+   creature you have already kept a copy of is not offered twice. */
+function tblLentEnemies() {
+  const mine = new Set(tblBuiltEnemies().map((e) => e.id));
+  return ((typeof dmCachedShared === "function") ? dmCachedShared() : []).filter((e) => !mine.has(e.id));
+}
 function tblEnemies() {
-  return tblBuiltEnemies().concat(tblShippedEnemies());
+  return tblBuiltEnemies().concat(tblLentEnemies(), tblShippedEnemies());
 }
 function tblEnemy(id) {
   return tblEnemies().find((e) => (e.id || "") === id) || null;
@@ -272,7 +278,7 @@ function tblEnemy(id) {
 /* YOURS FIRST, THE SYSTEM'S UNDER IT — separately, because they are separately OWNED and a DM should be
    able to see at a glance which half of the board's cast travels with their code. */
 function bestiaryHTML() {
-  const built = tblBuiltEnemies(), shipped = tblShippedEnemies();
+  const built = tblBuiltEnemies(), shipped = tblShippedEnemies(), lent = tblLentEnemies();
   const code = (typeof dmCode === "function") ? dmCode() : "";
   const tiers = [["normal", "Normal"], ["special", "Special"], ["boss", "Bosses"]];
   const group = (list, whose) => tiers.map(([tier, label]) => {
@@ -285,19 +291,19 @@ function bestiaryHTML() {
          <button class="chip" data-tbl="enemy-card" data-val="${esc(e.id)}"
            title="Read ${esc(e.name)}'s card">?</button>`).join("")}</div>`;
   }).join("");
-  const foot = built.length && shipped.length
-    ? `${esc(built.length)} of these you built yourself. Both halves live on DM code
-       ${esc(code)}, not in this room.`
-    : built.length ? `Built on DM code ${esc(code)}, so they are here at every table you run.`
-    : shipped.length ? `The system's own, on DM code ${esc(code)}. Build your own on
-        <a href="#/dm">the DM's screen</a> and they appear beside them.`
-    : code ? `Nothing on DM code ${esc(code)} yet — <a href="#/dm/${esc(code)}">build one</a> and it is
-        here at every table you run. The system's authored creatures belong to the code that owns them.`
-    : `No DM code open on this device, so there is no bestiary here.
-        <a href="#/dm">Open or start one</a> — the enemies you build live on it, and follow you between
-        devices and past this room being closed.`;
+  const any = built.length + shipped.length + lent.length;
+  const foot = !code
+    ? `No DM code open on this device, so there is no bestiary here.
+       <a href="#/dm">Open or start one</a> — the enemies you build live on it, and follow you between
+       devices and past this room being closed.`
+    : !any ? `Nothing on DM code ${esc(code)} yet — <a href="#/dm/${esc(code)}">build one</a> and it is
+        here at every table you run. The authored creatures, and anything another DM lends you, belong to
+        the code they were given to.`
+    : `Everything here is on DM code ${esc(code)}, not in this room${lent.length
+        ? `. The lent ones are another DM's and can be taken back — <a href="#/dm/${esc(code)}">keep a
+           copy</a> if you want one for good` : ""}.`;
   return `<p class="panel-sub">From the bestiary</p>
-    ${group(built, "Yours")}${group(shipped, "The system's")}
+    ${group(built, "Yours")}${group(lent, "Lent to you")}${group(shipped, "The system's")}
     <p class="muted">${foot}</p>`;
 }
 

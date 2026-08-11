@@ -43,10 +43,17 @@ function dmHasBestiary(code) {
 }
 
 let dm = null;                          // { code, rec } while a DM record is open
-const dmUi = { tab: "enemies", editing: null, draft: null, msg: "", pick: "", pickFrom: "" };
+const dmUi = { tab: "enemies", editing: null, draft: null, msg: "", pick: "", pickFrom: "", shareOpen: "" };
 
+/* TWO SIDES OF ONE ARRANGEMENT, and they are stored on DIFFERENT records on purpose.
+ *   rec.sharesTo — codes I have lent creatures to, and which ones. Mine, so I can change or revoke it.
+ *   rec.shared   — what other DMs have lent ME, keyed by their code. Written INTO my record by them.
+ * The alternative — keeping the lent creatures on the LENDER's record and letting the borrower read it —
+ * would mean handing the borrower the lender's code, and a code is the whole credential here
+ * (storage-security-model): they would then have every enemy, note and table on it. So a share is
+ * PUSHED, never pulled, and nobody ever learns a code they were not already given. */
 function dmBlank() {
-  return { v: 1, name: "", tables: [], notes: [], enemies: [] };
+  return { v: 1, name: "", tables: [], notes: [], enemies: [], sharesTo: {}, shared: {} };
 }
 
 /* A built enemy starts as the plainest thing that is still a creature: the tier decides what the form
@@ -95,17 +102,31 @@ function dmForget(code) {
 function dmCode() { return localStorage.getItem(DM_LAST) || ""; }
 
 let dmSaveTimer = null;
-function dmPersist() {
+let dmPendingSave = null;               // { code, rec } waiting out the debounce
+/* THE PENDING WRITE MUST SURVIVE LEAVING THE RECORD. There is one timer, and opening a second DM code
+   within the 400ms — which lending does constantly, hopping between your screen and theirs — used to
+   `clearTimeout` the first record's save and lose the edit silently. Anything still owed is written
+   BEFORE the next record is touched. */
+async function dmFlushSave() {
+  if (!dmPendingSave) return;
+  const { code, rec } = dmPendingSave;
+  dmPendingSave = null;
   clearTimeout(dmSaveTimer);
+  try {
+    await CocDm.save(code, rec);
+    dmCacheEnemies(code, rec.enemies || []);
+    dmCacheShared(code, rec.shared || {});
+  } catch (err) { dmSetMsg("not saved — " + dmWhy(err), true); }
+}
+function dmPersist() {
   if (!dm) return;
-  const code = dm.code, rec = dm.rec;
+  if (dmPendingSave && dmPendingSave.code !== dm.code) dmFlushSave();
+  clearTimeout(dmSaveTimer);
+  dmPendingSave = { code: dm.code, rec: dm.rec };
   dmSetMsg("saving…");
   dmSaveTimer = setTimeout(async () => {
-    try {
-      await CocDm.save(code, rec);
-      dmCacheEnemies(code, rec.enemies || []);
-      dmSetMsg("saved");
-    } catch (err) { dmSetMsg("not saved — " + dmWhy(err), true); }
+    await dmFlushSave();
+    dmSetMsg(dmUi.msg === "saving…" ? "saved" : dmUi.msg);
   }, 400);
 }
 /* A 401 HERE MEANS ONE THING, so it should say it. The `dms` branch is newer than most databases this
@@ -135,11 +156,25 @@ function dmCachedEnemies() {
   if (!code) return [];
   try { return JSON.parse(localStorage.getItem("coc:dm:enemies:" + code) || "[]"); } catch { return []; }
 }
+/* The same copy, for what other DMs have lent this code. Kept apart from the built ones so the table can
+   say which is which, and so revoking a share can never take one of your own with it. */
+function dmCacheShared(code, byCode) {
+  const flat = [];
+  for (const [from, entry] of Object.entries(byCode || {}))
+    for (const e of ((entry || {}).enemies || [])) flat.push(Object.assign({}, e, { sharedFrom: from }));
+  try { localStorage.setItem("coc:dm:shared:" + code, JSON.stringify(flat)); } catch { /* full */ }
+}
+function dmCachedShared() {
+  const code = dmCode();
+  if (!code) return [];
+  try { return JSON.parse(localStorage.getItem("coc:dm:shared:" + code) || "[]"); } catch { return []; }
+}
 
 /* ---------------------------------------------------------------- routes */
 
 async function routeDm(arg) {
   const code = String(arg || "").replace(/\D/g, "").slice(0, 6);
+  await dmFlushSave();          // whatever the last record still owed, before opening another
   if (!CocDm.validCode(code)) { dm = null; renderDmDoor(); return; }
   paint(`<div class="tool-head"><h1>Opening…</h1></div>`);
   let rec = null;
@@ -152,7 +187,8 @@ async function routeDm(arg) {
   dm = { code, rec: Object.assign(dmBlank(), rec) };
   dmRemember(code, dm.rec.name);
   dmCacheEnemies(code, dm.rec.enemies || []);
-  dmUi.editing = null;
+  dmCacheShared(code, dm.rec.shared || {});
+  dmUi.editing = null; dmUi.shareOpen = "";
   renderDm();
 }
 
@@ -203,6 +239,7 @@ function renderDm() {
   if (dmUi.editing) { renderDmEnemyForm(); return; }
   const rec = dm.rec;
   const tabs = [["enemies", "Enemies", (rec.enemies || []).length],
+                ["sharing", "Sharing", Object.keys(rec.sharesTo || {}).length + Object.keys(rec.shared || {}).length],
                 ["tables", "Tables", (rec.tables || []).length],
                 ["notes", "Notes", (rec.notes || []).length]];
   paint(`
@@ -226,6 +263,7 @@ function renderDm() {
         role="tab" aria-selected="${dmUi.tab === id}">${esc(label)}${n ? ` <span class="tab-n">${esc(n)}</span>` : ""}</button>`).join("")}</div>
     <div class="panes">${
       dmUi.tab === "enemies" ? dmEnemiesPane()
+      : dmUi.tab === "sharing" ? dmSharingPane()
       : dmUi.tab === "tables" ? dmTablesPane()
       : dmNotesPane()}</div>
   `);
@@ -271,8 +309,9 @@ function dmEnemiesPane() {
         : `<p class="muted">The system's authored creatures are <strong>not</strong> on this code: they are
           one campaign's, and a stat block read early is a fight spoiled. Build your own here — the form
           gives you everything an authored one has.</p>`}
-      <p class="muted">Enemies live on the code that built them. Another DM never sees yours, and you never
-        see theirs — if you want one of theirs, they read you the numbers and you build it here.</p>
+      <p class="muted">Enemies live on the code that built them: no other DM sees these unless you lend
+        them, which is what <strong>Sharing</strong> is for — their code, the creatures you pick, and Stop
+        whenever you like.</p>
     </section>
     ${dmShippedPane()}`;
 }
@@ -300,6 +339,92 @@ function dmShippedPane() {
     <p class="muted">A copy is yours to change; the original is untouched and still in the bestiary at
       every table you run.</p>
   </section>`;
+}
+
+/* ---------------------------------------------------------------- sharing */
+
+/* EVERYTHING THIS CODE COULD LEND: what it built, and — for a code the authored bestiary is on — the
+   system's nine as well, since lending one of those is exactly what "I'll let you run my monsters" means.
+   Deduped by id, because a code can hold a copy of an authored one under an id of its own. */
+function dmLendable() {
+  const mine = (dm.rec.enemies || []).map((e) => Object.assign({}, e, { own: true }));
+  const shipped = (dmHasBestiary(dm.code) && typeof store !== "undefined" && Array.isArray(store.enemies))
+    ? store.enemies.map((e) => Object.assign({}, e, { own: false })) : [];
+  return mine.concat(shipped);
+}
+function dmShareIds(code) {
+  const entry = (dm.rec.sharesTo || {})[code];
+  return (entry && Array.isArray(entry.ids)) ? entry.ids : [];
+}
+/* Ids to creatures, at the moment of writing. The share stores the CREATURES rather than their ids
+   because the other DM cannot look up what they have never been given — an id means nothing on a record
+   that does not hold the thing. Editing a lent creature re-pushes it, so their copy keeps up. */
+function dmResolveShare(ids) {
+  const all = dmLendable();
+  return ids.map((id) => all.find((e) => e.id === id)).filter(Boolean)
+    .map((e) => { const c = JSON.parse(JSON.stringify(e)); delete c.own; return c; });
+}
+
+function dmSharingPane() {
+  const to = dm.rec.sharesTo || {};
+  const from = dm.rec.shared || {};
+  const lendable = dmLendable();
+  const rows = Object.entries(to).map(([code, entry]) => {
+    const ids = (entry.ids || []).filter((id) => lendable.some((e) => e.id === id));
+    const open = dmUi.shareOpen === code;
+    return `<div class="scene-row">
+        <span class="scene-static"><strong>code ${esc(code)}</strong>
+          <span class="muted">${esc(entry.name || "a DM")} · ${esc(ids.length)} creature${ids.length === 1 ? "" : "s"}</span></span>
+        <button class="btn-quiet" data-dm="share-open" data-val="${esc(code)}">${open ? "Done" : "Choose"}</button>
+        <button class="btn-quiet" data-dm="share-stop" data-val="${esc(code)}">Stop</button>
+      </div>
+      ${open ? `<div class="figure-open">
+        <p class="muted">Press a creature to lend it or take it back. They see it at once — well, the next
+          time they open their screen or a table.</p>
+        ${/* Above the creatures, not below: at the end of the row they read as two more creatures. */""}
+        <div class="hp-controls">
+          <button class="btn-quiet" data-dm="share-all" data-val="${esc(code)}">Lend everything</button>
+          <button class="btn-quiet" data-dm="share-none" data-val="${esc(code)}">Take it all back</button>
+        </div>
+        <div class="chips">${lendable.map((e) => `<button class="chip ${ids.includes(e.id) ? "on" : ""}"
+          data-dm="share-pick" data-val="${esc(code)}|${esc(e.id)}">${esc(e.name)}${
+            e.own ? "" : ` <span class="muted">system</span>`}</button>`).join("")}</div>
+      </div>` : ""}`;
+  }).join("");
+  const mine = Object.entries(from).map(([code, entry]) => {
+    const list = (entry || {}).enemies || [];
+    return `<p class="panel-sub">From code ${esc(code)} <span class="muted">— ${esc((entry || {}).name || "a DM")}</span></p>
+      ${list.length ? `<div class="scene-list">${list.map((e) => `<div class="scene-row">
+        <span class="scene-static"><strong>${esc(e.name || "Unnamed")}</strong>
+          <span class="muted">${esc(cap(e.tier || "normal"))} · AC ${esc(e.ac)} · ${esc(e.hp)} hp</span></span>
+        <button class="btn-quiet" data-dm="share-keep" data-val="${esc(code)}|${esc(e.id)}">Keep a copy</button>
+      </div>`).join("")}</div>`
+        : `<p class="muted">Nothing right now — they have taken it all back.</p>`}`;
+  }).join("");
+  return `<section class="panel">
+      ${/* PUSHED, NOT PULLED. To lend somebody a creature you need their code, which is the thing they had
+            to give you; they never need yours, so nothing of yours is reachable from their end. */""}
+      <p class="panel-sub">Lend to a DM code</p>
+      <div class="save-row">
+        <input id="dm-share" class="code-input" inputmode="numeric" maxlength="6" placeholder="000000" />
+        <button class="btn" data-dm="share-add">Add them</button>
+      </div>
+      <p id="dm-share-msg" class="save-msg"></p>
+      <p class="muted">You need <strong>their</strong> six-digit DM code. They never need yours — what you
+        lend is written onto their screen, so nothing else of yours is reachable from their end.</p>
+    </section>
+    <section class="panel">
+      <p class="panel-sub">You lend to</p>
+      ${rows ? `<div class="scene-list">${rows}</div>`
+        : `<p class="muted">Nobody yet. A creature you lend stays yours: edit it and their copy follows,
+           press Stop and it is gone from their bestiary.</p>`}
+    </section>
+    <section class="panel">
+      <p class="panel-sub">Lent to you</p>
+      ${mine || `<p class="muted">Nothing. A creature another DM lends you appears here and in the bestiary
+        at every table you run, marked as theirs. <strong>Keep a copy</strong> makes it yours for good —
+        after that, taking it back does not reach it.</p>`}
+    </section>`;
 }
 
 function dmTablesPane() {
@@ -796,9 +921,56 @@ document.addEventListener("click", (ev) => {
   if (act === "drop") {
     dm.rec.enemies = (dm.rec.enemies || []).filter((e) => e.id !== val);
     dmPersist(); renderDm();
+    // Deleted here means gone from anybody it was lent to: dmResolveShare finds nothing to send.
+    dmPushSharesWith(val);
     return;
   }
   if (act === "close") { dmUi.editing = null; dmUi.draft = null; renderDm(); return; }
+  if (act === "share-add") { dmAddShareCode(); return; }
+  if (act === "share-open") { dmUi.shareOpen = dmUi.shareOpen === val ? "" : val; renderDm(); return; }
+  if (act === "share-pick" || act === "share-all" || act === "share-none") {
+    const code = act === "share-pick" ? val.split("|")[0] : val;
+    const entry = (dm.rec.sharesTo || {})[code];
+    if (!entry) return;
+    if (act === "share-all") entry.ids = dmLendable().map((e) => e.id);
+    else if (act === "share-none") entry.ids = [];
+    else {
+      const id = val.split("|")[1];
+      const ids = entry.ids || [];
+      entry.ids = ids.includes(id) ? ids.filter((x) => x !== id) : ids.concat(id);
+    }
+    dmPersist();
+    renderDm();
+    dmPushShare(code).catch((err) => dmSetMsg("lending failed — " + dmWhy(err), true));
+    return;
+  }
+  /* STOP means STOP: the entry is deleted off their record, not merely emptied on mine, or their browser
+     would go on showing the last thing it cached. What they have already KEPT a copy of is theirs. */
+  if (act === "share-stop") {
+    const to = Object.assign({}, dm.rec.sharesTo);
+    delete to[val];
+    dm.rec.sharesTo = to;
+    if (dmUi.shareOpen === val) dmUi.shareOpen = "";
+    dmPersist();
+    renderDm();
+    dmWriteShare(val, null).catch((err) => dmSetMsg("could not take it back — " + dmWhy(err), true));
+    return;
+  }
+  /* A LENT CREATURE, MADE YOURS FOR GOOD. It becomes an ordinary built enemy on this code — a new id, no
+     lender — so taking the loan back afterwards cannot reach it. */
+  if (act === "share-keep") {
+    const [from, id] = val.split("|");
+    const src = (((dm.rec.shared || {})[from] || {}).enemies || []).find((e) => e.id === id);
+    if (!src) return;
+    const copy = dmTidyEnemy(Object.assign({}, JSON.parse(JSON.stringify(src)),
+      { id: "", custom: true, sharedFrom: undefined }));
+    delete copy.sharedFrom;
+    dm.rec.enemies = (dm.rec.enemies || []).concat(copy);
+    dmPersist();
+    dmUi.tab = "enemies";
+    renderDm();
+    return;
+  }
   if (act === "tier") { dmReadForm(); dmUi.draft.tier = val; renderDmEnemyForm(); return; }
   if (act === "abil") {
     dmReadForm();
@@ -921,6 +1093,57 @@ async function dmAddRoomByCode() {
   renderDm();
 }
 
+/* ---------------------------------------------------------------- lending, written onto their record */
+
+/* READ, CHANGE ONE KEY, WRITE. Their record is theirs — their notes, their tables, their own enemies —
+   so this must never write a whole record built here. `shared` is keyed by MY code, so two DMs lending to
+   the same person cannot overwrite each other. */
+async function dmWriteShare(theirCode, entryOrNull) {
+  const rec = Object.assign(dmBlank(), (await CocDm.load(theirCode)) || {});
+  rec.shared = rec.shared || {};
+  if (entryOrNull) rec.shared[dm.code] = entryOrNull;
+  else delete rec.shared[dm.code];
+  await CocDm.save(theirCode, rec);
+}
+
+/* Everything currently lent to one code, pushed. Called whenever the list changes AND whenever a lent
+   creature is edited, so their copy is never a stale stat block. */
+async function dmPushShare(theirCode) {
+  const ids = dmShareIds(theirCode);
+  await dmWriteShare(theirCode, {
+    name: dm.rec.name || "", at: Date.now(), enemies: dmResolveShare(ids),
+  });
+}
+/* After an enemy is saved or deleted: only the codes that actually hold it are written to. */
+async function dmPushSharesWith(id) {
+  for (const [code, entry] of Object.entries(dm.rec.sharesTo || {}))
+    if ((entry.ids || []).includes(id)) {
+      try { await dmPushShare(code); } catch (err) { dmSetMsg("lending to " + code + " failed — " + dmWhy(err), true); }
+    }
+}
+
+async function dmAddShareCode() {
+  const msg = document.querySelector("#dm-share-msg");
+  const say = (t, bad) => { if (msg) { msg.textContent = t; msg.className = "save-msg" + (bad ? " bad" : ""); } };
+  const code = String((dmVal("dm-share") || "")).replace(/\D/g, "");
+  if (!CocDm.validCode(code)) return say("Six digits.", true);
+  if (code === dm.code) return say("That is this code. You already have these.", true);
+  if ((dm.rec.sharesTo || {})[code]) return say("Already on the list — press Choose to change what they get.");
+  say("Looking for them…");
+  let theirs = null;
+  try { theirs = await CocDm.load(code); } catch (err) { return say(dmWhy(err), true); }
+  /* REFUSED IF NOBODY IS THERE. Writing a share onto a code that has never been opened would CREATE that
+     record — the same shape of bug as a figure creating a table that was closed (rtdb-field-write-creates-
+     parent) — and a mistyped digit would quietly lend your bestiary to a stranger. */
+  if (!theirs) return say("No DM screen answers on " + code + ". Check the code with them — this must be "
+    + "their DM code, not a room's key.", true);
+  dm.rec.sharesTo = Object.assign({}, dm.rec.sharesTo, { [code]: { name: String(theirs.name || ""), at: Date.now(), ids: [] } });
+  dmUi.shareOpen = code;
+  dmPersist();
+  try { await dmPushShare(code); } catch (err) { return say(dmWhy(err), true); }
+  renderDm();
+}
+
 async function dmStartNew() {
   const msg = document.querySelector("#dm-msg");
   const say = (t, bad) => { if (msg) { msg.textContent = t; msg.className = "save-msg" + (bad ? " bad" : ""); } };
@@ -947,6 +1170,8 @@ function dmSaveEnemy() {
   dmPersist();
   dmUi.editing = null; dmUi.draft = null;
   renderDm();
+  // Anybody it is lent to gets the new numbers, so a borrowed card is never a stale one.
+  dmPushSharesWith(tidy.id);
 }
 
 /* Typing anywhere in the DM's own fields saves; the same debounce the sheet uses. */
