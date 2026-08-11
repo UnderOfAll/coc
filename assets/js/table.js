@@ -1147,7 +1147,12 @@ document.addEventListener("click", (e) => {
     } else {
       const list = Array.isArray(t.conditions) ? t.conditions.slice() : [];
       const next = list.includes(arg) ? list.filter((c) => c !== arg) : list.concat(arg);
-      tblTokenField(id, "conditions", next.length ? next : null).catch(tblFail);
+      /* AND REPAINT THE PANEL. Nothing else does: the stream repaints the board, the bars and the log,
+         but not an open side panel — so the chip you had just switched off went on looking switched on,
+         you pressed it again, and that put the condition back. Press, press, press: "I can't remove the
+         condition no matter what." The data was right every time and the panel never said so. */
+      tblTokenField(id, "conditions", next.length ? next : null)
+        .then(() => paintSide()).catch(tblFail);
     }
   }
   // Closing the drawer hands paint() back to the page. Leaving it pointed here would mean the next

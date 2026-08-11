@@ -877,7 +877,10 @@ function paintTurnBar() {
     <span class="turn-round">${tight ? "R" : "Round "}${esc(turn.round || 1)}</span>
     <strong class="turn-who">${esc(t.name || "?")}${mine ? " — you" : ""}</strong>
     ${budget ? `<span class="turn-move ${budget.left ? "" : "spent"}">${esc(budget.left)}${
-      tight ? "/" + esc(budget.speed) + " ft" : " of " + esc(budget.speed) + " ft left"}</span>` : ""}
+      tight ? "/" + esc(budget.speed) + " ft" : " of " + esc(budget.speed) + " ft left"}${
+      /* Why the number is what it is. A bar that quietly halves your speed is a bar nobody trusts; one
+         that says "crawling" is the app doing its job. */
+      budget.why ? ` <em>${esc(budget.why)}</em>` : ""}</span>` : ""}
     ${upNext && upNext !== currentId ? `<span class="muted turn-next">next: ${esc((tokens[upNext] || {}).name || "?")}</span>` : ""}
     <span class="turn-acts">
       ${canStep ? `<button class="btn-quiet" data-tbl="turn" data-val="1">${mine && tbl.role !== "dm" ? "Done" : "Next"} &rarr;</button>` : ""}
@@ -1924,4 +1927,20 @@ function pickingBarHTML(pick) {
          <strong class="turn-who">Tap where it goes</strong>`
       : `<strong class="turn-who">Tap the figure to ${pick.verb === "lock" ? "hold" : "move"}</strong>`}
     <span class="turn-acts"><button class="btn-quiet" data-tbl="pick-cancel">Cancel</button></span>`;
+}
+
+
+/* WHAT YOUR OWN FIGURE IS UNDER, for the sheet to say.
+ *
+ * The sheet and the figure were two records of the same character that had never been introduced: mark
+ * yourself prone on the board, open your sheet, and the sheet knew nothing about it. Kayki: "the
+ * conditions window doesn't communicate with the character sheet." Conditions are the one piece of state
+ * that lives on the FIGURE — they are public, and the board is where everyone reads them — so the sheet
+ * asks the board rather than keeping a second copy that could disagree. */
+function tblMyConditions() {
+  if (typeof tbl === "undefined" || !tbl) return [];
+  const id = tblMyTokens()[0];
+  const t = id ? tblTokens()[id] : null;
+  const conds = t && Array.isArray(t.conditions) ? t.conditions : [];
+  return conds.map((c) => TBL_CONDITION_NAMES[c] || c);
 }

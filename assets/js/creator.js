@@ -1078,6 +1078,10 @@ function renderSheet() {
         : `<button class="btn ${p.inCombat ? "btn-hot" : ""}" data-act="combat">${p.inCombat ? "End combat" : "Start combat"}</button>`}
     </div>
     ${ui.levelUp ? levelUpPanel(d) : ""}
+    ${/* What the board says you are under. It lives on the figure, not here — conditions are public and
+          the board is where the table reads them — so this asks rather than keeping a second copy that
+          could disagree with it. Only at a table, because only there is there a figure to ask. */""}
+    ${conditionStrip()}
     ${vitals(d, p)}
     ${p.inCombat ? combatBar(d, p) : idleLine()}
     ${p.prompt ? promptBar(p.prompt) : ""}
@@ -1725,6 +1729,16 @@ async function deleteCharacter() {
    may not be loaded at all, so it is asked for rather than assumed. */
 function atATable() {
   return typeof tbl !== "undefined" && !!tbl && !!paintTarget;
+}
+
+function conditionStrip() {
+  const conds = (typeof tblMyConditions === "function") ? tblMyConditions() : [];
+  if (!conds.length) return "";
+  return `<section class="panel cond-strip">
+    <p class="panel-sub">You are under</p>
+    <div class="chips">${conds.map((c) => `<span class="chip on">${esc(c)}</span>`).join("")}</div>
+    <p class="muted">Set on your figure at the table, where everyone can see them.</p>
+  </section>`;
 }
 
 function setCombat(p, d, on) {

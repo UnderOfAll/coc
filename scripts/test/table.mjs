@@ -1119,7 +1119,12 @@ click($("#sheetroll"));
  * chased for three sessions. What actually needs proving is that the modifier reached the total, and the
  * entry carries the die it was added to. [[test-random-is-shared]] */
 await until(async () => /Dagger to hit/.test((await lastRoll()).label || ""));
-const thrown = await lastRoll();
+/* THAT roll, not whatever is newest. `lastRoll()` takes the top of the log, and by the time it is asked
+   something else at this busy table may have landed on top — which is a test failing for a reason that
+   is not a bug. Find the entry this section made. */
+const thrown = Object.values(await aget(`CocLive.get("tables/482910/log")`))
+  .filter((e) => /Dagger to hit/.test(e.label || ""))
+  .sort((a, b) => (b.t || 0) - (a.t || 0))[0] || {};
 ok(/Dagger to hit/.test(thrown.label || ""),
   "a sheet number posts to the table's log by name");
 ok(thrown.total === (thrown.dice || [{}])[0].v + 7,
@@ -1668,8 +1673,11 @@ function paintTurnBarCheck() {
  * This file has paid for that twice today, and sleeping until the coast is clear only moves the odds.
  * So: the figure is made mine in this browser's own copy, and the cast is caught at the push instead of
  * being allowed to make one. [[test-random-is-shared]] */
-peek(`window.__wasOwner = tbl.data.tokens.tRig.owner; tbl.data.tokens.tRig.owner = tbl.me.clientId;
-  tbl.ui.peek = "tRig"; paintPeek();`);
+/* Written for real, not faked in memory: every one of the presses below causes a stream event, and a
+   stream event replaces this browser's whole copy of the table — taking an in-memory fake with it. */
+await peek(`CocLive.put("tables/482910/tokens/tRig/owner", tbl.me.clientId)`);
+await wait(80);
+peek(`tbl.ui.peek = "tRig"; paintPeek();`);
 ok(!!$('[data-tbl="mine-remove"][data-val="tRig"]'),
   "tapping your own figure offers the way off the table, code or no code");
 ok(!!$('[data-tbl="panel"][data-val="sheet"]'), "beside the way into your sheet");
@@ -1689,6 +1697,25 @@ click($$('[data-tbl="mine-cond"]').find((b) => /Prone/.test(b.textContent)));
 await until(async () => ((await aget(`CocLive.get("tables/482910/tokens/tRig/conditions")`)) || [])
   .indexOf("prone") >= 0);
 ok(true, "and pressing one marks it, for everybody");
+/* AND PRESSING IT AGAIN TAKES IT OFF. Nothing repainted an open side panel — the stream repaints the
+   board, the bars and the log, but not this — so the chip you had just switched off went on looking
+   switched on, you pressed it again, and that put the condition back. "I can't remove the condition no
+   matter what." The data was right every time and the panel never said so. */
+ok(/\bon\b/.test($$('[data-tbl="mine-cond"]').find((b) => /Prone/.test(b.textContent)).className),
+  "the chip shows it is on, without waiting for anything else to repaint");
+click($$('[data-tbl="mine-cond"]').find((b) => /Prone/.test(b.textContent)));
+await until(async () => (await aget(`CocLive.get("tables/482910/tokens/tRig/conditions")`)) == null);
+ok(!/\bon\b/.test($$('[data-tbl="mine-cond"]').find((b) => /Prone/.test(b.textContent)).className),
+  "and pressing it again takes it off, and the chip says so");
+/* WHAT A CONDITION TAKES OFF YOUR FEET. Three of the ten change how far you can go, and Kayki marked
+   himself prone and watched the bar go on saying 30 of 30 — which is the arithmetic this app is for. */
+ok(peek(`tblSpeedUnder({ speed: 30 })`) === 30, "an unencumbered figure has all its speed");
+ok(peek(`tblSpeedUnder({ speed: 30, conditions: ["prone"] })`) === 15, "prone is a crawl, at half");
+ok(peek(`tblSpeedUnder({ speed: 25, conditions: ["prone"] })`) === 10,
+  "rounded down to a whole square, because half a square is not a place");
+ok(peek(`tblSpeedUnder({ speed: 30, conditions: ["grappled"] })`) === 0, "held, you go nowhere");
+ok(peek(`tblSpeedWhy({ speed: 30, conditions: ["prone"] })`) === "crawling",
+  "and the bar says why, rather than quietly halving a number nobody would then trust");
 await peek(`CocLive.put("tables/482910/tokens/tRig/conditions", null)`);
 peek(`tbl.ui.panel = ""; paintSide();`);
 /* A Turn spends a cooldown and a Prestige spends the engine, and both show on your own sheet — but a
@@ -1703,7 +1730,8 @@ ok(/Rig casts After-Image — 30 feet \(Pledge\)/.test(said),
   "a Pledge that costs nothing still tells the table: " + said.split(" // ")[0]);
 ok(/Reflected Wound — 60 feet \(Turn · back in 2 rounds\)/.test(said),
   "and a Turn says when it comes back: " + said.split(" // ")[1]);
-peek(`tbl.data.tokens.tRig.owner = window.__wasOwner; tbl.ui.peek = ""; paintPeek();`);
+peek(`tbl.ui.peek = ""; paintPeek(); CocLive.flush();`);
+await wait(200);
 
 /* THE DM'S FIGHT IS THE FIGHT. A sheet kept its own private idea of whether combat was on, behind a
    button on itself — so the engine sat dead and every pip greyed out while the order bar was running at

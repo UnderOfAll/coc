@@ -1120,7 +1120,7 @@ function paintRuler() {
   const over = budget && feet > budget.left;
   label.className = "vtt-measure" + (over ? " over" : "");
   label.textContent = budget
-    ? `${feet} ft — ${Math.max(0, budget.left - feet)} of ${budget.speed} left`
+    ? `${feet} ft — ${Math.max(0, budget.left - feet)} of ${budget.speed} left${budget.why ? " (" + budget.why + ")" : ""}`
     : `${feet} ft`;
 }
 
@@ -1130,9 +1130,35 @@ function paintRuler() {
 function tblBudgetFor(id, token) {
   const turn = (tbl.data.meta || {}).turn;
   if (!turn || !Array.isArray(turn.order) || turn.order[turn.idx] !== id) return null;
-  const speed = Math.max(0, Number(token.speed) || 30);
+  const speed = tblSpeedUnder(token);
   const used = Math.max(0, Number(token.moved) || 0);
-  return { speed, used, left: Math.max(0, speed - used) };
+  return { speed, used, left: Math.max(0, speed - used), why: tblSpeedWhy(token) };
+}
+
+/* WHAT A CONDITION TAKES OFF YOUR FEET.
+ *
+ * Three of the ten change how far you can go, and they are the three that come up most: held or tied you
+ * do not go anywhere, and on your back you crawl at half. Kayki marked himself prone and the bar went on
+ * cheerfully saying 30 of 30 — which is precisely the arithmetic he keeps saying the app is for.
+ *
+ * This is TRACKING and not refereeing: the number changes, nothing is prevented. Standing up costs half
+ * your speed and you may still be dragged, shoved or hauled about while flat — all of which the board
+ * already allows and none of which it decides. */
+const TBL_SPEED_ZERO = ["grappled", "restrained", "paralysed", "stunned", "unconscious"];
+function tblSpeedUnder(token) {
+  const speed = Math.max(0, Number((token || {}).speed) || 30);
+  const conds = Array.isArray((token || {}).conditions) ? token.conditions : [];
+  if (conds.some((c) => TBL_SPEED_ZERO.includes(c))) return 0;
+  if (conds.includes("prone")) return Math.floor(speed / 2 / 5) * 5;   // crawling, to a whole square
+  return speed;
+}
+
+/* And WHY, in a word, so the bar can say it rather than leaving a number to be argued about. */
+function tblSpeedWhy(token) {
+  const conds = Array.isArray((token || {}).conditions) ? token.conditions : [];
+  const stop = conds.find((c) => TBL_SPEED_ZERO.includes(c));
+  if (stop) return TBL_CONDITION_NAMES[stop] || stop;
+  return conds.includes("prone") ? "crawling" : "";
 }
 
 /* Charged on release, from the same function the ruler used. */

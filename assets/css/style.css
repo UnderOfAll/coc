@@ -1789,3 +1789,6 @@ body:has(.vtt) { height: 100dvh; overflow: hidden; }
 
 /* A feature that puts something on the map carries the button that does it, under its own text. */
 .feat-ctl { margin-top: 0.5rem; }
+
+/* What the board says you are under, echoed on the sheet — the two were never introduced before. */
+.cond-strip .chips { gap: 0.3rem; }
