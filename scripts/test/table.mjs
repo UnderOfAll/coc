@@ -2132,6 +2132,17 @@ ok(peek(`tbl.ui.panel`) === "enemy", "pressing its card opens the sheet in the d
 ok(/Runs in a Pack/.test($("#vtt-side").textContent), "with everything on it: " +
   $("#vtt-side").textContent.replace(/\s+/g, " ").trim().slice(0, 70));
 ok(/How to play it/.test($("#vtt-side").textContent), "including how to play it");
+/* AND A WAY BACK TO WHERE YOU WERE. This row used to be shown only on a phone — on a desktop the way out
+   of a panel was pressing its button in the bar again, which works for the panels that HAVE one. An
+   enemy's card does not, so reading one was a dead end. Kayki: "it doesn't have a return or exit button
+   to go back to where it was before." It goes back to the panel it was opened FROM. */
+ok(!!$(".side-back"), "the card carries a way out");
+ok($(".side-back").dataset.val === "dm", "which leads back to the DM screen it was opened from");
+click($(".side-back"));
+await wait(60);
+ok(peek(`tbl.ui.panel`) === "dm", "and pressing it lands you there, not on an empty board");
+ok(!!$("#dm-figures"), "with the figure list you left");
+peek(`tbl.ui.panel = ""; paintSide();`);
 peek(`tbl.role = "player"; paintSide();`);
 ok(!/Runs in a Pack/.test($("#vtt-side").textContent), "and a player who reaches it is shown nothing");
 peek(`tbl.role = "dm"; tbl.ui.panel = ""; paintSide();`);

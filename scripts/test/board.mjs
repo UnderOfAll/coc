@@ -498,6 +498,23 @@ console.log("\n— 1280px, as the DM, with a mouse —");
   ok(put.rect && put.rect.x === 210 && put.rect.y === 140 && put.rect.w === 70,
     `and is drawn exactly over that square, not between four (${JSON.stringify(put.rect)})`);
 
+  /* A PANEL WITH NO BUTTON IN THE BAR MUST STILL CLOSE. The back row was phone-only, on the reasoning
+     that a desktop closes a panel by pressing its own button again — true for the panels that have one,
+     and a dead end for a figure's card and an enemy's, which do not. Measured, because jsdom has no
+     layout and `display: none` is exactly what it cannot see. */
+  const wayOut = await page.evaluate(() => {
+    tbl.ui.enemyId = "sawdust-hound"; tbl.ui.enemyFrom = "dm"; tbl.ui.panel = "enemy";
+    paintSide();
+    const b = document.querySelector("#vtt-side .side-back");
+    if (!b) return { there: false };
+    const r = b.getBoundingClientRect();
+    return { there: true, shown: getComputedStyle(b).display !== "none" && r.width > 20 && r.height > 10,
+      back: b.dataset.val };
+  });
+  ok(wayOut.there && wayOut.shown, "an enemy's card carries a visible way out on a desktop too");
+  ok(wayOut.back === "dm", "and it leads back to the panel it was opened from");
+  await page.evaluate(() => { tbl.ui.panel = ""; paintSide(); });
+
   ok(errs.length === 0, "no errors on the console" + (errs.length ? ": " + errs[0] : ""));
   await page.close();
 }

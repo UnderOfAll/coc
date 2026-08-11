@@ -1217,7 +1217,12 @@ body:has(.vtt) { height: 100dvh; overflow: hidden; }
 
 /* On a desktop the panel is a column beside the board and needs no way "back" — it is already beside
    what it belongs to. Declared before the phone rules so the phone rules win. */
-.side-head { display: none; }
+/* The way out of a panel, at every width. It used to be phone-only, on the reasoning that a desktop
+   closes a panel by pressing its button in the bar again — true for the panels that have one, and a dead
+   end for a figure's card and an enemy's, which do not. */
+.side-head { display: flex; gap: 0.6rem; align-items: center; justify-content: space-between;
+  margin: -0.2rem 0 0.7rem; }
+.side-head strong { font-family: var(--serif); color: var(--gold); font-size: 1rem; }
 
 @media (max-width: 760px) {
   /* The site header is for the compendium. At a table it is 60px of brand and a search box you cannot

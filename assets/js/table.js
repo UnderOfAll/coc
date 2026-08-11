@@ -837,9 +837,17 @@ const TBL_PANEL_NAMES = {
 /* The way back to the board, and the name of what you are in. Rendered always and shown only on a phone,
    where the panel covers the board — pressing it toggles the panel that is already open, which is the
    same thing pressing its button in the bar does. */
-function sideHeadHTML(which) {
+/* THE WAY OUT, and it has to be on every panel at every width. This row was shown only on a phone, where
+   the panel covers the board — on a desktop the way out of a panel was pressing its button in the bar
+   again, which works for the panels that HAVE one. A figure's card and an enemy's card do not, so once
+   either was open there was no control on screen that closed it. Kayki, on the enemy card: "it doesn't
+   have a return or exit button to go back to where it was before."
+   `backTo` is where the arrow leads: the panel this one was opened FROM, so reading a creature's card and
+   coming back lands you on the DM screen rather than staring at the board. */
+function sideHeadHTML(which, backTo) {
+  const to = backTo == null ? which : backTo;
   return `<div class="side-head">
-    <button class="btn-quiet side-back" data-tbl="panel" data-val="${esc(which)}">&larr; Board</button>
+    <button class="btn-quiet side-back" data-tbl="panel" data-val="${esc(to)}">&larr; Back</button>
     <strong>${esc(TBL_PANEL_NAMES[which] || "Panel")}</strong>
   </div>`;
 }
@@ -877,7 +885,7 @@ function paintSide() {
   // The DM's alone: the whole stat block, in the panel, without leaving the table.
   else if (which === "enemy") body = tbl.role === "dm" ? enemySheetHTML(tbl.ui.enemyId) : "";
   else if (which === "sheet") body = `<p class="muted">Opening your sheet…</p>`;
-  side.innerHTML = sideHeadHTML(which) + body;
+  side.innerHTML = sideHeadHTML(which, which === "enemy" ? (tbl.ui.enemyFrom || "") : which) + body;
   // The DM's panel is re-rendered on every stream event and compared against what is on screen, so what
   // is stored has to be the whole thing, header and all.
   if (which === "dm") side.dataset.rendered = side.innerHTML;
@@ -1333,6 +1341,8 @@ document.addEventListener("click", (e) => {
   else if (act === "bestiary") tblDropEnemy(val).catch(tblFail);
   else if (act === "enemy-card") {
     tbl.ui.enemyId = val;
+    // Where to come back to: the panel it was opened from, or the board if it was opened off a figure.
+    tbl.ui.enemyFrom = tbl.ui.panel === "enemy" ? tbl.ui.enemyFrom : (tbl.ui.panel || "");
     tbl.ui.panel = "enemy";
     tbl.ui.peek = "";
     paintPeek();
