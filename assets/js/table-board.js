@@ -1147,6 +1147,33 @@ function tblSpeedUnder(token, id) {
   return speed;
 }
 
+/* WHAT STANDING UP COSTS: half your speed, off your full one rather than off the crawl — the crawl is
+   what prone leaves you to walk with, and getting up is paid for out of the legs you would have had. */
+function tblStandCost(token) {
+  const speed = Math.max(0, Number((token || {}).speed) || 30);
+  return Math.floor(speed / 2 / 5) * 5;
+}
+
+/* Off the floor, and charged for. Nothing is decided here — the condition was set by a person and the
+   cost is arithmetic the rules already state. */
+async function tblStandUp(id) {
+  const t = tblTokens()[id];
+  if (!t) return;
+  const conds = tblConds(id, t);
+  if (!conds.includes("prone")) return;
+  const speed = Math.max(0, Number(t.speed) || 30);
+  const spent = Math.min(speed, (Number(t.moved) || 0) + tblStandCost(t));
+  const left = conds.filter((c) => c !== "prone");
+  if (!tbl.ui.condWish) tbl.ui.condWish = {};
+  tbl.ui.condWish[id] = { list: left, at: Date.now() };
+  await tblTokenField(id, "conditions", left.length ? left : null);
+  await tblTokenField(id, "moved", spent);
+  await CocLive.push(tblPath("log"), {
+    t: Date.now(), who: t.name || "Someone", kind: "system",
+    text: `${t.name || "Someone"} stands up (${tblStandCost(t)} ft)`,
+  });
+}
+
 /* And WHY, in a word, so the bar can say it rather than leaving a number to be argued about. */
 function tblSpeedWhy(token, id) {
   const conds = tblConds(id, token);

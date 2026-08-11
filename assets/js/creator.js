@@ -960,6 +960,8 @@ function freshPlay(ch) {
     cooldowns: {},     // trickId -> rounds remaining
     usedOncePerCombat: {},   // trickId / featureName -> true
     uses: {},          // featureName -> uses spent this combat
+    turnUses: {},      // featureName -> uses spent THIS TURN (see limitOf)
+    turnAt: 0,         // the round this character last began a turn in, so it refreshes exactly once
     flags: {},         // named states the player toggles (grapple, Subject, concentration…)
   };
 }
@@ -969,10 +971,10 @@ function freshPlay(ch) {
 function normalisePlay(ch) {
   const base = freshPlay(ch);
   const p = Object.assign(base, ch.play || {});
-  for (const k of ["cooldowns", "usedOncePerCombat", "uses", "flags", "turnTriggers"]) {
+  for (const k of ["cooldowns", "usedOncePerCombat", "uses", "turnUses", "flags", "turnTriggers"]) {
     if (!p[k] || typeof p[k] !== "object") p[k] = {};
   }
-  for (const k of ["hp", "tempHp", "engine", "round"]) p[k] = Number(p[k]) || (k === "round" ? 1 : 0);
+  for (const k of ["hp", "tempHp", "engine", "round", "turnAt"]) p[k] = Number(p[k]) || (k === "round" ? 1 : 0);
   p.inCombat = !!p.inCombat;
   return p;
 }
@@ -1131,11 +1133,18 @@ function promptBar(q) {
     </span></div>`;
 }
 
+/* TWO BUTTONS FOR ONE EVENT IS ONE TOO MANY. At a table the order bar ends your turn — it is the only
+   thing that knows whose turn it is, and it is what the rest of the table watches — so the sheet does not
+   offer a second button that would leave the two disagreeing about which round it is. It says who does it
+   instead, exactly as Start combat already does. */
 function combatBar(d, p) {
   return `<div class="combat-bar">
     <div><span class="combat-round">Round ${esc(p.round)}</span>
-      <span class="muted">cooldowns tick down and per-combat uses refresh when the fight ends</span></div>
-    <button class="btn" data-act="endturn">End my turn &rarr;</button>
+      <span class="muted">cooldowns tick down and per-turn uses refresh when your turn comes round;
+        per-combat uses refresh when the fight ends</span></div>
+    ${atATable()
+      ? `<span class="at-table-combat muted">End your turn on the order bar</span>`
+      : `<button class="btn" data-act="endturn">End my turn &rarr;</button>`}
   </div>`;
 }
 
@@ -1378,11 +1387,36 @@ function trickMetaRow(t, d) {
 
 /* Features that cost something to use get a counter; the rest are reference text. A feature is
    "limited" if its own text says so — the sheet reads the meta rather than a hand-kept list. */
-function limitOf(f) {
-  const uses = String(f.meta?.uses || "");
+function limitOf(f, level) {
+  const uses = String(f.meta?.uses || "").trim();
+  /* TWO LIMITS IN ONE LINE IS NOT ONE LIMIT. "Disadv 1 / turn; defensive Swap 1 / combat" was being read
+     as a plain once-per-combat, because that is the half a pattern happened to find first — a counter
+     that tracks the wrong half is worse than no counter. The card still says the whole sentence. */
+  if (uses.includes(";")) return null;
   if (/1 \/ combat|once per combat|1 Mimic \/ combat/i.test(uses)) return { kind: "combat", n: 1 };
   if (/scaling/i.test(uses) || /uses per combat/i.test(f.sheetSummary || "")) return { kind: "scaling" };
+  /* PER TURN, which is the commonest limit in the whole system and the one the sheet did not track at
+     all: thirty-six features say "1 / turn" and eight say "1 / round", and every one of them rendered as
+     plain reference text with nothing to press. For a player at a table, "your turn" and "the round" come
+     round together, so both refresh at the same moment.
+     A COMPOUND OR CONDITIONAL LINE IS DELIBERATELY NOT MATCHED — "1 / turn each", "Disadv 1 / turn;
+     defensive Swap 1 / combat", "1 tier / turn", "0 to Set Size / turn". A counter that is wrong is worse
+     than no counter: those say something a person has to read, and the card still says it. */
+  const per = /^(?:[A-Za-z]+\s+)?(\d+)\s*\/\s*(?:turn|round)\b/i.exec(uses);
+  if (per && !/each|;|tier|set size/i.test(uses)) {
+    return { kind: "turn", n: Math.max(1, usesLadder(uses, Number(per[1]), level)) };
+  }
   return null;
+}
+
+/* "1 / turn (2 at L5, 3 at L9, 4 at L12)" — the ladder is written in the uses line itself, so it is read
+   from there rather than kept as a second copy in the code. The highest step you have reached wins. */
+function usesLadder(text, base, level) {
+  let n = base;
+  const re = /(\d+)\s*at\s*L\s*(\d+)/gi;
+  let m;
+  while ((m = re.exec(text))) if ((level || 1) >= Number(m[2])) n = Number(m[1]);
+  return n;
 }
 
 /* One card per feature, each showing the whole thing: level, name, where it came from, its
@@ -1397,15 +1431,16 @@ function featuresPanel(d, p) {
   // Engine or Tricks panel saying that panel exists.
   const shown = d.features.filter((f) => !(f.panel === "engine" ? d.engine : f.panel === "tricks" ? d.tricks.length : false));
   const cards = shown.map((f) => {
-    const lim = limitOf(f);
+    const lim = limitOf(f, d.level);
     const key = f.name;
     let ctl = "";
     if (lim) {
-      const max = lim.kind === "combat" ? 1 : d.scalingUses;
-      const used = p.uses[key] || 0;
+      const perTurn = lim.kind === "turn";
+      const max = lim.kind === "combat" ? 1 : perTurn ? lim.n : d.scalingUses;
+      const used = (perTurn ? (p.turnUses || {}) : p.uses)[key] || 0;
       const leftN = Math.max(0, max - used);
       ctl = `<div class="uses">
-        <span class="${leftN ? "" : "spent"}">${esc(leftN)} / ${esc(max)} left</span>
+        <span class="${leftN ? "" : "spent"}">${esc(leftN)} / ${esc(max)} left${perTurn ? " this turn" : ""}</span>
         <button class="btn-quiet" data-act="use" data-val="${esc(key)}" ${leftN ? "" : "disabled"}>Use</button>
         ${used ? `<button class="btn-quiet" data-act="unuse" data-val="${esc(key)}">Undo</button>` : ""}
       </div>`;
@@ -1794,7 +1829,7 @@ function setCombat(p, d, on) {
   if (!p.inCombat) {
     // Everything per-combat resets: the engine empties, cooldowns clear, uses refresh.
     p.engine = 0; p.cooldowns = {}; p.usedOncePerCombat = {}; p.uses = {}; p.round = 1;
-    p.flags = {}; p.turnTriggers = {}; p.prompt = null;
+    p.flags = {}; p.turnTriggers = {}; p.turnUses = {}; p.turnAt = 0; p.prompt = null;
   }
   return true;
 }
@@ -1805,6 +1840,34 @@ function syncCombatFromTable(fighting) {
   const d = derive(sheet.ch);
   if (!d) return false;
   return setCombat(sheet.ch.play, d, fighting);
+}
+
+/* YOUR TURN CAME ROUND, said by the table rather than by a button on the sheet.
+ *
+ * A once-per-turn use has to know when the turn is. Away from a table that is "End my turn"; at a table
+ * it is the order bar, which is the only thing that knows whose turn it is — and expecting a player to
+ * press Done on the bar AND End my turn on the sheet is expecting them to remember two buttons for one
+ * event. So the bar tells the sheet, once per round, when the order arrives on their figure.
+ *
+ * `turnAt` is the round it last fired in: your turn happens once a round, so the round IS the key, and a
+ * stream event arriving five times in that turn cannot refresh anything twice. */
+function startTurnFromTable(round) {
+  if (!sheet || !sheet.ch) return false;
+  const d = derive(sheet.ch);
+  if (!d) return false;
+  const p = sheet.ch.play;
+  const r = Math.max(1, Number(round) || 1);
+  if (p.turnAt === r) return false;
+  p.turnAt = r;
+  p.round = r;
+  for (const k of Object.keys(p.cooldowns)) {
+    p.cooldowns[k] -= 1;
+    if (p.cooldowns[k] <= 0) delete p.cooldowns[k];
+  }
+  p.turnTriggers = {};
+  p.turnUses = {};
+  if (d.cls.play?.autoRefill === "turn") p.engine = d.engineCap ?? 0;   // the Juggler's Set
+  return true;
 }
 
 /* ---------------------------------------------------------------- sheet actions */
@@ -1838,6 +1901,8 @@ function sheetAction(e) {
       if (p.cooldowns[k] <= 0) delete p.cooldowns[k];
     }
     p.turnTriggers = {};                                  // once-per-turn gains come back
+    p.turnUses = {};                                      // and so do once-per-turn features
+    p.turnAt = p.round;
     if (d.cls.play?.autoRefill === "turn") p.engine = d.engineCap ?? 0;   // the Juggler's Set
     p.prompt = null;
   } else if (act === "board-use") {
@@ -1922,8 +1987,15 @@ function sheetAction(e) {
       } else if (typeof tblCastOnBoard === "function") tblCastOnBoard(t);
     }
   } else if (act === "clear-cd") delete p.cooldowns[val];
-  else if (act === "use") p.uses[val] = (p.uses[val] || 0) + 1;
-  else if (act === "unuse") p.uses[val] = Math.max(0, (p.uses[val] || 0) - 1);
+  /* Spent this TURN or spent this COMBAT — the feature's own uses line says which, so the counter is
+     kept in whichever bag refreshes at the right moment rather than in one bag with two meanings. */
+  else if (act === "use" || act === "unuse") {
+    const f = (d.features || []).find((x) => x.name === val);
+    const lim = f ? limitOf(f, d.level) : null;
+    if (lim && lim.kind === "turn") { p.turnUses = p.turnUses || {}; }
+    const bag = lim && lim.kind === "turn" ? p.turnUses : p.uses;
+    bag[val] = act === "use" ? (bag[val] || 0) + 1 : Math.max(0, (bag[val] || 0) - 1);
+  }
   /* A CONDITION GOES ON THE FIGURE, a class state stays on the sheet. Conditions are public — the whole
      table has to see that you are prone, and the board counts your movement from it — so at a table the
      chip writes to your figure and there is no second copy to disagree with it. Away from a table, or

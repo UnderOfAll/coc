@@ -377,6 +377,35 @@ click($('[data-act="combat"]'));
 const useBtn=$$('[data-act="use"]')[0];
 if(useBtn){ click(useBtn); ok($$(".feat-card").length===nFeat,"cards survive an action unchanged"); }
 
+/* ONCE PER TURN, which is the commonest limit in the system and had no counter at all. Thirty-six
+   features say "1 / turn" and eight say "1 / round", and every one of them rendered as plain reference
+   text with nothing to press — the sheet only knew per-combat limits. */
+ok(peek(`limitOf({ meta:{ uses:"1 / turn" } }, 5).kind`)==="turn","a '1 / turn' feature is a per-turn limit");
+ok(peek(`limitOf({ meta:{ uses:"1 / round" } }, 5).kind`)==="turn","and so is '1 / round' — they come round together");
+ok(peek(`limitOf({ meta:{ uses:"Intercept 1 / turn" } }, 5).kind`)==="turn","however the line is worded");
+// The ladder is written in the uses line itself rather than kept as a second copy in the code.
+ok(peek(`limitOf({ meta:{ uses:"1 / turn (2 at L5, 3 at L9, 4 at L12)" } }, 4).n`)===1,"a ladder starts at its base");
+ok(peek(`limitOf({ meta:{ uses:"1 / turn (2 at L5, 3 at L9, 4 at L12)" } }, 5).n`)===2,"and climbs at the level it names");
+ok(peek(`limitOf({ meta:{ uses:"1 / turn (2 at L5, 3 at L9, 4 at L12)" } }, 20).n`)===4,"to its top step");
+/* A COUNTER THAT IS WRONG IS WORSE THAN NO COUNTER. These say something a person has to read. */
+ok(peek(`limitOf({ meta:{ uses:"1 / turn each" } }, 5)`)===null,"'1 / turn each' is left to a person");
+ok(peek(`limitOf({ meta:{ uses:"Disadv 1 / turn; defensive Swap 1 / combat" } }, 5)`)===null,"and so is a compound line");
+ok(peek(`limitOf({ meta:{ uses:"1 tier / turn" } }, 5)`)===null,"and a line counting something other than uses");
+// Spent this turn goes in its own bag, so it refreshes when the turn does rather than when the fight ends.
+mk("doppelganger",5);
+click($('[data-act="combat"]'));
+const perTurn=$$(".feat-card").map(c=>c.querySelector('[data-act="use"]')).filter(Boolean);
+ok(perTurn.length>0,"a Doppelganger's per-turn features carry a Use button ("+perTurn.length+")");
+ok(/left this turn/.test($(".uses").textContent),"which says the limit is per turn: "+$(".uses").textContent.replace(/\s+/g," ").trim());
+const featKey=perTurn[0].dataset.val;
+click(perTurn[0]);
+ok((peek(`JSON.stringify(sheet.ch.play.turnUses)`)||"").includes(featKey),"using one is spent this turn, not this combat");
+ok(peek(`Object.keys(sheet.ch.play.uses).length`)===0,"and the per-combat bag is untouched");
+peek(`endTurnForTest = () => {}; sheet.ch.play.round = 1;`);
+ok(peek(`startTurnFromTable(2)`)===true,"the table saying your turn came round refreshes it");
+ok(peek(`Object.keys(sheet.ch.play.turnUses).length`)===0,"the per-turn bag is empty again");
+ok(peek(`startTurnFromTable(2)`)===false,"and a second stream event in the same round refreshes nothing twice");
+
 console.log("\n— HP BOX KEEPS ITS NUMBER —");
 type($("#hp-amt"),"7");
 click($('[data-act="dmg"]'));

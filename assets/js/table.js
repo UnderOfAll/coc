@@ -1108,6 +1108,12 @@ document.addEventListener("click", (e) => {
   // Stepping the turn is the DM's — or yours, on your own turn. paintTurnBar only renders the button
   // for those two, and this is the only way in, so it sits above the DM-only guard below.
   else if (act === "turn") tblTurnStep(Number(val)).catch(tblFail);
+  else if (act === "stand") {
+    tblStandUp(val).catch(tblFail);
+    paintTokens();
+    paintTurnBar();
+    tblRepaintPanel();
+  }
   /* Rolling for a figure you hold is YOURS, not the DM's — which is the whole point of the gather — so
      these sit above the DM-only guard with the other player-facing actions. */
   else if (act === "init-roll-one") tblInitRoll(val).catch(tblFail);

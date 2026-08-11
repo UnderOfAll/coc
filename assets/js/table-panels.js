@@ -888,6 +888,13 @@ function paintTurnBar() {
       /* Why the number is what it is. A bar that quietly halves your speed is a bar nobody trusts; one
          that says "crawling" is the app doing its job. */
       budget.why ? ` <em>${esc(budget.why)}</em>` : ""}</span>` : ""}
+    ${/* GETTING UP OFF THE FLOOR. Standing costs half your speed, and that is arithmetic — which is
+          exactly the half of a condition the app is for, and the half a person forgets. Kayki: "stand up
+          button is the way, half move speed to leave prone condition." It only appears on the figure
+          whose turn it is, because movement only exists on your turn, and only for whoever holds it. */""}
+    ${canStep && tblConds(currentId, t).includes("prone")
+      ? `<button class="btn-quiet" data-tbl="stand" data-val="${esc(currentId)}">Stand up${
+          tight ? "" : ` <span class="muted">&minus;${esc(tblStandCost(t))} ft</span>`}</button>` : ""}
     ${upNext && upNext !== currentId ? `<span class="muted turn-next">next: ${esc((tokens[upNext] || {}).name || "?")}</span>` : ""}
     <span class="turn-acts">
       ${/* Back on the left, Next on the right: they were the other way round, so an arrow pointing left
@@ -1937,7 +1944,15 @@ function tblSyncSheetCombat() {
   if (typeof syncCombatFromTable !== "function") return;
   const turn = (tbl.data.meta || {}).turn;
   const fighting = !!(turn && Array.isArray(turn.order) && turn.order.length);
-  if (!syncCombatFromTable(fighting)) return;
+  let changed = syncCombatFromTable(fighting);
+  /* AND WHOSE TURN IT IS. Once-per-turn uses, once-per-turn triggers and cooldowns all refresh when your
+     turn comes round, and only the order bar knows when that is — the sheet's own "End my turn" is for
+     playing away from a table. Fired when the order arrives on a figure you hold. */
+  if (fighting && typeof startTurnFromTable === "function") {
+    const up = turn.order[turn.idx];
+    if (up && tblMyTokens().indexOf(up) >= 0 && startTurnFromTable(turn.round || 1)) changed = true;
+  }
+  if (!changed) return;
   if (typeof renderSheet === "function") renderSheet();
   if (typeof persist === "function") persist();
 }

@@ -1688,6 +1688,22 @@ ok(/Rig — you/.test($("#vtt-turn").textContent), "the bar tells you it is your
 ok($('[data-tbl="turn"][data-val="1"]'), "and lets you end it");
 ok(!$('[data-tbl="turn"][data-val="-1"]'), "but not step back through everyone else's");
 ok(!$('[data-tbl="init-roll"]'), "nor reroll the whole order");
+/* AND STAND UP, on the turn bar, because movement only exists on your turn. It appears only when the
+   figure whose turn it is is actually on the floor. */
+ok(!$('[data-tbl="stand"]'), "nothing to stand up from while you are on your feet");
+await peek(`CocLive.patch("tables/482910/tokens/tRig", { conditions: ["prone"], moved: 0 })`);
+await until(() => peek(`tblConds("tRig").indexOf("prone")`) >= 0);
+peek(`paintTurnBar();`);
+ok(!!$('[data-tbl="stand"]'), "prone on your own turn offers the way up");
+ok(/15 ft/.test($("#vtt-turn").textContent), "priced on the bar, so the cost is not a surprise");
+click($('[data-tbl="stand"]'));
+await until(async () => (await aget(`CocLive.get("tables/482910/tokens/tRig/moved")`)) === 15);
+ok(peek(`tblConds("tRig").indexOf("prone")`) < 0, "pressing it stands you up");
+peek(`paintTurnBar();`);
+ok(!$('[data-tbl="stand"]'), "and the button goes with the condition");
+ok(/15\/30 ft|15 of 30 ft/.test($("#vtt-turn").textContent),
+  "with the 15 feet charged to your movement: " + $("#vtt-turn").textContent.replace(/\s+/g, " ").trim().slice(0, 90));
+await peek(`CocLive.patch("tables/482910/tokens/tRig", { moved: 0 })`);
 click($('[data-tbl="turn"][data-val="1"]'));
 await wait(80);
 ok((await aget(`CocLive.get("tables/482910/meta/turn/idx")`)) === 0, "pressing Done passes the turn on");
@@ -1752,6 +1768,23 @@ ok(peek(`tblSpeedUnder({ speed: 25, conditions: ["prone"] })`) === 10,
 ok(peek(`tblSpeedUnder({ speed: 30, conditions: ["grappled"] })`) === 0, "held, you go nowhere");
 ok(peek(`tblSpeedWhy({ speed: 30, conditions: ["prone"] })`) === "crawling",
   "and the bar says why, rather than quietly halving a number nobody would then trust");
+/* GETTING BACK UP, which is the other half of the arithmetic. Standing costs half your speed — Kayki:
+   "stand up button is the way, half move speed to leave prone condition." Charged off your FULL speed,
+   not off the crawl: the crawl is what prone leaves you to walk with, and getting up is paid for out of
+   the legs you would have had. Tracking, not refereeing — the condition was put there by a person. */
+ok(peek(`tblStandCost({ speed: 30 })`) === 15, "standing costs half your speed");
+ok(peek(`tblStandCost({ speed: 25 })`) === 10, "rounded down to a whole square");
+await peek(`CocLive.patch("tables/482910/tokens/tRig", { conditions: ["prone"], moved: 0, speed: 30 })`);
+await until(async () => ((await aget(`CocLive.get("tables/482910/tokens/tRig/conditions")`)) || [])
+  .indexOf("prone") >= 0);
+await peek(`tblStandUp("tRig")`);
+ok(peek(`tblConds("tRig").indexOf("prone")`) < 0, "standing up takes the condition off at once");
+await until(async () => (await aget(`CocLive.get("tables/482910/tokens/tRig/moved")`)) === 15);
+ok(true, "and charges the 15 feet to what you have walked");
+const stoodLine = Object.values(await aget(`CocLive.get("tables/482910/log")`)).map((e) => e.text)
+  .find((t) => /stands up/.test(t || ""));
+ok(/stands up \(15 ft\)/.test(stoodLine || ""), "and the table is told: " + stoodLine);
+await peek(`CocLive.patch("tables/482910/tokens/tRig", { moved: 0 })`);
 await peek(`CocLive.put("tables/482910/tokens/tRig/conditions", null)`);
 peek(`tbl.ui.panel = ""; paintSide();`);
 /* A Turn spends a cooldown and a Prestige spends the engine, and both show on your own sheet — but a
@@ -1815,6 +1848,17 @@ click(proneChip());
 ok(!/\bon\b/.test(proneChip().className), "and pressing it again puts it out — the press that used to do nothing");
 await until(async () => (await aget(`CocLive.get("tables/482910/tokens/tRig/conditions")`)) == null);
 ok(true, "with the table agreeing once the writes land");
+/* THE ORDER BAR ENDS YOUR TURN, and the sheet does not offer a second button for the same event — two
+   buttons for one thing is how the sheet's round and the table's round come to disagree. */
+ok(!$("#vtt-sheet [data-act='endturn']"), "no second End my turn on the sheet at a table");
+ok(/End your turn on the order bar/.test($("#vtt-sheet").textContent), "it says who does it instead");
+/* AND YOUR TURN COMING ROUND REFRESHES WHAT IS PER-TURN. Only the bar knows when that is. */
+peek(`sheet.ch.play.inCombat = true; sheet.ch.play.turnUses = { X: 1 }; sheet.ch.play.turnAt = 1;
+  sheet.ch.play.cooldowns = { someTrick: 2 };`);
+ok(peek(`startTurnFromTable(2)`) === true, "the table saying your turn came round is heard");
+ok(peek(`Object.keys(sheet.ch.play.turnUses).length`) === 0, "per-turn uses come back");
+ok(peek(`sheet.ch.play.cooldowns.someTrick`) === 1, "and a cooldown ticks down one");
+ok(peek(`startTurnFromTable(2)`) === false, "a second stream event in the same round changes nothing twice");
 /* AND THE WAY OFF THE TABLE IS IN PROGRESS, not one stray tap from a figure you drag constantly. */
 click($("#vtt-sheet [data-act='tab'][data-val='progress']"));
 await wait(60);
