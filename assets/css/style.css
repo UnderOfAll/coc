@@ -1363,6 +1363,10 @@ body:has(.vtt) { height: 100dvh; overflow: hidden; }
   align-items: baseline; text-align: left; background: none; border: none; color: inherit;
   font: inherit; cursor: pointer; padding: 0.2rem 0; }
 .scene-pick:hover strong { color: var(--gold); }
+/* The same row where the name is NOT a control: an authored enemy on the DM's screen is read, and the one
+   thing you can do to it is take a copy. Laid out like .scene-pick, without the pointer that would lie. */
+.scene-static { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; gap: 0.2rem 0.5rem;
+  align-items: baseline; padding: 0.2rem 0; }
 /* A figure opened from the DM's list unfolds UNDER its own name, indented so the list it belongs to is
    still readable around it, rather than being lifted to the top of the panel away from where it was
    tapped. The panel inside loses its own frame — it is already inside one. */

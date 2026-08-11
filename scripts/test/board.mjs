@@ -503,6 +503,8 @@ console.log("\n— 1280px, as the DM, with a mouse —");
      and a dead end for a figure's card and an enemy's, which do not. Measured, because jsdom has no
      layout and `display: none` is exactly what it cannot see. */
   const wayOut = await page.evaluate(() => {
+    // The authored bestiary follows the DM code that owns it, so this is only a card with one open.
+    localStorage.setItem("coc:dm:last", COC_BESTIARY_CODES[0]);
     tbl.ui.enemyId = "sawdust-hound"; tbl.ui.enemyFrom = "dm"; tbl.ui.panel = "enemy";
     paintSide();
     const b = document.querySelector("#vtt-side .side-back");

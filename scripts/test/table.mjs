@@ -2113,14 +2113,23 @@ ok(!$('[data-tbl="keep-table"]'), "and it stops offering once it is kept");
 peek(`localStorage.removeItem("coc:dm:last"); paintSide();`);
 ok($("#tbl-npc-name"), "the DM can drop a figure");
 ok(/for scenery, a barrel/.test($("#tool").textContent), "which is for the things the bestiary has not got");
-/* THE BESTIARY, AT THE TABLE. Typing "Sawdust Hound / 9" four times a night is the exact work this app
-   exists to save, and until now the DM's panel said so in a note apologising for itself. One press drops
-   the creature with its hit points, its size and its speed already right. */
+/* THE SYSTEM'S NINE ARE ONE CAMPAIGN'S, NOT EVERY DM'S. A stat block read early is a fight spoiled, so
+   the authored bestiary follows the DM CODES in COC_BESTIARY_CODES — with no code open, or with somebody
+   else's, a chair carries only what that code built. Kayki: "I don't want other people to create a DM and
+   see the enemies from the bestiary… they will need to create their own enemies." */
+ok($$('[data-tbl="bestiary"]').length === 0, "with no DM code open there is no authored bestiary");
+ok(/No DM code open/.test($("#tool").textContent), "and the panel says where one comes from");
+peek(`localStorage.setItem("coc:dm:last", "420420"); paintSide();`);
+ok($$('[data-tbl="bestiary"]').length === 0, "another DM's code does not carry it either");
+ok(peek(`tblEnemies().length`) === 0, "so a second DM starts with an empty bestiary, as intended");
+/* THE BESTIARY, AT THE TABLE, for the code it belongs to. Typing "Sawdust Hound / 9" four times a night is
+   the exact work this app exists to save, and until now the DM's panel said so in a note apologising for
+   itself. One press drops the creature with its hit points, its size and its speed already right. */
+peek(`localStorage.setItem("coc:dm:last", COC_BESTIARY_CODES[0]); paintSide();`);
 ok($$('[data-tbl="bestiary"]').length >= 9,
-  `every enemy is one press away (${$$('[data-tbl="bestiary"]').length})`);
-/* AND THE ONES THIS DM HAS BUILT, beside the ones the system ships. They come off the copy this browser
-   keeps of the DM's record, so a fight never waits on a fetch — and they live on the DM's code, so
-   closing this room does not take them with it. */
+  `every enemy is one press away for its owner (${$$('[data-tbl="bestiary"]').length})`);
+/* AND THE ONES THIS DM HAS BUILT — which are that code's own, and travel with it rather than with the
+   room. They come off the copy this browser keeps of the record, so a fight never waits on a fetch. */
 peek(`localStorage.setItem("coc:dm:last", "777001");
   localStorage.setItem("coc:dm:enemies:777001", JSON.stringify([{ id: "rope-ghoul-ab12", custom: true,
     name: "Rope Ghoul", tier: "normal", ac: 14, hp: 11, speed: 30, size: "Medium",
@@ -2128,7 +2137,8 @@ peek(`localStorage.setItem("coc:dm:last", "777001");
     features: [] }]));`);
 peek(`paintSide();`);
 ok(peek(`tblEnemies().some(e => e.name === "Rope Ghoul")`), "a built enemy joins the bestiary");
-ok(peek(`tblEnemies().some(e => e.name === "Sawdust Hound")`), "beside the ones the system ships");
+ok(!peek(`tblEnemies().some(e => e.name === "Sawdust Hound")`),
+  "and on a code the authored nine are not on, it is the ONLY thing there");
 ok(!!$('[data-tbl="bestiary"][data-val="rope-ghoul-ab12"]'), "and is one press away like the rest");
 click($('[data-tbl="bestiary"][data-val="rope-ghoul-ab12"]'));
 await until(() => Object.values(peek(`JSON.parse(JSON.stringify(tblTokens()))`)).some((t) => t.enemyId === "rope-ghoul-ab12"));
@@ -2139,7 +2149,8 @@ ok(builtTok[1].hp === 11, "dropping one uses its own hit points");
 ok(builtTok[1].initMod === 0, "a built enemy with no Dexterity rolls flat");
 ok(/Claw/.test(peek(`enemyReadHTML(${JSON.stringify(builtTok[1])})`)), "and its card reads off what was built");
 await peek(`CocLive.del("tables/482910/tokens/" + ${JSON.stringify(builtTok[0])})`);
-peek(`localStorage.removeItem("coc:dm:enemies:777001"); localStorage.removeItem("coc:dm:last"); paintSide();`);
+peek(`localStorage.removeItem("coc:dm:enemies:777001");
+  localStorage.setItem("coc:dm:last", COC_BESTIARY_CODES[0]); paintSide();`);
 const hound = $$('[data-tbl="bestiary"]').find((b) => /Sawdust Hound/.test(b.textContent));
 ok(!!hound, "including the Sawdust Hound");
 const beforeDrop = Object.keys(peek(`JSON.parse(JSON.stringify(tblTokens()))`)).length;

@@ -202,6 +202,42 @@ click($$('[data-dm="tab"]').find(b=>b.dataset.val==="enemies"));
 ok(peek(`dmCachedEnemies().length`)===2,"this device keeps a copy for the board to read");
 ok(peek(`dmCachedEnemies().some(e => e.name === "Rope Ghoul")`),"holding what was built");
 
+/* WHOSE THE AUTHORED NINE ARE. They are one campaign's, not every DM's: a stat block read early is a
+   fight spoiled. Kayki: "I don't want other people to create a DM and see the enemies from the bestiary
+   that I have or created, for spoiler reasons… they will need to create their own enemies." */
+ok($$('[data-dm="clone"]').length===0,"a code the bestiary is not on has nothing of the system's to take");
+ok(/not<\/strong> on this code/.test($("#tool").innerHTML),"and the pane says so rather than staying silent");
+ok(/Another DM never sees yours/.test($("#tool").textContent),"and says an enemy belongs to the code that built it");
+/* AND ON THE CODE IT DOES BELONG TO, an authored creature can be TAKEN. Kayki: "the creatures the DM
+   creates can at any time be cloned or edited by himself — that applies to those prefab creatures too."
+   The file in data/enemies/ is never written to: the copy is yours, under an id of its own. */
+peek(`window.__dms[COC_BESTIARY_CODES[0]] = { v: 1, name: "Owner", tables: [], notes: [], enemies: [] };`);
+await go("#/dm/"+peek(`COC_BESTIARY_CODES[0]`));
+await new Promise(r=>setTimeout(r,80));
+ok($$('[data-dm="clone"]').length>=9,"the code it belongs to is offered every authored one to copy");
+click($$('[data-dm="clone"]').find(b=>b.dataset.val==="sawdust-hound"));
+await new Promise(r=>setTimeout(r,60));
+const taken=peek(`JSON.parse(JSON.stringify(dm.rec.enemies[0]))`);
+ok(peek(`dm.rec.enemies.length`)===1,"copying one puts it on your code");
+ok(taken.id!=="sawdust-hound"&&taken.custom===true,"under an id of its own: "+taken.id);
+/* A NORMAL ENEMY'S FEATURES SURVIVE THE COPY. The builder does not ASK a normal for features, and it used
+   to answer that by emptying the list on save — which would have gutted a Hound of its pack tactics. */
+ok(taken.features.length===1,"keeping what it had: "+((taken.features[0]||{}).name||"nothing"));
+ok(taken.parryDC===null,"and still not Parrying, because a normal enemy does not");
+ok(peek(`dmUi.editing`)===taken.id,"it opens in the builder, because copying means copying and changing");
+ok($$('[data-feat="name|0"]').some(n=>n.value==="Runs in a Pack"),"with the feature it kept there to edit");
+type($("#en-name"),"Rope Hound");
+click($('[data-dm="save-enemy"]'));
+await new Promise(r=>setTimeout(r,60));
+ok(peek(`dm.rec.enemies[0].name`)==="Rope Hound","changing the copy is ordinary editing");
+ok(peek(`store.enemies.find(e => e.id === "sawdust-hound").name`)==="Sawdust Hound",
+  "and the authored one it was taken from is untouched");
+click($$('[data-dm="drop"]')[0]);
+await new Promise(r=>setTimeout(r,60));
+ok(peek(`dm.rec.enemies.length`)===0,"and it can be thrown away like anything else built");
+await go("#/dm/777001");
+await new Promise(r=>setTimeout(r,80));
+
 console.log("\n— CREATOR —");
 await go("#/create");
 click($$('[data-pick="class"]').find(b=>b.dataset.val==="joker"));

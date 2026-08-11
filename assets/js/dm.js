@@ -21,6 +21,27 @@
 const DM_LAST = "coc:dm:last";          // the code this browser last opened, so it opens itself
 const DM_RECENT = "coc:dm:recent";      // codes seen on this device
 
+/* WHOSE THE SYSTEM'S NINE ARE. The authored bestiary is a CAMPAIGN, not a rulebook: a player who reads
+ * Grinsel's card knows how the fight ends before it starts. Kayki: "I don't want other people to create a
+ * DM and see the enemies from the bestiary that I have or created, for spoiler reasons… they will need to
+ * create their own enemies." So the shipped enemies belong to the DM CODES listed here and to nobody
+ * else — every other code sees only what that code has built.
+ *
+ * TO LEND THEM TO SOMEBODY: add their six-digit DM code to this line and publish. Taking it out again
+ * takes the bestiary back, and touches nothing they built of their own.
+ *
+ * THE SAME HONEST LIMIT AS EVER: this is a static site, so `data/bundle.json` is a URL anybody can type.
+ * This decides what the APP hands a DM, not what somebody with the developer tools open can dig out. */
+const COC_BESTIARY_CODES = ["130820"];
+
+/* It follows the CODE, not the browser and not the chair: open Kayki's code and the bestiary is there,
+   open a friend's on the same laptop and it is not. With no code open there is none at all — the safe
+   answer, rather than "everyone who never made a code gets everything". */
+function dmHasBestiary(code) {
+  const c = String(code == null ? dmCode() : (code || ""));
+  return !!c && COC_BESTIARY_CODES.includes(c);
+}
+
 let dm = null;                          // { code, rec } while a DM record is open
 const dmUi = { tab: "enemies", editing: null, draft: null, msg: "", pick: "", pickFrom: "" };
 
@@ -235,9 +256,50 @@ function dmEnemiesPane() {
       <p class="muted">The form asks for what that weight needs and nothing else. You can change the
         weight later; anything the new weight does not use is kept, not thrown away.</p>
     </section>
-    ${list.length ? `<section class="panel">${byTier}</section>`
-      : `<section class="panel"><p class="muted">Nothing built yet. They appear in your bestiary at any
-         table you run, beside the ones that come with the system.</p></section>`}`;
+    ${list.length ? `<section class="panel"><p class="panel-sub">Yours</p>${byTier}</section>`
+      : `<section class="panel"><p class="panel-sub">Yours</p><p class="muted">Nothing built yet. What you
+         build here is this code's own — it appears in the bestiary at every table you run, and at nobody
+         else's.</p></section>`}
+    ${/* SAID OUT LOUD, because "why can my friend not see my Sawdust Hound" is a question that otherwise
+          costs an evening. Enemies belong to the code that built them; the system's nine belong to the
+          codes named in COC_BESTIARY_CODES. */""}
+    <section class="panel">
+      <p class="panel-sub">Who sees these</p>
+      ${dmHasBestiary(dm.code) ? `<p class="muted">This code also carries <strong>the system's own
+        bestiary</strong> — the authored creatures are yours at any table you run, and any of them can be
+        taken as a copy below and then changed like anything else you built.</p>`
+        : `<p class="muted">The system's authored creatures are <strong>not</strong> on this code: they are
+          one campaign's, and a stat block read early is a fight spoiled. Build your own here — the form
+          gives you everything an authored one has.</p>`}
+      <p class="muted">Enemies live on the code that built them. Another DM never sees yours, and you never
+        see theirs — if you want one of theirs, they read you the numbers and you build it here.</p>
+    </section>
+    ${dmShippedPane()}`;
+}
+
+/* THE AUTHORED ONES, TAKEN AS YOUR OWN. Kayki: "the creatures the DM creates can be at any time cloned or
+   edited by himself — that applies to those prefab creatures too." They live in `data/enemies/` as files,
+   which is what keeps one description of a creature for the whole system, so nothing here writes to them:
+   a copy lands on YOUR code with a new id, and from that moment it is an ordinary built enemy — rename it,
+   re-arm it, delete it. The original stays exactly as it is, for you and for every table you run.
+   Shown only to a code the bestiary belongs to; there is nothing to copy for anybody else. */
+function dmShippedPane() {
+  const shipped = (dmHasBestiary(dm.code) && typeof store !== "undefined" && Array.isArray(store.enemies))
+    ? store.enemies : [];
+  if (!shipped.length) return "";
+  return `<section class="panel">
+    <p class="panel-sub">The system's <span class="muted">— take one and make it yours</span></p>
+    <div class="scene-list">${shipped.map((e) => `<div class="scene-row">
+      <span class="scene-static">
+        <strong>${esc(e.name || "Unnamed")}</strong>
+        <span class="muted">${esc(cap(e.tier || "normal"))} · AC ${esc(e.ac)} · ${esc(e.hp)} hp${
+          e.parryDC != null ? " · Parry " + esc(e.parryDC) : ""}</span>
+      </span>
+      <button class="btn-quiet" data-dm="clone" data-val="${esc(e.id)}">Copy to yours</button>
+    </div>`).join("")}</div>
+    <p class="muted">A copy is yours to change; the original is untouched and still in the bestiary at
+      every table you run.</p>
+  </section>`;
 }
 
 function dmTablesPane() {
@@ -391,7 +453,10 @@ function renderDmEnemyForm() {
 
     ${dmAbilitiesSection(e)}
     ${dmAttacksSection(e)}
-    ${isNormal ? "" : dmFeaturesSection(e)}
+    ${/* The form does not ASK a normal enemy for features — that is what keeps the plain ones plain — but
+          it must still show the ones it has, or a copy of an authored Hound would lose its pack tactics
+          the moment it was saved. */""}
+    ${isNormal && !(e.features || []).length ? "" : dmFeaturesSection(e)}
 
     <section class="panel">
       <label class="field"><span>How to play it <span class="muted">— what it opens with, what it does when hurt</span></span>
@@ -657,7 +722,12 @@ function dmTidyEnemy(e) {
   if (!out.attacks.length) out.attacks = [{ name: "Attack", kind: "melee", toHit: 3, reach: "5 ft", damage: "1d4", damageType: "bludgeoning" }];
   out.features = (out.features || []).filter((f) => f && f.name && f.description);
   if (out.tier === "boss") out.features = out.features.slice(0, DM_MAX_BOSS_FEATURES);
-  if (out.tier === "normal") { out.parryDC = null; out.features = []; }
+  /* A NORMAL ENEMY DOES NOT PARRY — that is the rule, and it is enforced here whatever wrote the draft.
+     Its FEATURES are a different matter: the form does not ask for them, but half the authored normals
+     have one (a Sawdust Hound runs in a pack), so emptying the list would quietly gut every copy taken of
+     one and would break this pane's own promise that changing the weight keeps what the new weight does
+     not use. They are kept, and the form shows them once they exist. */
+  if (out.tier === "normal") out.parryDC = null;
   for (const k of ["resist", "immune", "vulnerable"]) out[k] = (out[k] || []).filter(Boolean);
   // A +0 is the default, so it is not written down: a plain enemy stores nothing it does not use.
   const ab = {};
@@ -706,6 +776,21 @@ document.addEventListener("click", (ev) => {
       { id: "", name: (found.name || "Enemy") + " (copy)" }));
     dm.rec.enemies.push(copy);
     dmPersist(); renderDm();
+    return;
+  }
+  /* AN AUTHORED ONE, TAKEN AS YOURS. The file in `data/enemies/` is never written to — this is a copy with
+     a new id, on your code, which the very next press can edit. It opens in the builder straight away,
+     because "copy it" almost always means "copy it and change something". */
+  if (act === "clone") {
+    const src = ((typeof store !== "undefined" && store.enemies) || []).find((e) => e.id === val);
+    if (!src) return;
+    const copy = dmTidyEnemy(Object.assign({}, JSON.parse(JSON.stringify(src)),
+      { id: "", custom: true, name: (src.name || "Enemy") + " (yours)" }));
+    dm.rec.enemies = (dm.rec.enemies || []).concat(copy);
+    dmPersist();
+    dmUi.draft = JSON.parse(JSON.stringify(copy));
+    dmUi.editing = copy.id; dmUi.pick = "";
+    renderDmEnemyForm();
     return;
   }
   if (act === "drop") {

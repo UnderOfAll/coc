@@ -250,37 +250,55 @@ async function tblKeepTableOnDm() {
 
 /* ---------------------------------------------------------------- the bestiary, at the table */
 
-/* THE SYSTEM'S, AND THE ONES THIS DM HAS BUILT. The built ones come off the copy this browser keeps of
-   the DM's record, so a fight never waits on a fetch to draw a card. A player never sees either list —
-   the bestiary and every enemy card are behind the DM chair. */
+/* WHAT THIS CHAIR'S BESTIARY IS. Two lists, and both follow the DM CODE open on this device rather than
+   the room: the ones this code has BUILT (off the copy this browser keeps of the record, so a fight never
+   waits on a fetch), and the system's authored nine — which belong to the codes in COC_BESTIARY_CODES and
+   to nobody else, because a stat block read early is a fight spoiled. A DM with no code open, or with
+   somebody else's, gets only what that code built. A player never sees either list. */
+function tblBuiltEnemies() {
+  return (typeof dmCachedEnemies === "function") ? dmCachedEnemies() : [];
+}
+function tblShippedEnemies() {
+  if (typeof dmHasBestiary !== "function" || !dmHasBestiary()) return [];
+  return (typeof store !== "undefined" && Array.isArray(store.enemies)) ? store.enemies : [];
+}
 function tblEnemies() {
-  const shipped = (typeof store !== "undefined" && Array.isArray(store.enemies)) ? store.enemies : [];
-  const built = (typeof dmCachedEnemies === "function") ? dmCachedEnemies() : [];
-  return built.length ? built.concat(shipped) : shipped;
+  return tblBuiltEnemies().concat(tblShippedEnemies());
 }
 function tblEnemy(id) {
   return tblEnemies().find((e) => (e.id || "") === id) || null;
 }
 
+/* YOURS FIRST, THE SYSTEM'S UNDER IT — separately, because they are separately OWNED and a DM should be
+   able to see at a glance which half of the board's cast travels with their code. */
 function bestiaryHTML() {
-  const all = tblEnemies();
-  if (!all.length) return "";
+  const built = tblBuiltEnemies(), shipped = tblShippedEnemies();
+  const code = (typeof dmCode === "function") ? dmCode() : "";
   const tiers = [["normal", "Normal"], ["special", "Special"], ["boss", "Bosses"]];
-  const rows = tiers.map(([tier, label]) => {
-    const inTier = all.filter((e) => (e.tier || "normal") === tier);
+  const group = (list, whose) => tiers.map(([tier, label]) => {
+    const inTier = list.filter((e) => (e.tier || "normal") === tier);
     if (!inTier.length) return "";
-    return `<p class="panel-sub">${esc(label)}</p>
+    return `<p class="panel-sub">${esc(whose)} <span class="muted">— ${esc(label.toLowerCase())}</span></p>
       <div class="chips">${inTier.map((e) =>
         `<button class="chip" data-tbl="bestiary" data-val="${esc(e.id)}">${esc(e.name)}
           <span class="muted">${esc(e.hp)} hp</span></button>
          <button class="chip" data-tbl="enemy-card" data-val="${esc(e.id)}"
            title="Read ${esc(e.name)}'s card">?</button>`).join("")}</div>`;
   }).join("");
-  const built = (typeof dmCachedEnemies === "function") ? dmCachedEnemies().length : 0;
-  return `<p class="panel-sub">From the bestiary</p>${rows}
-    <p class="muted">${built
-      ? esc(built) + " of these you built yourself. They live on your DM code, not in this room."
-      : "Build your own on <a href=\"#/dm\">the DM's screen</a> — they appear here at every table you run."}</p>`;
+  const foot = built.length && shipped.length
+    ? `${esc(built.length)} of these you built yourself. Both halves live on DM code
+       ${esc(code)}, not in this room.`
+    : built.length ? `Built on DM code ${esc(code)}, so they are here at every table you run.`
+    : shipped.length ? `The system's own, on DM code ${esc(code)}. Build your own on
+        <a href="#/dm">the DM's screen</a> and they appear beside them.`
+    : code ? `Nothing on DM code ${esc(code)} yet — <a href="#/dm/${esc(code)}">build one</a> and it is
+        here at every table you run. The system's authored creatures belong to the code that owns them.`
+    : `No DM code open on this device, so there is no bestiary here.
+        <a href="#/dm">Open or start one</a> — the enemies you build live on it, and follow you between
+        devices and past this room being closed.`;
+  return `<p class="panel-sub">From the bestiary</p>
+    ${group(built, "Yours")}${group(shipped, "The system's")}
+    <p class="muted">${foot}</p>`;
 }
 
 /* Down it goes, with everything the board needs already right. `enemyId` is the whole link: the figure
