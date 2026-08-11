@@ -1677,36 +1677,39 @@ function paintTurnBarCheck() {
    stream event replaces this browser's whole copy of the table — taking an in-memory fake with it. */
 await peek(`CocLive.put("tables/482910/tokens/tRig/owner", tbl.me.clientId)`);
 await wait(80);
+/* NO CARD FOR YOUR OWN FIGURE. Everything it used to carry about yourself is on the sheet, one tap
+   further and one window fewer — Kayki: "remove the pop-up when we click on the character, I like way
+   more the 2 click open the sheet." It was also where "take it off the table" sat, one stray tap from a
+   figure people drag constantly, and he removed his own character with a misclick. */
 peek(`tbl.ui.peek = "tRig"; paintPeek();`);
-ok(!!$('[data-tbl="mine-remove"][data-val="tRig"]'),
-  "tapping your own figure offers the way off the table, code or no code");
-ok(!!$('[data-tbl="panel"][data-val="sheet"]'), "beside the way into your sheet");
-/* AND WHAT YOU ARE UNDER. A character with a real sheet could not mark itself prone: tapping your own
-   figure went straight to the sheet, and the figure panel that holds the conditions was only ever shown
-   to a guest with no sheet at all. So the DM kept the whole table's conditions in their head — which is
-   the opposite of what this app is for. Kayki: "the app is to make it easier to keep track of things." */
-ok(!!$('[data-tbl="my-conds"][data-val="tRig"]'), "and the way to what you are under");
-click($('[data-tbl="my-conds"][data-val="tRig"]'));
-await wait(80);
-ok(peek(`tbl.ui.panel`) === "figure", "which opens your figure");
+ok($("#vtt-peek").classList.contains("hidden"), "tapping your own figure pops nothing up");
+ok(!$('[data-tbl="mine-remove"][data-val="tRig"]'), "so the way off the table is not one stray tap away");
+/* IT IS ON THE SHEET, and so are the conditions — one window for one character. The strip the sheet draws
+   is the CONTROL now, not a read-out of a second list that could disagree with it. */
+peek(`$("#vtt-side").innerHTML = tblMyCondStripHTML(); $("#vtt-side").classList.remove("hidden");`);
 ok($$('[data-tbl="mine-cond"]').length >= 8,
-  `carrying every condition as a chip you can press (${$$('[data-tbl="mine-cond"]').length})`);
+  `the sheet carries every condition as a chip you can press (${$$('[data-tbl="mine-cond"]').length})`);
+ok(!!$('[data-tbl="mine-remove"][data-val="tRig"]'), "and the way off the table, under them");
 ok(!/Hit points/.test($("#vtt-side").textContent),
-  "and not your hit points, which are yours and live on your sheet");
+  "and not your hit points, which are yours and live further down the same sheet");
+/* AND IT ANSWERS ON THE PRESS, not when the database says so. It used to repaint when the write was
+   ACKNOWLEDGED: instant on a good moment, five to ten seconds on a bad one, and every press in between
+   read the stored list — still the old one — and asked for the very same change again. Kayki: "if I click
+   it again to remove it doesn't do so, if I click grapple afterwards it does nothing, and after 5-10 sec
+   the condition gets updated out of nowhere." Asserted with NO wait at all, which is the whole point. */
 click($$('[data-tbl="mine-cond"]').find((b) => /Prone/.test(b.textContent)));
-await until(async () => ((await aget(`CocLive.get("tables/482910/tokens/tRig/conditions")`)) || [])
-  .indexOf("prone") >= 0);
-ok(true, "and pressing one marks it, for everybody");
-/* AND PRESSING IT AGAIN TAKES IT OFF. Nothing repainted an open side panel — the stream repaints the
-   board, the bars and the log, but not this — so the chip you had just switched off went on looking
-   switched on, you pressed it again, and that put the condition back. "I can't remove the condition no
-   matter what." The data was right every time and the panel never said so. */
-ok(/\bon\b/.test($$('[data-tbl="mine-cond"]').find((b) => /Prone/.test(b.textContent)).className),
-  "the chip shows it is on, without waiting for anything else to repaint");
+ok(peek(`tblConds("tRig").indexOf("prone")`) >= 0, "pressing one marks it at once, ack or no ack");
 click($$('[data-tbl="mine-cond"]').find((b) => /Prone/.test(b.textContent)));
-await until(async () => (await aget(`CocLive.get("tables/482910/tokens/tRig/conditions")`)) == null);
-ok(!/\bon\b/.test($$('[data-tbl="mine-cond"]').find((b) => /Prone/.test(b.textContent)).className),
-  "and pressing it again takes it off, and the chip says so");
+ok(peek(`tblConds("tRig").indexOf("prone")`) < 0, "and pressing it again takes it off, at once");
+/* A SECOND CONDITION WHILE THE FIRST IS STILL IN FLIGHT. This is the press that was broken: it read the
+   stored list, which had not caught up, and so asked for a change that had already been made. */
+click($$('[data-tbl="mine-cond"]').find((b) => /Grappled/i.test(b.textContent)));
+ok(peek(`tblConds("tRig").length`) === 1, "a second press lands on top of the first rather than under it");
+await until(async () => ((await aget(`CocLive.get("tables/482910/tokens/tRig/conditions")`)) || []).length === 1);
+ok(true, "and the table agrees once the write lands");
+await peek(`CocLive.put("tables/482910/tokens/tRig/conditions", null)`);
+await until(async () => peek(`tblConds("tRig").length`) === 0);
+ok(true, "and what you pressed retires itself the moment the stored table agrees with it");
 /* WHAT A CONDITION TAKES OFF YOUR FEET. Three of the ten change how far you can go, and Kayki marked
    himself prone and watched the bar go on saying 30 of 30 — which is the arithmetic this app is for. */
 ok(peek(`tblSpeedUnder({ speed: 30 })`) === 30, "an unencumbered figure has all its speed");
@@ -1765,6 +1768,21 @@ ok($("#vtt-sheet .tab-strip"), "holding the REAL sheet, fields and all — not a
 ok($$("#vtt-sheet .ab-box").length === 6, "with the six abilities");
 ok($("#vtt-sheet [data-act='dmg']"), "and its own controls, which is the point");
 ok(!$("#tool .vtt-stage").classList.contains("hidden"), "the board is still there behind it");
+/* THE CONDITIONS, ON THE SHEET, IN THE DRAWER — the one place they are set now. There used to be a second
+   window on the figure ("What I am under") holding the same ten chips, and two lists of one thing is one
+   list too many: Kayki, after they disagreed once too often, "just remove the option what I am under and
+   let it all be on the character sheet, the field is already there." Pressing one has to answer at once
+   and it has to repaint THIS drawer — paintSide() would throw the sheet away and fetch it again. */
+const proneChip = () => $$("#vtt-sheet [data-tbl='mine-cond']").find((b) => /Prone/.test(b.textContent));
+ok($$("#vtt-sheet [data-tbl='mine-cond']").length >= 8, "the sheet carries every condition as a chip");
+ok(!!$("#vtt-sheet [data-tbl='mine-remove']"), "and the way off the table, under them");
+click(proneChip());
+ok(/\bon\b/.test(proneChip().className), "pressing one lights the chip on the press, ack or no ack");
+ok($$("#vtt-sheet .ab-box").length === 6, "and redraws the sheet in place rather than fetching it again");
+click(proneChip());
+ok(!/\bon\b/.test(proneChip().className), "and pressing it again puts it out — the press that used to do nothing");
+await until(async () => (await aget(`CocLive.get("tables/482910/tokens/tRig/conditions")`)) == null);
+ok(true, "with the table agreeing once the writes land");
 // The sheet is live: damage taken here must reach the figure on the board, for everyone.
 const hpBefore = await aget(`CocLive.get("tables/482910/tokens/tRig/hp")`);
 type($("#vtt-sheet #hp-amt"), "7");
@@ -2120,6 +2138,34 @@ ok(peek(`tblMyTokens().length`) === 1, "and you are holding exactly one figure �
 const taken = peek(`JSON.parse(JSON.stringify(tblTokens()[tbl.me.tokenId]))`);
 ok(taken.name === "Rig" && taken.hpMax === 44 && taken.charCode === "123456",
   "named and numbered from the sheet it pulled (" + taken.name + " " + taken.hp + "/" + taken.hpMax + ")");
+
+/* TAKING YOUR FIGURE OFF, AND PUTTING IT STRAIGHT BACK. Kayki misclicked "take it off the table" on the
+   card that used to open when you tapped yourself, and could not get back on: the figure is DELETED, so
+   it is not in the list to be taken again, and "My sheet" went on showing a full sheet for a character
+   that had left the room. So the button lives on the sheet now, taking it off opens the question, and the
+   answer is one press because this browser still knows which character it was. */
+/* Nothing else on the board carrying this code first — the figures let go by the pruning above are still
+   standing there, and a free figure with your code is offered in the list, which is a different way back. */
+await peek(`(async () => { for (const [id, t] of Object.entries(tblTokens()))
+  if (t && t.charCode === "123456" && id !== tbl.me.tokenId) await CocLive.del("tables/482910/tokens/" + id); })()`);
+await until(() => peek(`Object.values(tblTokens()).filter((t) => t && t.charCode === "123456").length`) === 1);
+peek(`tbl.ui.panel = "sheet"; paintSide();`);
+await until(() => !!$("#vtt-sheet [data-tbl='mine-remove']"), 10000);
+click($("#vtt-sheet [data-tbl='mine-remove']"));
+await until(() => peek(`tblMyTokens().length`) === 0);
+ok(peek(`tbl.ui.panel`) === "seat", "taking it off asks who you are playing, rather than closing everything");
+ok(!$('[data-tbl="panel"][data-val="sheet"]'),
+  "and 'My sheet' goes with it — a sheet for somebody not at the table is a sheet that lies");
+peek(`tbl.ui.panel = "sheet"; paintSide();`);
+ok(!!$('[data-tbl="seat-return"]'), "opening it anyway asks the same question, not the old sheet");
+ok(/Rig/.test($('[data-tbl="seat-return"]').textContent), "with the character you were just playing named on it");
+ok(!!$('[data-tbl="seat-new"]'), "beside the other way in — a name, with a code or without one");
+click($('[data-tbl="seat-return"]'));
+await until(() => peek(`tblMyTokens().length`) === 1, 6000);
+const backOn = peek(`JSON.parse(JSON.stringify(tblTokens()[tbl.me.tokenId]))`);
+ok(backOn.charCode === "123456" && backOn.name === "Rig",
+  "one press puts the same character back on, sheet and all (" + backOn.name + ")");
+ok(peek(`tbl.me.left`) === false, "and this browser stops thinking you walked out");
 
 /* DELETING A CHARACTER TAKES ITS FIGURE WITH IT. Kayki's distinction, and the right one: deleting is not
    dying. A dead character's figure stays because a body is a thing at the table; a deleted one never

@@ -243,7 +243,7 @@ function paintTokens() {
     const cond = node.querySelector(".tok-cond");
     // Conditions, set by the DM, read by everybody — the second half of "what is going on with that
     // thing". Two letters each, because a token is 40px wide on a phone.
-    const list = Array.isArray(t.conditions) ? t.conditions : [];
+    const list = tblConds(id, t);
     cond.innerHTML = list.map((c) =>
       `<span class="tok-flag" title="${esc(TBL_CONDITION_NAMES[c] || c)}">${esc((TBL_CONDITION_NAMES[c] || c).slice(0, 2))}</span>`).join("");
   }
@@ -343,6 +343,11 @@ function paintPeek() {
   const id = tbl.ui.peek;
   const t = id ? tblTokens()[id] : null;
   if (!t) { host.classList.add("hidden"); host.innerHTML = ""; return; }
+  /* NOT FOR YOUR OWN FIGURE. Everything this card carried about yourself now lives on your sheet, which
+     is one tap further and one window fewer — Kayki: "remove the pop-up when we click on the character,
+     I like way more the 2 click open the sheet." It was also a hazard: "take it off the table" sat one
+     stray tap away from a figure people drag constantly, and he removed his own character by accident. */
+  if (tblIsMine(t)) { host.classList.add("hidden"); host.innerHTML = ""; return; }
   const scene = tblScene();
   const cell = Number(scene.cell) || 70;
   const size = Math.max(1, Number(t.size) || 1);
@@ -350,7 +355,7 @@ function paintPeek() {
   const sx = tbl.view.x + ((Number(t.x) || 0) + size) * cell * tbl.view.z;
   const sy = tbl.view.y + (Number(t.y) || 0) * cell * tbl.view.z;
   const showHp = tbl.role === "dm" || tblIsMine(t);
-  const conds = Array.isArray(t.conditions) ? t.conditions : [];
+  const conds = tblConds(id, t);
   const pct = t.hpMax ? Math.max(0, Math.min(100, Math.round((Number(t.hp) || 0) / t.hpMax * 100))) : 0;
   host.classList.remove("hidden");
   host.innerHTML = `<div class="peek-head">
@@ -366,18 +371,7 @@ function paintPeek() {
       : `<p class="muted">Nothing wrong with it.</p>`}
     <p class="peek-foot">${esc(Number(t.speed) || 30)} ft${size > 1 ? ` &middot; ${esc(size)} squares` : ""}</p>
     ${tbl.role === "dm"
-      ? `<button class="btn-quiet" data-tbl="peek-edit" data-val="${esc(id)}">Edit this figure</button>`
-      /* Your own figure, both things you can do to it. Taking it off used to live in the tracker panel,
-         which a player holding a Circus of Chaos character no longer sees — so a character with a real
-         sheet had no way off the board at all, and Kayki had to log in as the DM to remove one. It
-         belongs here anyway: this card is what opens when you tap yourself. */
-      : tblIsMine(t) ? `<button class="btn-quiet" data-tbl="panel" data-val="${tbl.me.charCode ? "sheet" : "mine"}">Open ${tbl.me.charCode ? "my sheet" : "my character"}</button>
-        ${/* The conditions you are under are the one thing about a figure that is public and yours to
-              set, and tapping your own figure went straight to the sheet — so a character with a real
-              sheet had no way to mark itself prone and the DM had to keep the whole table's conditions
-              in their head. */""}
-        <button class="btn-quiet" data-tbl="my-conds" data-val="${esc(id)}">What I am under</button>
-        <button class="btn-quiet" data-tbl="mine-remove" data-val="${esc(id)}">Take it off the table</button>` : ""}`;
+      ? `<button class="btn-quiet" data-tbl="peek-edit" data-val="${esc(id)}">Edit this figure</button>` : ""}`;
   tblFitPeek(host, sx, sy);
 }
 
@@ -1130,9 +1124,9 @@ function paintRuler() {
 function tblBudgetFor(id, token) {
   const turn = (tbl.data.meta || {}).turn;
   if (!turn || !Array.isArray(turn.order) || turn.order[turn.idx] !== id) return null;
-  const speed = tblSpeedUnder(token);
+  const speed = tblSpeedUnder(token, id);
   const used = Math.max(0, Number(token.moved) || 0);
-  return { speed, used, left: Math.max(0, speed - used), why: tblSpeedWhy(token) };
+  return { speed, used, left: Math.max(0, speed - used), why: tblSpeedWhy(token, id) };
 }
 
 /* WHAT A CONDITION TAKES OFF YOUR FEET.
@@ -1145,17 +1139,17 @@ function tblBudgetFor(id, token) {
  * your speed and you may still be dragged, shoved or hauled about while flat — all of which the board
  * already allows and none of which it decides. */
 const TBL_SPEED_ZERO = ["grappled", "restrained", "paralysed", "stunned", "unconscious"];
-function tblSpeedUnder(token) {
+function tblSpeedUnder(token, id) {
   const speed = Math.max(0, Number((token || {}).speed) || 30);
-  const conds = Array.isArray((token || {}).conditions) ? token.conditions : [];
+  const conds = tblConds(id, token);
   if (conds.some((c) => TBL_SPEED_ZERO.includes(c))) return 0;
   if (conds.includes("prone")) return Math.floor(speed / 2 / 5) * 5;   // crawling, to a whole square
   return speed;
 }
 
 /* And WHY, in a word, so the bar can say it rather than leaving a number to be argued about. */
-function tblSpeedWhy(token) {
-  const conds = Array.isArray((token || {}).conditions) ? token.conditions : [];
+function tblSpeedWhy(token, id) {
+  const conds = tblConds(id, token);
   const stop = conds.find((c) => TBL_SPEED_ZERO.includes(c));
   if (stop) return TBL_CONDITION_NAMES[stop] || stop;
   return conds.includes("prone") ? "crawling" : "";
@@ -1737,7 +1731,7 @@ async function tblPickFigure(id) {
   const t = tblTokens()[id];
   if (!pick || !t) return;
   if (pick.verb === "lock") {
-    const had = Array.isArray(t.conditions) ? t.conditions : [];
+    const had = tblConds(id, t);
     if (!had.includes("grappled")) await tblTokenField(id, "conditions", had.concat("grappled"));
     await CocLive.push(tblPath("log"), {
       t: Date.now(), who: pick.of || tbl.me.name || "Someone", kind: "system",

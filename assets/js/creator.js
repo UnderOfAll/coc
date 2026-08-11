@@ -1731,14 +1731,14 @@ function atATable() {
   return typeof tbl !== "undefined" && !!tbl && !!paintTarget;
 }
 
+/* THE ONE PLACE YOUR CONDITIONS ARE SET, and no longer a read-out of somewhere else. There used to be a
+   second window ("What I am under") on the figure, and two lists of the same thing is one list too many —
+   Kayki, after the sheet's copy and the figure's copy disagreed once too often: "just remove the option
+   what I am under and let it all be on the character sheet, the field is already there, it makes it
+   redundant to have both at the same time." The chips are still written to the FIGURE, because conditions
+   are public and the board is where the table reads them; the sheet is only where you press them. */
 function conditionStrip() {
-  const conds = (typeof tblMyConditions === "function") ? tblMyConditions() : [];
-  if (!conds.length) return "";
-  return `<section class="panel cond-strip">
-    <p class="panel-sub">You are under</p>
-    <div class="chips">${conds.map((c) => `<span class="chip on">${esc(c)}</span>`).join("")}</div>
-    <p class="muted">Set on your figure at the table, where everyone can see them.</p>
-  </section>`;
+  return (typeof tblMyCondStripHTML === "function") ? tblMyCondStripHTML() : "";
 }
 
 function setCombat(p, d, on) {

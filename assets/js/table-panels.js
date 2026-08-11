@@ -809,7 +809,7 @@ function turnStripHTML(order, tokens, currentId) {
   return `<div class="turn-strip" role="list">${order.map((id) => {
     const t = tokens[id] || {};
     const now = id === currentId;
-    const conds = Array.isArray(t.conditions) ? t.conditions : [];
+    const conds = tblConds(id, t);
     const initials = String(t.name || "?").trim().slice(0, 1).toUpperCase();
     return `<button class="turn-face ${now ? "now" : ""} ${t.kind === "npc" ? "npc" : "pc"}"
       role="listitem" data-tbl="ed-open" data-val="${esc(id)}"
@@ -915,6 +915,15 @@ function paintSheetPanel() {
   const side = $("#vtt-side");
   if (!side) return;
   const code = tbl.me.charCode;
+  /* NO FIGURE, NO SHEET. A character that is not on the table is not the one you are playing, and showing
+     its sheet here was how a player who had just taken their figure off went on being shown a full sheet
+     for somebody who had left the room. What belongs here then is the question you were asked on the way
+     in — who are you playing — with the same two answers: take a figure already on the board, or put a
+     new one on, with a Circus of Chaos code or without one. */
+  if (tbl.role !== "dm" && !tblMyTokens().length) {
+    side.innerHTML = sideHeadHTML("sheet") + seatPanelHTML();
+    return;
+  }
   // The DM has no character of their own, but often wants one open — an NPC with a real sheet, or a
   // player's, read out over their shoulder. So they get a box instead of a refusal.
   if (!code || tbl.role === "dm") {
@@ -1135,34 +1144,19 @@ function figureInfoHTML(id) {
   // Your own figure, in a game with no Circus of Chaos sheet behind it: this IS your sheet, so it is
   // yours to change. Somebody else's is read-only.
   if (tblIsMine(t) && !tbl.me.charCode) return myFigureHTML(id, t);
-  // Your own figure, with a sheet behind it: the sheet is where its numbers live, so all this needs to
-  // offer is the thing that was missing — getting a character you are not playing off the board. A friend
-  // of Kayki's ended up with three of his characters standing on the map at once.
+  /* Your own figure, with a sheet behind it, has no panel of its own any more: the conditions and the way
+     off the table both live on the sheet, and a second window saying the same things is what Kayki asked
+     to be rid of — "we have all we need on My sheet". Sent there rather than shown a stub. */
   if (tblIsMine(t)) {
-    /* AND WHAT YOU ARE UNDER, which is the whole job of this app during a fight. A character with a real
-       sheet used to get this panel with nothing in it but the way off the table — so a player could not
-       mark themselves prone, or frightened, or grappled, and the DM had to keep every condition at the
-       table in their own head. A guest with no sheet at all could always do it. Kayki, when the map
-       could move figures but not much else: "the app is to make it easier to keep track of things and be
-       able to focus on the fun part of the table itself, not to be the whole game in the app."
-       Hit points stay on the sheet, where they are yours; conditions are public and belong on the
-       figure, because they change what it can do and everybody has to see them. */
-    const conds = Array.isArray(t.conditions) ? t.conditions : [];
     return `<section class="panel"><h2>${esc(t.name || "Your figure")}</h2>
-      <p class="panel-sub">What you are under</p>
-      <div class="chips">${Object.entries(TBL_CONDITION_NAMES).map(([k, label]) =>
-        `<button class="chip ${conds.includes(k) ? "on" : ""}" data-tbl="mine-cond"
-          data-val="${esc(id)}|${esc(k)}">${esc(label)}</button>`).join("")}</div>
-      <p class="muted">Everyone can see these — they change what you can do. Your hit points are yours
-        and live on your sheet; open <strong>My sheet</strong> for those.</p>
-      <p class="panel-sub">Leaving</p>
-      <button class="btn-quiet" data-tbl="mine-remove" data-val="${esc(id)}">Take my figure off the table</button>
-      <p class="muted">Nothing about the character is touched; you can walk back in whenever.</p>
+      <p class="muted">Everything about this one is on your sheet — what you are under, what you have
+        spent, and the way off the table.</p>
+      <button class="btn" data-tbl="panel" data-val="sheet">Open my sheet</button>
     </section>`;
   }
   const pct = t.hpMax ? Math.max(0, Math.min(100, Math.round((Number(t.hp) || 0) / t.hpMax * 100))) : 0;
   const showHp = tbl.role === "dm" || tblIsMine(t);
-  const conds = Array.isArray(t.conditions) ? t.conditions : [];
+  const conds = tblConds(id, t);
   return `<section class="panel">
     <h2>${esc(t.name || "Figure")}</h2>
     ${t.image ? `<img class="figure-art" src="${esc(t.image)}" alt="" />` : ""}
@@ -1212,7 +1206,7 @@ function tokenEditorHTML(id) {
       : `<p class="muted">A player's figure is always a square.</p>`}
     <p class="panel-sub">Conditions <span class="muted">— every player can read these</span></p>
     <div class="chips">${Object.entries(TBL_CONDITION_NAMES).map(([k, label]) => {
-      const on = Array.isArray(t.conditions) && t.conditions.includes(k);
+      const on = tblConds(id, t).includes(k);
       return `<button class="chip ${on ? "on" : ""}" data-tbl="ed-cond" data-val="${esc(id)}|${k}">${esc(label)}</button>`;
     }).join("")}</div>
     <div class="hp-controls">
@@ -1244,7 +1238,7 @@ async function tblSaveToken(id) {
 /* A guest's figure is the only record they have here, so they keep it themselves: their name, their hit
    points, their picture, and the conditions they are under. Any system, no sheet required. */
 function myFigureHTML(id, t) {
-  const conds = Array.isArray(t.conditions) ? t.conditions : [];
+  const conds = tblConds(id, t);
   return `<section class="panel">
     <h2>Your figure</h2>
     <label class="field"><span>Name</span>
@@ -1435,7 +1429,18 @@ function seatPanelHTML() {
         </button>
       </div>`;
     }).join("");
-  return `<section class="panel">
+  /* THE CHARACTER YOU WERE JUST PLAYING, one press away. Taking a figure off deletes it, so it is not in
+     the list above to be taken back — and retyping a name and a six-digit code to undo a misclick is not
+     a way back, it is a punishment. This browser still remembers the code, so it offers to put it on. */
+  const back = (!tblMyTokens().length && tbl.me.charCode
+    && !Object.values(tblTokens()).some((t) => t && t.charCode === tbl.me.charCode))
+    ? `<section class="panel">
+        <p class="panel-sub">Back on the table</p>
+        <button class="btn" data-tbl="seat-return">Put ${esc(tbl.me.name || "your character")} back on</button>
+        <p id="seat-back-msg" class="save-msg"></p>
+        <p class="muted">The same character, code ${esc(tbl.me.charCode)} — its sheet comes with it.</p>
+      </section>` : "";
+  return `${back}<section class="panel">
       <h2>Who are you playing?</h2>
       ${rows ? `<p class="muted">Take one of these, or add a new one below. Somebody else's is greyed out
         while they are here.</p><div class="scene-list">${rows}</div>`
@@ -1489,10 +1494,21 @@ async function tblTakeSeat(id) {
 }
 
 async function tblNewSeat() {
-  const msg = $("#seat-msg");
+  await tblSeatCharacter(
+    String(($("#seat-name") || {}).value || "").trim().slice(0, 40),
+    String(($("#seat-code") || {}).value || "").replace(/\D/g, ""),
+    "#seat-msg");
+}
+
+/* Undoing the misclick: the character this browser was last playing, back on the board, no typing. */
+async function tblReturnSeat() {
+  if (!tbl.me.charCode) return;
+  await tblSeatCharacter(tbl.me.name || "", tbl.me.charCode, "#seat-back-msg");
+}
+
+async function tblSeatCharacter(name, code, msgSel) {
+  const msg = $(msgSel);
   const say = (t, bad) => { if (msg) { msg.textContent = t; msg.className = "save-msg" + (bad ? " bad" : ""); } };
-  const name = String(($("#seat-name") || {}).value || "").trim().slice(0, 40);
-  const code = String(($("#seat-code") || {}).value || "").replace(/\D/g, "");
   if (code && !CocStore.validCode(code)) return say("A Circus of Chaos code is six digits, or leave it empty.", true);
   let ch = null;
   if (code) {
@@ -1937,10 +1953,25 @@ function pickingBarHTML(pick) {
  * conditions window doesn't communicate with the character sheet." Conditions are the one piece of state
  * that lives on the FIGURE — they are public, and the board is where everyone reads them — so the sheet
  * asks the board rather than keeping a second copy that could disagree. */
-function tblMyConditions() {
-  if (typeof tbl === "undefined" || !tbl) return [];
+/* The strip the sheet draws, which is now the CONTROL rather than a read-out: every condition as a
+   chip you press, and the way off the table underneath it. Both used to live on the figure's own panel,
+   reached by tapping yourself on the board — two windows for one character, which is what Kayki asked to
+   be rid of. A misclick on that card also took his figure off the table with no warning and no way back;
+   here it sits at the bottom of your own sheet, where you have to have gone looking for it. */
+function tblMyCondStripHTML() {
+  if (typeof tbl === "undefined" || !tbl || tbl.role === "dm") return "";
   const id = tblMyTokens()[0];
-  const t = id ? tblTokens()[id] : null;
-  const conds = t && Array.isArray(t.conditions) ? t.conditions : [];
-  return conds.map((c) => TBL_CONDITION_NAMES[c] || c);
+  if (!id) return "";
+  const conds = tblConds(id);
+  return `<section class="panel cond-strip">
+    <p class="panel-sub">You are under</p>
+    <div class="chips">${Object.entries(TBL_CONDITION_NAMES).map(([k, label]) =>
+      `<button class="chip ${conds.includes(k) ? "on" : ""}" data-tbl="mine-cond"
+        data-val="${esc(id)}|${esc(k)}">${esc(label)}</button>`).join("")}</div>
+    <p class="muted">Everyone at the table can see these — they change what you can do, and the board
+      counts your movement from them.</p>
+    <p class="panel-sub">Leaving the table</p>
+    <button class="btn-quiet" data-tbl="mine-remove" data-val="${esc(id)}">Take my figure off the table</button>
+    <p class="muted">Nothing about the character is touched; you can put it back on whenever.</p>
+  </section>`;
 }

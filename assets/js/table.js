@@ -160,6 +160,37 @@ function tblTokenField(id, field, value) {
   return CocLive.put(tblPath("tokens/" + id + "/" + field), value);
 }
 
+/* WHAT A FIGURE IS UNDER — INCLUDING WHAT YOU HAVE JUST PRESSED.
+ *
+ * A chip has to answer the instant it is pressed, and until now it waited for the write to be ACKNOWLEDGED
+ * by the database: press Prone and it lit up straight away on a good moment and five to ten seconds later
+ * on a bad one, and every press in between read the stored list — which still said the old thing — and so
+ * computed the same change again. Kayki: "if I click it again to remove it doesn't do so, if I click on
+ * grapple afterwards it does nothing, and after 5-10 sec the condition gets updated out of nowhere."
+ *
+ * So the pressed state is held here, on screen, until the stored table AGREES with it — the same shape as
+ * the eraser's local rub, and it retires itself with no timers. The fifteen seconds is not a delay, it is
+ * giving up: a write that never lands must not leave the board lying about a figure for good. */
+function tblConds(id, token) {
+  const t = token || (id ? tblTokens()[id] : null) || {};
+  const have = Array.isArray(t.conditions) ? t.conditions : [];
+  const wish = id && tbl && tbl.ui && tbl.ui.condWish ? tbl.ui.condWish[id] : null;
+  if (!wish) return have;
+  const agreed = wish.list.length === have.length && wish.list.every((c) => have.includes(c));
+  if (agreed || Date.now() - wish.at > 15000) { delete tbl.ui.condWish[id]; return have; }
+  return wish.list;
+}
+
+/* Switching one on or off. Computed from what is ON SCREEN, not from what is stored — otherwise a second
+   press inside the same write reads the old list and asks for the very same change a second time. */
+function tblToggleCond(id, cond) {
+  const list = tblConds(id);
+  const next = list.includes(cond) ? list.filter((c) => c !== cond) : list.concat(cond);
+  if (!tbl.ui.condWish) tbl.ui.condWish = {};
+  tbl.ui.condWish[id] = { list: next, at: Date.now() };
+  return tblTokenField(id, "conditions", next.length ? next : null);
+}
+
 function tblIsMine(token) {
   /* Ownership is simply the browser HOLDING it — nothing else. A character-code fallback was tried and is
      wrong: letting go of a figure could not then be expressed, since the code still matched and the figure
@@ -586,7 +617,7 @@ function renderTableShell() {
           <button class="btn-quiet" data-tbl="panel" data-val="notes">Notes</button>
           <button class="btn-quiet" data-tbl="panel" data-val="draw">Draw</button>
           ${tblDebugOn() ? `<button class="btn-quiet" data-tbl="panel" data-val="debug">Debug</button>` : ""}
-          ${tbl.role === "dm" || tbl.me.charCode
+          ${tbl.role === "dm" || (tbl.me.charCode && tblMyTokens().length)
             ? `<button class="btn-quiet" data-tbl="panel" data-val="sheet">My sheet</button>` : ""}
           <button class="btn-quiet" data-tbl="panel" data-val="mine">Character</button>
           ${tbl.role === "dm"
@@ -710,7 +741,10 @@ function paintBar() {
   const drop = (val) => { const n = acts.querySelector(`[data-val="${val}"]`); if (n) n.remove(); };
   const holding = tblMyTokens().length;
   if (tbl.role !== "dm" && !holding) want("seat", "Choose a character", " on"); else drop("seat");
-  if (tbl.role === "dm" || tbl.me.charCode) want("sheet", "My sheet"); else drop("sheet");
+  /* AND "MY SHEET" GOES WHILE YOU ARE NOT ON THE TABLE. It used to stay, still holding the sheet of a
+     character that had just been taken off — so the panel showed a full sheet for somebody who was not
+     in the room, beside a "Choose a character" button, which is two buttons and one of them lying. */
+  if (tbl.role === "dm" || (tbl.me.charCode && holding)) want("sheet", "My sheet"); else drop("sheet");
   /* "Character" is the tracker — a place to keep a character this app does not understand. Beside "My
      sheet" it is two buttons for one thing, and the wrong one is the one that looks like it holds your
      character. So a player with a real Circus of Chaos code does not get it; everybody else still does,
@@ -844,6 +878,19 @@ function paintSide() {
   else if (which === "dice") paintLog();
   else if (which === "sheet") paintSheetPanel();
 }
+/* Repaint whatever is open, the cheap way. The sheet is the exception and has to be: paintSide() for the
+   sheet panel throws the drawer away and FETCHES the character again, which for a condition chip means a
+   round trip, a lost scroll position and whichever field was open closing itself. renderSheet() redraws
+   the same live sheet in place, which is what everything else that touches it uses. */
+function tblRepaintPanel() {
+  if (!tbl || !tbl.ui.panel) return;
+  if (tbl.ui.panel === "sheet") {
+    if (typeof renderSheet === "function" && typeof sheet !== "undefined" && sheet && sheet.ch) renderSheet();
+    return;
+  }
+  paintSide();
+}
+
 /* Re-render the DM's panel, keeping what is half-typed in it.
  *
  * The first version simply SKIPPED the re-render whenever the cursor was inside the panel, to avoid
@@ -1096,6 +1143,7 @@ document.addEventListener("click", (e) => {
   else if (act === "seat-pic") { tbl.ui.seatPic = "maps/" + val; paintSide(); }
   else if (act === "seat-take") tblTakeSeat(val).catch(tblFail);
   else if (act === "seat-new") tblNewSeat().catch(tblFail);
+  else if (act === "seat-return") tblReturnSeat().catch(tblFail);
   else if (act === "trk-add") {
     const rows = tblTrackerFields(tblTracker()).concat({ k: "", v: "" });
     CocLive.put(tblPath("sheets/" + tblNoteOwner() + "/fields"), rows).then(() => paintSide()).catch(tblFail);
@@ -1121,11 +1169,17 @@ document.addEventListener("click", (e) => {
       // Remembered, so the heartbeat does not helpfully put it straight back.
       tbl.me.left = true;
       CocLive.del(tblPath("tokens/" + val)).catch(tblFail);
-      tbl.ui.panel = "";
+      /* AND THE WAY BACK IN, IMMEDIATELY. This used to close everything and leave you looking at a board
+         you were no longer on, with your old sheet still open in the panel behind it — a sheet for a
+         character that was not at the table. Kayki took his off by accident and could not put it back.
+         So: the choosing panel opens on the spot, and it knows the code you were just playing. */
+      if (tbl.ui.panel === "sheet" && typeof closeSheetPanel === "function") closeSheetPanel();
       tbl.ui.peek = "";
+      tbl.ui.panel = "seat";
       paintSide();
       paintPeek();
       paintBar();   // "Choose a character" comes back the moment you are holding nothing
+      if (typeof tblRevealPanel === "function") tblRevealPanel();
     }
   }
   else if (act === "mine-save" || act === "mine-hp" || act === "mine-cond") {
@@ -1145,14 +1199,17 @@ document.addEventListener("click", (e) => {
       const next = Math.max(0, (Number(t.hp) || 0) + amt * Number(arg));
       tblTokenField(id, "hp", t.hpMax ? Math.min(Number(t.hpMax), next) : next).catch(tblFail);
     } else {
-      const list = Array.isArray(t.conditions) ? t.conditions.slice() : [];
-      const next = list.includes(arg) ? list.filter((c) => c !== arg) : list.concat(arg);
-      /* AND REPAINT THE PANEL. Nothing else does: the stream repaints the board, the bars and the log,
-         but not an open side panel — so the chip you had just switched off went on looking switched on,
-         you pressed it again, and that put the condition back. Press, press, press: "I can't remove the
-         condition no matter what." The data was right every time and the panel never said so. */
-      tblTokenField(id, "conditions", next.length ? next : null)
-        .then(() => paintSide()).catch(tblFail);
+      /* AND REPAINT AT ONCE. Nothing else does: the stream repaints the board, the bars and the log, but
+         not an open side panel — so the chip you had just switched off went on looking switched on, you
+         pressed it again, and that put the condition back. Press, press, press: "I can't remove the
+         condition no matter what." The data was right every time and the panel never said so.
+         Repainting when the write RESOLVED fixed the display and not the wait; the chip, the flags on the
+         figure and the turn bar's speed all read tblConds now, so they change on the press. */
+      tblToggleCond(id, arg).catch(tblFail);
+      tblRepaintPanel();
+      paintTokens();
+      paintPeek();
+      paintTurnBar();
     }
   }
   // Closing the drawer hands paint() back to the page. Leaving it pointed here would mean the next
@@ -1179,15 +1236,6 @@ document.addEventListener("click", (e) => {
   // An area's card, opened from its label — the one part of it that takes a press, because a corner
   // handle is under a figure half the time.
   else if (act === "area-peek") { tbl.ui.peek = ""; tbl.ui.peekArea = val; paintPeek(); }
-  // Your own figure's conditions, which are public and yours to set — see the note on the card.
-  else if (act === "my-conds") {
-    tbl.ui.peek = "";
-    paintPeek();
-    tbl.ui.lookAt = val;
-    tbl.ui.panel = "figure";
-    paintSide();
-    if (typeof tblRevealPanel === "function") tblRevealPanel();
-  }
   else if (act === "ink-color") { tblInkState().color = val; paintSide(); }
   else if (act === "ink-width") { tblInkState().width = Number(val); paintSide(); }
   else if (act === "ink-clear-mine") {
@@ -1273,9 +1321,10 @@ document.addEventListener("click", (e) => {
     const [id, cond] = String(val).split("|");
     const t = tblTokens()[id];
     if (t) {
-      const list = Array.isArray(t.conditions) ? t.conditions.slice() : [];
-      const next = list.includes(cond) ? list.filter((c) => c !== cond) : list.concat(cond);
-      tblTokenField(id, "conditions", next.length ? next : null).catch(tblFail);
+      tblToggleCond(id, cond).catch(tblFail);
+      paintSide();
+      paintTokens();
+      paintTurnBar();
     }
   }
   else if (act === "ed-del") {

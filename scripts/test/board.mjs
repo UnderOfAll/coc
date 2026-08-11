@@ -277,11 +277,18 @@ console.log("\n— 393px, as a player, by touch —");
                 c.top >= s.top - 0.5 && c.bottom <= s.bottom + 0.5 };
     });
   };
-  // Hard against the right-hand edge: the case that was clipped.
+  /* Hard against the right-hand edge: the case that was clipped. Somebody ELSE's figure — your own opens
+     no card at all any more, because everything it said about you is on your sheet. Your own goes to the
+     same edge on another row, because tblFit centres the camera on YOUR figure: leave it behind and the
+     right-hand edge, card and area alike, is simply off screen. */
   await page.evaluate(async () => {
-    const id = Object.keys(await CocLive.get("tables/482910/tokens"))[0];
-    await CocLive.put("tables/482910/tokens/" + id + "/x", tblScene().cols - 1);
-    tbl.ui.peek = id; tbl.ui.peekArea = ""; tblFit(); paintPeek();
+    const all = await CocLive.get("tables/482910/tokens");
+    const col = tblScene().cols - 1;
+    const mine = Object.keys(all).find((k) => tblIsMine(all[k]));
+    const other = Object.keys(all).find((k) => !tblIsMine(all[k]));
+    if (mine) await CocLive.patch("tables/482910/tokens/" + mine, { x: col, y: 6 });
+    await CocLive.patch("tables/482910/tokens/" + other, { x: col, y: 0 });
+    tbl.ui.peek = other; tbl.ui.peekArea = ""; tblFit(); paintPeek();
   });
   const edge = await fits();
   ok(edge.open && edge.inside, `a figure's card at the right-hand edge stays on the board (${edge.w}px)`);
