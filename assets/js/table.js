@@ -1114,6 +1114,9 @@ document.addEventListener("click", (e) => {
   else if (act === "init-roll-mine") tblInitRollMine().catch(tblFail);
   else if (act === "sheet-open") tblOpenSheetByCode();
   else if (act === "init-go") tblInitSettle(true).catch(tblFail);
+  // Calling off the gather. Not turn-end: there is no turn yet, and clearing one that does not exist is
+  // what made this button do nothing at all.
+  else if (act === "init-cancel") CocLive.put(tblPath("meta/init"), null).catch(tblFail);
   // Not everything dropped on the board mid-fight belongs in the order. The DM's call, and only theirs.
   else if (act === "init-out") tblJoinOut(val).catch(tblFail);
   // Placing an area: anybody may cancel their own, and the DM may clear one that has landed.

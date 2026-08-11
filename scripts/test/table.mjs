@@ -1684,26 +1684,25 @@ await wait(80);
 peek(`tbl.ui.peek = "tRig"; paintPeek();`);
 ok($("#vtt-peek").classList.contains("hidden"), "tapping your own figure pops nothing up");
 ok(!$('[data-tbl="mine-remove"][data-val="tRig"]'), "so the way off the table is not one stray tap away");
-/* IT IS ON THE SHEET, and so are the conditions — one window for one character. The strip the sheet draws
-   is the CONTROL now, not a read-out of a second list that could disagree with it. */
-peek(`$("#vtt-side").innerHTML = tblMyCondStripHTML(); $("#vtt-side").classList.remove("hidden");`);
-ok($$('[data-tbl="mine-cond"]').length >= 8,
-  `the sheet carries every condition as a chip you can press (${$$('[data-tbl="mine-cond"]').length})`);
-ok(!!$('[data-tbl="mine-remove"][data-val="tRig"]'), "and the way off the table, under them");
-ok(!/Hit points/.test($("#vtt-side").textContent),
-  "and not your hit points, which are yours and live further down the same sheet");
+/* ONE LIST OF CONDITIONS, AND IT IS THE SHEET'S OWN FIELD. The board used to name its own ten and the
+   sheet's Status field kept its own States, so a character could be prone in one and not in the other.
+   Kayki: "the functionality of the conditions will pass to the ALREADY EXISTING conditions field on the
+   status field on the character sheet, don't double it." The vocabulary is authored once. */
+ok(peek(`JSON.stringify(Object.keys(TBL_CONDITION_NAMES))`)
+   === peek(`JSON.stringify(UNIVERSAL_STATE_IDS)`),
+  "the board's conditions ARE the sheet's, one list authored once");
 /* AND IT ANSWERS ON THE PRESS, not when the database says so. It used to repaint when the write was
    ACKNOWLEDGED: instant on a good moment, five to ten seconds on a bad one, and every press in between
    read the stored list — still the old one — and asked for the very same change again. Kayki: "if I click
    it again to remove it doesn't do so, if I click grapple afterwards it does nothing, and after 5-10 sec
    the condition gets updated out of nowhere." Asserted with NO wait at all, which is the whole point. */
-click($$('[data-tbl="mine-cond"]').find((b) => /Prone/.test(b.textContent)));
-ok(peek(`tblConds("tRig").indexOf("prone")`) >= 0, "pressing one marks it at once, ack or no ack");
-click($$('[data-tbl="mine-cond"]').find((b) => /Prone/.test(b.textContent)));
-ok(peek(`tblConds("tRig").indexOf("prone")`) < 0, "and pressing it again takes it off, at once");
+ok(peek(`tblToggleMyCondition("prone")`) === true, "a condition pressed on the sheet goes to the figure");
+ok(peek(`tblConds("tRig").indexOf("prone")`) >= 0, "and marks it at once, ack or no ack");
+peek(`tblToggleMyCondition("prone")`);
+ok(peek(`tblConds("tRig").indexOf("prone")`) < 0, "pressing it again takes it off, at once");
 /* A SECOND CONDITION WHILE THE FIRST IS STILL IN FLIGHT. This is the press that was broken: it read the
    stored list, which had not caught up, and so asked for a change that had already been made. */
-click($$('[data-tbl="mine-cond"]').find((b) => /Grappled/i.test(b.textContent)));
+peek(`tblToggleMyCondition("grappled")`);
 ok(peek(`tblConds("tRig").length`) === 1, "a second press lands on top of the first rather than under it");
 await until(async () => ((await aget(`CocLive.get("tables/482910/tokens/tRig/conditions")`)) || []).length === 1);
 ok(true, "and the table agrees once the write lands");
@@ -1768,21 +1767,26 @@ ok($("#vtt-sheet .tab-strip"), "holding the REAL sheet, fields and all — not a
 ok($$("#vtt-sheet .ab-box").length === 6, "with the six abilities");
 ok($("#vtt-sheet [data-act='dmg']"), "and its own controls, which is the point");
 ok(!$("#tool .vtt-stage").classList.contains("hidden"), "the board is still there behind it");
-/* THE CONDITIONS, ON THE SHEET, IN THE DRAWER — the one place they are set now. There used to be a second
-   window on the figure ("What I am under") holding the same ten chips, and two lists of one thing is one
-   list too many: Kayki, after they disagreed once too often, "just remove the option what I am under and
-   let it all be on the character sheet, the field is already there." Pressing one has to answer at once
-   and it has to repaint THIS drawer — paintSide() would throw the sheet away and fetch it again. */
-const proneChip = () => $$("#vtt-sheet [data-tbl='mine-cond']").find((b) => /Prone/.test(b.textContent));
-ok($$("#vtt-sheet [data-tbl='mine-cond']").length >= 8, "the sheet carries every condition as a chip");
-ok(!!$("#vtt-sheet [data-tbl='mine-remove']"), "and the way off the table, under them");
+/* THE CONDITIONS, IN THE FIELD THAT ALREADY HELD THEM. The Status field's own States chips ARE the
+   table's conditions now — same ids, same list — so pressing one there writes to your figure and there is
+   no second window to disagree with it. Kayki: "don't double it." */
+const proneChip = () => $$("#vtt-sheet [data-act='flag']").find((b) => /^Prone$/.test(b.textContent.trim()));
+ok($$("#vtt-sheet [data-act='flag']").length >= 10, "the Status field carries every condition as a chip");
+ok(!!proneChip(), "including Prone");
 click(proneChip());
 ok(/\bon\b/.test(proneChip().className), "pressing one lights the chip on the press, ack or no ack");
-ok($$("#vtt-sheet .ab-box").length === 6, "and redraws the sheet in place rather than fetching it again");
+ok(peek(`tblConds("tRig").indexOf("prone")`) >= 0, "and it went to the FIGURE, where the table reads it");
+ok($$("#vtt-sheet .ab-box").length === 6, "the sheet redrew in place rather than being fetched again");
 click(proneChip());
 ok(!/\bon\b/.test(proneChip().className), "and pressing it again puts it out — the press that used to do nothing");
 await until(async () => (await aget(`CocLive.get("tables/482910/tokens/tRig/conditions")`)) == null);
 ok(true, "with the table agreeing once the writes land");
+/* AND THE WAY OFF THE TABLE IS IN PROGRESS, not one stray tap from a figure you drag constantly. */
+click($("#vtt-sheet [data-act='tab'][data-val='progress']"));
+await wait(60);
+ok(!!$("#vtt-sheet [data-tbl='mine-remove']"), "the way off the table lives in Progress, with levelling");
+click($("#vtt-sheet [data-act='tab'][data-val='status']"));
+await wait(60);
 // The sheet is live: damage taken here must reach the figure on the board, for everyone.
 const hpBefore = await aget(`CocLive.get("tables/482910/tokens/tRig/hp")`);
 type($("#vtt-sheet #hp-amt"), "7");
@@ -2150,6 +2154,8 @@ await peek(`(async () => { for (const [id, t] of Object.entries(tblTokens()))
   if (t && t.charCode === "123456" && id !== tbl.me.tokenId) await CocLive.del("tables/482910/tokens/" + id); })()`);
 await until(() => peek(`Object.values(tblTokens()).filter((t) => t && t.charCode === "123456").length`) === 1);
 peek(`tbl.ui.panel = "sheet"; paintSide();`);
+await until(() => !!$("#vtt-sheet [data-act='tab'][data-val='progress']"), 10000);
+click($("#vtt-sheet [data-act='tab'][data-val='progress']"));   // where leaving lives, beside levelling
 await until(() => !!$("#vtt-sheet [data-tbl='mine-remove']"), 10000);
 click($("#vtt-sheet [data-tbl='mine-remove']"));
 await until(() => peek(`tblMyTokens().length`) === 0);

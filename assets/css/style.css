@@ -429,10 +429,9 @@ h1 { font-family: var(--serif); font-weight: 600; margin: 0 0 1.25rem; }
 code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; font-size: 0.85em; }
 
 @media (max-width: 640px) {
-  /* The 5-column Attacks table tightens rather than overflowing. */
+  /* The class page's 5-column weapon table tightens rather than overflowing. */
   .attack-table { font-size: 0.87rem; }
   .attack-table td, .attack-table th { padding: 0.35rem 0.4rem; }
-  .attack-table td:nth-child(4) { min-width: 0; }
   /* Top bar wraps: brand + Parry button on row 1, search full-width on row 2. */
   .topbar { flex-wrap: wrap; gap: 0.5rem 0.75rem; padding: 0.6rem 0.9rem; }
   .brand { min-width: 0; }
@@ -464,19 +463,14 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
   .content { padding: 1rem 1rem calc(3.5rem + env(safe-area-inset-bottom, 0px)); }
   .detail-view { max-width: 100%; }
 
-  /* Five columns cannot fit a phone. Stack each attack into label/value rows rather than putting
-     the table in a horizontal scroller, which would clip the mastery and property tooltips. */
+
+  /* Five columns cannot fit a phone. The class page's weapon table stacks into label/value rows rather
+     than going into a horizontal scroller, which would clip the mastery and property tooltips. (The
+     SHEET's attacks are cards — see .atk-card — and were never well served by a table.) */
   .attack-table, .attack-table tbody, .attack-table tr, .attack-table td { display: block; width: 100%; }
   .attack-table thead { display: none; }
   .attack-table tr { padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--border); }
-  /* Normal inline flow, not flex. A flex row will not shrink its value below that value's own
-     min-content, so a long word ("bludgeoning") pushed straight off the screen; in inline flow it
-     simply wraps under its label. */
   .attack-table td { display: block; padding: 0.15rem 0; border: none; }
-  .attack-table td::before {
-    content: attr(data-label); display: inline-block; min-width: 5.5rem;
-    color: var(--muted); font-size: 0.80rem; text-transform: uppercase; letter-spacing: 1px;
-  }
 
   /* Keep wide tables readable and prevent unbreakable text from overflowing. table-layout: fixed
      is the guarantee: an auto table sizes itself to its content and will happily exceed the screen,
@@ -570,7 +564,6 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
    character, so columns collapse and every word shatters — "mar ke d car d one" per line.
    `break-word` breaks only a word that genuinely cannot fit and leaves column sizing alone. */
 .data-table td, .data-table th { overflow-wrap: break-word; }
-.attack-table td:nth-child(4) { min-width: 8rem; }
 
 /* The choosable property (armour trait, weapon mastery) shown on a list card, so a player can
    compare without opening every entry. */
@@ -922,10 +915,6 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 .trick-list { display: block; }
 
 /* Engine trigger buttons and the post-cast question. */
-.triggers { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.6rem; }
-.trigger { text-align: left; }
-.trigger em { color: var(--muted); font-style: normal; font-size: 0.78rem; }
-.trigger.spent { opacity: 0.45; text-decoration: line-through; }
 .prompt-bar { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; justify-content: space-between;
   background: rgba(201,165,78,0.12); border: 1px solid var(--gold); border-radius: var(--radius);
   padding: 0.7rem 1rem; margin-bottom: 1rem; }
@@ -952,7 +941,6 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
   .hp-controls .btn-quiet { flex: 1 1 auto; }
   .combat-bar, .prompt-bar { flex-direction: column; align-items: stretch; }
   .prompt-acts .btn, .prompt-acts .btn-quiet { flex: 1; }
-  .triggers .trigger { width: 100%; }
   /* The header is not the sheet — it is the label on it. Wrapping put the portrait, the name, the
      level box and the combat button on four separate rows, which cost most of a phone screen before
      a single number appeared and pushed the fields below the fold. One row, three columns. */
@@ -1024,9 +1012,35 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 .lu-asi .stepper { justify-content: space-between; width: 100%; }
 
 /* Attacks: one row per weapon actually carried, with the to-hit and damage already worked out. */
-.atk-hit, .atk-dmg { font-family: var(--serif); color: var(--gold); }
-.atk-hit { white-space: nowrap; }
-.gear-line { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: baseline; margin: 0 0 0.6rem; }
+/* ATTACKS — a card per weapon. It was a five-column table that stacked into label/value rows on a phone,
+   which put "PROPERTIES" hard against "finesse" with nothing between them, and buried the two things you
+   actually DO with a weapon among five equal cells. The name leads, the two rolls are the two buttons. */
+.atk-list { display: grid; gap: 0.6rem; }
+.atk-card { padding: 0.7rem 0.8rem; background: var(--panel-2); border: 1px solid var(--border);
+  border-radius: 8px; }
+.atk-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem; margin-bottom: 0.5rem; }
+.atk-name { font-family: var(--serif); font-size: 1.05rem; }
+.atk-range { font-size: 0.85rem; }
+.atk-nums { display: flex; flex-wrap: wrap; gap: 0.5rem 1.2rem; }
+.atk-num { display: flex; align-items: baseline; gap: 0.4rem; font-family: var(--serif);
+  color: var(--gold); font-size: 1.05rem; }
+.atk-k { color: var(--muted); font-family: var(--sans); font-size: 0.78rem; text-transform: uppercase;
+  letter-spacing: 0.06em; }
+.atk-meta { margin: 0.45rem 0 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.3rem 0.5rem; }
+.atk-alt { margin: 0.45rem 0 0; font-size: 0.9rem; }
+/* GEAR — what you are wearing and what you are holding, one row each. It was a single flex line with the
+   armour, its AC, its trait and the shield sharing a baseline, and a section label the weapon chips ran
+   straight into. A row has a fixed label column, so nothing can grow into anything else. */
+.gear-list { display: grid; gap: 0.5rem; margin: 0 0 0.8rem; }
+.gear-row { display: grid; grid-template-columns: 5.5rem 1fr; gap: 0.2rem 0.7rem; align-items: baseline;
+  padding: 0.55rem 0.7rem; background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; }
+.gear-k { color: var(--muted); font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.gear-v { min-width: 0; overflow-wrap: anywhere; }
+.gear-x { grid-column: 2; display: flex; flex-wrap: wrap; gap: 0.3rem; }
+@media (max-width: 480px) {
+  .gear-row { grid-template-columns: 1fr; }
+  .gear-x { grid-column: 1; }
+}
 /* The level box is a stepper's middle, not a full-width field. */
 input.step-val { width: 3.4rem; }
 
@@ -1790,5 +1804,3 @@ body:has(.vtt) { height: 100dvh; overflow: hidden; }
 /* A feature that puts something on the map carries the button that does it, under its own text. */
 .feat-ctl { margin-top: 0.5rem; }
 
-/* What the board says you are under, echoed on the sheet — the two were never introduced before. */
-.cond-strip .chips { gap: 0.3rem; }

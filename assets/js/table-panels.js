@@ -764,8 +764,15 @@ function initBarHTML(init) {
     <span class="muted">${esc(need.length - waiting.length)} of ${esc(need.length)} in${
       waiting.length && !mine.length ? ": " + esc(waiting.map((id) => (tokens[id] || {}).name || "?").slice(0, 4).join(", ")) : ""}</span>
     <span class="turn-acts">
-      ${tbl.role === "dm" ? `<button class="btn-quiet" data-tbl="init-go" ${waiting.length ? "" : "disabled"}>Start without them</button>
-        <button class="btn-quiet" data-tbl="turn-end">Cancel</button>` : ""}
+      ${/* BOTH OF THESE WERE BUTTONS THAT DID NOTHING, and Kayki found them: "Cancel" called turn-end,
+            which clears `meta/turn` — and during the gather there is no `meta/turn` yet, the state is
+            `meta/init`, so it cleared nothing and the bar stayed exactly where it was. And "Start
+            without them" was enabled the moment ANYONE was still missing, including when nobody had
+            rolled at all — and an order of nought people cannot be written, so tblInitSettle returned
+            silently. It now needs somebody in as well as somebody out. */""}
+      ${tbl.role === "dm" ? `<button class="btn-quiet" data-tbl="init-go"
+          ${waiting.length && waiting.length < need.length ? "" : "disabled"}>Start without them</button>
+        <button class="btn-quiet" data-tbl="init-cancel">Cancel</button>` : ""}
     </span>`;
 }
 
@@ -883,9 +890,11 @@ function paintTurnBar() {
       budget.why ? ` <em>${esc(budget.why)}</em>` : ""}</span>` : ""}
     ${upNext && upNext !== currentId ? `<span class="muted turn-next">next: ${esc((tokens[upNext] || {}).name || "?")}</span>` : ""}
     <span class="turn-acts">
+      ${/* Back on the left, Next on the right: they were the other way round, so an arrow pointing left
+            sat to the RIGHT of an arrow pointing right. */""}
+      ${tbl.role === "dm" ? `<button class="btn-quiet" data-tbl="turn" data-val="-1">&larr; Back</button>` : ""}
       ${canStep ? `<button class="btn-quiet" data-tbl="turn" data-val="1">${mine && tbl.role !== "dm" ? "Done" : "Next"} &rarr;</button>` : ""}
-      ${tbl.role === "dm" ? `<button class="btn-quiet" data-tbl="turn" data-val="-1">&larr; Back</button>
-        <button class="btn-quiet" data-tbl="init-roll">Reroll</button>
+      ${tbl.role === "dm" ? `<button class="btn-quiet" data-tbl="init-roll">Reroll</button>
         <button class="btn-quiet" data-tbl="turn-end">End</button>` : ""}
     </span>
     ${joinLineHTML(turn, tokens)}`;
@@ -1081,11 +1090,13 @@ function tblShapeOf(t) {
   return TBL_SHAPE_IDS.includes(t.shape) ? t.shape : "square";
 }
 
-const TBL_CONDITION_NAMES = {
-  prone: "Prone", grappled: "Grappled", restrained: "Restrained", frightened: "Frightened",
-  blinded: "Blinded", stunned: "Stunned", poisoned: "Poisoned", concentrating: "Concentrating",
-  bloodied: "Bloodied", down: "Down",
-};
+/* ONE LIST, and it is the sheet's. The board used to keep its own names here and the sheet kept its own
+   States field, so the same character could be prone in one place and not in the other — which is what
+   Kayki kept reporting as "the conditions window doesn't communicate with the character sheet". The
+   vocabulary is authored once, in UNIVERSAL_STATES (creator.js), and the board reads it. creator.js runs
+   before this file, so the list is there by the time this line does. */
+const TBL_CONDITION_NAMES = Object.fromEntries(
+  (typeof UNIVERSAL_STATES !== "undefined" ? UNIVERSAL_STATES : []).map(([k, label]) => [k, label]));
 
 /* Opening a figure has to bring its details INTO VIEW. The panel is beside the board on a desktop and
    below it on a phone, so "it opened" and "you can see that it opened" were two different things — Kayki
@@ -1953,25 +1964,38 @@ function pickingBarHTML(pick) {
  * conditions window doesn't communicate with the character sheet." Conditions are the one piece of state
  * that lives on the FIGURE — they are public, and the board is where everyone reads them — so the sheet
  * asks the board rather than keeping a second copy that could disagree. */
-/* The strip the sheet draws, which is now the CONTROL rather than a read-out: every condition as a
-   chip you press, and the way off the table underneath it. Both used to live on the figure's own panel,
-   reached by tapping yourself on the board — two windows for one character, which is what Kayki asked to
-   be rid of. A misclick on that card also took his figure off the table with no warning and no way back;
-   here it sits at the bottom of your own sheet, where you have to have gone looking for it. */
-function tblMyCondStripHTML() {
+function tblMyConditions() {
+  if (typeof tbl === "undefined" || !tbl) return null;
+  const id = tblMyTokens()[0];
+  return id ? tblConds(id) : null;
+}
+
+/* Pressing one of the sheet's condition chips at a table. It answers whether the figure took it, so the
+   sheet knows whether to fall back to remembering it on itself — away from a table there is no figure
+   and a condition is simply a note. */
+function tblToggleMyCondition(k) {
+  if (typeof tbl === "undefined" || !tbl) return false;
+  const id = tblMyTokens()[0];
+  if (!id) return false;
+  tblToggleCond(id, k).catch(tblFail);
+  paintTokens();
+  paintPeek();
+  paintTurnBar();
+  return true;
+}
+
+/* And the way off the table, for the sheet's Progress field to carry. It used to be on the card that
+   opened when you tapped your own figure, one stray tap from a figure people drag constantly — Kayki hit
+   it by accident and his character came off. Levelling and leaving are both things you do between
+   moments of play, which is what that field is for. */
+function tblLeaveTableHTML() {
   if (typeof tbl === "undefined" || !tbl || tbl.role === "dm") return "";
   const id = tblMyTokens()[0];
   if (!id) return "";
-  const conds = tblConds(id);
-  return `<section class="panel cond-strip">
-    <p class="panel-sub">You are under</p>
-    <div class="chips">${Object.entries(TBL_CONDITION_NAMES).map(([k, label]) =>
-      `<button class="chip ${conds.includes(k) ? "on" : ""}" data-tbl="mine-cond"
-        data-val="${esc(id)}|${esc(k)}">${esc(label)}</button>`).join("")}</div>
-    <p class="muted">Everyone at the table can see these — they change what you can do, and the board
-      counts your movement from them.</p>
-    <p class="panel-sub">Leaving the table</p>
+  return `<section class="panel">
+    <p class="panel-sub">At the table</p>
     <button class="btn-quiet" data-tbl="mine-remove" data-val="${esc(id)}">Take my figure off the table</button>
-    <p class="muted">Nothing about the character is touched; you can put it back on whenever.</p>
+    <p class="muted">Nothing about the character is touched. You are asked who you are playing straight
+      after, and putting this one back on is one press.</p>
   </section>`;
 }

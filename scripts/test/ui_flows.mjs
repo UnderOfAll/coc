@@ -182,8 +182,11 @@ console.log("\n— MOBILE —");
 const mob=(css.match(/@media \(max-width: 640px\) \{[\s\S]*?\n\}/)||[""])[0];
 ok(!/statusbar/.test(css)&&!/statusbar/.test(fs.readFileSync(path.join(REPO,"index.html"),"utf8")),
   "the status bar is gone entirely, not merely hidden");
-ok(/\.attack-table[^{]*\{[^}]*display: block/.test(mob),"five attack columns stack instead of overflowing");
-ok(/content: attr\(data-label\)/.test(mob),"stacked rows are labelled");
+ok(/\.attack-table[^{]*\{[^}]*display: block/.test(mob),"the class page's five weapon columns stack instead of overflowing");
+// The SHEET's attacks are a card each, not a table stacked into label/value rows — that layout put
+// "PROPERTIES" hard against "finesse" with nothing between them. Kayki: "attacks show the attack we
+// have with the weapon, not just a label of the weapon itself."
+ok(/\.atk-card \{/.test(css),"and the sheet's own attacks are cards");
 // A bare minmax(Xrem, 1fr) keeps its floor even when the container is narrower, which is a grid
 // pushing the page wider than the phone and making the browser zoom out.
 const rigid=[...css.matchAll(/minmax\((\d[\d.]*(?:rem|px)), 1fr\)/g)].map(m=>m[0]);
@@ -248,25 +251,32 @@ ok(!jl.some(l=>/Trick attack/i.test(l)),"and no trick-attack line, because he ca
 mk("joker",5);
 ok($$(".ab-box.prof").length===2,"the two proficient saves are marked");
 ok($(".ab-save").textContent.includes("+"),"each ability shows its saving throw");
-ok($$(".attack-table td").every(n=>n.getAttribute("data-label")),"every attack cell carries its stacked-view label");
-const atk=$$(".attack-table tbody tr");
+ok($$(".atk-card").every(n=>n.querySelector(".atk-name")&&n.querySelectorAll(".atk-num").length===2),
+  "every attack card names the weapon and carries both rolls");
+const atk=$$(".atk-card");
 ok(atk.length===3,"attacks listed for a character who chose nothing (falls back to proficiency)");
 // Dagger is finesse and this Joker has Dex 15 (+2) but Cha 13 (+1). The default rule would give
 // +5; his Sleight of Hand feature says Charisma, so the sheet must say +4.
-ok(/\+4/.test($(".atk-hit").textContent),"Joker hits at +4 — Charisma, not the better finesse stat");
-ok(/Sleight of Hand/.test($(".atk-hit .term-tip").textContent),"and the tooltip names the feature that does it");
+ok(/\+4/.test($(".atk-num").textContent),"Joker hits at +4 — Charisma, not the better finesse stat");
+ok(/Sleight of Hand/.test($(".atk-num .term-tip").textContent),"and the tooltip names the feature that does it");
 peek(`sheet.ch.weapons=["Dagger"]; renderSheet();`);
-ok($$(".attack-table tbody tr").length===1,"choosing one weapon shows exactly one attack");
+ok($$(".atk-card").length===1,"choosing one weapon shows exactly one attack");
 // A character saved before weapons were choosable has to be able to fix that from the sheet.
 peek(`delete sheet.ch.weapons; renderSheet();`);
-ok($$(".attack-table tbody tr").length===3,"an old save with no weapons recorded falls back to all three");
+ok($$(".atk-card").length===3,"an old save with no weapons recorded falls back to all three");
 click($$('[data-act="carry"]').find(b=>b.dataset.val==="Dagger"));
-ok($$(".attack-table tbody tr").length===1,"and can be corrected from the Gear panel");
+ok($$(".atk-card").length===1,"and can be corrected from the Gear panel");
+// You hold ONE weapon, as at creation: picking another swaps rather than adding to a growing pile.
+const swapTo=$$('[data-act="carry"]')[0];
+const swapName=swapTo&&swapTo.dataset.val;
+click(swapTo);
+ok($$(".atk-card").length===1&&$(".atk-name").textContent.trim()===swapName,
+  "and picking another swaps it rather than carrying both ("+swapName+")");
 
 mk("acrobat",5);
 // No override on the Acrobat, so the default 5e rule applies: finesse takes the better of Str/Dex.
-ok(/\+5/.test($(".atk-hit").textContent),"Acrobat hits at +5 — finesse takes the better of Str 12 and Dex 15");
-ok(/Finesse/.test($(".atk-hit .term-tip").textContent),"and says so");
+ok(/\+5/.test($(".atk-num").textContent),"Acrobat hits at +5 — finesse takes the better of Str 12 and Dex 15");
+ok(/Finesse/.test($(".atk-num .term-tip").textContent),"and says so");
 mk("joker",5);
 
 console.log("\n— HEADER —");
@@ -307,7 +317,11 @@ ok($(".trick-sum .inplay-tip"),"and carry the In play description as a tooltip")
 ok($(".trick-sum .inplay-tip .term-tip").textContent.length>20,"which has real text in it");
 // the cooldown label is plain English, not the system's in-fiction word for it
 peek(`sheet.ch.play.inCombat=true; sheet.ch.play.cooldowns={"waking-nightmare":2}; renderSheet();`);
-ok([...$$(".why")].some(n=>/Ready in 2 rounds/.test(n.textContent)),"a cooldown reads 'Ready in 2 rounds', not 'Seen'");
+ok([...$$(".why")].some(n=>/ready in 2 rounds/i.test(n.textContent)),"a cooldown reads 'ready in 2 rounds', not 'Seen'");
+// …and being too poor to cast says WHAT it is short of, not a bare number nobody can attach to anything.
+peek(`sheet.ch.play.cooldowns={}; sheet.ch.play.engine=0; renderSheet();`);
+ok([...$$(".why")].some(n=>/needs \d+ \w+ — you have 0/.test(n.textContent)),
+  "and an unaffordable trick names the engine it is short of");
 ok(![...$$(".why")].some(n=>/Seen/.test(n.textContent)),"the word Seen is gone from the sheet");
 peek(`sheet.ch.play.cooldowns={}; sheet.ch.play.inCombat=false; renderSheet();`);
 
@@ -495,7 +509,7 @@ ok($$(".vital-set .kn").every(k=>!k.closest(".pane")),"none of the three hides i
 const paneOf=sel=>{const n=$(sel); const p=n&&n.closest(".pane"); return p?p.dataset.pane:null;};
 ok(paneOf(".ab-grid")==="status","abilities are Status");
 ok(paneOf(".skill-chip")==="status","and so are the trained skills, which used to be filed under Gear");
-ok(paneOf(".attack-table")==="attacks","weapons attacks are their own field");
+ok(paneOf(".atk-card")==="attacks","weapons attacks are their own field");
 ok(paneOf(".trick-list-sheet")==="tricks","tricks are their own field");
 ok(paneOf(".feat-grid")==="features","features are their own field");
 ok(paneOf(".chips")==="status","the states chips are Status");

@@ -1078,10 +1078,6 @@ function renderSheet() {
         : `<button class="btn ${p.inCombat ? "btn-hot" : ""}" data-act="combat">${p.inCombat ? "End combat" : "Start combat"}</button>`}
     </div>
     ${ui.levelUp ? levelUpPanel(d) : ""}
-    ${/* What the board says you are under. It lives on the figure, not here — conditions are public and
-          the board is where the table reads them — so this asks rather than keeping a second copy that
-          could disagree with it. Only at a table, because only there is there a figure to ask. */""}
-    ${conditionStrip()}
     ${vitals(d, p)}
     ${p.inCombat ? combatBar(d, p) : idleLine()}
     ${p.prompt ? promptBar(p.prompt) : ""}
@@ -1255,29 +1251,39 @@ function attacksPanel(d) {
       <p class="muted">Nothing to swing. Pick up a weapon under Gear and its to-hit and damage appear here.</p>
     </section>`;
   }
-  const rows = d.carried.map(({ w, ability, why, hit, mod }) => {
+  /* A CARD PER WEAPON, not a five-column table stacked into a phone. As a table it put a "PROPERTIES"
+     label hard against the word "finesse" with no gap between them, and the two things you actually do
+     with a weapon — the to-hit and the damage — were two cells in a list of five. Kayki: "attacks show
+     the attack we have with the weapon, not just a label of the weapon itself." So: the name leads, the
+     two rolls are the two big buttons beside it, and everything else is underneath. */
+  const cards = d.carried.map(({ w, ability, why, hit, mod }) => {
     const vers = (w.properties || []).includes("versatile") && w.versatileDamage
-      ? ` <span class="muted">(${esc(w.versatileDamage)} ${esc(sign(mod))} two-handed)</span>` : "";
-    const rng = w.range ? `<span class="muted">${esc(w.range.normal)}/${esc(w.range.long)} ft</span>` : "";
-    // data-label drives the stacked layout on a phone, where five columns cannot fit and a
-    // horizontal scroller would clip the mastery tooltips.
-    // The to-hit and the damage are the two things you do with a weapon, so they are the two buttons.
+      ? `<p class="atk-alt muted">Two-handed: ${rollBtn(w.versatileDamage + (mod ? sign(mod) : ""),
+          w.name + " damage (two-handed)", w.versatileDamage + " " + sign(mod))} ${esc(w.damage.type)}</p>` : "";
     // chipTip keeps the explanation on its own ⓘ rather than on the control — tapping a control on a
     // phone must do the thing, not explain it.
     const hitBtn = chipTip(rollBtn("1d20" + sign(hit), w.name + " to hit", sign(hit)),
       `${why} Proficiency ${sign(d.prof)} + ${ability} ${sign(mod)}.`);
     const dmgSpec = w.damage.die + (mod ? sign(mod) : "");
-    return `<tr>
-      <td data-label="Weapon"><strong>${esc(w.name)}</strong> ${rng}</td>
-      <td data-label="To hit" class="atk-hit">${hitBtn}</td>
-      <td data-label="Damage" class="atk-dmg">${rollBtn(dmgSpec, w.name + " damage", w.damage.die + " " + sign(mod))}${vers} <span class="muted">${esc(w.damage.type)}</span></td>
-      <td data-label="Properties">${propsHTML(w.properties)}</td>
-      <td data-label="Mastery">${masteryHTML(w.mastery)}</td></tr>`;
+    return `<div class="atk-card">
+      <div class="atk-head">
+        <strong class="atk-name">${esc(w.name)}</strong>
+        ${w.range ? `<span class="muted atk-range">${esc(w.range.normal)}/${esc(w.range.long)} ft</span>`
+          : `<span class="muted atk-range">melee</span>`}
+      </div>
+      <div class="atk-nums">
+        <span class="atk-num"><span class="atk-k">To hit</span>${hitBtn}</span>
+        <span class="atk-num"><span class="atk-k">Damage</span>${rollBtn(dmgSpec, w.name + " damage",
+          w.damage.die + " " + sign(mod))} <span class="muted">${esc(w.damage.type)}</span></span>
+      </div>
+      ${vers}
+      ${(w.properties || []).length ? `<p class="atk-meta"><span class="atk-k">Properties</span>
+        ${propsHTML(w.properties)}</p>` : ""}
+      ${w.mastery ? `<p class="atk-meta"><span class="atk-k">Mastery</span> ${masteryHTML(w.mastery)}</p>` : ""}
+    </div>`;
   }).join("");
   return `<section class="panel">
-    <table class="data-table attack-table">
-      <thead><tr><th>Weapon</th><th>To hit</th><th>Damage</th><th>Properties</th><th>Mastery</th></tr></thead>
-      <tbody>${rows}</tbody></table>
+    <div class="atk-list">${cards}</div>
     <p class="muted">Roll d20 and add the to-hit against the target's AC. On a hit, roll the damage die and add the same modifier.</p>
   </section>`;
 }
@@ -1298,19 +1304,16 @@ function enginePanel(d, p) {
     `<button class="pip ${i < p.engine ? "on" : ""}" data-act="engine-set" data-val="${i + 1}"
       title="Set to ${i + 1}" ${p.inCombat ? "" : "disabled"}></button>`).join("");
   const play = d.cls.play || {};
-  // One button per way this class GAINS engine, worded as the player would say it. Once-per-turn
-  // triggers grey out until End my turn, which is the only thing that resets them.
-  const trig = (play.triggers || []).map((t) => {
-    const spent = t.oncePerTurn && p.turnTriggers?.[t.id];
-    return `<button class="btn-quiet trigger ${spent ? "spent" : ""}" data-act="trigger" data-val="${esc(t.id)}"
-      ${spent || !p.inCombat ? "disabled" : ""}>+${esc(t.gain)} · ${esc(t.label)}${t.oncePerTurn ? ' <em>1/turn</em>' : ""}</button>`;
-  }).join("");
+  /* THE ONLY BUTTONS HERE ARE +1, −1 AND CLEAR. There used to be one per way the class GAINS engine
+     ("+1 · Create a Clone", "+1 · Full Dodge"), and Kayki's call is that they do not belong: the meter
+     is a number, and WHY it went up is something the player and the DM settle between them at the table.
+     The one thing a trigger button also did — putting a Clone on the map — has moved to the feature that
+     grants Clones, where somebody reading about Clones will actually look for it. */
   return `<section class="panel engine-panel">
     <h2>${esc(e.name)} <span class="muted">${esc(p.engine)} / ${esc(cap)}</span></h2>
     <div class="pips">${pips || `<span class="muted">cap 0</span>`}</div>
     ${p.inCombat ? "" : `<p class="muted">Built during a fight and lost when it ends — it cannot be
       banked beforehand, so it sits at 0 until you start one.</p>`}
-    ${trig ? `<div class="triggers">${trig}</div>` : ""}
     ${play.autoRefill === "turn" ? `<p class="muted">Refills to ${esc(cap)} at the start of each of your turns — press <strong>End my turn</strong>.</p>` : ""}
     <div class="hp-controls">
       <button class="btn-quiet" data-act="engine" data-val="-1">−1</button>
@@ -1330,7 +1333,13 @@ function tricksPanel(d, p) {
     const cost = t.engineCost || 0;
     const tooPoor = cost > p.engine;
     const blocked = cd > 0 || spent || tooPoor;
-    const why = spent ? "used this combat" : cd > 0 ? `Ready in ${cd} round${cd === 1 ? "" : "s"}` : tooPoor ? `needs ${cost}` : "";
+    /* WHY IT CANNOT BE CAST, in the words a player would use. "needs 2" left you counting pips to work
+       out what it needed 2 OF; naming the engine and what you actually have says it outright. */
+    const eng = d.engine ? d.engine.name : "engine";
+    const why = spent ? "already used this combat"
+      : cd > 0 ? `ready in ${cd} round${cd === 1 ? "" : "s"}`
+      : tooPoor ? `needs ${cost} ${eng} — you have ${p.engine}`
+      : "";
     return `<div class="trick-row ${blocked ? "blocked" : ""}">
       <div class="trick-main">
         <div class="trick-head">
@@ -1412,7 +1421,7 @@ function featuresPanel(d, p) {
       ${metaRow(f.meta)}
       <div class="feat-text">${fmtDesc(f.sheetSummary || f.description || "")} ${inPlayTip(f.narration)}</div>
       ${optionsBlock(f, key)}
-      ${boardCtl(f)}
+      ${boardCtl(f, d, p)}
       ${ctl}
     </div>`;
   }).join("");
@@ -1434,46 +1443,89 @@ function optionsBlock(f, key) {
     ${open ? optionTable(opts) : ""}`;
 }
 
-/* Conditions any character can be under, plus whatever the class data declares. Nothing here is
-   inferred: the app never sees a die roll, so it only ever remembers what the player tells it. */
+/* THE CONDITIONS, and there is exactly one list of them in the app.
+ *
+ * This field has always been here, and the figure on the board grew a second list of the same thing —
+ * which then disagreed with it, because nothing joined them up. Kayki: "the functionality of the
+ * conditions will pass to the ALREADY EXISTING conditions field on the status field on the character
+ * sheet, don't double it." So: these ids ARE the board's ids (`TBL_CONDITION_NAMES` is built from this
+ * list), and at a table pressing one writes to your FIGURE, because a condition is public and the board
+ * is where the table reads it. Away from a table it is remembered on the sheet as before.
+ *
+ * Nothing here is inferred: the app never sees a die roll, so it only ever remembers what you tell it. */
 const UNIVERSAL_STATES = [
   ["prone", "Prone", "Melee attacks against you have advantage, ranged have disadvantage; standing costs half your speed."],
   ["grappled", "Grappled", "Your speed is 0."],
   ["restrained", "Restrained", "Speed 0, attacks against you have advantage, and you have disadvantage on Dex saves."],
   ["frightened", "Frightened", "Disadvantage while the source is in sight, and you cannot willingly move closer to it."],
   ["blinded", "Blinded", "You automatically fail sight checks; attacks against you have advantage and yours have disadvantage."],
-  ["concentrating", "Concentrating", "Take damage → roll a flat d20 against DC 10, or half the damage taken if that is higher."],
+  ["poisoned", "Poisoned", "Disadvantage on attack rolls and on ability checks."],
+  ["stunned", "Stunned", "Speed 0, you cannot act, and attacks against you have advantage."],
   ["incapacitated", "Incapacitated", "No actions and no reactions — and you cannot Parry at all."],
+  ["concentrating", "Concentrating", "Take damage → roll a flat d20 against DC 10, or half the damage taken if that is higher."],
+  ["bloodied", "Bloodied", "At or below half your hit points. Some effects read it; the app only records it."],
+  ["down", "Down", "Unconscious and making death saves. Speed 0."],
 ];
+const UNIVERSAL_STATE_IDS = UNIVERSAL_STATES.map(([k]) => k);
+
 function statePanel(d, p) {
   const own = (d.cls.play?.states || []).filter((st) => !st.subclass || (d.subclass && d.subclass.id === st.subclass));
-  const all = own.map((st) => [st.id, st.label, st.why || ""]).concat(UNIVERSAL_STATES);
+  const onFigure = typeof tblMyConditions === "function" ? tblMyConditions() : null;
+  const isOn = (k) => onFigure && UNIVERSAL_STATE_IDS.includes(k) ? onFigure.includes(k) : !!p.flags[k];
+  const chips = (list) => `<div class="chips">${list.map(([k, label, why]) => chipTip(
+    `<button class="chip ${isOn(k) ? "on" : ""}" data-act="flag" data-val="${esc(k)}">${esc(label)}</button>`,
+    esc(why))).join("")}</div>`;
   return `<section class="panel"><h2>States</h2>
-    <div class="chips">${all.map(([k, label, why]) => chipTip(
-      `<button class="chip ${p.flags[k] ? "on" : ""}" data-act="flag" data-val="${esc(k)}">${esc(label)}</button>`,
-      esc(why))).join("")}</div>
-    <p class="muted">Toggle these yourself — the app never sees your dice, so it never guesses. All of
-      them clear when the fight ends.</p>
+    <p class="panel-sub">Conditions${onFigure ? ` <span class="muted">— everyone at the table sees
+      these, and the board counts your movement from them</span>` : ""}</p>
+    ${chips(UNIVERSAL_STATES)}
+    ${own.length ? `<p class="panel-sub">${esc(d.cls.name)}</p>
+      ${chips(own.map((st) => [st.id, st.label, st.why || ""]))}` : ""}
+    <p class="muted">Toggle these yourself — the app never sees your dice, so it never guesses.
+      ${own.length ? `The ${esc(d.cls.name)} ones clear when the fight ends.` : ""}</p>
   </section>`;
 }
 
+/* WHAT YOU ARE WEARING AND WHAT YOU ARE HOLDING — two things, so two rows, each saying what it gives you.
+ *
+ * This was a flex line with the armour, its AC, its trait and the shield all sharing one baseline, and
+ * then a "Carrying" label that the weapon chips ran straight into. Kayki: "the gear field is shit, straight
+ * up… the weapon label is nearly invading the carrying label, it's all deformatted, horrible."
+ *
+ * And you hold ONE weapon, the one you chose when you built the character — swapping is a swap, not a
+ * second weapon added to a growing pile. That is what creation does (one pick), and the sheet disagreeing
+ * with creation is how a character ended up listing every weapon its class is proficient with. */
 function gearPanel(d, ch) {
-  // What you are HOLDING is a thing that changes at the table — you drop a weapon, you pick a
-  // different one up — so it is editable here rather than frozen at creation. It is also the only
-  // way a character saved before weapons were choosable can stop listing all three at once.
   const carried = Array.isArray(ch.weapons) ? ch.weapons : [];
-  const weps = d.weapons.map((w) => chipTip(
-    `<button class="chip ${carried.includes(w.name) ? "on" : ""}" data-act="carry" data-val="${esc(w.name)}">${esc(w.name)}</button>`,
-    weaponTipHTML(w, d))).join("");
+  const held = d.weapons.find((w) => carried.includes(w.name)) || null;
+  const row = (label, name, note, extra) => `<div class="gear-row">
+    <span class="gear-k">${label}</span>
+    <span class="gear-v"><strong>${esc(name)}</strong>${note ? ` <span class="muted">${note}</span>` : ""}</span>
+    ${extra ? `<span class="gear-x">${extra}</span>` : ""}
+  </div>`;
+  const swaps = d.weapons.filter((w) => !held || w.name !== held.name);
   return `<section class="panel">
-    <p class="gear-line"><strong>${esc(d.armor ? d.armor.name : "No armour")}</strong>
-      ${d.armor ? `<span class="muted">AC ${esc(d.armor.baseAC)}</span> ${d.armor.trait ? armorTraitHTML(d.armor.trait) : ""}` : ""}
-      ${d.shield ? `<strong>${esc(d.shield.name)}</strong> <span class="muted">+${esc(d.shield.acBonus)}</span>` : ""}</p>
-    <p class="panel-sub">${plainTermHTML("Carrying",
-      "Everything your class is proficient with — the to-hit and the damage below already include that "
-      + "proficiency, so there is nothing to add on.")}</p>
-    <div class="chips">${weps}</div>
-    ${carried.length ? "" : `<p class="muted">Nothing chosen, so every weapon you are proficient with is listed under Attacks.</p>`}
+    <div class="gear-list">
+      ${row(plainTermHTML("Armour", "What you are wearing. Your AC at the top of the sheet already includes "
+        + "it, and your shield if you carry one."),
+        d.armor ? d.armor.name : "None",
+        d.armor ? `AC ${esc(d.armor.baseAC)}` : "unarmoured",
+        d.armor && d.armor.trait ? armorTraitHTML(d.armor.trait) : "")}
+      ${d.shield ? row("Shield", d.shield.name, `+${esc(d.shield.acBonus)} AC`, "") : ""}
+      ${held
+        ? row(plainTermHTML("Weapon", "The one you are holding. Its to-hit and its damage are worked out "
+            + "under Attacks, proficiency already included."),
+            held.name,
+            `${esc(held.damage.die)} ${esc(held.damage.type)}${held.range ? ` · ${esc(held.range.normal)}/${esc(held.range.long)} ft` : ""}`,
+            propsHTML(held.properties))
+        : row("Weapon", "None chosen", "every weapon your class knows is listed under Attacks", "")}
+    </div>
+    ${swaps.length ? `<p class="panel-sub">${plainTermHTML("Swap to",
+      "Everything your class is proficient with. You hold one at a time; picking another puts this one "
+      + "away, and you can change whenever you like.")}</p>
+      <div class="chips">${swaps.map((w) => chipTip(
+        `<button class="chip" data-act="carry" data-val="${esc(w.name)}">${esc(w.name)}</button>`,
+        weaponTipHTML(w, d))).join("")}</div>` : ""}
   </section>`;
 }
 
@@ -1561,7 +1613,10 @@ function progressPanel(d) {
       <button class="btn" data-act="levelup" ${atMax ? "disabled" : ""}>Level up to ${esc(Math.min(MAX_LEVEL, nextLv))}</button>
       ${d.level > 1 ? `<button class="btn-quiet" data-act="leveldown">Undo a level</button>` : ""}
     </div>
-  </section>`;
+  </section>
+  ${/* Leaving the table belongs with levelling and deleting: things you do between moments of play,
+        rather than a button beside the trick you are about to cast. */""}
+  ${typeof tblLeaveTableHTML === "function" ? tblLeaveTableHTML() : ""}`;
 }
 
 /* Choosing a discipline is permanent and it is the single biggest decision on the ladder, so it is
@@ -1731,16 +1786,6 @@ function atATable() {
   return typeof tbl !== "undefined" && !!tbl && !!paintTarget;
 }
 
-/* THE ONE PLACE YOUR CONDITIONS ARE SET, and no longer a read-out of somewhere else. There used to be a
-   second window ("What I am under") on the figure, and two lists of the same thing is one list too many —
-   Kayki, after the sheet's copy and the figure's copy disagreed once too often: "just remove the option
-   what I am under and let it all be on the character sheet, the field is already there, it makes it
-   redundant to have both at the same time." The chips are still written to the FIGURE, because conditions
-   are public and the board is where the table reads them; the sheet is only where you press them. */
-function conditionStrip() {
-  return (typeof tblMyCondStripHTML === "function") ? tblMyCondStripHTML() : "";
-}
-
 function setCombat(p, d, on) {
   if (!!p.inCombat === !!on) return false;
   p.inCombat = !!on;
@@ -1794,31 +1839,27 @@ function sheetAction(e) {
     p.turnTriggers = {};                                  // once-per-turn gains come back
     if (d.cls.play?.autoRefill === "turn") p.engine = d.engineCap ?? 0;   // the Juggler's Set
     p.prompt = null;
-  } else if (act === "trigger") {
-    const t = (d.cls.play?.triggers || []).find((x) => x.id === val);
-    if (t) {
-      p.engine = Math.max(0, Math.min(d.engineCap ?? 0, p.engine + t.gain));
-      if (t.oncePerTurn) p.turnTriggers[t.id] = true;
-      /* AND IT APPEARS ON THE BOARD. For a class whose engine IS a count of things standing on the map —
-         `resourceType: "tokens"`, which today means the Doppelganger's Clones — the meter going up and a
-         figure appearing are the same event, so the button that does one does the other. Everything the
-         board needs to draw it comes from here, because the sheet is the only side that knows the
-         character's picture, its size and what its cap is. */
-      if (d.engine?.resourceType === "tokens" && typeof tblSpawnOnBoard === "function") {
-        const from = (d.features || []).find((f) => (f.board || {}).verb === "spawn");
-        tblSpawnOnBoard({
-          name: (from && from.board.figure) || "clone",
-          of: ch.name || "Someone", image: ch.photo || "",
-          range: (from && from.board.range) || 30,
-          cap: d.engineCap ?? 0, ofCode: sheet.code, size: ch.size === "Large" ? 2 : 1,
-        });
-      }
-    }
   } else if (act === "board-use") {
     // The feature says what it does to the board; the board does it. Nothing here decides an outcome.
     const f = (d.features || []).find((x) => x.name === val);
     const b = f && f.board;
-    if (b && b.verb === "move" && typeof tblMoveOnBoard === "function") {
+    if (b && b.verb === "spawn") {
+      /* A FIGURE SOMEBODY MADE, from the feature that grants it. For a class whose engine IS a count of
+         things standing on the map — `resourceType: "tokens"`, which today means the Doppelganger's
+         Clones — the meter going up and a figure appearing are the same event, so this does both.
+         Everything the board needs to draw it comes from here: the sheet is the only side that knows the
+         character's picture, its size and what its cap is. */
+      if (d.engine?.resourceType === "tokens") {
+        p.engine = Math.max(0, Math.min(d.engineCap ?? 0, p.engine + 1));
+      }
+      if (typeof tblSpawnOnBoard === "function") {
+        tblSpawnOnBoard({
+          name: b.figure || "clone", of: ch.name || "Someone", image: ch.photo || "",
+          range: b.range || 30, cap: d.engineCap ?? 0, ofCode: sheet.code,
+          size: ch.size === "Large" ? 2 : 1,
+        });
+      }
+    } else if (b && b.verb === "move" && typeof tblMoveOnBoard === "function") {
       tblMoveOnBoard({ verb: "move", name: f.name, of: ch.name, distance: b.distance,
         targets: b.targets, range: b.range });
     } else if (b && b.verb === "lock" && typeof tblMoveOnBoard === "function") {
@@ -1882,11 +1923,17 @@ function sheetAction(e) {
   } else if (act === "clear-cd") delete p.cooldowns[val];
   else if (act === "use") p.uses[val] = (p.uses[val] || 0) + 1;
   else if (act === "unuse") p.uses[val] = Math.max(0, (p.uses[val] || 0) - 1);
-  else if (act === "flag") p.flags[val] = !p.flags[val];
-  else if (act === "carry") {
-    const have = Array.isArray(ch.weapons) ? ch.weapons : [];
-    ch.weapons = have.includes(val) ? have.filter((w) => w !== val) : have.concat(val);
+  /* A CONDITION GOES ON THE FIGURE, a class state stays on the sheet. Conditions are public — the whole
+     table has to see that you are prone, and the board counts your movement from it — so at a table the
+     chip writes to your figure and there is no second copy to disagree with it. Away from a table, or
+     for a state only this class has, it is a note on the sheet as it always was. */
+  else if (act === "flag") {
+    const onFigure = UNIVERSAL_STATE_IDS.includes(val) && typeof tblToggleMyCondition === "function"
+      && tblToggleMyCondition(val);
+    if (!onFigure) p.flags[val] = !p.flags[val];
   }
+  // One weapon in your hands, as at creation: picking another puts the last one away.
+  else if (act === "carry") ch.weapons = [val];
   // Opening a field takes you to the top OF THAT FIELD, not to the top of the page: on a phone the
   // vitals fill the first screen, so leaving the scroll alone means tapping Tricks shows you your
   // hit points and scrolling to 0 shows you them from further away.
@@ -2030,14 +2077,19 @@ document.addEventListener("keydown", (e) => {
    stringed creature, Heave throwing one, Iron Grip holding one, a Trapeze Swing — could be read and not
    used. The button appears only where the data says there is something to do, and only at a table, since
    away from one there is no board to do it on. */
-function boardCtl(f) {
+function boardCtl(f, d, p) {
   const b = f && f.board;
   if (!b || !atATable()) return "";
-  const verb = b.verb === "spawn" ? "" : b.verb;   // spawning is the engine's own button, not a second one
-  if (!verb) return "";
-  const label = verb === "lock" ? "Hold a figure"
-    : verb === "move" ? "Move a figure"
+  /* SPAWNING IS THIS BUTTON TOO. It used to be the engine's — the meter going up and a figure appearing
+     are the same event for a class whose engine IS a count of things on the map — but the engine is a
+     number with three buttons now, and "make a Clone" is a thing the Clones feature does. */
+  const label = b.verb === "lock" ? "Hold a figure"
+    : b.verb === "move" ? "Move a figure"
+    : b.verb === "spawn" ? `Put ${esc(b.figure ? "a " + b.figure : "one")} on the map`
     : "Put it on the map";
+  // A spawn feeds the engine, so it cannot be pressed before there is a fight to feed.
+  const off = b.verb === "spawn" && d && d.engine?.resourceType === "tokens" && !p.inCombat;
   return `<div class="feat-ctl"><button class="btn-quiet" data-act="board-use"
-    data-val="${esc(f.name)}">${label}</button></div>`;
+    data-val="${esc(f.name)}" ${off ? "disabled" : ""}>${label}</button>
+    ${off ? `<span class="why">the fight has not started</span>` : ""}</div>`;
 }
