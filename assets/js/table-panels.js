@@ -1948,11 +1948,13 @@ function tblSyncSheetCombat() {
 function pickingBarHTML(pick) {
   const t = pick.pickedId ? tblTokens()[pick.pickedId] : null;
   const feet = t ? tblMoveFeet(pick, t) : 0;
-  return `<strong>${esc(pick.name || (pick.verb === "lock" ? "Hold" : "Move"))}</strong>
+  // A swap has one beat and no destination, so it never reaches the "tap where it goes" half.
+  const ask = pick.verb === "lock" ? "hold" : pick.verb === "swap" ? "trade places with" : "move";
+  return `<strong>${esc(pick.name || (pick.verb === "lock" ? "Hold" : pick.verb === "swap" ? "Swap" : "Move"))}</strong>
     ${t
       ? `<span class="muted">${esc(t.name || "It")} &middot; up to ${esc(feet)} ft</span>
          <strong class="turn-who">Tap where it goes</strong>`
-      : `<strong class="turn-who">Tap the figure to ${pick.verb === "lock" ? "hold" : "move"}</strong>`}
+      : `<strong class="turn-who">Tap the figure to ${esc(ask)}</strong>`}
     <span class="turn-acts"><button class="btn-quiet" data-tbl="pick-cancel">Cancel</button></span>`;
 }
 

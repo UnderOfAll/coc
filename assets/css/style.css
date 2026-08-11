@@ -711,7 +711,8 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 /* The portrait on a sheet IS the picker: click it and choose a file. The input itself is not shown —
    a bare "Choose file" button beside a face is the ugliest control in any browser — and the hint only
    appears when there is somewhere to point it. */
-.portrait-swap { position: relative; display: inline-grid; cursor: pointer; }
+.portrait-swap { position: relative; display: inline-grid; cursor: pointer;
+  border-radius: var(--radius); overflow: hidden; }
 /* The control that says what it does, under the name where the eye already is. The file input itself is
    never shown — a browser's own "Choose file" button beside a face is the ugliest control there is —
    and BOTH the portrait and this button point at the same one. */
@@ -719,15 +720,12 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 .sheet-pic input[type="file"] { position: absolute; width: 1px; height: 1px; opacity: 0;
   pointer-events: none; }
 .sheet-pic label.btn-quiet { cursor: pointer; }
-.portrait-swap-hint { position: absolute; left: 0; right: 0; bottom: 0; text-align: center;
-  font-size: 0.78rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--bg);
-  background: var(--gold); border-radius: 0 0 var(--radius) var(--radius); opacity: 0; transition: opacity 0.15s ease; }
-.portrait-swap:hover .portrait-swap-hint, .portrait-swap:focus-within .portrait-swap-hint { opacity: 1; }
-/* On a touch screen there is no hover to discover it with. Neither is there when the portrait is EMPTY
-   and you are hunting for the way to add one — which is the only moment this control matters, and it
-   was invisible in it. */
-@media (hover: none) { .portrait-swap-hint { opacity: 0.92; } }
-.portrait-swap:has(.portrait.empty) .portrait-swap-hint { opacity: 0.92; }
+/* NO WORD PAINTED ON THE TILE. There was a "CHANGE" strip across the bottom of the portrait, and at any
+   readable size it was wider than a 56px thumbnail: it stuck out past both edges of the picture and came
+   out clipped to "CHANG". It also said nothing the labelled button under the name does not already say —
+   which is the control this was invented as a substitute for. The picture is still a second way in.
+   Kayki: "change picture label in phone is decentralized, and the picture by the side is deformatted." */
+.portrait-swap:hover .portrait, .portrait-swap:focus-within .portrait { border-color: var(--gold); }
 .portrait.empty { display: grid; place-items: center; color: var(--muted); font-family: var(--serif); font-size: 1.6rem; background: var(--panel-2); }
 /* 1.6rem is for the single initial the sheet shows in this box. A worded placeholder needs caption
    sizing or it simply does not fit 72px. */
@@ -739,7 +737,9 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 .sheet-head { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between; }
 /* The sheet header: portrait, name, what they ARE, and the level as a field of its own rather than
    a word buried in a comma-separated line. */
-.sheet-id { display: flex; gap: 0.9rem; align-items: center; flex-wrap: wrap; }
+/* Top-aligned, not centred. Centring a 52px portrait against a three-line title block floated it
+   level with the code line, detached from the name it belongs to. */
+.sheet-id { display: flex; gap: 0.9rem; align-items: flex-start; flex-wrap: wrap; }
 .sheet-id h1 { margin: 0; line-height: 1.15; }
 .sheet-titles { min-width: 0; display: flex; flex-direction: column; gap: 0.15rem; }
 .sheet-class { margin: 0; font-family: var(--serif); font-size: 1.05rem; color: var(--gold); }
@@ -944,9 +944,14 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
   /* The header is not the sheet — it is the label on it. Wrapping put the portrait, the name, the
      level box and the combat button on four separate rows, which cost most of a phone screen before
      a single number appeared and pushed the fields below the fold. One row, three columns. */
-  .sheet-id { width: 100%; display: grid; gap: 0.6rem; align-items: center;
+  .sheet-id { width: 100%; display: grid; gap: 0.6rem; align-items: start;
     grid-template-columns: auto minmax(0, 1fr) auto; }
-  .sheet-id .portrait { width: 52px; height: 52px; }
+  /* Big enough to be a face rather than a stamp, and the same height as the level box beside it. */
+  .sheet-id .portrait { width: 64px; height: 64px; }
+  /* Both picture buttons on one line: at full size they wrapped, which added a whole row to the
+     header and left the portrait stranded beside it. */
+  .sheet-pic { gap: 0.35rem; }
+  .sheet-pic .btn-quiet { min-height: 2.25rem; padding-inline: 0.6rem; font-size: 0.82rem; }
   .sheet-id h1 { font-size: 1.35rem; }
   .sheet-class { font-size: 0.95rem; }
   .sheet-level { min-width: 3.2rem; padding: 0.2rem 0.45rem; }

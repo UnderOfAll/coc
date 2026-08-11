@@ -1644,6 +1644,40 @@ await until(async () => ((await aget(`CocLive.get("tables/482910/tokens/tOrc/con
   .indexOf("grappled") >= 0);
 ok(true, "and it is held, as a condition the whole table can read");
 ok(peek(`tbl.picking`) === null, "with nothing left to tap");
+/* SWAP: one beat too, and the destination is not yours to pick — it is where the other one is standing.
+   It had been riding the generic `move`, which asked for a second tap and then put the Clone wherever
+   that tap landed, which is not a swap at all. Kayki: "the swap feature for Doppelganger doesn't work." */
+await peek(`CocLive.patch("tables/482910/tokens/tRig", { x: 2, y: 2 })`);
+await peek(`CocLive.patch("tables/482910/tokens/tOrc", { x: 7, y: 8 })`);
+await until(async () => (await aget(`CocLive.get("tables/482910/tokens/tOrc/x")`)) === 7);
+peek(`tblMoveOnBoard({ verb: "swap", name: "Swap", of: "Rig", range: 30 })`);
+ok(/Tap the figure to trade places with/.test($("#vtt-placing").textContent),
+  "a swap asks which figure and nothing else");
+await peek(`tblPickFigure("tOrc")`);
+await until(async () => (await aget(`CocLive.get("tables/482910/tokens/tRig/x")`)) === 7);
+ok((await aget(`CocLive.get("tables/482910/tokens/tOrc/x")`)) === 2
+  && (await aget(`CocLive.get("tables/482910/tokens/tOrc/y")`)) === 2,
+  "and the two exchange squares in one gesture, with no second tap");
+ok(peek(`tbl.picking`) === null, "which ends it");
+/* AND THE DRAWER GETS OUT OF THE WAY — for a move or a hold, not only for placing an area. It asked
+   `if (tbl.placing)`, and these set `tbl.picking`, so the bar saying "tap the figure" was drawn behind
+   the open sheet. On a phone the sheet IS the screen: the feature looked dead. */
+peek(`tbl.ui.panel = "sheet"; tblMoveOnBoard({ verb: "swap", name: "Swap", of: "Rig", range: 30 });`);
+await until(() => peek(`tbl.ui.panel`) === "");
+ok(true, "and pressing it from the sheet closes the drawer, so the board can be tapped");
+peek(`tblPickCancel();`);
+/* WHO IS CASTING IS YOU, not one of your Clones. This took the first figure the browser holds, sorted by
+   id — and Clones are held by the same browser, so once one was out every range ring could be drawn from
+   the Clone instead of from the character. */
+peek(`tbl.me.charCode = "123456";`);
+await peek(`CocLive.patch("tables/482910/tokens/tRig", { owner: tbl.me.clientId, charCode: "123456" })`);
+await peek(`CocLive.put("tables/482910/tokens/aaaClone", { name: "Clone", owner: tbl.me.clientId,
+  spawn: true, spawnOf: "123456", x: 9, y: 9, size: 1, kind: "pc", hp: 1, hpMax: 1, speed: 0 })`);
+await until(async () => !!(await aget(`CocLive.get("tables/482910/tokens/aaaClone")`)));
+ok(peek(`tblMyTokens()[0]`) === "aaaClone", "a Clone can sort first among the figures you hold");
+ok(peek(`tblCasterToken()`) === "tRig", "and the caster is still you, by the code your figure carries"
+  + " (got " + peek(`tblCasterToken()`) + ")");
+await peek(`CocLive.put("tables/482910/tokens/aaaClone", null)`);
 await peek(`CocLive.put("tables/482910/tokens/tOrc/conditions", null)`);
 peek(`CocLive.flush();`);
 await wait(200);

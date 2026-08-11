@@ -266,12 +266,12 @@ peek(`delete sheet.ch.weapons; renderSheet();`);
 ok($$(".atk-card").length===3,"an old save with no weapons recorded falls back to all three");
 click($$('[data-act="carry"]').find(b=>b.dataset.val==="Dagger"));
 ok($$(".atk-card").length===1,"and can be corrected from the Gear panel");
-// You hold ONE weapon, as at creation: picking another swaps rather than adding to a growing pile.
-const swapTo=$$('[data-act="carry"]')[0];
-const swapName=swapTo&&swapTo.dataset.val;
-click(swapTo);
-ok($$(".atk-card").length===1&&$(".atk-name").textContent.trim()===swapName,
-  "and picking another swaps it rather than carrying both ("+swapName+")");
+// You have the weapon you chose and no list of the others. Kayki: "the player doesn't have them, he
+// only has the option he chose in character creation." The picker survives for exactly one case — a
+// character saved before weapons were choosable, which is the case just above.
+ok($$('[data-act="carry"]').length===0,"and the other weapons are not offered at all once you have one");
+ok(/Mastery|Properties|properties/i.test($(".gear-list").textContent)||!!$(".gear-list"),
+  "gear shows what you carry rather than a menu");
 
 mk("acrobat",5);
 // No override on the Acrobat, so the default 5e rule applies: finesse takes the better of Str/Dex.

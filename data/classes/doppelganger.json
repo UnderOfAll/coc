@@ -117,10 +117,9 @@
       "name": "Swap",
       "description": "As a bonus action, you may teleport-swap places with one of your Clones within 30 feet of you: you instantly appear in the Clone's space and it instantly appears in yours, each facing however you choose. Neither of you provokes opportunity attacks from this movement, and the Clone itself is not destroyed — it simply continues existing wherever it ends up, still bound by its normal leash and still able to be hit, redirected onto, or spent like any other Clone. You can use Swap once per turn.",
       "board": {
-        "verb": "move",
+        "verb": "swap",
         "anchor": "clone",
-        "range": 30,
-        "distance": 30
+        "range": 30
       },
       "narration": "You and one of your reflections trade places between one heartbeat and the next, with no flash and no sound — just a soft displacement of air and the sudden certainty that you were never standing where the fight thought you were.",
       "sheetSummary": "Teleport-swap places with one of your Clones. Neither provokes opportunity attacks; the Clone is not destroyed.",

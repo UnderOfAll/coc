@@ -1352,9 +1352,19 @@ function tblCastOnBoard(trick) {
 
 /* Which figure is casting: yours if you hold one, else whoever is up (the DM running a creature from its
    own sheet). Only used to draw the reach from, so being wrong costs a ring and not a rule. */
+/* YOU, not one of your Clones. This took the first figure this browser holds, sorted by id — and a
+   Doppelganger's Clones are held by the same browser, so once one was on the board it could perfectly
+   well come first and every range ring was then drawn from the Clone. The character's own figure is the
+   one carrying its code; a spawn never carries one. */
 function tblCasterToken() {
-  const mine = tblMyTokens()[0];
-  if (mine) return mine;
+  const tokens = tblTokens();
+  const mine = tblMyTokens();
+  const own = mine.find((id) => (tokens[id] || {}).charCode
+    && tokens[id].charCode === tbl.me.charCode);
+  if (own) return own;
+  const notSpawn = mine.find((id) => !(tokens[id] || {}).spawn);
+  if (notSpawn) return notSpawn;
+  if (mine.length) return mine[0];
   const turn = (tbl.data.meta || {}).turn;
   if (turn && Array.isArray(turn.order)) return turn.order[turn.idx] || "";
   return "";
@@ -1627,8 +1637,14 @@ function tblSpawnOnBoard(spec) {
 
 /* Shared with casting: the drawer gets out of the way a tick later, after the sheet has finished with
    itself. See the long note on tblCastOnBoard. */
+/* GET OUT OF THE WAY — for every gesture, not only for placing an area.
+ *
+ * This asked `if (tbl.placing)`, and a move or a hold sets `tbl.picking` instead. So pressing Swap,
+ * Manipulate, Heave or Iron Grip left the drawer wide open over the board, and the bar saying "tap the
+ * figure to move" was drawn BEHIND the sheet — on a phone the sheet IS the screen. Kayki: "the swap
+ * feature for Doppelganger doesn't work." It worked; you could not see it, or reach the map it wanted. */
 function tblClosePanelSoon() {
-  setTimeout(() => { if (tbl && tbl.placing) tblClosePanel(); }, 0);
+  setTimeout(() => { if (tbl && (tbl.placing || tbl.picking)) tblClosePanel(); }, 0);
 }
 
 /* Down it goes as a figure, not an area. */
@@ -1705,7 +1721,7 @@ async function tblSpawnsSettle() {
 function tblMoveOnBoard(spec) {
   if (!tbl || !spec) return false;
   tbl.picking = {
-    verb: spec.verb === "lock" ? "lock" : "move",
+    verb: spec.verb === "lock" ? "lock" : spec.verb === "swap" ? "swap" : "move",
     name: spec.name || "", of: spec.of || "",
     distance: spec.distance, targets: spec.targets === "many" ? "many" : "one",
     range: Number(spec.range) || 0, fromId: tblCasterToken(), pickedId: "",
@@ -1736,6 +1752,28 @@ async function tblPickFigure(id) {
     await CocLive.push(tblPath("log"), {
       t: Date.now(), who: pick.of || tbl.me.name || "Someone", kind: "system",
       text: `${t.name || "Someone"} is held${pick.name ? " — " + pick.name : ""}`,
+    });
+    tbl.picking = null;
+    paintPlacing();
+    paintAreas();
+    return;
+  }
+  /* A SWAP IS ONE BEAT, NOT TWO. "You teleport-swap places with one of your Clones" is a single choice —
+     which Clone — and the destination is not yours to pick: it is where the Clone is standing. Asking
+     for a second tap was asking a question the feature does not have, and putting the Clone wherever
+     that tap landed is not a swap at all. */
+  if (pick.verb === "swap") {
+    const me = tblTokens()[pick.fromId];
+    if (!me) { tbl.picking = null; paintPlacing(); return; }
+    const mx = Number(me.x) || 0, my = Number(me.y) || 0;
+    const tx = Number(t.x) || 0, ty = Number(t.y) || 0;
+    await tblTokenField(pick.fromId, "x", tx);
+    await tblTokenField(pick.fromId, "y", ty);
+    await tblTokenField(id, "x", mx);
+    await tblTokenField(id, "y", my);
+    await CocLive.push(tblPath("log"), {
+      t: Date.now(), who: pick.of || tbl.me.name || "Someone", kind: "system",
+      text: `${me.name || "Someone"} and ${t.name || "it"} trade places${pick.name ? " — " + pick.name : ""}`,
     });
     tbl.picking = null;
     paintPlacing();

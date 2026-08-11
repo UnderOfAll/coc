@@ -3,13 +3,22 @@
   "title": "Board effect",
   "description": "WHAT THIS PUTS ON THE MAP, in numbers a program can act on. Everything else about a trick or a feature is prose written for a person; this block is written for the board. Nothing here decides an outcome — it says where the thing goes and how big it is, works out who is inside it, and hands that list to the DM, who rolls and says what happened. See docs/MAP-INTERACTION.md.\n\nIt exists because the prose cannot be read by a program. `range` is free text ('30 feet', 'Self'), the area is a sentence ('a 10-foot radius centered on a point you choose within range'), and recovering a shape from that by pattern-matching got three of sixteen tricks wrong on the first attempt — it called an after-image that explicitly occupies no space a spawn, and a burst around a dead Clone a spawn as well. So the shape is authored, not inferred.\n\nOMIT IT unless the trick actually puts something on the board. A trick that targets one creature you can see needs no board block: the target is already a figure on the map and the range is already in the prose. This is for areas, for figures that appear, and for figures that are moved.\n\nDISTANCES ARE FEET, always, and multiples of 5 — the grid is 5 feet a square, and a 12-foot radius is not a thing anyone can draw on it.",
   "type": "object",
-  "required": ["verb"],
+  "required": [
+    "verb"
+  ],
   "additionalProperties": false,
   "properties": {
     "verb": {
       "type": "string",
-      "enum": ["shape", "spawn", "move", "mark", "lock"],
-      "description": "The five things anything in this system does to the board, and there are only five.\n  shape — an area is placed: a burst, a cloud, an illusion. Needs `shape` and `size`.\n  spawn — a figure appears that somebody then controls. Needs `figure`.\n  move  — a figure is put somewhere else: dragged, swapped, teleported. Needs `distance`.\n  mark  — ground is marked and stays marked: a wall run, a line held. Needs `shape` and `size`.\n  lock  — a figure stops moving. Where a condition already says so (restrained, grappled), the condition does the work and this only says the board should show it."
+      "enum": [
+        "shape",
+        "spawn",
+        "move",
+        "swap",
+        "mark",
+        "lock"
+      ],
+      "description": "The six things anything in this system does to the board, and there are only six.\n  shape — an area is placed: a burst, a cloud, an illusion. Needs `shape` and `size`.\n  spawn — a figure appears that somebody then controls. Needs `figure`.\n  move  — a figure is put somewhere else: dragged, thrown, hauled. Needs `distance`.\n  swap  — two figures exchange squares in ONE gesture: you and one of your own Clones. Not a move with a destination — the destination IS where the other one is standing, so there is nothing to aim and no distance to measure. `range` is how far away it may be.\n  mark  — ground is marked and stays marked: a wall run, a line held. Needs `shape` and `size`.\n  lock  — a figure stops moving. Where a condition already says so (restrained, grappled), the condition does the work and this only says the board should show it."
     },
     "range": {
       "type": "integer",
@@ -19,12 +28,24 @@
     },
     "anchor": {
       "type": "string",
-      "enum": ["point", "self", "creature", "ally", "clone"],
+      "enum": [
+        "point",
+        "self",
+        "creature",
+        "ally",
+        "clone"
+      ],
       "description": "What the effect is centred on, which is not the same question as who it hurts.\n  point    — anywhere within range; the caster picks the spot.\n  self     — on the caster.\n  creature — on a chosen figure.\n  ally     — on a chosen friendly figure.\n  clone    — on a figure the caster owns (a Clone, a spawned hand): the app knows where those are, so it does not have to ask."
     },
     "shape": {
       "type": "string",
-      "enum": ["radius", "cube", "cone", "line", "wall"],
+      "enum": [
+        "radius",
+        "cube",
+        "cone",
+        "line",
+        "wall"
+      ],
       "description": "shape/mark only. `radius` is a circle on the grid (a sphere read from above); `cube` is a square of `size` on a side; `line` and `wall` also take a `width`."
     },
     "size": {
@@ -50,14 +71,27 @@
     },
     "controlledBy": {
       "type": "string",
-      "enum": ["caster", "dm"],
+      "enum": [
+        "caster",
+        "dm"
+      ],
       "default": "caster",
       "description": "spawn only. A figure the caster controls acts INSIDE its owner's turn — it gets no slot of its own in the order and one 'Done' ends all of it (docs/MAP-INTERACTION.md, decided 2026-08-10)."
     },
     "distance": {
       "oneOf": [
-        { "type": "integer", "minimum": 5, "multipleOf": 5 },
-        { "type": "string", "enum": ["speed", "half-speed"] }
+        {
+          "type": "integer",
+          "minimum": 5,
+          "multipleOf": 5
+        },
+        {
+          "type": "string",
+          "enum": [
+            "speed",
+            "half-speed"
+          ]
+        }
       ],
       "description": "move only: how far the figure goes, in feet. For a swap or a teleport this is the furthest the destination may be from where it started.\n\n'speed' and 'half-speed' are for the moves measured against the figure's OWN speed rather than a fixed number — a Wall-Run is half your speed, and Grand Marionette moves someone else up to theirs. The board already knows every figure's speed, so it can draw those too."
     },
@@ -67,37 +101,91 @@
     },
     "targets": {
       "type": "string",
-      "enum": ["one", "many"],
+      "enum": [
+        "one",
+        "many"
+      ],
       "default": "one",
       "description": "move only: whether one figure moves or several chosen ones do."
     }
   },
   "allOf": [
     {
-      "if": { "properties": { "verb": { "enum": ["shape", "mark"] } }, "required": ["verb"] },
+      "if": {
+        "properties": {
+          "verb": {
+            "enum": [
+              "shape",
+              "mark"
+            ]
+          }
+        },
+        "required": [
+          "verb"
+        ]
+      },
       "then": {
-        "required": ["shape", "size"],
+        "required": [
+          "shape",
+          "size"
+        ],
         "description": "An area with no shape and no size is not an area."
       }
     },
     {
-      "if": { "properties": { "verb": { "const": "spawn" } }, "required": ["verb"] },
+      "if": {
+        "properties": {
+          "verb": {
+            "const": "spawn"
+          }
+        },
+        "required": [
+          "verb"
+        ]
+      },
       "then": {
-        "required": ["figure"],
+        "required": [
+          "figure"
+        ],
         "description": "Something appears; the board has to have something to call it."
       }
     },
     {
-      "if": { "properties": { "verb": { "const": "move" } }, "required": ["verb"] },
+      "if": {
+        "properties": {
+          "verb": {
+            "const": "move"
+          }
+        },
+        "required": [
+          "verb"
+        ]
+      },
       "then": {
-        "required": ["distance"],
+        "required": [
+          "distance"
+        ],
         "description": "A move with no distance cannot be drawn or measured."
       }
     },
     {
-      "if": { "properties": { "shape": { "enum": ["line", "wall"] } }, "required": ["shape"] },
+      "if": {
+        "properties": {
+          "shape": {
+            "enum": [
+              "line",
+              "wall"
+            ]
+          }
+        },
+        "required": [
+          "shape"
+        ]
+      },
       "then": {
-        "required": ["width"],
+        "required": [
+          "width"
+        ],
         "description": "A line has to be some number of feet thick to cover any squares at all."
       }
     }

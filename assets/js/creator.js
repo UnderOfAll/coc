@@ -1055,7 +1055,6 @@ function renderSheet() {
         <label class="portrait-swap" for="sheet-photo" title="${ch.photo ? "Change the picture" : "Add a picture"}">
           ${ch.photo ? `<img class="portrait" src="${esc(ch.photo)}" alt="" />`
             : `<div class="portrait empty">${esc((ch.name || "?")[0])}</div>`}
-          <span class="portrait-swap-hint">${ch.photo ? "Change" : "Add"}</span>
         </label>
         <div class="sheet-titles">
           <h1>${esc(ch.name || "Unnamed")}</h1>
@@ -1497,13 +1496,12 @@ function statePanel(d, p) {
  * with creation is how a character ended up listing every weapon its class is proficient with. */
 function gearPanel(d, ch) {
   const carried = Array.isArray(ch.weapons) ? ch.weapons : [];
-  const held = d.weapons.find((w) => carried.includes(w.name)) || null;
+  const held = carried.length ? (d.weapons.find((w) => carried.includes(w.name)) || null) : null;
   const row = (label, name, note, extra) => `<div class="gear-row">
     <span class="gear-k">${label}</span>
     <span class="gear-v"><strong>${esc(name)}</strong>${note ? ` <span class="muted">${note}</span>` : ""}</span>
     ${extra ? `<span class="gear-x">${extra}</span>` : ""}
   </div>`;
-  const swaps = d.weapons.filter((w) => !held || w.name !== held.name);
   return `<section class="panel">
     <div class="gear-list">
       ${row(plainTermHTML("Armour", "What you are wearing. Your AC at the top of the sheet already includes "
@@ -1513,19 +1511,22 @@ function gearPanel(d, ch) {
         d.armor && d.armor.trait ? armorTraitHTML(d.armor.trait) : "")}
       ${d.shield ? row("Shield", d.shield.name, `+${esc(d.shield.acBonus)} AC`, "") : ""}
       ${held
-        ? row(plainTermHTML("Weapon", "The one you are holding. Its to-hit and its damage are worked out "
-            + "under Attacks, proficiency already included."),
+        ? row(plainTermHTML("Weapon", "The one you chose when you built this character. Its to-hit and "
+            + "its damage are worked out under Attacks, proficiency already included."),
             held.name,
             `${esc(held.damage.die)} ${esc(held.damage.type)}${held.range ? ` · ${esc(held.range.normal)}/${esc(held.range.long)} ft` : ""}`,
-            propsHTML(held.properties))
-        : row("Weapon", "None chosen", "every weapon your class knows is listed under Attacks", "")}
+            propsHTML(held.properties) + (held.mastery ? " " + masteryHTML(held.mastery) : ""))
+        : ""}
     </div>
-    ${swaps.length ? `<p class="panel-sub">${plainTermHTML("Swap to",
-      "Everything your class is proficient with. You hold one at a time; picking another puts this one "
-      + "away, and you can change whenever you like.")}</p>
-      <div class="chips">${swaps.map((w) => chipTip(
+    ${/* YOU HAVE THE WEAPON YOU CHOSE, and no list of the others. Kayki: "the player doesn't have them,
+          he only has the option he chose in character creation." The picker survives for exactly one
+          case — a character saved before weapons were choosable, which has none recorded at all and
+          would otherwise be a sheet with no weapon on it and no way to give it one. */""}
+    ${held ? "" : `<p class="muted">No weapon was recorded when this character was made, so every weapon
+        the class is proficient with is listed under Attacks. Choose the one you actually carry:</p>
+      <div class="chips">${d.weapons.map((w) => chipTip(
         `<button class="chip" data-act="carry" data-val="${esc(w.name)}">${esc(w.name)}</button>`,
-        weaponTipHTML(w, d))).join("")}</div>` : ""}
+        weaponTipHTML(w, d))).join("")}</div>`}
   </section>`;
 }
 
@@ -1859,8 +1860,8 @@ function sheetAction(e) {
           size: ch.size === "Large" ? 2 : 1,
         });
       }
-    } else if (b && b.verb === "move" && typeof tblMoveOnBoard === "function") {
-      tblMoveOnBoard({ verb: "move", name: f.name, of: ch.name, distance: b.distance,
+    } else if (b && (b.verb === "move" || b.verb === "swap") && typeof tblMoveOnBoard === "function") {
+      tblMoveOnBoard({ verb: b.verb, name: f.name, of: ch.name, distance: b.distance,
         targets: b.targets, range: b.range });
     } else if (b && b.verb === "lock" && typeof tblMoveOnBoard === "function") {
       tblMoveOnBoard({ verb: "lock", name: f.name, of: ch.name, range: b.range });
@@ -1913,8 +1914,8 @@ function sheetAction(e) {
       // Said out loud at the table, whatever the tier — see tblAnnounceCast.
       if (typeof tblAnnounceCast === "function") tblAnnounceCast(t, ch.name);
       const tb = t.board || {};
-      if (tb.verb === "move" && typeof tblMoveOnBoard === "function") {
-        tblMoveOnBoard({ verb: "move", name: t.name, of: ch.name, distance: tb.distance,
+      if ((tb.verb === "move" || tb.verb === "swap") && typeof tblMoveOnBoard === "function") {
+        tblMoveOnBoard({ verb: tb.verb, name: t.name, of: ch.name, distance: tb.distance,
           targets: tb.targets, range: tb.range });
       } else if (tb.verb === "lock" && typeof tblMoveOnBoard === "function") {
         tblMoveOnBoard({ verb: "lock", name: t.name, of: ch.name, range: tb.range });
@@ -2085,6 +2086,7 @@ function boardCtl(f, d, p) {
      number with three buttons now, and "make a Clone" is a thing the Clones feature does. */
   const label = b.verb === "lock" ? "Hold a figure"
     : b.verb === "move" ? "Move a figure"
+    : b.verb === "swap" ? "Trade places"
     : b.verb === "spawn" ? `Put ${esc(b.figure ? "a " + b.figure : "one")} on the map`
     : "Put it on the map";
   // A spawn feeds the engine, so it cannot be pressed before there is a fight to feed.
