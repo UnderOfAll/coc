@@ -30,6 +30,7 @@ const CATEGORIES = [
   { key: "passives",   label: "Passives",   render: renderPassive },
   { key: "weapons",    label: "Weapons",    render: renderWeapon },
   { key: "armor",      label: "Armor",      render: renderArmor },
+  { key: "enemies",    label: "Enemies",    render: renderEnemy },
 ];
 
 const store = {};        // key -> array of entries
@@ -311,6 +312,8 @@ function renderList(key) {
   if (key === "armor")      return renderArmorList(list, items);
   // Tricks: three ways to slice the same list — by tier, by class, or by unlock level.
   if (key === "tricks")     return renderTrickList(list, items);
+  // Enemies: by weight, because "how much of a fight is this" is the only question a DM asks first.
+  if (key === "enemies")    return renderEnemiesList(list, items);
   for (const it of items) list.appendChild(makeCard(key, it));
 }
 
@@ -666,6 +669,8 @@ function cardMeta(key, it) {
     case "passives":   return `${it.type || "Feature"}`;
     case "weapons":    return `${it.category ? cap(it.category) : ""} · ${it.damage && it.damage.type ? it.damage.type : ""}`;
     case "armor":      return `${it.category ? cap(it.category) : ""}${it.category === "shield" ? " · +" + (it.acBonus ?? 0) + " AC" : " · AC " + (it.baseAC ?? "?")}${it.availability === "bought" ? " · Bought" : ""}`;
+    case "enemies":    return `${cap(it.tier || "")} · AC ${it.ac ?? "?"} · ${it.hp ?? "?"} HP`
+                              + (it.partyLevel ? ` · levels ${it.partyLevel}` : "");
     default:           return "";
   }
 }
@@ -1351,6 +1356,89 @@ function renderArmor(a) {
       <p class="muted">${a.availability === "bought"
         ? "<strong>Bought</strong> — a premium upgrade acquired by purchase or loot during play, not owned at character creation."
         : "<strong>Starter</strong> — basic gear available at character creation."} Pricing is left to the DM / campaign.</p>
+    </div>`;
+}
+
+/* AN ENEMY IS A CARD A DM READS OUT, so it is laid out in the order a DM reads it: what it looks like,
+   the four numbers, what it does to you, what makes it different, and — last and on purpose — how to
+   PLAY it. That last part is the half most stat blocks leave out and the half that makes a fight feel
+   like something. Nothing here is resolved by the app: this system's app is a tracker, not a referee. */
+const ENEMY_TIERS = [
+  ["normal", "Normal", "an AC, some hit points, and not much else — several at once"],
+  ["special", "Special", "a fight's second gear: a signature move and something it does to you"],
+  ["boss", "Bosses", "a class, a handful of its features, and moves of its own"],
+];
+function renderEnemiesList(list, items) {
+  list.className = "grouped";
+  for (const [tier, label, note] of ENEMY_TIERS) {
+    const inTier = items.filter((e) => (e.tier || "normal") === tier);
+    if (!inTier.length) continue;
+    const section = el("section", "group");
+    section.appendChild(el("h2", "group-title",
+      `${esc(label)} <span class="sub-note">— ${esc(note)}</span>`));
+    const grid = el("div", "cards");
+    for (const e of inTier.sort((a, b) => (a.hp || 0) - (b.hp || 0)))
+      grid.appendChild(makeCard("enemies", e));
+    section.appendChild(grid);
+    list.appendChild(section);
+  }
+}
+
+function enemyAttackRow(a) {
+  const kind = a.kind === "ranged" ? "Ranged" : "Melee";
+  return `<tr>
+    <td data-label="Attack"><strong>${esc(a.name)}</strong> <span class="muted">${esc(kind)}</span></td>
+    <td data-label="To hit">${esc(sign(a.toHit))}</td>
+    <td data-label="Reach">${esc(a.reach || (a.kind === "ranged" ? "—" : "5 ft"))}</td>
+    <td data-label="Damage">${esc(a.damage)}${a.damageType ? ` <span class="muted">${esc(a.damageType)}</span>` : ""}</td>
+    <td data-label="Then">${a.note ? esc(a.note) : "<span class=\"muted\">—</span>"}</td>
+  </tr>`;
+}
+
+function renderEnemy(e) {
+  const list = (arr) => (Array.isArray(arr) && arr.length) ? arr.join(", ") : "";
+  return head(e.name, e.flavor) +
+    `<div class="detail-grid">
+      ${stat("Armor Class", e.ac)}
+      ${stat("Hit Points", e.hp + (e.hpDice ? ` (${e.hpDice})` : ""))}
+      ${stat("Speed", (e.speed ?? 30) + " ft" + (e.otherSpeeds ? ", " + e.otherSpeeds : ""))}
+      ${stat("Weight", cap(e.tier || "normal"))}
+      ${stat("Size", e.size || "Medium")}
+      ${e.partyLevel ? stat("Written for", (/[-–]/.test(e.partyLevel) ? "levels " : "level ") + e.partyLevel) : ""}
+      ${e.parryDC != null ? stat("Parry DC", e.parryDC) : ""}
+    </div>
+    <div class="detail-body">
+      ${e.acNote ? `<p class="muted">Its armour class is ${esc(e.acNote)}.</p>` : ""}
+      ${/* The Parry is what makes a player's defence a decision. Handing it to a mob of six is six more
+            d20 rolls a round, so most enemies simply take the hit — and the ones that do not are the
+            ones a fight is built around. Said here rather than assumed. */""}
+      ${e.parryDC != null
+        ? `<p><strong>It Parries.</strong> When an attack hits it, it may spend its reaction to roll a flat
+            d20 against DC ${esc(e.parryDC)} — above it takes nothing, on it takes half, below it takes half
+            again as much. The same roll you make.</p>`
+        : `<p class="muted">It does not Parry: an attack that hits it simply lands.</p>`}
+      ${e.senses ? `<p><strong>Senses.</strong> ${esc(e.senses)}</p>` : ""}
+      ${list(e.resist) ? `<p><strong>Takes half from</strong> ${esc(list(e.resist))}.</p>` : ""}
+      ${list(e.immune) ? `<p><strong>Ignores</strong> ${esc(list(e.immune))}.</p>` : ""}
+      ${list(e.vulnerable) ? `<p><strong>Takes double from</strong> ${esc(list(e.vulnerable))}.</p>` : ""}
+      <h2>Attacks</h2>
+      ${e.multiattack ? `<p>${esc(e.multiattack)}</p>` : ""}
+      <table class="data-table attack-table">
+        <thead><tr><th>Attack</th><th>To hit</th><th>Reach</th><th>Damage</th><th>Then</th></tr></thead>
+        <tbody>${(e.attacks || []).map(enemyAttackRow).join("")}</tbody>
+      </table>
+      ${(e.features || []).length ? `<h2>What makes it different</h2>
+        ${e.features.map((f) => `<div class="feat-card">
+          <div class="feat-title"><span class="feat-name">${esc(f.name)}</span>
+            ${f.uses ? `<span class="role-badge">${esc(f.uses)}</span>` : ""}</div>
+          ${f.from ? `<p class="feat-from">Borrowed from the ${esc(f.from)}</p>` : ""}
+          <div class="feat-text">${fmtDesc(f.description)}</div>
+        </div>`).join("")}` : ""}
+      ${e.borrowsClass ? `<p class="muted">This one wears the <strong>${esc(className(e.borrowsClass) || e.borrowsClass)}</strong>'s
+        identity and a handful of its features, written out above. It has no level, no sheet and no
+        engine beyond what is listed — a boss is a one-off, and a class is a twenty-level ladder.</p>` : ""}
+      ${e.tactics ? `<h2>How to play it</h2><p>${esc(e.tactics)}</p>` : ""}
+      ${e.narration ? `<h2>In play</h2><p>${esc(e.narration)}</p>` : ""}
     </div>`;
 }
 

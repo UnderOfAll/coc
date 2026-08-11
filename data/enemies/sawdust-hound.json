@@ -1,0 +1,34 @@
+{
+  "id": "sawdust-hound",
+  "name": "Sawdust Hound",
+  "source": "Circus System",
+  "flavor": "A ring dog gone feral, coat matted grey with sawdust, ribs like tent poles under the fur.",
+  "tier": "normal",
+  "size": "Medium",
+  "kind": "beast",
+  "partyLevel": "1-3",
+  "ac": 13,
+  "acNote": "quick, and mostly hide",
+  "hp": 9,
+  "hpDice": "2d8",
+  "speed": 40,
+  "attacks": [
+    {
+      "name": "Bite",
+      "kind": "melee",
+      "toHit": 4,
+      "reach": "5 ft",
+      "damage": "1d6+2",
+      "damageType": "piercing"
+    }
+  ],
+  "features": [
+    {
+      "name": "Runs in a Pack",
+      "uses": "passive",
+      "description": "It has advantage on its Bite against a creature that is within 5 feet of another Sawdust Hound."
+    }
+  ],
+  "tactics": "Never alone — three or four, and they circle. They go for whoever is furthest from the rest, and they run rather than die: at 3 hit points or fewer a Hound breaks off and bolts for the dark under the seating.",
+  "narration": "It does not bark. It waits at the edge of the lamplight with its head low, and the sawdust falls off it in a fine grey rain when it finally moves."
+}

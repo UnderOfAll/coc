@@ -1,0 +1,37 @@
+{
+  "id": "cinder-juggler",
+  "name": "Cinder Juggler",
+  "source": "Circus System",
+  "flavor": "Six clubs in the air and every one of them alight; the fire has been going round so long it has forgotten how to land.",
+  "tier": "normal",
+  "size": "Medium",
+  "kind": "performer",
+  "partyLevel": "1-3",
+  "ac": 12,
+  "acNote": "loose motley, and it is watching the clubs, not you",
+  "hp": 10,
+  "hpDice": "3d8-3",
+  "speed": 30,
+  "attacks": [
+    {
+      "name": "Lit Club",
+      "kind": "ranged",
+      "toHit": 4,
+      "reach": "20/60 ft",
+      "damage": "1d6+2",
+      "damageType": "fire"
+    }
+  ],
+  "features": [
+    {
+      "name": "Keep the Cascade",
+      "uses": "passive",
+      "description": "It may throw two Lit Clubs on its turn instead of one, but only if it does not move that turn. Break its footing and the cascade breaks with it."
+    }
+  ],
+  "resist": [
+    "fire"
+  ],
+  "tactics": "It plants itself at range and burns. The counter is written into it: make it move. Anything that shoves, hauls or frightens it costs it half its damage that turn.",
+  "narration": "The clubs go round without a sound, and then one of them is not going round any more."
+}

@@ -1,0 +1,50 @@
+{
+  "id": "the-standing-ovation",
+  "name": "The Standing Ovation",
+  "source": "Circus System",
+  "flavor": "The applause outlived the audience. It is a churning mass of hands, and it is coming down the aisle.",
+  "tier": "special",
+  "size": "Large",
+  "kind": "crowd",
+  "partyLevel": "1-3",
+  "ac": 12,
+  "acNote": "there is nothing solid to hit",
+  "hp": 27,
+  "hpDice": "6d10-6",
+  "speed": 20,
+  "attacks": [
+    {
+      "name": "Applause",
+      "kind": "melee",
+      "toHit": 3,
+      "reach": "0 ft, anything in its space",
+      "damage": "2d6",
+      "damageType": "bludgeoning",
+      "note": "Half as much (1d6) while the swarm is at half its hit points or fewer."
+    }
+  ],
+  "features": [
+    {
+      "name": "A Swarm of Hands",
+      "uses": "passive",
+      "description": "It takes half damage from bludgeoning, piercing and slashing. It can move through any opening a hand fits through, it can enter and end its turn in another creature's space, and it cannot be grappled, restrained or knocked prone."
+    },
+    {
+      "name": "Deafening",
+      "uses": "passive",
+      "description": "A creature that starts its turn in the swarm's space makes a DC 12 Constitution save or is deafened until the end of its next turn — and a deafened creature cannot take reactions, which means it cannot Parry."
+    }
+  ],
+  "immune": [
+    "grappled",
+    "restrained",
+    "prone"
+  ],
+  "resist": [
+    "bludgeoning",
+    "piercing",
+    "slashing"
+  ],
+  "tactics": "It goes where the party is thickest and stays there. Everything a sword does to it is halved, so it exists to be the fight where somebody's odd trick — a burst, a fire, an illusion — is suddenly the right answer. It never retreats. Applause does not.",
+  "narration": "The sound arrives a half second before it does, and once you are inside it you cannot hear the person shouting at you from four feet away."
+}

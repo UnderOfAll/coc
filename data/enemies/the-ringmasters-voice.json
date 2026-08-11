@@ -1,0 +1,43 @@
+{
+  "id": "the-ringmasters-voice",
+  "name": "The Ringmaster's Voice",
+  "source": "Circus System",
+  "flavor": "A tall coated figure with a brass megaphone where its face should be, announcing an act nobody agreed to be in.",
+  "tier": "special",
+  "size": "Medium",
+  "kind": "performer",
+  "partyLevel": "2-3",
+  "ac": 14,
+  "acNote": "a heavy showman's coat",
+  "hp": 33,
+  "hpDice": "6d8+6",
+  "speed": 30,
+  "senses": "hears everything within 60 ft, even through canvas",
+  "attacks": [
+    {
+      "name": "Brass Cane",
+      "kind": "melee",
+      "toHit": 4,
+      "reach": "5 ft",
+      "damage": "1d8+2",
+      "damageType": "bludgeoning"
+    }
+  ],
+  "features": [
+    {
+      "name": "Announcement",
+      "uses": "1 / combat",
+      "description": "As an action it names one of you to the empty seats. Every creature it chooses in a 15-foot cone makes a DC 13 Wisdom save. On a failure: 2d6 thunder damage and deafened until the end of its next turn — and a deafened creature cannot take reactions, which means it cannot Parry. On a success, half damage and nothing else."
+    },
+    {
+      "name": "Cue the Crowd",
+      "uses": "1 / turn",
+      "description": "As a bonus action it points its cane at one ally within 30 feet that can hear it. That ally immediately moves up to half its speed. This is not the ally's own movement and it provokes nothing."
+    }
+  ],
+  "immune": [
+    "deafened"
+  ],
+  "tactics": "It opens with Cue the Crowd, not with the Announcement — it wants two Hounds in your face first, and the cone saved for when three of you are stood together. It keeps the ring between itself and anything with a knife. Deafen it and it does not care; it has no ears.",
+  "narration": "The megaphone turns towards you with a slow brass creak, and then the whole tent knows your name."
+}

@@ -1327,6 +1327,7 @@ document.addEventListener("click", (e) => {
   else if (act === "ed-save") tblSaveToken(val).catch(tblFail);
   else if (act === "ed-dup") tblDuplicate(val).catch(tblFail);
   else if (act === "npc-shape") { tbl.ui.npcShape = val; paintSide(); }
+  else if (act === "bestiary") tblDropEnemy(val).catch(tblFail);
   else if (act === "ed-shape") {
     const [id, shape] = String(val).split("|");
     if (TBL_SHAPE_IDS.includes(shape)) tblTokenField(id, "shape", shape).catch(tblFail);

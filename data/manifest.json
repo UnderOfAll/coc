@@ -153,5 +153,16 @@
     "armor/tamers-bracer.json",
     "armor/troupers-chain-shirt.json",
     "armor/tumblers-leathers.json"
+  ],
+  "enemies": [
+    "enemies/cinder-juggler.json",
+    "enemies/greasepaint-mime.json",
+    "enemies/grinsel-the-last-clown.json",
+    "enemies/rigging-crawler.json",
+    "enemies/sawdust-hound.json",
+    "enemies/the-blindfold.json",
+    "enemies/the-ringmasters-voice.json",
+    "enemies/the-standing-ovation.json",
+    "enemies/ticketing-usher.json"
   ]
 }

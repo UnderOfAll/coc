@@ -1,0 +1,34 @@
+{
+  "id": "greasepaint-mime",
+  "name": "Greasepaint Mime",
+  "source": "Circus System",
+  "flavor": "White face, black tears, both palms pressed flat against nothing at all — and the nothing holds.",
+  "tier": "normal",
+  "size": "Medium",
+  "kind": "performer",
+  "partyLevel": "1-3",
+  "ac": 13,
+  "acNote": "never quite where you swung",
+  "hp": 13,
+  "hpDice": "3d8",
+  "speed": 30,
+  "attacks": [
+    {
+      "name": "Silent Slam",
+      "kind": "melee",
+      "toHit": 4,
+      "reach": "5 ft",
+      "damage": "1d6+2",
+      "damageType": "bludgeoning"
+    }
+  ],
+  "features": [
+    {
+      "name": "The Wall",
+      "uses": "1 / combat",
+      "description": "As an action it presses its hands against the air and a wall that is not there becomes real: a 10-foot line, 10 feet high, in unoccupied squares within 15 feet. Nothing crosses it. A creature may spend an action to break it with a DC 12 Strength check, and it collapses on its own when the Mime drops."
+    }
+  ],
+  "tactics": "It splits the party and then picks on whichever half is smaller. The wall goes up on the first turn, not the last — a Mime that waits has misunderstood the act.",
+  "narration": "Its hands stop dead in the air an inch from each other, and the sound of everything on the far side of them stops with them."
+}

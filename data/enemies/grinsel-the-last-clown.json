@@ -1,0 +1,75 @@
+{
+  "id": "grinsel-the-last-clown",
+  "name": "Grinsel, the Last Clown",
+  "source": "Circus System",
+  "flavor": "The only one of the company who never took the paint off. He has been doing the same routine to an empty tent for years, and he has finally got an audience.",
+  "tier": "boss",
+  "size": "Medium",
+  "kind": "performer",
+  "partyLevel": "3",
+  "borrowsClass": "joker",
+  "ac": 15,
+  "acNote": "studded motley, and he is never quite where he was",
+  "hp": 72,
+  "hpDice": "11d8+22",
+  "speed": 30,
+  "parryDC": 11,
+  "senses": "",
+  "multiattack": "He throws two Razor Cards on his turn, at the same target or at two different ones.",
+  "attacks": [
+    {
+      "name": "Razor Card",
+      "kind": "ranged",
+      "toHit": 6,
+      "reach": "20/60 ft",
+      "damage": "1d8+4",
+      "damageType": "slashing"
+    },
+    {
+      "name": "Bootlace Kick",
+      "kind": "melee",
+      "toHit": 6,
+      "reach": "5 ft",
+      "damage": "1d6+4",
+      "damageType": "bludgeoning",
+      "note": "The target makes a DC 14 Strength save or is pushed 10 feet and knocked prone."
+    }
+  ],
+  "features": [
+    {
+      "name": "Mayhem",
+      "uses": "passive",
+      "from": "Joker",
+      "description": "He carries a pool of 5 Mayhem and starts a fight with none of it. He gains 1 the first time each turn he deals damage, 1 the first time each turn he takes damage, and 1 the first time each turn anybody at the table rolls a natural 1 or a natural 20 — his own or yours. He spends it on Wild Card and on The Punchline."
+    },
+    {
+      "name": "Chaotic Parry",
+      "uses": "1 / turn",
+      "from": "Joker",
+      "description": "After seeing his Parry result he may reroll the Parry d20, and must use the new roll even if it is worse. He Parries on a flat d20 against DC 11, exactly as a player does — above it he takes nothing, on it he takes half, below it he takes half again as much."
+    },
+    {
+      "name": "Wild Card",
+      "uses": "1 / turn, costs 1 Mayhem",
+      "from": "Joker",
+      "description": "He draws off the top of the deck and does whatever it says. Roll a d6: 1 — the card turns on him and he takes 1d8 slashing. 2 — one creature within 30 ft makes a DC 14 Charisma save or drops what it is holding. 3 — he teleports 15 feet to a space he can see. 4 — his next Razor Card this turn deals an extra 2d6. 5 — one creature within 30 ft makes a DC 14 Charisma save or is frightened of him until the end of its next turn. 6 — he laughs, and regains 5 hit points."
+    },
+    {
+      "name": "The Punchline",
+      "uses": "1 / combat, costs 3 Mayhem",
+      "description": "The line he has been building to all fight. Every creature he chooses within 20 feet makes a DC 14 Wisdom save: on a failure, 3d6 psychic damage and frightened of him until the end of its next turn; on a success, half damage and no fear. He will not use this until at least three of you are inside it."
+    },
+    {
+      "name": "Curtain Call",
+      "uses": "1 / combat, when he first drops to half hit points or fewer",
+      "description": "The lamps go out all at once. He moves up to his speed without provoking anything, and every other creature in the tent is blinded until the end of its next turn — which means none of them can Parry, and his next attack is made against a party that cannot see it coming."
+    },
+    {
+      "name": "Deal Them In",
+      "uses": "1 / round, at the end of another creature's turn",
+      "description": "He throws one Razor Card at a creature he can see within 60 feet. This happens on somebody else's turn and does not use his reaction, so he can still Parry."
+    }
+  ],
+  "tactics": "He is a duellist who never stands still and never fights the whole party at once. Round one: keep 30 feet of sand between himself and anything with a reach, Deal Them In at the end of the turn of whoever is closest. He spends Mayhem the moment he has it rather than banking it — a Wild Card a turn, every turn. The Punchline waits for three of you in a group and never comes out early. Curtain Call fires the instant he crosses half, and he uses the dark to cross the ring and start again on the softest target he can find. He does not surrender and he does not run: this is the last show he is ever going to get.",
+  "narration": "He is laughing before he moves, and he keeps laughing all the way through it, and at some point you realise the laugh has not paused for breath once."
+}

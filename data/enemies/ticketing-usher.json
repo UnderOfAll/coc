@@ -1,0 +1,27 @@
+{
+  "id": "ticketing-usher",
+  "name": "Ticketing Usher",
+  "source": "Circus System",
+  "flavor": "A thin figure in a moth-eaten uniform, still checking stubs for a show that ended a long time ago.",
+  "tier": "normal",
+  "size": "Medium",
+  "kind": "performer",
+  "partyLevel": "1-3",
+  "ac": 12,
+  "acNote": "a padded uniform coat",
+  "hp": 11,
+  "hpDice": "2d8+2",
+  "speed": 30,
+  "attacks": [
+    {
+      "name": "Ticket Punch",
+      "kind": "melee",
+      "toHit": 3,
+      "reach": "5 ft",
+      "damage": "1d6+1",
+      "damageType": "piercing"
+    }
+  ],
+  "tactics": "The plainest thing in the tent: it walks at the nearest intruder and punches. It has nothing else and does not pretend to. Use it in threes to fill a ring while something worse crosses the sand.",
+  "narration": "It holds out one gloved hand for a ticket you do not have, waits exactly three seconds, and then decides."
+}

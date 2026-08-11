@@ -370,6 +370,9 @@ function paintPeek() {
       `<span class="chip on">${esc(TBL_CONDITION_NAMES[c] || c)}</span>`).join("")}</div>`
       : `<p class="muted">Nothing wrong with it.</p>`}
     ${tblPlayReadHTML(t)}
+    ${/* Its own numbers, for the DM only. A player tapping a goblin still gets what a player is entitled
+          to — name, conditions, speed — and not the thing's AC and to-hit. */""}
+    ${tbl.role === "dm" ? enemyReadHTML(t) : ""}
     <p class="peek-foot">${esc(Number(t.speed) || 30)} ft${size > 1 ? ` &middot; ${esc(size)} squares` : ""}</p>
     ${tbl.role === "dm"
       ? `<button class="btn-quiet" data-tbl="peek-edit" data-val="${esc(id)}">Edit this figure</button>` : ""}`;

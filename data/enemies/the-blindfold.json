@@ -1,0 +1,41 @@
+{
+  "id": "the-blindfold",
+  "name": "The Blindfold",
+  "source": "Circus System",
+  "flavor": "A knife-thrower with a black band over her eyes and a bandolier that is never empty. She has not missed in eleven years.",
+  "tier": "special",
+  "size": "Medium",
+  "kind": "performer",
+  "partyLevel": "2-3",
+  "ac": 15,
+  "acNote": "studded leathers under the sequins",
+  "hp": 30,
+  "hpDice": "5d8+8",
+  "speed": 30,
+  "senses": "blindsight 30 ft",
+  "multiattack": "It throws two knives on its turn, at the same target or at two different ones.",
+  "attacks": [
+    {
+      "name": "Thrown Knife",
+      "kind": "ranged",
+      "toHit": 5,
+      "reach": "20/60 ft",
+      "damage": "1d6+3",
+      "damageType": "piercing"
+    }
+  ],
+  "features": [
+    {
+      "name": "Blind Aim",
+      "uses": "passive",
+      "description": "She cannot see, and it has never mattered. She ignores disadvantage on her attacks from not being able to see a target, and cover from anything she can hear moving."
+    },
+    {
+      "name": "Pin the Costume",
+      "uses": "1 / combat",
+      "description": "On a hit with a Thrown Knife she may pin the target to whatever is behind it. The target makes a DC 13 Dexterity save or is restrained — speed 0, attacks against it have advantage — until it or an ally within 5 feet spends an action to pull the knife free."
+    }
+  ],
+  "tactics": "She opens at her longest range and walks backwards all fight. Pin whoever is closing on her, then put both knives into whoever is already hurt. Blindness, darkness and invisibility do nothing to her; putting something SOLID between you and her does. She is worth more hit points than she has: the party has to reach her.",
+  "narration": "She tilts her head very slightly, the way you do when you are listening for a floorboard, and her hand is already moving."
+}

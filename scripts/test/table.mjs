@@ -2072,7 +2072,38 @@ peek(`tbl.role = "dm"; tbl.me.charCode = ""; renderTableShell(); paintTokens();`
 openPanel("dm");
 await wait(60);
 ok($("#tbl-npc-name"), "the DM can drop a figure");
-ok(/no stat blocks/.test($("#tool").textContent), "and is told what it deliberately is not");
+ok(/for scenery, a barrel/.test($("#tool").textContent), "which is for the things the bestiary has not got");
+/* THE BESTIARY, AT THE TABLE. Typing "Sawdust Hound / 9" four times a night is the exact work this app
+   exists to save, and until now the DM's panel said so in a note apologising for itself. One press drops
+   the creature with its hit points, its size and its speed already right. */
+ok($$('[data-tbl="bestiary"]').length >= 9,
+  `every enemy is one press away (${$$('[data-tbl="bestiary"]').length})`);
+const hound = $$('[data-tbl="bestiary"]').find((b) => /Sawdust Hound/.test(b.textContent));
+ok(!!hound, "including the Sawdust Hound");
+const beforeDrop = Object.keys(peek(`JSON.parse(JSON.stringify(tblTokens()))`)).length;
+click(hound);
+await until(() => Object.keys(peek(`JSON.parse(JSON.stringify(tblTokens()))`)).length === beforeDrop + 1);
+const dropped = Object.values(peek(`JSON.parse(JSON.stringify(tblTokens()))`)).find((t) => t.enemyId === "sawdust-hound");
+ok(!!dropped, "pressing it puts one on the board");
+ok(dropped.hp === 9 && dropped.hpMax === 9 && dropped.speed === 40,
+  `with its own hit points and speed already right (${dropped.hp}/${dropped.hpMax}, ${dropped.speed} ft)`);
+/* THE STAT BLOCK IS NOT COPIED INTO THE DATABASE. The figure stores WHICH creature it is and reads the
+   rest back out of the data, so fixing an enemy reaches every figure of it at once. */
+ok(dropped.ac === undefined && dropped.attacks === undefined,
+  "and nothing but the id — the numbers are read from the data, not copied into the table");
+ok(/AC<\/em> 13/.test(peek(`enemyReadHTML(${JSON.stringify(dropped)})`)),
+  "which is what the DM reads off its card");
+ok(/Bite/.test(peek(`enemyReadHTML(${JSON.stringify(dropped)})`)), "attacks and all");
+// A player gets what a player is entitled to, and not the thing's to-hit.
+const droppedId = Object.entries(peek(`JSON.parse(JSON.stringify(tblTokens()))`)).find(([, t]) => t.enemyId === "sawdust-hound")[0];
+peek(`tbl.role = "player"; tbl.ui.peek = ${JSON.stringify(droppedId)}; paintPeek();`);
+ok(!/AC/.test($("#vtt-peek").textContent), "a player tapping it is not shown its armour class");
+peek(`tbl.role = "dm"; paintPeek();`);
+ok(/AC/.test($("#vtt-peek").textContent), "and the DM is");
+peek(`tbl.ui.peek = ""; paintPeek();`);
+await peek(`CocLive.del("tables/482910/tokens/" + ${JSON.stringify(droppedId)})`);
+openPanel("dm");
+await wait(60);
 click($('[data-tbl="spawn"]'));
 await wait(60);
 ok(/needs a name|Give it a name/.test($("#tbl-spawn-msg").textContent), "an unnamed circle is refused");

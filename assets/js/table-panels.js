@@ -187,7 +187,13 @@ function dmFiguresHTML() {
   return `<section class="panel" id="dm-figures">
       <p class="panel-sub">Figures on this map</p>
       <div class="scene-list">${rows || `<p class="muted">Nothing on the board.</p>`}</div>
-      <p class="panel-sub">Drop a figure</p>
+      ${/* FROM THE BESTIARY. The form below is still there — a barrel, a crate, a thing with a name and
+            some hit points needs nothing more — but a fight is mostly things that already exist, and
+            typing "Sawdust Hound / 9" four times a night is the exact work this app is for saving. One
+            press drops it with its hit points, its size and its speed already right, and its card at the
+            table carries the AC and the attacks so the DM never leaves the board to read them. */""}
+      ${bestiaryHTML()}
+      <p class="panel-sub">Or make one up</p>
       <div class="grid-row">
         <label class="field"><span>Name</span>
           <input id="tbl-npc-name" class="text" type="text" maxlength="40" placeholder="Goblin" /></label>
@@ -205,10 +211,71 @@ function dmFiguresHTML() {
         <input id="tbl-npc-img" class="text" type="text" placeholder="https://… or maps/…" /></label>
       <button class="btn" data-tbl="spawn">Drop it on the board</button>
       <p id="tbl-spawn-msg" class="save-msg"></p>
-      <p class="muted">Names, hit points and a picture — no stat blocks. Enemies as real content, with
-        attacks and saves of their own, is the next thing being built; this is what runs a fight until
-        then.</p>
+      <p class="muted">A name, some hit points and a picture — for scenery, a barrel, anything the
+        bestiary does not have.</p>
     </section>`;
+}
+
+/* ---------------------------------------------------------------- the bestiary, at the table */
+
+function tblEnemies() {
+  return (typeof store !== "undefined" && Array.isArray(store.enemies)) ? store.enemies : [];
+}
+function tblEnemy(id) {
+  return tblEnemies().find((e) => (e.id || "") === id) || null;
+}
+
+function bestiaryHTML() {
+  const all = tblEnemies();
+  if (!all.length) return "";
+  const tiers = [["normal", "Normal"], ["special", "Special"], ["boss", "Bosses"]];
+  const rows = tiers.map(([tier, label]) => {
+    const inTier = all.filter((e) => (e.tier || "normal") === tier);
+    if (!inTier.length) return "";
+    return `<p class="panel-sub">${esc(label)}</p>
+      <div class="chips">${inTier.map((e) =>
+        `<button class="chip" data-tbl="bestiary" data-val="${esc(e.id)}">${esc(e.name)}
+          <span class="muted">${esc(e.hp)} hp</span></button>`).join("")}</div>`;
+  }).join("");
+  return `<p class="panel-sub">From the bestiary</p>${rows}`;
+}
+
+/* Down it goes, with everything the board needs already right. `enemyId` is the whole link: the figure
+   stores which creature it is and reads the rest back out of the data, so a stat block is never copied
+   into the database and a fix to an enemy reaches every figure of it at once. */
+async function tblDropEnemy(id) {
+  const e = tblEnemy(id);
+  if (!e || tbl.role !== "dm") return;
+  const size = e.size === "Huge" ? 3 : e.size === "Large" ? 2 : 1;
+  const spot = tblFreeSquare("", 1, 1, size, 1, 1);
+  const made = await CocLive.push(tblPath("tokens"), {
+    name: e.name, enemyId: e.id, kind: "npc", shape: tbl.ui.npcShape || "square",
+    x: spot.x, y: spot.y, size,
+    hp: e.hp, hpMax: e.hp, speed: Number(e.speed) || 30, initMod: 0, image: "",
+  });
+  await CocLive.push(tblPath("log"), {
+    t: Date.now(), who: "DM", kind: "system", text: `${e.name} enters the ring`,
+  });
+  return made;
+}
+
+/* What a figure from the bestiary is, read off the data rather than off the token. The DM should never
+   have to leave the board to find out what the thing they just dropped hits for. */
+function enemyReadHTML(t) {
+  const e = t && t.enemyId ? tblEnemy(t.enemyId) : null;
+  if (!e) return "";
+  const atk = (e.attacks || []).map((a) =>
+    `<span class="trk-read"><em>${esc(a.name)}</em> ${esc(sign(a.toHit))}, ${esc(a.damage)}${
+      a.damageType ? " " + esc(a.damageType) : ""}</span>`).join("");
+  return `<p class="trk-reads">
+      <span class="trk-read"><em>AC</em> ${esc(e.ac)}</span>
+      ${e.parryDC != null ? `<span class="trk-read"><em>Parry DC</em> ${esc(e.parryDC)}</span>` : ""}
+      ${atk}
+    </p>
+    ${e.multiattack ? `<p class="muted">${esc(e.multiattack)}</p>` : ""}
+    ${(e.features || []).length
+      ? `<p class="muted">${e.features.map((f) => esc(f.name) + (f.uses ? ` (${esc(f.uses)})` : "")).join(" · ")}</p>` : ""}
+    <p class="muted"><a href="#/enemies/${encodeURIComponent(e.id)}">Open the full card</a></p>`;
 }
 
 function repoMapsHTML() {
@@ -1280,6 +1347,7 @@ function tokenEditorHTML(id) {
       <button class="btn-quiet" data-tbl="ed-del" data-val="${esc(id)}">Remove</button>
       <button class="btn-quiet" data-tbl="ed-close">Close</button>
     </div>
+    ${t.enemyId ? `<p class="panel-sub">Its card</p>${enemyReadHTML(t)}` : ""}
     ${t.play ? `<p class="panel-sub">In this fight <span class="muted">— from their sheet</span></p>
       ${tblPlayReadHTML(t)}` : ""}
     ${trackerReadHTML(tblTrackerKeyFor(t))}

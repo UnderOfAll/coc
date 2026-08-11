@@ -25,7 +25,7 @@ DATA = ROOT / "data"
 SCHEMA = {
     "classes": "class", "subclasses": "subclass", "tricks": "trick",
     "skills": "skill", "passives": "passive", "weapons": "weapon",
-    "armor": "armor", "rules": "rule",
+    "armor": "armor", "rules": "rule", "enemies": "enemy",
 }
 
 
