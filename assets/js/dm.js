@@ -33,11 +33,11 @@ function dmBlank() {
 function dmBlankEnemy(tier) {
   return {
     id: "", custom: true, name: "", flavor: "", tier: tier || "normal", size: "Medium", kind: "",
-    partyLevel: "", ac: 12, acNote: "", hp: 10, hpDice: "", speed: 30, otherSpeeds: "",
+    partyLevel: "", ac: 12, hp: 10, speed: 30,
     image: "", parryDC: null, resist: [], immune: [], vulnerable: [], senses: "",
     abilities: {}, saveProf: [], prof: 2, initMod: null,
     multiattack: "", attacks: [{ name: "Attack", kind: "melee", toHit: 3, reach: "5 ft", damage: "1d6+1", damageType: "bludgeoning", note: "" }],
-    features: [], borrowsClass: "", borrowsSubclass: "", tactics: "", narration: "",
+    features: [], tactics: "", narration: "",
   };
 }
 
@@ -349,7 +349,6 @@ function renderDmEnemyForm() {
         ${dmField("en-speed", "Speed (ft)", e.speed, { num: true, min: 0, max: 200 })}
       </div>
       <div class="grid-row">
-        ${dmField("en-acnote", "AC from", e.acNote, { maxlength: 60, placeholder: "a padded coat" })}
         ${dmField("en-kind", "Sort of thing", e.kind, { maxlength: 30, placeholder: "beast" })}
       </div>
       <div class="grid-row">
@@ -393,7 +392,6 @@ function renderDmEnemyForm() {
     ${dmAbilitiesSection(e)}
     ${dmAttacksSection(e)}
     ${isNormal ? "" : dmFeaturesSection(e)}
-    ${tier === "boss" ? dmClassSection(e) : ""}
 
     <section class="panel">
       <label class="field"><span>How to play it <span class="muted">— what it opens with, what it does when hurt</span></span>
@@ -487,14 +485,29 @@ function dmAttacksSection(e) {
     ${atks.length < 3 ? `<button class="btn-quiet" data-dm="atk-add">Add an attack</button>` : ""}
     ${/* THE PRE-MADE ONES. Every weapon in the system already carries a damage die, a type, properties and
           a mastery — Cleave, Vex, Push. Picking one fills the row rather than making the DM look it up. */""}
-    ${weapons.length ? `<label class="field"><span>Or take one off a weapon</span>
-      <select class="text" data-dm-add="weapon">
-        <option value="">pick a weapon…</option>
-        ${weapons.map((w) => `<option value="${esc(w.name)}">${esc(w.name)} — ${esc(w.damage.die)} ${esc(w.damage.type)}${
-          w.mastery ? " · " + esc(w.mastery) : ""}</option>`).join("")}
-      </select></label>
-      <p class="muted">Fills the last row above with that weapon's damage, type and mastery. The to-hit
-        stays yours — that is the creature's, not the weapon's.</p>` : ""}
+    ${/* A DROPDOWN CANNOT SHOW WHAT A WEAPON DOES. Nineteen names, then nineteen names with a die glued
+          on, and neither said what Vex or Cleave or Topple actually IS — which is the thing you are
+          choosing between. Kayki: "the pick a weapon dropdown needs a design to show better the weapons
+          and what they do, Vex, Cleave, etc." So: a card each, the mastery named and explained, and one
+          button that fills the row. Melee and ranged split, because that is the first cut a DM makes. */""}
+    ${weapons.length ? `<p class="panel-sub">Or take one off a weapon</p>
+      <p class="muted">Fills the last row above with its damage, type and mastery. The to-hit stays
+        yours — that is the creature's, not the weapon's.</p>
+      ${[["melee", "In the hand"], ["ranged", "At range"]].map(([kind, label]) => {
+        const inKind = weapons.filter((w) => (w.range ? "ranged" : "melee") === kind);
+        if (!inKind.length) return "";
+        return `<p class="panel-sub">${esc(label)}</p>
+          <div class="wep-grid">${inKind.map((w) => `<div class="wep-card">
+            <div class="wep-head">
+              <strong>${esc(w.name)}</strong>
+              <span class="wep-dmg">${esc(w.damage.die)} <span class="muted">${esc(w.damage.type)}</span></span>
+            </div>
+            ${w.range ? `<p class="muted wep-note">${esc(w.range.normal)}/${esc(w.range.long)} ft</p>` : ""}
+            ${(w.properties || []).length ? `<p class="wep-note">${propsHTML(w.properties)}</p>` : ""}
+            ${w.mastery ? `<p class="wep-note"><span class="dmg-k">Mastery</span> ${masteryHTML(w.mastery)}</p>` : ""}
+            <button class="btn-quiet" data-dm="atk-from" data-val="${esc(w.name)}">Use this one</button>
+          </div>`).join("")}</div>`;
+      }).join("")}` : ""}
     ${(e.attacks || []).length > 1 ? `<label class="field"><span>Multiattack <span class="muted">— how many a turn</span></span>
       <input id="en-multi" class="text" type="text" maxlength="160" value="${esc(e.multiattack || "")}"
         placeholder="It throws two knives on its turn." /></label>` : ""}
@@ -589,30 +602,6 @@ function dmFeaturesSection(e) {
   </section>`;
 }
 
-function dmClassSection(e) {
-  const classes = (typeof store !== "undefined" && Array.isArray(store.classes)) ? store.classes : [];
-  const subs = (typeof store !== "undefined" && Array.isArray(store.subclasses) ? store.subclasses : [])
-    .filter((s) => s.parentClass === e.borrowsClass);
-  return `<section class="panel">
-    <p class="panel-sub">The class it wears</p>
-    <div class="grid-row">
-      <label class="field"><span>Class</span>
-        <select id="en-class" class="text">
-          <option value="">None</option>
-          ${classes.map((c) => `<option value="${esc(c.id)}" ${e.borrowsClass === c.id ? "selected" : ""}>${esc(c.name)}</option>`).join("")}
-        </select></label>
-      ${subs.length ? `<label class="field"><span>Discipline</span>
-        <select id="en-subclass" class="text">
-          <option value="">None</option>
-          ${subs.map((s) => `<option value="${esc(s.id)}" ${e.borrowsSubclass === s.id ? "selected" : ""}>${esc(s.name)}</option>`).join("")}
-        </select></label>` : ""}
-    </div>
-    <p class="muted">A boss WEARS a class: the table can see what it is fighting, and its features are
-      written out on its own card. It has no level and no sheet — a boss is a one-off, and a class is a
-      twenty-level ladder.</p>
-  </section>`;
-}
-
 /* ---------------------------------------------------------------- reading the form back */
 
 function dmVal(id) { const n = asEl(document.getElementById(id)); return n ? n.value : undefined; }
@@ -627,7 +616,6 @@ function dmReadForm() {
   e.ac = Math.max(5, Math.min(25, num("en-ac", e.ac) || 12));
   e.hp = Math.max(1, num("en-hp", e.hp) || 1);
   e.speed = Math.max(0, Math.min(200, num("en-speed", e.speed) ?? 30));
-  e.acNote = str("en-acnote", e.acNote);
   e.size = str("en-size", e.size) || "Medium";
   e.kind = str("en-kind", e.kind);
   e.partyLevel = str("en-levels", e.partyLevel);
@@ -640,10 +628,6 @@ function dmReadForm() {
   const parry = dmVal("en-parry");
   e.parryDC = (e.tier === "normal" || parry === undefined || parry === "") ? null
     : Math.max(3, Math.min(20, Number(parry) || 10));
-  if (e.tier === "boss") {
-    const c = dmVal("en-class"); if (c !== undefined) e.borrowsClass = c;
-    const s = dmVal("en-subclass"); if (s !== undefined) e.borrowsSubclass = s;
-  }
   for (const node of document.querySelectorAll("[data-atk]")) {
     const n = asEl(node);
     const [field, i] = n.dataset.atk.split("|");
@@ -673,7 +657,7 @@ function dmTidyEnemy(e) {
   if (!out.attacks.length) out.attacks = [{ name: "Attack", kind: "melee", toHit: 3, reach: "5 ft", damage: "1d4", damageType: "bludgeoning" }];
   out.features = (out.features || []).filter((f) => f && f.name && f.description);
   if (out.tier === "boss") out.features = out.features.slice(0, DM_MAX_BOSS_FEATURES);
-  if (out.tier === "normal") { out.parryDC = null; out.features = []; out.borrowsClass = ""; }
+  if (out.tier === "normal") { out.parryDC = null; out.features = []; }
   for (const k of ["resist", "immune", "vulnerable"]) out[k] = (out[k] || []).filter(Boolean);
   // A +0 is the default, so it is not written down: a plain enemy stores nothing it does not use.
   const ab = {};
@@ -747,6 +731,7 @@ document.addEventListener("click", (ev) => {
     renderDmEnemyForm();
     return;
   }
+  if (act === "atk-from") { dmReadForm(); dmAttackFromWeapon(val); return; }
   if (act === "atk-add") {
     dmReadForm();
     if (dmUi.draft.attacks.length < 3) dmUi.draft.attacks.push({ name: "Attack", kind: "melee", toHit: 3, reach: "5 ft", damage: "1d6", damageType: "bludgeoning", note: "" });

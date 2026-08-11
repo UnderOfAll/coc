@@ -79,11 +79,14 @@ type($("#en-name"),"Rope Ghoul"); type($("#en-ac"),"14"); type($("#en-hp"),"11")
 // One to three attacks, and a weapon fills a row rather than making the DM look it up.
 click($('[data-dm="atk-add"]'));
 ok($$('[data-atk="name|1"]').length===1,"a second attack can be added");
-const wepSel=$('[data-dm-add="weapon"]');
-ok(!!wepSel,"a weapon is picked off a list, not out of nineteen chips");
-wepSel.value=[...wepSel.options].map(o=>o.value).filter(Boolean)[0];
-wepSel.dispatchEvent(new window.Event("change",{bubbles:true}));
-ok($('[data-atk="damage|1"]').value.length>0,"and it fills the row's damage: "+$('[data-atk="damage|1"]').value);
+/* A DROPDOWN CANNOT SHOW WHAT A WEAPON DOES. Nineteen names said nothing about what Vex or Cleave IS,
+   which is the thing being chosen between. Kayki: "the pick a weapon dropdown needs a design to show
+   better the weapons and what they do." */
+ok($$('.wep-card').length>0,"weapons are cards, not a dropdown of names");
+ok(!!$('.wep-card .tip-term'),"each naming its mastery, with what that mastery does");
+ok(/In the hand|At range/.test($("#tool").textContent),"split by melee and ranged, the first cut a DM makes");
+click($$('[data-dm="atk-from"]')[0]);
+ok($('[data-atk="damage|1"]').value.length>0,"and one fills the row's damage: "+$('[data-atk="damage|1"]').value);
 click($('[data-dm="atk-drop"][data-val="1"]'));
 ok(!$('[data-atk="name|1"]'),"and a row can be taken off again");
 // Resistances come from the system's own damage types, and immunities include its conditions.
@@ -132,7 +135,13 @@ ok(!!$("#en-parry"),"a special is asked for a Parry DC");
 ok(/Features/.test($("#tool").textContent),"and for features");
 ok(!$("#en-class"),"but not for a class");
 click($('[data-dm="tier"][data-val="boss"]'));
-ok(!!$("#en-class"),"a boss is asked which class it wears");
+/* NO "CLASS IT WEARS" FIELD. Kayki: "that doesn't make sense at all, delete it — it will be defined by
+   the features the DM chooses." A boss wearing the Joker IS a boss carrying the Joker's features, and a
+   second field saying so is a second thing that can disagree with them. */
+ok(!$("#en-class"),"a boss is not asked which class it wears");
+ok(peek(`enemyWears({ features: [{ from: "Joker" }, { from: "Joker" }, { from: "trick" }] })`)==="Joker",
+  "it is read off where its features came from");
+ok(peek(`enemyWears({ features: [{ name: "x" }] })`)==="","and says nothing when they came from nowhere");
 type($("#en-name"),"The Understudy"); type($("#en-parry"),"12");
 for(let i=0;i<6;i++){ const add=$('[data-dm="feat-add"]'); if(add) click(add); }
 ok($$('[data-dm="feat-drop"]').length===5,"and it is capped at five features ("+$$('[data-dm="feat-drop"]').length+")");

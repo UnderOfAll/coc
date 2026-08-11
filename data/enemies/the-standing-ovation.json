@@ -8,7 +8,6 @@
   "kind": "crowd",
   "partyLevel": "1-3",
   "ac": 12,
-  "acNote": "there is nothing solid to hit",
   "hp": 27,
   "hpDice": "6d10-6",
   "speed": 20,

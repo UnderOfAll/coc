@@ -1422,6 +1422,12 @@ function enemyAbilityHTML(e) {
   }).join("")}</div>`;
 }
 
+/* Which class an enemy is wearing, read off where its features came from rather than stated separately. */
+function enemyWears(e) {
+  const from = [...new Set((e.features || []).map((f) => f.from).filter((x) => x && x !== "trick"))];
+  return from.length ? from.join(" and ") : "";
+}
+
 function enemyInitMod(e) {
   return Number(e && e.initMod != null ? e.initMod : ((e && e.abilities) || {}).Dexterity || 0);
 }
@@ -1440,7 +1446,7 @@ function renderEnemy(e) {
       ${stat("Initiative", sign(enemyInitMod(e)))}
     </div>
     <div class="detail-body">
-      ${e.acNote ? `<p class="muted">Its armour class is ${esc(e.acNote)}.</p>` : ""}
+
       ${/* The Parry is what makes a player's defence a decision. Handing it to a mob of six is six more
             d20 rolls a round, so most enemies simply take the hit — and the ones that do not are the
             ones a fight is built around. Said here rather than assumed. */""}
@@ -1472,9 +1478,13 @@ function renderEnemy(e) {
           ${f.from ? `<p class="feat-from">Borrowed from the ${esc(f.from)}</p>` : ""}
           <div class="feat-text">${fmtDesc(f.description)}</div>
         </div>`).join("")}` : ""}
-      ${e.borrowsClass ? `<p class="muted">This one wears the <strong>${esc(className(e.borrowsClass) || e.borrowsClass)}</strong>'s
-        identity and a handful of its features, written out above. It has no level, no sheet and no
-        engine beyond what is listed — a boss is a one-off, and a class is a twenty-level ladder.</p>` : ""}
+      ${/* WHAT IT WEARS IS WHAT IT TOOK. There used to be a "class it wears" field beside the features, and
+            Kayki: "that doesn't make sense at all, delete it — it will be defined by the features the DM
+            chooses." He is right: a boss wearing the Joker IS a boss carrying three of the Joker's
+            features, and a second field saying so is a second thing that can disagree with them. */""}
+      ${enemyWears(e) ? `<p class="muted">This one wears <strong>${esc(enemyWears(e))}</strong> — the
+        features above are where that is written, and the only place it is. It has no level, no sheet and
+        no engine beyond what is listed: a boss is a one-off, and a class is a twenty-level ladder.</p>` : ""}
       ${e.tactics ? `<h2>How to play it</h2><p>${esc(e.tactics)}</p>` : ""}
       ${e.narration ? `<h2>In play</h2><p>${esc(e.narration)}</p>` : ""}
     </div>`;

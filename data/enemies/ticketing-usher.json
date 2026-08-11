@@ -8,7 +8,6 @@
   "kind": "performer",
   "partyLevel": "1-3",
   "ac": 12,
-  "acNote": "a padded uniform coat",
   "hp": 11,
   "hpDice": "2d8+2",
   "speed": 30,

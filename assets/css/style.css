@@ -1854,3 +1854,13 @@ body:has(.vtt) { height: 100dvh; overflow: hidden; }
 .dmg-k { color: var(--muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; }
 .pick-row { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
 .pick-add { max-width: 16rem; }
+
+/* THE WEAPON PICKER — a card each, because a dropdown cannot show what Vex or Cleave actually does, and
+   that is the thing being chosen between. */
+.wep-grid { display: grid; gap: 0.5rem; grid-template-columns: repeat(auto-fill, minmax(min(15rem, 100%), 1fr)); }
+.wep-card { padding: 0.6rem 0.7rem; background: var(--panel-2); border: 1px solid var(--border);
+  border-radius: 8px; display: flex; flex-direction: column; gap: 0.3rem; }
+.wep-head { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: baseline; justify-content: space-between; }
+.wep-dmg { font-family: var(--serif); color: var(--gold); }
+.wep-note { margin: 0; font-size: 0.85rem; }
+.wep-card .btn-quiet { align-self: flex-start; margin-top: 0.15rem; }
