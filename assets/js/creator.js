@@ -1500,7 +1500,15 @@ const UNIVERSAL_STATES = [
   ["bloodied", "Bloodied", "At or below half your hit points. Some effects read it; the app only records it."],
   ["down", "Down", "Unconscious and making death saves. Speed 0."],
 ];
-const UNIVERSAL_STATE_IDS = UNIVERSAL_STATES.map(([k]) => k);
+/* HOW YOU ARE ROLLING, which is the fourth thing Kayki said the app owes a fight — "conditions, usage,
+   the engine, advantage" — and the only one it had nowhere to put. Public, like a condition and for the
+   same reason: the table settles a roll out loud and the DM should not have to ask. The two are mutually
+   exclusive because in this system they cancel, and the board enforces that when one is pressed. */
+const ROLL_STATES = [
+  ["advantage", "Advantage", "Roll two d20 and take the higher. Cancels disadvantage."],
+  ["disadvantage", "Disadvantage", "Roll two d20 and take the lower. Cancels advantage."],
+];
+const UNIVERSAL_STATE_IDS = UNIVERSAL_STATES.concat(ROLL_STATES).map(([k]) => k);
 
 function statePanel(d, p) {
   const own = (d.cls.play?.states || []).filter((st) => !st.subclass || (d.subclass && d.subclass.id === st.subclass));
@@ -1510,6 +1518,8 @@ function statePanel(d, p) {
     `<button class="chip ${isOn(k) ? "on" : ""}" data-act="flag" data-val="${esc(k)}">${esc(label)}</button>`,
     esc(why))).join("")}</div>`;
   return `<section class="panel"><h2>States</h2>
+    <p class="panel-sub">Rolling${onFigure ? ` <span class="muted">— the table sees this too</span>` : ""}</p>
+    ${chips(ROLL_STATES)}
     <p class="panel-sub">Conditions${onFigure ? ` <span class="muted">— everyone at the table sees
       these, and the board counts your movement from them</span>` : ""}</p>
     ${chips(UNIVERSAL_STATES)}

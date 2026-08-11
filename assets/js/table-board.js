@@ -369,6 +369,7 @@ function paintPeek() {
     ${conds.length ? `<div class="chips">${conds.map((c) =>
       `<span class="chip on">${esc(TBL_CONDITION_NAMES[c] || c)}</span>`).join("")}</div>`
       : `<p class="muted">Nothing wrong with it.</p>`}
+    ${tblPlayReadHTML(t)}
     <p class="peek-foot">${esc(Number(t.speed) || 30)} ft${size > 1 ? ` &middot; ${esc(size)} squares` : ""}</p>
     ${tbl.role === "dm"
       ? `<button class="btn-quiet" data-tbl="peek-edit" data-val="${esc(id)}">Edit this figure</button>` : ""}`;

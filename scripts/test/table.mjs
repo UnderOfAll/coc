@@ -1759,6 +1759,33 @@ ok(true, "and the table agrees once the write lands");
 await peek(`CocLive.put("tables/482910/tokens/tRig/conditions", null)`);
 await until(async () => peek(`tblConds("tRig").length`) === 0);
 ok(true, "and what you pressed retires itself the moment the stored table agrees with it");
+/* ADVANTAGE, the fourth thing the app owes a fight and the one it had nowhere to put. Public like a
+   condition and for the same reason — the table settles a roll out loud — and the two cancel, so a figure
+   can never be marked with both. */
+ok(!!peek(`TBL_CONDITION_NAMES.advantage && TBL_CONDITION_NAMES.disadvantage`),
+  "advantage and disadvantage are markers the board knows");
+peek(`tblToggleCond("tRig", "advantage")`);
+ok(peek(`tblConds("tRig").indexOf("advantage")`) >= 0, "marking advantage marks it");
+peek(`tblToggleCond("tRig", "disadvantage")`);
+ok(peek(`tblConds("tRig").indexOf("disadvantage")`) >= 0
+  && peek(`tblConds("tRig").indexOf("advantage")`) < 0,
+  "and the other one cancels it rather than sitting beside it");
+peek(`tblToggleCond("tRig", "disadvantage")`);
+await until(async () => (await aget(`CocLive.get("tables/482910/tokens/tRig/conditions")`)) == null);
+/* THE ENGINE AND WHAT HAS BEEN SPENT, published from the sheet onto the figure. They lived only on your
+   own sheet, so the DM had to ask how much Mayhem you were sitting on and nobody could see your
+   once-per-turn was gone. Hit points stay behind — RULES.md. */
+ok(peek(`tblPublicPlay({ play: { inCombat: false, engine: 3 } }, { engine: { name: "Mayhem" }, engineCap: 6 })`) === null,
+  "out of combat a figure publishes nothing");
+const pub = peek(`JSON.stringify(tblPublicPlay(
+  { play: { inCombat: true, engine: 3, turnUses: { "Wild Card": 1 }, uses: {}, cooldowns: { a: 2 } } },
+  { engine: { name: "Mayhem" }, engineCap: 6 }))`);
+ok(/"eng":"Mayhem"/.test(pub) && /"v":3/.test(pub) && /"max":6/.test(pub),
+  "in combat it publishes the meter: " + pub);
+ok(/"turn":\["Wild Card"\]/.test(pub), "and what has been spent this turn");
+ok(!/hp|"hpMax"/.test(pub), "and never the hit points");
+ok(/Mayhem<\/em> 3\/6/.test(peek(`tblPlayReadHTML({ play: JSON.parse('${pub.replace(/'/g, "")}') })`)),
+  "which the table reads back as a fraction");
 /* WHAT A CONDITION TAKES OFF YOUR FEET. Three of the ten change how far you can go, and Kayki marked
    himself prone and watched the bar go on saying 30 of 30 — which is the arithmetic this app is for. */
 ok(peek(`tblSpeedUnder({ speed: 30 })`) === 30, "an unencumbered figure has all its speed");
@@ -1848,6 +1875,34 @@ click(proneChip());
 ok(!/\bon\b/.test(proneChip().className), "and pressing it again puts it out — the press that used to do nothing");
 await until(async () => (await aget(`CocLive.get("tables/482910/tokens/tRig/conditions")`)) == null);
 ok(true, "with the table agreeing once the writes land");
+/* AND THE WHOLE ROUND TRIP: spend something on the sheet, and the figure the rest of the table is
+   looking at says so. This is the thing Kayki's sentence asked for — "have all of this mentioned and
+   pointed and tracked" — and it is what the sheet publishing onto the figure buys. */
+peek(`sheet.ch.play.inCombat = true; sheet.ch.play.engine = 3; sheet.ch.play.turnUses = { "Wild Card": 1 };
+  persist();`);
+await until(async () => !!(await aget(`CocLive.get("tables/482910/tokens/tRig/play")`)));
+const onFigure = await aget(`CocLive.get("tables/482910/tokens/tRig/play")`);
+ok(onFigure.v === 3 && onFigure.max > 0, "the engine reaches the figure: " + JSON.stringify(onFigure));
+ok(String(onFigure.turn) === "Wild Card", "and so does what was spent this turn");
+ok(onFigure.hp === undefined, "and the hit points do not, which is the one thing that stays private");
+/* A SECOND DEVICE reads it off the card, without opening anybody's sheet. Read as somebody ELSE would:
+   a figure you hold has no card at all, because for you it is your own sheet. */
+const wasOwner = await aget(`CocLive.get("tables/482910/tokens/tRig/owner")`);
+await peek(`CocLive.put("tables/482910/tokens/tRig/owner", "someone-else")`);
+await until(() => peek(`!tblIsMine(tblTokens().tRig)`));
+peek(`tbl.ui.peek = "tRig"; paintPeek();`);
+ok(/Mayhem/.test($("#vtt-peek").textContent) && /3\/5/.test($("#vtt-peek").textContent),
+  "and another player's card says it: " + $("#vtt-peek").textContent.replace(/\s+/g, " ").trim().slice(0, 90));
+ok(/Wild Card/.test($("#vtt-peek").textContent), "including what they have spent this turn");
+ok(!/44\/44/.test($("#vtt-peek").textContent), "and still not their hit points");
+peek(`tbl.ui.peek = ""; paintPeek();`);
+await peek(`CocLive.put("tables/482910/tokens/tRig/owner", ${JSON.stringify(wasOwner)})`);
+await until(() => peek(`tblIsMine(tblTokens().tRig)`));
+// It goes when the fight does, so a figure never carries a stale meter between sessions.
+peek(`sheet.ch.play.inCombat = false; persist();`);
+await until(async () => (await aget(`CocLive.get("tables/482910/tokens/tRig/play")`)) == null);
+ok(true, "and it clears itself when the fight ends");
+peek(`sheet.ch.play.inCombat = true;`);
 /* THE ORDER BAR ENDS YOUR TURN, and the sheet does not offer a second button for the same event — two
    buttons for one thing is how the sheet's round and the table's round come to disagree. */
 ok(!$("#vtt-sheet [data-act='endturn']"), "no second End my turn on the sheet at a table");

@@ -185,7 +185,12 @@ function tblConds(id, token) {
    press inside the same write reads the old list and asks for the very same change a second time. */
 function tblToggleCond(id, cond) {
   const list = tblConds(id);
-  const next = list.includes(cond) ? list.filter((c) => c !== cond) : list.concat(cond);
+  // Advantage and disadvantage cancel: switching one on switches the other off rather than leaving a
+  // figure marked with both, which is a state nobody at the table could act on.
+  const drop = TBL_EXCLUSIVE[cond];
+  const next = list.includes(cond)
+    ? list.filter((c) => c !== cond)
+    : list.filter((c) => c !== drop).concat(cond);
   if (!tbl.ui.condWish) tbl.ui.condWish = {};
   tbl.ui.condWish[id] = { list: next, at: Date.now() };
   return tblTokenField(id, "conditions", next.length ? next : null);

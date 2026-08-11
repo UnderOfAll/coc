@@ -406,6 +406,19 @@ ok(peek(`startTurnFromTable(2)`)===true,"the table saying your turn came round r
 ok(peek(`Object.keys(sheet.ch.play.turnUses).length`)===0,"the per-turn bag is empty again");
 ok(peek(`startTurnFromTable(2)`)===false,"and a second stream event in the same round refreshes nothing twice");
 
+/* ADVANTAGE — the fourth thing the app owes a fight, and the one it had nowhere to put. It sits in the
+   same Status field as the conditions, because it is the same kind of thing: public, per-figure, and
+   yours to set. Kayki: "conditions the advantage, have all of this mentioned and pointed and tracked." */
+ok($$('[data-act="flag"]').some(b=>/^Advantage$/.test(b.textContent.trim())),"Advantage is a chip on the sheet");
+ok($$('[data-act="flag"]').some(b=>/^Disadvantage$/.test(b.textContent.trim())),"and so is Disadvantage");
+ok(/Rolling/.test($('[data-pane="status"]').textContent),"under their own heading, not among the conditions");
+const advChip=()=>$$('[data-act="flag"]').find(b=>/^Advantage$/.test(b.textContent.trim()));
+const disChip=()=>$$('[data-act="flag"]').find(b=>/^Disadvantage$/.test(b.textContent.trim()));
+click(advChip());
+ok(peek(`!!sheet.ch.play.flags.advantage`),"pressing it is remembered away from a table");
+click(disChip());
+ok(peek(`!!sheet.ch.play.flags.disadvantage`),"and so is the other");
+
 console.log("\n— HP BOX KEEPS ITS NUMBER —");
 type($("#hp-amt"),"7");
 click($('[data-act="dmg"]'));

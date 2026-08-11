@@ -1013,8 +1013,50 @@ function tblSyncTokenFromSheet(code, ch) {
        of its own. So the sheet's photo simply wins here. (It only ever reaches figures carrying this
        character's code, which is why nobody can touch anybody else's, or a creature's, this way.) */
     if (ch.photo && t.image !== ch.photo) patch.image = ch.photo;
+    /* AND WHAT YOU HAVE SPENT. Kayki, on what the app owes a fight: "conditions, usage, the engine,
+       advantage… have all of this mentioned and pointed and tracked." Conditions and advantage live on
+       the figure already; the engine and the uses lived ONLY on your own sheet, so the DM had to ask how
+       much Mayhem you were sitting on and nobody could see that your once-per-turn was gone.
+       HIT POINTS STAY PRIVATE (RULES.md) — this is the meter and the counters, which a table settles out
+       loud anyway. Written as one small block so it is one field on the wire, not five. */
+    const play = tblPublicPlay(ch, d);
+    if (JSON.stringify(play) !== JSON.stringify(t.play || null)) patch.play = play;
     if (Object.keys(patch).length) CocLive.patch(tblPath("tokens/" + id), patch).catch(() => {});
   }
+}
+
+/* The public half of a character's play state: the engine as a fraction, and the names of what has been
+   spent. Null when there is nothing to say, so a figure carries no empty branch. */
+function tblPublicPlay(ch, d) {
+  const p = (ch && ch.play) || {};
+  if (!p.inCombat) return null;
+  const names = (o) => Object.keys(o || {}).filter((k) => (o[k] || 0) > 0).sort();
+  const out = {};
+  if (d && d.engine) {
+    out.eng = d.engine.name;
+    out.v = Math.max(0, Number(p.engine) || 0);
+    out.max = Math.max(0, d.engineCap ?? 0);
+  }
+  const turn = names(p.turnUses), combat = names(p.uses);
+  if (turn.length) out.turn = turn;
+  if (combat.length) out.combat = combat;
+  const cds = Object.keys(p.cooldowns || {}).length;
+  if (cds) out.cd = cds;
+  return Object.keys(out).length ? out : null;
+}
+
+/* …and how the table reads it. Shown on a figure's card and in the DM's editor — never on your own card,
+   because your own is your sheet, where all of it is live rather than a read-out. */
+function tblPlayReadHTML(t) {
+  const p = t && t.play;
+  if (!p) return "";
+  const bits = [];
+  if (p.eng) bits.push(`<span class="trk-read"><em>${esc(p.eng)}</em> ${esc(p.v)}/${esc(p.max)}</span>`);
+  if (p.cd) bits.push(`<span class="trk-read"><em>Cooling</em> ${esc(p.cd)}</span>`);
+  if (!bits.length && !p.turn && !p.combat) return "";
+  return `${bits.length ? `<p class="trk-reads">${bits.join("")}</p>` : ""}
+    ${p.turn ? `<p class="muted">Spent this turn: ${esc(p.turn.join(", "))}</p>` : ""}
+    ${p.combat ? `<p class="muted">Spent this fight: ${esc(p.combat.join(", "))}</p>` : ""}`;
 }
 
 
@@ -1103,7 +1145,11 @@ function tblShapeOf(t) {
    vocabulary is authored once, in UNIVERSAL_STATES (creator.js), and the board reads it. creator.js runs
    before this file, so the list is there by the time this line does. */
 const TBL_CONDITION_NAMES = Object.fromEntries(
-  (typeof UNIVERSAL_STATES !== "undefined" ? UNIVERSAL_STATES : []).map(([k, label]) => [k, label]));
+  (typeof UNIVERSAL_STATES !== "undefined" ? UNIVERSAL_STATES : [])
+    .concat(typeof ROLL_STATES !== "undefined" ? ROLL_STATES : [])
+    .map(([k, label]) => [k, label]));
+/* Advantage and disadvantage cancel, so the board never lets a figure carry both. */
+const TBL_EXCLUSIVE = { advantage: "disadvantage", disadvantage: "advantage" };
 
 /* Opening a figure has to bring its details INTO VIEW. The panel is beside the board on a desktop and
    below it on a phone, so "it opened" and "you can see that it opened" were two different things — Kayki
@@ -1187,6 +1233,7 @@ function figureInfoHTML(id) {
     <div class="chips">${conds.length
       ? conds.map((c) => `<span class="chip on">${esc(TBL_CONDITION_NAMES[c] || c)}</span>`).join("")
       : `<span class="muted">None.</span>`}</div>
+    ${t.play ? `<p class="panel-sub">In this fight</p>${tblPlayReadHTML(t)}` : ""}
     <p class="panel-sub">Speed</p>
     <p>${esc(Number(t.speed) || 30)} ft${t.size > 1 ? ` <span class="muted">· ${esc(t.size)} squares across</span>` : ""}</p>
     <p class="muted">Read-only: the DM owns this figure. Double-tap any figure to look at it.</p>
@@ -1233,6 +1280,8 @@ function tokenEditorHTML(id) {
       <button class="btn-quiet" data-tbl="ed-del" data-val="${esc(id)}">Remove</button>
       <button class="btn-quiet" data-tbl="ed-close">Close</button>
     </div>
+    ${t.play ? `<p class="panel-sub">In this fight <span class="muted">— from their sheet</span></p>
+      ${tblPlayReadHTML(t)}` : ""}
     ${trackerReadHTML(tblTrackerKeyFor(t))}
     ${t.charCode || t.owner ? `<p class="muted">This is a player's figure — its hit points follow their
       sheet, so changing them here is a stopgap rather than the record. Removing it takes them off the
