@@ -1136,9 +1136,22 @@ function figureInfoHTML(id) {
   // offer is the thing that was missing — getting a character you are not playing off the board. A friend
   // of Kayki's ended up with three of his characters standing on the map at once.
   if (tblIsMine(t)) {
+    /* AND WHAT YOU ARE UNDER, which is the whole job of this app during a fight. A character with a real
+       sheet used to get this panel with nothing in it but the way off the table — so a player could not
+       mark themselves prone, or frightened, or grappled, and the DM had to keep every condition at the
+       table in their own head. A guest with no sheet at all could always do it. Kayki, when the map
+       could move figures but not much else: "the app is to make it easier to keep track of things and be
+       able to focus on the fun part of the table itself, not to be the whole game in the app."
+       Hit points stay on the sheet, where they are yours; conditions are public and belong on the
+       figure, because they change what it can do and everybody has to see them. */
+    const conds = Array.isArray(t.conditions) ? t.conditions : [];
     return `<section class="panel"><h2>${esc(t.name || "Your figure")}</h2>
-      <p class="muted">Your own figure. Its hit points and everything else live on your sheet — open
-        <strong>My sheet</strong> for those.</p>
+      <p class="panel-sub">What you are under</p>
+      <div class="chips">${Object.entries(TBL_CONDITION_NAMES).map(([k, label]) =>
+        `<button class="chip ${conds.includes(k) ? "on" : ""}" data-tbl="mine-cond"
+          data-val="${esc(id)}|${esc(k)}">${esc(label)}</button>`).join("")}</div>
+      <p class="muted">Everyone can see these — they change what you can do. Your hit points are yours
+        and live on your sheet; open <strong>My sheet</strong> for those.</p>
       <p class="panel-sub">Leaving</p>
       <button class="btn-quiet" data-tbl="mine-remove" data-val="${esc(id)}">Take my figure off the table</button>
       <p class="muted">Nothing about the character is touched; you can walk back in whenever.</p>

@@ -1673,6 +1673,24 @@ peek(`window.__wasOwner = tbl.data.tokens.tRig.owner; tbl.data.tokens.tRig.owner
 ok(!!$('[data-tbl="mine-remove"][data-val="tRig"]'),
   "tapping your own figure offers the way off the table, code or no code");
 ok(!!$('[data-tbl="panel"][data-val="sheet"]'), "beside the way into your sheet");
+/* AND WHAT YOU ARE UNDER. A character with a real sheet could not mark itself prone: tapping your own
+   figure went straight to the sheet, and the figure panel that holds the conditions was only ever shown
+   to a guest with no sheet at all. So the DM kept the whole table's conditions in their head — which is
+   the opposite of what this app is for. Kayki: "the app is to make it easier to keep track of things." */
+ok(!!$('[data-tbl="my-conds"][data-val="tRig"]'), "and the way to what you are under");
+click($('[data-tbl="my-conds"][data-val="tRig"]'));
+await wait(80);
+ok(peek(`tbl.ui.panel`) === "figure", "which opens your figure");
+ok($$('[data-tbl="mine-cond"]').length >= 8,
+  `carrying every condition as a chip you can press (${$$('[data-tbl="mine-cond"]').length})`);
+ok(!/Hit points/.test($("#vtt-side").textContent),
+  "and not your hit points, which are yours and live on your sheet");
+click($$('[data-tbl="mine-cond"]').find((b) => /Prone/.test(b.textContent)));
+await until(async () => ((await aget(`CocLive.get("tables/482910/tokens/tRig/conditions")`)) || [])
+  .indexOf("prone") >= 0);
+ok(true, "and pressing one marks it, for everybody");
+await peek(`CocLive.put("tables/482910/tokens/tRig/conditions", null)`);
+peek(`tbl.ui.panel = ""; paintSide();`);
 /* A Turn spends a cooldown and a Prestige spends the engine, and both show on your own sheet — but a
    Pledge is at-will, so once it stopped flipping the sheet into combat (which it had no business doing)
    pressing Cast on one changed nothing anybody could see. */

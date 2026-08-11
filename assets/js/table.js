@@ -1174,6 +1174,15 @@ document.addEventListener("click", (e) => {
   // An area's card, opened from its label — the one part of it that takes a press, because a corner
   // handle is under a figure half the time.
   else if (act === "area-peek") { tbl.ui.peek = ""; tbl.ui.peekArea = val; paintPeek(); }
+  // Your own figure's conditions, which are public and yours to set — see the note on the card.
+  else if (act === "my-conds") {
+    tbl.ui.peek = "";
+    paintPeek();
+    tbl.ui.lookAt = val;
+    tbl.ui.panel = "figure";
+    paintSide();
+    if (typeof tblRevealPanel === "function") tblRevealPanel();
+  }
   else if (act === "ink-color") { tblInkState().color = val; paintSide(); }
   else if (act === "ink-width") { tblInkState().width = Number(val); paintSide(); }
   else if (act === "ink-clear-mine") {

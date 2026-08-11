@@ -372,6 +372,11 @@ function paintPeek() {
          sheet had no way off the board at all, and Kayki had to log in as the DM to remove one. It
          belongs here anyway: this card is what opens when you tap yourself. */
       : tblIsMine(t) ? `<button class="btn-quiet" data-tbl="panel" data-val="${tbl.me.charCode ? "sheet" : "mine"}">Open ${tbl.me.charCode ? "my sheet" : "my character"}</button>
+        ${/* The conditions you are under are the one thing about a figure that is public and yours to
+              set, and tapping your own figure went straight to the sheet — so a character with a real
+              sheet had no way to mark itself prone and the DM had to keep the whole table's conditions
+              in their head. */""}
+        <button class="btn-quiet" data-tbl="my-conds" data-val="${esc(id)}">What I am under</button>
         <button class="btn-quiet" data-tbl="mine-remove" data-val="${esc(id)}">Take it off the table</button>` : ""}`;
   tblFitPeek(host, sx, sy);
 }
