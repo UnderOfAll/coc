@@ -344,11 +344,17 @@ function paintPeek() {
   const id = tbl.ui.peek;
   const t = id ? tblTokens()[id] : null;
   if (!t) { host.classList.add("hidden"); host.innerHTML = ""; return; }
-  /* NOT FOR YOUR OWN FIGURE. Everything this card carried about yourself now lives on your sheet, which
-     is one tap further and one window fewer — Kayki: "remove the pop-up when we click on the character,
-     I like way more the 2 click open the sheet." It was also a hazard: "take it off the table" sat one
-     stray tap away from a figure people drag constantly, and he removed his own character by accident. */
-  if (tblIsMine(t)) { host.classList.add("hidden"); host.innerHTML = ""; return; }
+  /* NOT FOR THE FIGURE YOU ARE PLAYING. Everything this card carried about yourself now lives on your
+     sheet, which is one tap further and one window fewer — Kayki: "remove the pop-up when we click on the
+     character, I like way more the 2 click open the sheet." It was also a hazard: "take it off the table"
+     sat one stray tap away from a figure people drag constantly, and he removed his own character.
+     ONLY THAT ONE, THOUGH. The test was "any figure you HOLD", which is not the same thing: copy your own
+     figure — a Doppelganger's clones — and every copy came out held by you, so tapping one opened nothing
+     at all, for the player AND for the DM running from the same browser. Kayki: "as DM when I click on
+     them, their sheet doesn't open, so I have to guess which clone is which to remove." */
+  if (tblIsMine(t) && (id === tbl.me.tokenId || t.kind !== "npc")) {
+    host.classList.add("hidden"); host.innerHTML = ""; return;
+  }
   const scene = tblScene();
   const cell = Number(scene.cell) || 70;
   const size = Math.max(1, Number(t.size) || 1);

@@ -475,7 +475,7 @@ function tblOpen(code) {
     // Placing a figure has to wait until the board's contents are known, or a second device places a
     // second figure. But waiting for the next heartbeat meant sitting down and appearing to the table
     // up to twenty seconds later, which is how it behaved live. Try the moment the data lands.
-    if (first) { tblSettleSeat(); tblEnsureToken(); tblStraightenTokens(); tblMigrateDmNotes(); }
+    if (first) { tblSettleSeat(); tblEnsureToken(); tblStraightenTokens(); tblUnlinkTwinnedSeats(); tblMigrateDmNotes(); }
   }));
   tblAnnounce();
   tbl.beat = setInterval(tblAnnounce, 20000);
@@ -493,6 +493,28 @@ function tblStraightenTokens() {
     if (!t) continue;
     const x = Math.round(Number(t.x) || 0), y = Math.round(Number(t.y) || 0);
     if (x !== t.x || y !== t.y) CocLive.patch(tblPath("tokens/" + id), { x, y }).catch(() => {});
+  }
+}
+
+/* CLONES MADE BEFORE COPYING STOPPED CARRYING THE CHARACTER CODE. Two figures with the same code is not a
+   preference, it is a fault: the sheet writes its name and its hit points to EVERY figure carrying its
+   code, so a Doppelganger's clones kept being renamed back to him and healed back to his total, which is
+   why they could not be told apart on the board. The one actually being played keeps the link — held
+   first, then a `pc`, then the oldest — and the copies lose it. The DM's browser only, once, on opening. */
+function tblUnlinkTwinnedSeats() {
+  if (!tbl || tbl.role !== "dm") return;
+  const groups = new Map();
+  for (const [id, t] of Object.entries(tblTokens())) {
+    const code = t && t.charCode;
+    if (!code) continue;
+    if (!groups.has(code)) groups.set(code, []);
+    groups.get(code).push([id, t]);
+  }
+  for (const group of groups.values()) {
+    if (group.length < 2) continue;
+    const rank = ([, t]) => (t.owner ? 0 : 2) + (t.kind === "npc" ? 1 : 0);
+    const keep = group.slice().sort((a, b) => rank(a) - rank(b) || (a[0] < b[0] ? -1 : 1))[0][0];
+    for (const [id] of group) if (id !== keep) tblTokenField(id, "charCode", null).catch(() => {});
   }
 }
 

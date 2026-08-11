@@ -1279,6 +1279,17 @@ async function tblDuplicate(id) {
     .filter((o) => o && String(o.name || "").replace(/\s+\d+$/, "") === base).length;
   const copy = Object.assign({}, t, { name: (base + " " + (used + 1)).slice(0, 40), moved: 0, init: null });
   delete copy.init;
+  /* A COPY IS A NEW CREATURE, NOT A SECOND YOU. Copying a player's figure — which is what a Doppelganger's
+     clones are — used to carry the character CODE and the holder across, and both did damage:
+       - the sheet writes to every figure carrying its code, so saving renamed all the clones back to the
+         character's name and reset their hit points to his. That is why they were impossible to tell
+         apart on the board.
+       - holding several figures is a thing the app deliberately resolves by LETTING GO of all but one
+         (tblPruneMyTokens), so a clone could quietly take your character's place as the figure you play.
+     A clone is a figure the DM runs. Its picture and its numbers are copied; the link is not. */
+  delete copy.charCode;
+  delete copy.owner;
+  delete copy.play;
   // The copy carries the same `art:` key its twin does — one picture, however many goblins.
   return tblPlaceNpc(copy);
 }
@@ -2056,8 +2067,26 @@ function tblArtSettle() {
     if (v.startsWith("art:")) used.add(v.slice(4));
   }
   if (String(meta.handout || "").startsWith("art:")) used.add(String(meta.handout).slice(4));
-  for (const k of keys) if (!used.has(k)) CocLive.put(tblPath("art/" + k), null).catch(() => {});
+  /* A PICTURE ARRIVES BEFORE THE FIGURE THAT USES IT. `tblKeepArt` writes the art, waits for it, and only
+     then pushes the figure — so between the two there is a moment where the store holds a key nothing
+     references yet, and this sweep ran on the data event that delivered it. It deleted the picture, the
+     figure landed pointing at a key that no longer existed, and the face came up blank. Kayki, first
+     session at a table: "the first time I entered, the image didn't load, I had to change it mid-session
+     to load" — changing it rewrote the art AFTER the figure was already pointing at it, which is why the
+     second attempt stuck.
+     So nothing is deleted the first time it looks unused: a key has to still be unreferenced a full
+     grace period later. A write in flight lands inside a second; a picture nobody wants can wait. */
+  const idle = tbl.artIdle || (tbl.artIdle = {});
+  const now = Date.now();
+  for (const k of keys) {
+    if (used.has(k)) { delete idle[k]; continue; }
+    if (!idle[k]) { idle[k] = now; continue; }
+    if (now - idle[k] < TBL_ART_GRACE) continue;
+    delete idle[k];
+    CocLive.put(tblPath("art/" + k), null).catch(() => {});
+  }
 }
+const TBL_ART_GRACE = 30000;
 
 /* One place that writes a figure's picture, whoever asked. */
 async function tblSetTokenImage(id, image) {

@@ -645,12 +645,58 @@ ok(peek(`tblTokens()[${JSON.stringify(copyId)}].image`) === artRef,
   "duplicating a figure copies the key, not the picture");
 ok(Object.keys(await aget(`CocLive.get("tables/482910/art")`)).length === 1,
   "so the database still holds exactly one copy of it");
+/* AND A CLONE IS NOT A SECOND YOU. tRig is a PLAYER's figure, and copying it used to carry the character
+   code and the holder across. Both did damage: the sheet writes its name and hit points to every figure
+   carrying its code, so a Doppelganger's clones kept being renamed back to him — "I have to guess which
+   clone is which to remove" — and holding several figures makes the app let go of all but one, so a clone
+   could quietly take the place of the character you play. */
+ok(peek(`tblTokens()[${JSON.stringify(copyId)}].charCode`) === undefined,
+  "a copy of a player's figure does not carry their character code");
+ok(peek(`tblTokens()[${JSON.stringify(copyId)}].owner`) === undefined, "nor the holder it was copied from");
+peek(`tblSyncTokenFromSheet("123456", { name: "Rigger", play: { hp: 3 }, classId: "acrobat", level: 1 });`);
+await wait(120);
+ok(peek(`tblTokens()[${JSON.stringify(copyId)}].name`) !== "Rigger",
+  "so saving the sheet no longer renames every clone back to the character");
+/* AND THE CLONES MADE BEFORE THE FIX ARE UNPICKED, once, by the DM's browser on opening — otherwise his
+   live table keeps renaming them forever. The figure being PLAYED keeps the link; the copies lose it. */
+await peek(`CocLive.put("tables/482910/tokens/tTwin", { name: "Rig 9", kind: "npc", x: 9, y: 9, size: 1,
+  charCode: "123456", hp: 5, hpMax: 5 })`);
+await wait(120);
+peek(`tblUnlinkTwinnedSeats();`);
+await wait(150);
+ok(peek(`tblTokens().tTwin.charCode`) === undefined, "an older clone loses the character code it copied");
+ok(peek(`tblTokens().tRig.charCode`) === "123456", "and the figure actually being played keeps it");
+await peek(`CocLive.del("tables/482910/tokens/tTwin")`);
+/* AND THE CARD OPENS ON ONE. It was hidden for any figure you HOLD, which is not the same as the figure
+   you PLAY — and the DM running from the same browser got nothing at all when tapping a clone. */
+peek(`tbl.me.tokenId = "tRig"; tblTokenField(${JSON.stringify(copyId)}, "owner", tbl.me.clientId);`);
+await wait(120);
+peek(`tbl.ui.peek = ${JSON.stringify(copyId)}; paintPeek();`);
+ok(!$("#vtt-peek").classList.contains("hidden"), "tapping a figure you hold but do not play opens its card");
+peek(`tbl.ui.peek = "tRig"; paintPeek();`);
+ok($("#vtt-peek").classList.contains("hidden"), "while the figure you are playing still opens the sheet instead");
+peek(`tbl.ui.peek = ""; tbl.me.tokenId = ""; tblTokenField(${JSON.stringify(copyId)}, "owner", null); paintPeek();`);
+await wait(120);
 // Uploading the SAME picture again writes nothing: the key is the same, so it is already there.
 peek(`tblSetTokenImage(${JSON.stringify(copyId)}, "data:image/jpeg;base64,MINE");`);
 await wait(120);
 ok(Object.keys(await aget(`CocLive.get("tables/482910/art")`)).length === 1,
   "and choosing the same picture again adds nothing");
 await peek(`CocLive.del("tables/482910/tokens/" + ${JSON.stringify(copyId)})`);
+/* THE SWEEP MUST NOT EAT A PICTURE THAT IS STILL ON ITS WAY. The art is written first and the figure
+   pushed after it, so for one round trip the store holds a key nothing references — and the sweep ran on
+   the very data event that delivered it, deleted the picture, and left the figure that landed a moment
+   later pointing at nothing. Kayki: "the first time I entered, the image didn't load, I had to change it
+   mid-session to load." Nothing goes until it has been unwanted for a whole grace period. */
+await peek(`CocLive.put("tables/482910/art/orphan1", "data:image/jpeg;base64,INFLIGHT")`);
+peek(`tblArtSettle(); tblArtSettle();`);
+await wait(150);
+ok((await aget(`CocLive.get("tables/482910/art/orphan1")`)) === "data:image/jpeg;base64,INFLIGHT",
+  "a picture nothing points at yet survives the sweep it arrives on");
+peek(`tbl.artIdle.orphan1 = Date.now() - TBL_ART_GRACE - 1000; tblArtSettle();`);
+await wait(150);
+ok((await aget(`CocLive.get("tables/482910/art/orphan1")`)) == null,
+  "and is swept once it has been unwanted for the whole grace period");
 peek(`tbl.role = "player";`);
 // Somebody else's figure is not theirs to dress.
 const orcArt = await aget(`CocLive.get("tables/482910/tokens/tOrc/image")`);
