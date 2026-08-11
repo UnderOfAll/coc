@@ -235,7 +235,9 @@ function bestiaryHTML() {
     return `<p class="panel-sub">${esc(label)}</p>
       <div class="chips">${inTier.map((e) =>
         `<button class="chip" data-tbl="bestiary" data-val="${esc(e.id)}">${esc(e.name)}
-          <span class="muted">${esc(e.hp)} hp</span></button>`).join("")}</div>`;
+          <span class="muted">${esc(e.hp)} hp</span></button>
+         <button class="chip" data-tbl="enemy-card" data-val="${esc(e.id)}"
+           title="Read ${esc(e.name)}'s card">?</button>`).join("")}</div>`;
   }).join("");
   return `<p class="panel-sub">From the bestiary</p>${rows}`;
 }
@@ -259,6 +261,21 @@ async function tblDropEnemy(id) {
   return made;
 }
 
+/* THE WHOLE CARD, IN THE PANEL, AND THE DM'S ALONE.
+ *
+ * The bestiary used to be a tab in the compendium, which put every enemy's hit points, weaknesses and
+ * tactics in front of the players. Kayki: "I don't want this to be available to everyone to see — put its
+ * sheet just like the character ones but for the DM, and make it only accessible for the DM at the
+ * table." So this is the sheet: the same shape as a character's, in the drawer, behind the DM chair.
+ *
+ * It renders through the compendium's own renderer, so there is ONE description of what an enemy looks
+ * like and the two cannot drift apart. */
+function enemySheetHTML(id) {
+  const e = tblEnemy(id);
+  if (!e) return `<section class="panel"><p class="muted">No such creature.</p></section>`;
+  return `<section class="panel enemy-sheet">${typeof renderEnemy === "function" ? renderEnemy(e) : ""}</section>`;
+}
+
 /* What a figure from the bestiary is, read off the data rather than off the token. The DM should never
    have to leave the board to find out what the thing they just dropped hits for. */
 function enemyReadHTML(t) {
@@ -275,7 +292,7 @@ function enemyReadHTML(t) {
     ${e.multiattack ? `<p class="muted">${esc(e.multiattack)}</p>` : ""}
     ${(e.features || []).length
       ? `<p class="muted">${e.features.map((f) => esc(f.name) + (f.uses ? ` (${esc(f.uses)})` : "")).join(" · ")}</p>` : ""}
-    <p class="muted"><a href="#/enemies/${encodeURIComponent(e.id)}">Open the full card</a></p>`;
+    <p><button class="btn-quiet" data-tbl="enemy-card" data-val="${esc(e.id)}">Open its full card</button></p>`;
 }
 
 function repoMapsHTML() {
@@ -889,8 +906,8 @@ function turnStripHTML(order, tokens, currentId) {
       role="listitem" data-tbl="ed-open" data-val="${esc(id)}"
       title="${esc(t.name || "Figure")}${conds.length ? " — " + conds.map((c) => esc(TBL_CONDITION_NAMES[c] || c)).join(", ") : ""}"
       aria-current="${now}">
-      <span class="turn-art"${t.image ? ` style="background-image:url('${esc(t.image)}')"` : ""}>${
-        t.image ? "" : esc(initials)}</span>
+      <span class="turn-art"${tblArt(t.image) ? ` style="background-image:url('${esc(tblArt(t.image))}')"` : ""}>${
+        tblArt(t.image) ? "" : esc(initials)}</span>
       <span class="turn-init">${t.init == null ? "" : esc(t.init)}</span>
       ${conds.length ? `<span class="turn-cond" aria-hidden="true">${esc(conds.length)}</span>` : ""}
       <span class="turn-label">${esc(t.name || "Figure")}</span>
@@ -1079,7 +1096,7 @@ function tblSyncTokenFromSheet(code, ch) {
        they like, and the figure on the board is a view of that character rather than a thing with a life
        of its own. So the sheet's photo simply wins here. (It only ever reaches figures carrying this
        character's code, which is why nobody can touch anybody else's, or a creature's, this way.) */
-    if (ch.photo && t.image !== ch.photo) patch.image = ch.photo;
+    if (ch.photo && tblArt(t.image) !== ch.photo) patch.image = tblArtRef(ch.photo);
     /* AND WHAT YOU HAVE SPENT. Kayki, on what the app owes a fight: "conditions, usage, the engine,
        advantage… have all of this mentioned and pointed and tracked." Conditions and advantage live on
        the figure already; the engine and the uses lived ONLY on your own sheet, so the DM had to ask how
@@ -1141,7 +1158,7 @@ async function tblSpawn() {
   const size = Math.max(1, Math.min(4, Number(($("#tbl-npc-size") || {}).value) || 1));
   const image = String(($("#tbl-npc-img") || {}).value || "").trim();
   if (!name) return say("Give it a name — a board of unnamed markers is unreadable.", true);
-  await tblPlaceNpc({ name, hp, hpMax: hp, size, image, shape: tbl.ui.npcShape || "square" });
+  await tblPlaceNpc({ name, hp, hpMax: hp, size, image: await tblKeepArt(image), shape: tbl.ui.npcShape || "square" });
   say("Dropped " + name + " on the board.");
 }
 
@@ -1187,7 +1204,8 @@ async function tblDuplicate(id) {
     .filter((o) => o && String(o.name || "").replace(/\s+\d+$/, "") === base).length;
   const copy = Object.assign({}, t, { name: (base + " " + (used + 1)).slice(0, 40), moved: 0, init: null });
   delete copy.init;
-  await tblPlaceNpc(copy);
+  // The copy carries the same `art:` key its twin does — one picture, however many goblins.
+  return tblPlaceNpc(copy);
 }
 
 /* Double-tapping a figure opens it. For a player that is a look at their own numbers; for the DM it is
@@ -1290,7 +1308,7 @@ function figureInfoHTML(id) {
   const conds = tblConds(id, t);
   return `<section class="panel">
     <h2>${esc(t.name || "Figure")}</h2>
-    ${t.image ? `<img class="figure-art" src="${esc(t.image)}" alt="" />` : ""}
+    ${t.image ? `<img class="figure-art" src="${esc(tblArt(t.image))}" alt="" />` : ""}
     ${showHp && t.hpMax ? `<div class="hp-head"><span class="panel-sub">Hit points</span>
         <div class="hp-num ${pct <= 25 ? "hurt" : ""}"><strong>${esc(t.hp)}</strong><span>/ ${esc(t.hpMax)}</span></div></div>
       <div class="hp-bar"><div class="hp-fill ${pct <= 25 ? "hurt" : ""}" style="transform:scaleX(${pct / 100})"></div></div>`
@@ -1644,6 +1662,15 @@ async function tblReturnSeat() {
 async function tblSeatCharacter(name, code, msgSel) {
   const msg = $(msgSel);
   const say = (t, bad) => { if (msg) { msg.textContent = t; msg.className = "save-msg" + (bad ? " bad" : ""); } };
+  /* NOT INTO A ROOM THAT IS NOT THERE. The database has no schema, so writing a figure into
+     `tables/<code>/tokens/<id>` CREATES `tables/<code>` — a table with one figure standing at 1,1 and no
+     meta, which the app then reports as closed on every device that opens it. Kayki found three of them
+     sitting in the database taking up space, each with exactly one figure at exactly that square.
+     A table always has meta; if this one has none, it was closed while somebody was still sitting in it,
+     or the code was never a table at all. [[rtdb-field-write-creates-parent]] */
+  if (!tbl || !(tbl.data && tbl.data.meta)) {
+    return say("This table is not there any more — ask your DM for the new room code.", true);
+  }
   if (code && !CocStore.validCode(code)) return say("A Circus of Chaos code is six digits, or leave it empty.", true);
   let ch = null;
   if (code) {
@@ -1662,7 +1689,7 @@ async function tblSeatCharacter(name, code, msgSel) {
     name: String(finalName).slice(0, 40),
     charCode: code || "",
     owner: tbl.me.clientId,
-    image: tbl.ui.seatPic || (ch && ch.photo) || "",
+    image: await tblKeepArt(tbl.ui.seatPic || (ch && ch.photo) || ""),
     x: spot.x, y: spot.y, size: 1, kind: "pc", shape: "square",
     initMod: d ? (d.mods.Dexterity || 0) : 0,
     hp: d ? (ch.play && ch.play.hp != null ? ch.play.hp : d.hpMax) : 0,
@@ -1858,7 +1885,7 @@ function tokenImageHTML(who, current) {
   const repo = tblRepoMaps;
   if (repo === null) tblLoadRepoMaps();
   return `<p class="panel-sub">Picture</p>
-    ${current ? `<img class="figure-art figure-thumb" src="${esc(current)}" alt="" />` : ""}
+    ${current ? `<img class="figure-art figure-thumb" src="${esc(tblArt(current))}" alt="" />` : ""}
     <label class="field"><span>From this device</span>
       <input id="${who}-file" class="text" type="file" accept="image/*" /></label>
     <p id="${who}-imgmsg" class="save-msg"></p>
@@ -1866,21 +1893,111 @@ function tokenImageHTML(who, current) {
       <div class="chips">${repo.map((f) =>
         `<button class="chip" data-tbl="${who}-repo" data-val="${esc(f)}">${esc(f)}</button>`).join("")}</div>` : ""}
     <label class="field"><span>Or a link</span>
-      <input id="${who}-img" class="text" type="text" value="${esc(current || "")}" /></label>`;
+      <input id="${who}-img" class="text" type="text" value="${esc(String(current || "").startsWith("art:") ? "" : (current || ""))}" /></label>`;
+}
+
+/* ---------------------------------------------------------------- pictures, stored once
+ *
+ * A photo off a phone is a data URI of a few hundred kilobytes, and it used to be written into the
+ * FIGURE. Copy a goblin eight times and the database held eight copies of the same picture. Kayki:
+ * "he uploads that image, the database has it stored once and all copies use that image, unless he
+ * manually swaps it, so we prevent it getting full later on."
+ *
+ * So a picture is stored once per table, under a key derived from the picture itself, and a figure
+ * carries the KEY (`art:xxxx`) rather than the bytes. Uploading the same photo twice writes nothing the
+ * second time — the key is the same, so it is already there. A link or a `maps/…` path is left exactly
+ * as it is: it costs nothing to store and resolving it would only add a layer.
+ *
+ * The key is content-derived and not a random id, which is the whole trick: it is what makes "the same
+ * picture" recognisable without keeping an index of what has been uploaded. */
+function tblArtKey(s) {
+  let a = 5381, b = 52711;
+  for (let i = 0; i < s.length; i++) {
+    const c = s.charCodeAt(i);
+    a = (a * 33 ^ c) >>> 0;
+    b = (b * 31 + c) >>> 0;
+  }
+  // Two independent hashes and the length: a collision would need all three to agree.
+  return (a.toString(36) + b.toString(36) + s.length.toString(36)).slice(0, 24);
+}
+
+function tblArtStore() { return (tbl && tbl.data && tbl.data.art) || {}; }
+
+/* A figure's `image` as something a browser can draw. */
+function tblArt(image) {
+  const v = String(image || "");
+  if (!v.startsWith("art:")) return v;
+  return tblArtStore()[v.slice(4)] || "";
+}
+
+/* And the other way: whatever was chosen, turned into what a figure should carry. Awaited where the
+   caller can, so the figure never points at a picture that has not landed yet. */
+async function tblKeepArt(image) {
+  const v = String(image || "").trim();
+  if (!v.startsWith("data:")) return v;          // a link or maps/… — nothing to store
+  const key = tblArtKey(v);
+  if (!tblArtStore()[key]) await CocLive.put(tblPath("art/" + key), v);
+  return "art:" + key;
+}
+
+/* The same thing for the paths that cannot await — building a token object to write in one go. The
+   picture is sent first and the reference goes out with the token; both are writes to the same table
+   and the mirror carries them together. */
+function tblArtRef(image) {
+  const v = String(image || "").trim();
+  if (!v.startsWith("data:")) return v;
+  const key = tblArtKey(v);
+  if (!tblArtStore()[key]) CocLive.put(tblPath("art/" + key), v).catch(() => {});
+  return "art:" + key;
+}
+
+/* Nothing keeps a picture alive but a figure using it. The DM's browser sweeps the rest — one client
+   only, so two of them cannot race, and the same shape the areas and the spawns already use. */
+function tblArtSettle() {
+  if (!tbl || tbl.role !== "dm") return;
+  const used = new Set();
+  /* AND ANYTHING STILL CARRYING THE BYTES MOVES INTO THE STORE. Figures placed before this existed hold
+     the whole picture inline, and eight copies of a goblin are eight copies of the photo. Repointing them
+     is what actually gets the space back — the sweep below then has something to sweep. One write per
+     figure, once, on the DM's browser only. */
+  for (const [id, t] of Object.entries(tblTokens())) {
+    const v = String((t || {}).image || "");
+    if (v.startsWith("data:")) {
+      const ref = tblArtRef(v);
+      tblTokenField(id, "image", ref).catch(() => {});
+      used.add(ref.slice(4));
+    }
+  }
+  const store = tblArtStore();
+  const keys = Object.keys(store);
+  if (!keys.length) return;
+  for (const t of Object.values(tblTokens())) {
+    const v = String((t || {}).image || "");
+    if (v.startsWith("art:")) used.add(v.slice(4));
+  }
+  const meta = tbl.data.meta || {};
+  for (const h of Object.values(tbl.data.handouts || {})) {
+    const v = String((h || {}).image || "");
+    if (v.startsWith("art:")) used.add(v.slice(4));
+  }
+  if (String(meta.handout || "").startsWith("art:")) used.add(String(meta.handout).slice(4));
+  for (const k of keys) if (!used.has(k)) CocLive.put(tblPath("art/" + k), null).catch(() => {});
 }
 
 /* One place that writes a figure's picture, whoever asked. */
-function tblSetTokenImage(id, image) {
+async function tblSetTokenImage(id, image) {
   const t = tblTokens()[id];
   if (!t) return;
   if (tbl.role !== "dm" && !tblIsMine(t)) return;
-  tblTokenField(id, "image", image || "").catch(tblFail);
+  // Stored once, under a key derived from the picture; the figure carries the key.
+  const kept = await tblKeepArt(image);
+  await tblTokenField(id, "image", kept || "").catch(tblFail);
   /* If this figure IS a character, the character is where its face belongs — otherwise the picture holds
      until the next time that sheet saves and then reverts to whatever the sheet still has. A player owns
      their own character completely, so changing it here changes it everywhere: on the board, on the
      sheet, and in the next session. Only ever their own — `tblIsMine` above is the whole guard, and a
      creature has no code to write to. */
-  if (t.charCode && (tblIsMine(t) || tbl.role === "dm")) tblSetCharacterPhoto(t.charCode, image || "");
+  if (t.charCode && (tblIsMine(t) || tbl.role === "dm")) tblSetCharacterPhoto(t.charCode, tblArt(kept) || "");
 }
 
 /* Write a picture onto the CHARACTER behind a figure, wherever that character lives. Read-modify-write,

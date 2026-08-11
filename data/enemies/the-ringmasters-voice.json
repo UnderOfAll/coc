@@ -12,6 +12,7 @@
   "hp": 33,
   "hpDice": "6d8+6",
   "speed": 30,
+  "parryDC": 13,
   "senses": "hears everything within 60 ft, even through canvas",
   "attacks": [
     {

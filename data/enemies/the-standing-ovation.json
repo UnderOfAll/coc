@@ -12,6 +12,7 @@
   "hp": 27,
   "hpDice": "6d10-6",
   "speed": 20,
+  "parryDC": 15,
   "attacks": [
     {
       "name": "Applause",

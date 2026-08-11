@@ -6355,6 +6355,7 @@
       "hp": 30,
       "hpDice": "5d8+8",
       "speed": 30,
+      "parryDC": 10,
       "senses": "blindsight 30 ft",
       "multiattack": "It throws two knives on its turn, at the same target or at two different ones.",
       "attacks": [
@@ -6397,6 +6398,7 @@
       "hp": 33,
       "hpDice": "6d8+6",
       "speed": 30,
+      "parryDC": 13,
       "senses": "hears everything within 60 ft, even through canvas",
       "attacks": [
         {
@@ -6441,6 +6443,7 @@
       "hp": 27,
       "hpDice": "6d10-6",
       "speed": 20,
+      "parryDC": 15,
       "attacks": [
         {
           "name": "Applause",

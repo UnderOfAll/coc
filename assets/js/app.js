@@ -30,8 +30,17 @@ const CATEGORIES = [
   { key: "passives",   label: "Passives",   render: renderPassive },
   { key: "weapons",    label: "Weapons",    render: renderWeapon },
   { key: "armor",      label: "Armor",      render: renderArmor },
-  { key: "enemies",    label: "Enemies",    render: renderEnemy },
+  /* NOT IN THE COMPENDIUM. `dm: true` keeps the data loading — the table reads it to drop a creature and
+     to show the DM its card — while keeping the tab, the search and the route out of the players' hands.
+     Kayki: "I don't want this to be available to everyone to see… make it only accessible for the DM at
+     the table, not for everyone in the compendium."
+     HONEST LIMIT: this is a static site, so `data/bundle.json` is a URL anybody can type. This hides the
+     bestiary from the app, not from a determined player with the developer tools open. */
+  { key: "enemies",    label: "Enemies",    render: renderEnemy, dm: true },
 ];
+/* The categories a player browses. Everything that walks CATEGORIES to build a tab, a search result or a
+   route uses this instead; only the loader and the table use the full list. */
+const OPEN_CATEGORIES = CATEGORIES.filter((c) => !c.dm);
 
 const store = {};        // key -> array of entries
 let current = "classes"; // active category
@@ -145,7 +154,7 @@ async function fetchJSON(url) {
 function buildSidebar() {
   const nav = $("#sidebar");
   nav.innerHTML = "";
-  for (const cat of CATEGORIES) {
+  for (const cat of OPEN_CATEGORIES) {
     // An empty category is a tab that goes nowhere — hide it until it has content. The app stays
     // fully data-driven: drop a file in and the tab reappears on the next build.
     if (!store[cat.key] || !store[cat.key].length) continue;
@@ -277,7 +286,7 @@ function routeFromHash() {
 
   // Otherwise the compendium.
   showView("compendium");
-  const key = CATEGORIES.some((c) => c.key === head) ? head : "classes";
+  const key = OPEN_CATEGORIES.some((c) => c.key === head) ? head : "classes";
   if (arg) showDetail(key, decodeURIComponent(arg));
   else selectCategory(key);
 }
@@ -287,7 +296,7 @@ function selectCategory(key) {
   document.querySelectorAll(".nav-btn").forEach((b) => b.classList.toggle("active", asEl(b).dataset.key === key));
   $("#detail-view").classList.add("hidden");
   $("#list-view").classList.remove("hidden");
-  $("#list-title").textContent = CATEGORIES.find((c) => c.key === key).label;
+  $("#list-title").textContent = (CATEGORIES.find((c) => c.key === key) || {}).label || "";
   renderList(key);
   if (location.hash !== "#/" + key) history.replaceState(null, "", "#/" + key);
   pageScroller().scrollTop = listScroll[key] || 0;
@@ -441,7 +450,7 @@ function renderSearch(q) {
   list.innerHTML = "";
   list.className = "grouped";
   let total = 0;
-  for (const cat of CATEGORIES) {
+  for (const cat of OPEN_CATEGORIES) {
     const hits = store[cat.key].filter((it) => (it._search || "").includes(q));
     if (!hits.length) continue;
     total += hits.length;

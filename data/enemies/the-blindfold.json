@@ -12,6 +12,7 @@
   "hp": 30,
   "hpDice": "5d8+8",
   "speed": 30,
+  "parryDC": 10,
   "senses": "blindsight 30 ft",
   "multiattack": "It throws two knives on its turn, at the same target or at two different ones.",
   "attacks": [

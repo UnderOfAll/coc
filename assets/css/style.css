@@ -1809,3 +1809,9 @@ body:has(.vtt) { height: 100dvh; overflow: hidden; }
 /* A feature that puts something on the map carries the button that does it, under its own text. */
 .feat-ctl { margin-top: 0.5rem; }
 
+
+/* An enemy's card, in the DM's drawer. It is the compendium's own renderer, so it arrives with the
+   compendium's widths; inside a panel it takes the panel's. */
+.enemy-sheet .detail-view, .enemy-sheet { max-width: 100%; }
+.enemy-sheet h1 { font-size: 1.4rem; margin-top: 0; }
+.enemy-sheet .detail-grid { gap: 0.4rem; }

@@ -693,6 +693,7 @@ function paintEverything() {
   paintAreas();
   tblAreasSettle();
   tblSpawnsSettle();
+  tblArtSettle();
   paintPlacing();
   // The list of what you have out there follows the board, so an area that expires leaves it by itself.
   if (tbl.ui.panel === "field") paintSide();
@@ -830,7 +831,7 @@ function tblPanel(which) {
 const TBL_PANEL_NAMES = {
   dm: "DM screen", dice: "Dice", claim: "The DM's chair", figure: "Figure", notes: "Notes",
   draw: "Draw", mine: "Your character", seat: "Choose a character", debug: "Debug", sheet: "Your sheet",
-  field: "On the field",
+  field: "On the field", enemy: "Its card",
 };
 
 /* The way back to the board, and the name of what you are in. Rendered always and shown only on a phone,
@@ -873,6 +874,8 @@ function paintSide() {
   else if (which === "seat") body = seatPanelHTML();
   else if (which === "debug") body = tblDebugOn() ? debugPanelHTML() : "";
   else if (which === "field") body = fieldPanelHTML();
+  // The DM's alone: the whole stat block, in the panel, without leaving the table.
+  else if (which === "enemy") body = tbl.role === "dm" ? enemySheetHTML(tbl.ui.enemyId) : "";
   else if (which === "sheet") body = `<p class="muted">Opening your sheet…</p>`;
   side.innerHTML = sideHeadHTML(which) + body;
   // The DM's panel is re-rendered on every stream event and compared against what is on screen, so what
@@ -1328,6 +1331,14 @@ document.addEventListener("click", (e) => {
   else if (act === "ed-dup") tblDuplicate(val).catch(tblFail);
   else if (act === "npc-shape") { tbl.ui.npcShape = val; paintSide(); }
   else if (act === "bestiary") tblDropEnemy(val).catch(tblFail);
+  else if (act === "enemy-card") {
+    tbl.ui.enemyId = val;
+    tbl.ui.panel = "enemy";
+    tbl.ui.peek = "";
+    paintPeek();
+    paintSide();
+    if (typeof tblRevealPanel === "function") tblRevealPanel();
+  }
   else if (act === "ed-shape") {
     const [id, shape] = String(val).split("|");
     if (TBL_SHAPE_IDS.includes(shape)) tblTokenField(id, "shape", shape).catch(tblFail);

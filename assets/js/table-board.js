@@ -218,8 +218,9 @@ function paintTokens() {
     node.classList.toggle("npc", t.kind === "npc");
     const art = node.querySelector(".tok-art");
     art.className = "tok-art shape-" + tblShapeOf(t);
-    if (t.image) {
-      if (art.dataset.src !== t.image) { art.dataset.src = t.image; art.style.backgroundImage = `url("${t.image}")`; }
+    const face = tblArt(t.image);
+    if (face) {
+      if (art.dataset.src !== face) { art.dataset.src = face; art.style.backgroundImage = `url("${face}")`; }
       art.textContent = "";
     } else {
       art.style.backgroundImage = "";
@@ -1694,7 +1695,7 @@ async function tblSpawnAt(x, y) {
   }
   const id = CocLive.newId();
   await CocLive.put(tblPath("tokens/" + id), {
-    name: p.name, image: p.image || "", x: spot.x, y: spot.y, size, kind: "pc", shape: "square",
+    name: p.name, image: await tblKeepArt(p.image || ""), x: spot.x, y: spot.y, size, kind: "pc", shape: "square",
     hp: 1, hpMax: 1, speed: 0, initMod: 0, owner: tbl.me.clientId,
     spawn: true, spawnOf: p.ofCode || "", at: Date.now(),
   });

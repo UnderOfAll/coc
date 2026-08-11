@@ -623,11 +623,35 @@ ok((await peek(`CocLive.get("tables/482910/tokens/tRig/x")`)) === 7, "but your o
    changes the character too — otherwise it holds until that sheet next saves and then springs back to
    whatever the sheet still had. */
 peek(`tblSetTokenImage("tRig", "data:image/jpeg;base64,MINE");`);
-await wait(200);
-ok((await aget(`CocLive.get("tables/482910/tokens/tRig/image")`)) === "data:image/jpeg;base64,MINE",
-  "a player can put a picture on their own figure");
+await until(async () => /^art:/.test(String(await aget(`CocLive.get("tables/482910/tokens/tRig/image")`) || "")));
+/* THE PICTURE IS STORED ONCE, AND THE FIGURE CARRIES A KEY. It used to be written into the figure, so
+   copying a goblin eight times put eight copies of the same photo in the database. Kayki: "he uploads
+   that image, the database has it stored once and all copies use that image… so we prevent it getting
+   full later on." The key is derived from the picture itself, which is what makes "the same picture"
+   recognisable without keeping an index of what has been uploaded. */
+const artRef = await aget(`CocLive.get("tables/482910/tokens/tRig/image")`);
+ok(/^art:/.test(artRef), "a player can put a picture on their own figure, and it is stored by key: " + artRef);
+ok((await aget(`CocLive.get("tables/482910/art/" + ${JSON.stringify(artRef)}.slice(4))`))
+   === "data:image/jpeg;base64,MINE", "with the picture itself kept once, in the table's own art store");
+ok(peek(`tblArt(${JSON.stringify(artRef)})`) === "data:image/jpeg;base64,MINE",
+  "and the board resolves the key back to something it can draw");
 ok((await aget(`CocStore.load("123456").then((c) => c && c.photo)`)) === "data:image/jpeg;base64,MINE",
-  "and it lands on the CHARACTER, so it survives the next time the sheet saves");
+  "and the CHARACTER gets the real picture, not a key that means nothing away from this table");
+/* AND A COPY IS A COPY OF THE KEY. This is the whole point: eight goblins, one photo. */
+peek(`tbl.role = "dm";`);
+const copyId = await aget(`tblDuplicate("tRig")`);
+await until(() => !!peek(`JSON.parse(JSON.stringify(tblTokens()))[${JSON.stringify(copyId)}]`));
+ok(peek(`tblTokens()[${JSON.stringify(copyId)}].image`) === artRef,
+  "duplicating a figure copies the key, not the picture");
+ok(Object.keys(await aget(`CocLive.get("tables/482910/art")`)).length === 1,
+  "so the database still holds exactly one copy of it");
+// Uploading the SAME picture again writes nothing: the key is the same, so it is already there.
+peek(`tblSetTokenImage(${JSON.stringify(copyId)}, "data:image/jpeg;base64,MINE");`);
+await wait(120);
+ok(Object.keys(await aget(`CocLive.get("tables/482910/art")`)).length === 1,
+  "and choosing the same picture again adds nothing");
+await peek(`CocLive.del("tables/482910/tokens/" + ${JSON.stringify(copyId)})`);
+peek(`tbl.role = "player";`);
 // Somebody else's figure is not theirs to dress.
 const orcArt = await aget(`CocLive.get("tables/482910/tokens/tOrc/image")`);
 peek(`tblSetTokenImage("tOrc", "data:image/jpeg;base64,NOPE");`);
@@ -2100,6 +2124,17 @@ peek(`tbl.role = "player"; tbl.ui.peek = ${JSON.stringify(droppedId)}; paintPeek
 ok(!/AC/.test($("#vtt-peek").textContent), "a player tapping it is not shown its armour class");
 peek(`tbl.role = "dm"; paintPeek();`);
 ok(/AC/.test($("#vtt-peek").textContent), "and the DM is");
+/* AND THE WHOLE CARD OPENS IN THE PANEL, the DM's alone. The bestiary used to be a tab in the
+   compendium, which put every enemy's hit points, weaknesses and tactics in front of the players. */
+click($('[data-tbl="enemy-card"][data-val="sawdust-hound"]'));
+await wait(80);
+ok(peek(`tbl.ui.panel`) === "enemy", "pressing its card opens the sheet in the drawer");
+ok(/Runs in a Pack/.test($("#vtt-side").textContent), "with everything on it: " +
+  $("#vtt-side").textContent.replace(/\s+/g, " ").trim().slice(0, 70));
+ok(/How to play it/.test($("#vtt-side").textContent), "including how to play it");
+peek(`tbl.role = "player"; paintSide();`);
+ok(!/Runs in a Pack/.test($("#vtt-side").textContent), "and a player who reaches it is shown nothing");
+peek(`tbl.role = "dm"; tbl.ui.panel = ""; paintSide();`);
 peek(`tbl.ui.peek = ""; paintPeek();`);
 await peek(`CocLive.del("tables/482910/tokens/" + ${JSON.stringify(droppedId)})`);
 openPanel("dm");

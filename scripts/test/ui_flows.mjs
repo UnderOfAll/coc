@@ -26,6 +26,19 @@ const type=(n,v)=>{ n.value=v; n.dispatchEvent(new window.Event("input",{bubbles
 const blur=n=>n.dispatchEvent(new window.Event("focusout",{bubbles:true}));
 const go=async h=>{ window.location.hash=h; window.dispatchEvent(new window.HashChangeEvent("hashchange")); await new Promise(r=>setTimeout(r,30)); };
 
+/* THE BESTIARY IS NOT IN THE COMPENDIUM. Kayki: "I don't want this available for everyone to see —
+   make it only accessible for the DM at the table." The data still LOADS, because the table reads it to
+   drop a creature and to show the DM its card; it is the tab, the search and the route that go. */
+ok(peek(`store.enemies.length`) > 0, "the bestiary still loads, for the table to read");
+ok(peek(`CATEGORIES.some(c => c.key === "enemies")`), "it is still a category");
+ok(peek(`OPEN_CATEGORIES.some(c => c.key === "enemies")`) === false, "but not one a player browses");
+await go("#/enemies");
+ok(peek(`current`) !== "enemies", "typing its address does not open it (lands on " + peek("current") + ")");
+type($("#search"), "Sawdust");
+await new Promise(r => setTimeout(r, 60));
+ok(!/Sawdust Hound/.test($("#list").textContent), "and searching for one finds nothing");
+type($("#search"), "");
+
 console.log("\n— CREATOR —");
 await go("#/create");
 click($$('[data-pick="class"]').find(b=>b.dataset.val==="joker"));
