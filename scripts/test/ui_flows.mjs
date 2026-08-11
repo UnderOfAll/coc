@@ -14,7 +14,7 @@ const {window}=dom; const doc=window.document;
 window.fetch=async(u)=>{const f=path.join(REPO,String(u).split("?")[0]);
   if(!fs.existsSync(f))return{ok:false,status:404,json:async()=>({})};
   const t=fs.readFileSync(f,"utf8");return{ok:true,status:200,json:async()=>JSON.parse(t),text:async()=>t};};
-for(const f of ["assets/js/config.js","assets/js/storage.js","assets/js/app.js","assets/js/creator.js"]){
+for(const f of ["assets/js/config.js","assets/js/storage.js","assets/js/app.js","assets/js/creator.js", "assets/js/dm.js"]){
   const s=doc.createElement("script"); s.textContent=fs.readFileSync(path.join(REPO,f),"utf8"); doc.body.appendChild(s);}
 window.scrollTo = () => {};   // jsdom has no layout, so smooth scrolling is a no-op here
 const peek=e=>window.eval(e);
@@ -38,6 +38,90 @@ type($("#search"), "Sawdust");
 await new Promise(r => setTimeout(r, 60));
 ok(!/Sawdust Hound/.test($("#list").textContent), "and searching for one finds nothing");
 type($("#search"), "");
+
+console.log("\n— THE DM'S SCREEN —");
+/* A SECOND KIND OF CODE, and it is an identity rather than a door. The DM key opens ONE room's chair and
+   dies with that room; this carries the tables, the notes and the enemies between devices and past any
+   table being closed. Kayki: "even if the table is deleted one day, the [enemies] maintain there."
+   Deliberately not merged with the room key — one leaked code would otherwise hand over every room. */
+peek(`window.__dms = {};
+  CocDm.load = async (c) => window.__dms[c] ? JSON.parse(JSON.stringify(window.__dms[c])) : null;
+  CocDm.save = async (c, r) => { window.__dms[c] = JSON.parse(JSON.stringify(r)); return true; };
+  CocDm.taken = async (c) => !!window.__dms[c];`);
+await go("#/dm");
+ok($("#dm-open")&&$("#dm-new"),"the door asks for a code, or offers to start one");
+ok(/not the key to a room/i.test($("#tool").textContent),"and says plainly that it is not the room key");
+type($("#dm-new"),"12"); click($('[data-dm="new"]')); await new Promise(r=>setTimeout(r,60));
+ok(/Six digits/.test($("#dm-msg").textContent),"a short code is refused");
+type($("#dm-new"),"777001"); click($('[data-dm="new"]'));
+await new Promise(r=>setTimeout(r,200));
+ok(peek(`dm && dm.code`)==="777001","starting one opens it");
+ok(peek(`JSON.stringify(Object.keys(window.__dms))`).includes("777001"),"and writes it under its code");
+type($("#dm-name"),"The management");
+await new Promise(r=>setTimeout(r,600));
+ok(peek(`window.__dms["777001"].name`)==="The management","the name saves as you type");
+
+/* THE BUILDER. Three tiers, and the form asks for what that weight needs and nothing else. */
+click($$('[data-dm="add"]').find(b=>b.dataset.val==="normal"));
+ok($("#en-name")&&$("#en-ac")&&$("#en-hp"),"a normal enemy asks for a name, an AC and hit points");
+ok(!$("#en-parry"),"and does not offer a Parry, because a normal enemy does not");
+ok($$('[data-atk]').length>0,"with an attack row ready");
+ok(!/Features/.test($("#tool").textContent),"and no features at all");
+type($("#en-name"),"Rope Ghoul"); type($("#en-ac"),"14"); type($("#en-hp"),"11");
+// One to three attacks, and a weapon fills a row rather than making the DM look it up.
+click($('[data-dm="atk-add"]'));
+ok($$('[data-atk="name|1"]').length===1,"a second attack can be added");
+const wep=$$('[data-dm="atk-from"]')[0];
+click(wep);
+ok($('[data-atk="damage|1"]').value.length>0,"and a weapon fills the row's damage: "+$('[data-atk="damage|1"]').value);
+click($('[data-dm="atk-drop"][data-val="1"]'));
+ok(!$('[data-atk="name|1"]'),"and a row can be taken off again");
+// Resistances come from the system's own damage types, and immunities include its conditions.
+click($$('[data-dm="resist"]').find(b=>/piercing/.test(b.textContent)));
+ok(peek(`dmUi.draft.resist.join(",")`)==="piercing","a resistance is a chip you press");
+ok($$('[data-dm="immune"]').some(b=>/Prone/.test(b.textContent)),"and immunities offer the conditions the board can show");
+click($('[data-dm="save-enemy"]'));
+await new Promise(r=>setTimeout(r,60));
+ok(peek(`dm.rec.enemies.length`)===1,"saving keeps it");
+const built=peek(`JSON.parse(JSON.stringify(dm.rec.enemies[0]))`);
+ok(built.name==="Rope Ghoul"&&built.ac===14&&built.hp===11,"with what was typed ("+built.name+", AC "+built.ac+", "+built.hp+" hp)");
+ok(built.parryDC===null&&built.features.length===0,"and a normal enemy carries no Parry and no features");
+ok(/-/.test(built.id),"under an id of its own: "+built.id);
+
+// A special adds the Parry and features; a boss adds a class and caps the features at five.
+click($$('[data-dm="add"]').find(b=>b.dataset.val==="special"));
+ok(!!$("#en-parry"),"a special is asked for a Parry DC");
+ok(/Features/.test($("#tool").textContent),"and for features");
+ok(!$("#en-class"),"but not for a class");
+click($('[data-dm="tier"][data-val="boss"]'));
+ok(!!$("#en-class"),"a boss is asked which class it wears");
+type($("#en-name"),"The Understudy"); type($("#en-parry"),"12");
+for(let i=0;i<6;i++){ const add=$('[data-dm="feat-add"]'); if(add) click(add); }
+ok($$('[data-dm="feat-drop"]').length===5,"and it is capped at five features ("+$$('[data-dm="feat-drop"]').length+")");
+ok(!$("#dm-pick"),"and at the cap it stops offering more");
+// A feature can be taken from what the system already describes, as a COPY.
+click($('[data-dm="feat-drop"][data-val="4"]'));
+type($("#dm-pick"),"mirror");
+await new Promise(r=>setTimeout(r,60));
+ok($$('[data-dm="feat-from"]').length>0,"searching finds features the system already has");
+click($$('[data-dm="feat-from"]')[0]);
+ok(peek(`dmUi.draft.features[4] && dmUi.draft.features[4].from`)!=="","one taken in remembers where it came from");
+// Fill the five THROUGH THE FORM — the draft is read back off the DOM when it saves, so setting the
+// object underneath would be overwritten by the blank inputs still on screen.
+$$('[data-feat]').forEach((n)=>{ const [f,i]=n.dataset.feat.split("|");
+  if(!n.value) type(n, f==="name" ? "Move "+i : f==="description" ? "It does a thing." : ""); });
+click($('[data-dm="save-enemy"]'));
+await new Promise(r=>setTimeout(r,60));
+const boss=peek(`JSON.parse(JSON.stringify(dm.rec.enemies[1]))`);
+ok(boss.tier==="boss"&&boss.parryDC===12,"a boss saves with its Parry ("+boss.parryDC+")");
+ok(boss.features.length===5,"and no more than five features ("+boss.features.length+")");
+await new Promise(r=>setTimeout(r,600));
+ok(peek(`window.__dms["777001"].enemies.length`)===2,"both are on the code, not in any room");
+
+/* AND THE BOARD READS THE COPY THIS BROWSER KEEPS, so a fight never waits on a fetch to draw a card.
+   That the table's bestiary then carries them is asserted in table.mjs, where the table exists. */
+ok(peek(`dmCachedEnemies().length`)===2,"this device keeps a copy for the board to read");
+ok(peek(`dmCachedEnemies().some(e => e.name === "Rope Ghoul")`),"holding what was built");
 
 console.log("\n— CREATOR —");
 await go("#/create");
@@ -186,8 +270,9 @@ ok(/overflow-x:\s*clip/.test(bodyRule),"and nothing can push the page wider than
 // every landing card must be reachable, since one of them is the only way into the compendium
 await go("#/");
 const menuCards=$$("#menu-view .menu-card").map(a=>a.getAttribute("href"));
-ok(menuCards.length===4&&menuCards.includes("#/classes")&&menuCards.includes("#/table"),
-  "all four landing cards are present, including the compendium and the table");
+ok(menuCards.length===5&&menuCards.includes("#/classes")&&menuCards.includes("#/table")
+  &&menuCards.includes("#/dm"),
+  "all five landing cards are present, including the compendium, the table and the DM's screen");
 await go("#/classes");
 ok(!$("#compendium-view").classList.contains("hidden"),"and it opens");
 

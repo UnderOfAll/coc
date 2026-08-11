@@ -1820,3 +1820,10 @@ body:has(.vtt) { height: 100dvh; overflow: hidden; }
 .enemy-sheet .detail-view, .enemy-sheet { max-width: 100%; }
 .enemy-sheet h1 { font-size: 1.4rem; margin-top: 0; }
 .enemy-sheet .detail-grid { gap: 0.4rem; }
+
+/* THE ENEMY BUILDER — one boxed row per attack and per feature, so a form of three attacks and five
+   features reads as five things rather than as forty fields in a column. */
+.atk-edit, .note-edit { padding: 0.7rem 0.8rem; margin-bottom: 0.7rem; background: var(--panel-2);
+  border: 1px solid var(--border); border-radius: 8px; }
+.atk-edit .grid-row, .note-edit .text { margin-bottom: 0.4rem; }
+.atk-edit > .field:last-of-type, .note-edit > .text:last-of-type { margin-bottom: 0.5rem; }

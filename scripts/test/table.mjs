@@ -19,7 +19,7 @@ window.fetch = async (u) => {
   return { ok: true, status: 200, json: async () => JSON.parse(t), text: async () => t };
 };
 for (const f of ["assets/js/config.js", "assets/js/storage.js", "assets/js/live.js",
-                 "assets/js/app.js", "assets/js/creator.js",
+                 "assets/js/app.js", "assets/js/creator.js", "assets/js/dm.js",
                  "assets/js/table-board.js", "assets/js/table-dice.js", "assets/js/table-panels.js",
                  "assets/js/table.js"]) {
   const s = doc.createElement("script");
@@ -2102,6 +2102,25 @@ ok(/for scenery, a barrel/.test($("#tool").textContent), "which is for the thing
    the creature with its hit points, its size and its speed already right. */
 ok($$('[data-tbl="bestiary"]').length >= 9,
   `every enemy is one press away (${$$('[data-tbl="bestiary"]').length})`);
+/* AND THE ONES THIS DM HAS BUILT, beside the ones the system ships. They come off the copy this browser
+   keeps of the DM's record, so a fight never waits on a fetch — and they live on the DM's code, so
+   closing this room does not take them with it. */
+peek(`localStorage.setItem("coc:dm:last", "777001");
+  localStorage.setItem("coc:dm:enemies:777001", JSON.stringify([{ id: "rope-ghoul-ab12", custom: true,
+    name: "Rope Ghoul", tier: "normal", ac: 14, hp: 11, speed: 30, size: "Medium",
+    attacks: [{ name: "Claw", kind: "melee", toHit: 4, reach: "5 ft", damage: "1d6+2", damageType: "slashing" }],
+    features: [] }]));`);
+peek(`paintSide();`);
+ok(peek(`tblEnemies().some(e => e.name === "Rope Ghoul")`), "a built enemy joins the bestiary");
+ok(peek(`tblEnemies().some(e => e.name === "Sawdust Hound")`), "beside the ones the system ships");
+ok(!!$('[data-tbl="bestiary"][data-val="rope-ghoul-ab12"]'), "and is one press away like the rest");
+click($('[data-tbl="bestiary"][data-val="rope-ghoul-ab12"]'));
+await until(() => Object.values(peek(`JSON.parse(JSON.stringify(tblTokens()))`)).some((t) => t.enemyId === "rope-ghoul-ab12"));
+const builtTok = Object.entries(peek(`JSON.parse(JSON.stringify(tblTokens()))`)).find(([, t]) => t.enemyId === "rope-ghoul-ab12");
+ok(builtTok[1].hp === 11, "dropping one uses its own hit points");
+ok(/Claw/.test(peek(`enemyReadHTML(${JSON.stringify(builtTok[1])})`)), "and its card reads off what was built");
+await peek(`CocLive.del("tables/482910/tokens/" + ${JSON.stringify(builtTok[0])})`);
+peek(`localStorage.removeItem("coc:dm:enemies:777001"); localStorage.removeItem("coc:dm:last"); paintSide();`);
 const hound = $$('[data-tbl="bestiary"]').find((b) => /Sawdust Hound/.test(b.textContent));
 ok(!!hound, "including the Sawdust Hound");
 const beforeDrop = Object.keys(peek(`JSON.parse(JSON.stringify(tblTokens()))`)).length;

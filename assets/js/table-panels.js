@@ -218,8 +218,13 @@ function dmFiguresHTML() {
 
 /* ---------------------------------------------------------------- the bestiary, at the table */
 
+/* THE SYSTEM'S, AND THE ONES THIS DM HAS BUILT. The built ones come off the copy this browser keeps of
+   the DM's record, so a fight never waits on a fetch to draw a card. A player never sees either list —
+   the bestiary and every enemy card are behind the DM chair. */
 function tblEnemies() {
-  return (typeof store !== "undefined" && Array.isArray(store.enemies)) ? store.enemies : [];
+  const shipped = (typeof store !== "undefined" && Array.isArray(store.enemies)) ? store.enemies : [];
+  const built = (typeof dmCachedEnemies === "function") ? dmCachedEnemies() : [];
+  return built.length ? built.concat(shipped) : shipped;
 }
 function tblEnemy(id) {
   return tblEnemies().find((e) => (e.id || "") === id) || null;
@@ -239,7 +244,11 @@ function bestiaryHTML() {
          <button class="chip" data-tbl="enemy-card" data-val="${esc(e.id)}"
            title="Read ${esc(e.name)}'s card">?</button>`).join("")}</div>`;
   }).join("");
-  return `<p class="panel-sub">From the bestiary</p>${rows}`;
+  const built = (typeof dmCachedEnemies === "function") ? dmCachedEnemies().length : 0;
+  return `<p class="panel-sub">From the bestiary</p>${rows}
+    <p class="muted">${built
+      ? esc(built) + " of these you built yourself. They live on your DM code, not in this room."
+      : "Build your own on <a href=\"#/dm\">the DM's screen</a> — they appear here at every table you run."}</p>`;
 }
 
 /* Down it goes, with everything the board needs already right. `enemyId` is the whole link: the figure
@@ -253,7 +262,9 @@ async function tblDropEnemy(id) {
   const made = await CocLive.push(tblPath("tokens"), {
     name: e.name, enemyId: e.id, kind: "npc", shape: tbl.ui.npcShape || "square",
     x: spot.x, y: spot.y, size,
-    hp: e.hp, hpMax: e.hp, speed: Number(e.speed) || 30, initMod: 0, image: "",
+    hp: e.hp, hpMax: e.hp, speed: Number(e.speed) || 30, initMod: 0,
+    // Stored once and shared, so eight of them are one picture. See tblKeepArt.
+    image: await tblKeepArt(e.image || ""),
   });
   await CocLive.push(tblPath("log"), {
     t: Date.now(), who: "DM", kind: "system", text: `${e.name} enters the ring`,

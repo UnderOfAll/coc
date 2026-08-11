@@ -27,7 +27,7 @@ window.fetch = async (url) => {
 
 // Load the real script set the page loads, in the same order — config, storage, compendium,
 // character tools. Loading only app.js meant a missing sibling never showed up here.
-for (const f of ["assets/js/config.js", "assets/js/storage.js", "assets/js/app.js", "assets/js/creator.js"]) {
+for (const f of ["assets/js/config.js", "assets/js/storage.js", "assets/js/app.js", "assets/js/creator.js", "assets/js/dm.js"]) {
   const p = path.join(REPO, f);
   if (!fs.existsSync(p)) continue;
   const s = window.document.createElement("script");

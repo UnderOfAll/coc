@@ -20,7 +20,7 @@ DATA = ROOT / "data"
 CATEGORIES = ["rules", "classes", "subclasses", "tricks", "skills", "passives", "weapons", "armor", "enemies"]
 # Assets that get a content-hash cache-buster stamped into index.html (see stamp_assets).
 VERSIONED_ASSETS = ["assets/css/style.css", "assets/js/app.js",
-                    "assets/js/storage.js", "assets/js/creator.js",
+                    "assets/js/storage.js", "assets/js/creator.js", "assets/js/dm.js",
                     "assets/js/live.js", "assets/js/table-board.js",
                     "assets/js/table-dice.js", "assets/js/table-panels.js", "assets/js/table.js"]
 

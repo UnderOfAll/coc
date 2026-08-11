@@ -13,10 +13,14 @@
  * Everything here returns a Promise, so the calling code is identical either way and swapping
  * backends never touches the UI.
  */
-const CocStore = (() => {
+/* ONE IMPLEMENTATION, TWO THINGS STORED. `characters/<code>` is a player's sheet; `dms/<code>` is a DM's
+   own record — the tables they run, their notes, and the enemies they have built. Same six digits, same
+   "the code IS the credential" model, same three backends. Parameterised rather than copied, because a
+   second copy of this file is a second place for a backend bug to live. */
+function cocMakeStore(node, localPrefix, localIndex) {
   const cfg = (typeof COC_CONFIG !== "undefined") ? COC_CONFIG : {};
-  const LOCAL_PREFIX = "coc:character:";
-  const LOCAL_INDEX = "coc:codes";
+  const LOCAL_PREFIX = localPrefix;
+  const LOCAL_INDEX = localIndex;
 
   const mode = cfg.firebaseUrl ? "firebase"
     : (cfg.supabaseUrl && cfg.supabaseAnonKey) ? "supabase"
@@ -56,14 +60,14 @@ const CocStore = (() => {
 
   /* ---------- firebase realtime database (REST, no SDK) ---------- */
   const firebase = {
-    url(code) { return `${cfg.firebaseUrl.replace(/\/$/, "")}/characters/${code}.json`; },
+    url(code) { return `${cfg.firebaseUrl.replace(/\/$/, "")}/${node}/${code}.json`; },
     async all() {
-      const res = await fetch(`${cfg.firebaseUrl.replace(/\/$/, "")}/characters.json`);
+      const res = await fetch(`${cfg.firebaseUrl.replace(/\/$/, "")}/${node}.json`);
       if (!res.ok) throw new Error("cloud read failed: " + res.status);
       return (await res.json()) || {};
     },
     async list() {
-      const res = await fetch(`${cfg.firebaseUrl.replace(/\/$/, "")}/characters.json?shallow=true`);
+      const res = await fetch(`${cfg.firebaseUrl.replace(/\/$/, "")}/${node}.json?shallow=true`);
       if (!res.ok) throw new Error("cloud list failed: " + res.status);
       const obj = await res.json();
       return obj ? Object.keys(obj).sort() : [];
@@ -90,7 +94,7 @@ const CocStore = (() => {
 
   /* ---------- supabase (REST) ---------- */
   const supabase = {
-    base() { return `${cfg.supabaseUrl.replace(/\/$/, "")}/rest/v1/${cfg.supabaseTable || "characters"}`; },
+    base() { return `${cfg.supabaseUrl.replace(/\/$/, "")}/rest/v1/${cfg.supabaseTable || node}`; },
     headers(extra) {
       return Object.assign({
         "apikey": cfg.supabaseAnonKey,
@@ -155,5 +159,20 @@ const CocStore = (() => {
         ? "Saving to this browser only — add a cloud key in assets/js/config.js to reach your characters from any device."
         : `Saving to the cloud (${mode}) — your code works from any device.`;
     },
+    /* Tests replace the backend wholesale; this is the seam they use. */
+    setMode(m) { /* backends are chosen from config; tests stub load/save directly */ return m; },
   };
-})();
+}
+
+const CocStore = cocMakeStore("characters", "coc:character:", "coc:codes");
+
+/* A DM'S OWN RECORD, under a six-digit code of their own.
+ *
+ * The DM KEY that opens a room's chair is a DOOR, and it belongs to that room. This is an IDENTITY, and
+ * it belongs to the person: the tables they run, their notes and the enemies they have built follow it
+ * between devices and survive any one room being closed. Kayki: "so even if the table is deleted one day,
+ * the [enemies] maintain there."
+ *
+ * Deliberately NOT merged with the room key: one leaked code would otherwise hand over every room he has
+ * ever run. Two codes, two jobs, named differently on screen. */
+const CocDm = cocMakeStore("dms", "coc:dm:", "coc:dmcodes");
