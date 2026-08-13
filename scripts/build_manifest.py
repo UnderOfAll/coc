@@ -233,7 +233,11 @@ def build_music_index():
     folder = ROOT / "music"
     folder.mkdir(exist_ok=True)
     exts = {".mp3", ".ogg", ".m4a", ".opus", ".wav", ".webm"}
-    files = sorted(f.name for f in folder.iterdir() if f.suffix.lower() in exts)
+    # SUBFOLDERS ARE THE POINT. Kayki wants music/backstage/, music/main-stage/ and so on, so the listing
+    # is relative paths rather than names — the panel groups by the first segment and the app fetches
+    # "music/" + the path. One level or five; the walk does not care.
+    files = sorted(str(f.relative_to(folder).as_posix())
+                   for f in folder.rglob("*") if f.is_file() and f.suffix.lower() in exts)
     (folder / "index.json").write_text(json.dumps(files, indent=2) + "\n", encoding="utf-8")
     return files
 

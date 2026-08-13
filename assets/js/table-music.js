@@ -74,9 +74,12 @@ function tblMusicTracks() {
 function tblMusicSrc(t) {
   if (!t) return "";
   if (t.kind === "file") return (tblMusicData().blobs || {})[t.src] || "";
-  // A committed track is named by its file and lives under music/ — resolved against the page, so it
-  // works the same on the live site and on a local server.
-  if (t.kind === "repo") return "music/" + String(t.src || "");
+  /* A committed track is named by its path under music/ and resolved against the page, so it works the
+     same on the live site and on a local server. Each SEGMENT is encoded rather than the whole string:
+     a folder called "main stage" needs its space escaped, and the slashes between folders must not be. */
+  if (t.kind === "repo") {
+    return "music/" + String(t.src || "").split("/").map(encodeURIComponent).join("/");
+  }
   return t.src || "";
 }
 
@@ -127,6 +130,29 @@ function tblMusicPushVolume() {
     if (mus.audio) { mus.audio.volume = v; mus.audio.muted = tblMusicMuted(); }
     if (mus.yt && mus.ytOn) { mus.yt.setVolume(Math.round(v * 100)); if (tblMusicMuted()) mus.yt.mute(); else mus.yt.unMute(); }
   } catch { /* a player that has gone away is not an error worth showing anybody */ }
+}
+
+/* THE FOLDER A COMMITTED TRACK LIVES IN, which is how Kayki separates a scene's music from the next
+   scene's. Everything at the top level is "Loose" rather than being hidden or made up a name for. */
+function tblMusicFolder(pathOrTrack) {
+  const src = typeof pathOrTrack === "string" ? pathOrTrack
+    : (pathOrTrack && pathOrTrack.kind === "repo" ? pathOrTrack.src : "");
+  const at = String(src || "").lastIndexOf("/");
+  return at > 0 ? String(src).slice(0, at) : "";
+}
+function tblMusicFolderName(f) {
+  return f ? f.split("/").map((s) => s.replace(/[-_]+/g, " ")).join(" · ") : "Loose";
+}
+/* Grouped, folders first in the order they are met, "Loose" last — a scene's set is what a DM reaches
+   for, and the odds and ends at the top level are what they scroll past. */
+function tblMusicByFolder(items, folderOf) {
+  const groups = new Map();
+  for (const it of items) {
+    const f = folderOf(it);
+    if (!groups.has(f)) groups.set(f, []);
+    groups.get(f).push(it);
+  }
+  return [...groups.entries()].sort((a, b) => (a[0] ? 0 : 1) - (b[0] ? 0 : 1));
 }
 
 /* WHAT IS COMMITTED IN music/. The app cannot list a directory over HTTP, so the build writes the
@@ -372,10 +398,14 @@ async function tblMusicStop() {
   if (tbl.role !== "dm") return;
   await CocLive.put(tblPath("music/now"), null);
 }
-async function tblMusicToggleLoop() {
+/* SET, not toggle: the panel offers two buttons and one of them is always the one that is already on,
+   so pressing it must be a no-op rather than flipping the room into the other mode. */
+async function tblMusicWhenEnds(mode) {
   const now = tblMusicNow();
   if (!now) return;
-  await tblMusicSet({ loop: !now.loop, pos: tblMusicWhere(now), at: Date.now() });
+  const loop = mode === "repeat";
+  if (!!now.loop === loop) return;
+  await tblMusicSet({ loop, pos: tblMusicWhere(now), at: Date.now() });
 }
 /* PUT ONE AT THE BACK OF THE QUEUE. Playing something does not touch the queue and queueing something
    does not interrupt what is playing — they are two different questions and the panel asks both. */
@@ -383,6 +413,17 @@ async function tblMusicQueueAdd(id) {
   if (tbl.role !== "dm") return;
   if (!(tblMusicData().tracks || {})[id]) return;
   await CocLive.put(tblPath("music/queue"), tblMusicQueue().concat(id));
+  paintSide();
+}
+/* A WHOLE FOLDER, QUEUED IN ONE PRESS. This is the thing the folders are FOR: the backstage set goes in
+   as a set, in the order it is listed, and the DM does not touch the panel again for that scene. */
+async function tblMusicQueueFolder(folder) {
+  if (tbl.role !== "dm") return;
+  const ids = tblMusicTracks()
+    .filter(([, t]) => t.kind === "repo" && tblMusicFolder(t) === (folder || ""))
+    .map(([id]) => id);
+  if (!ids.length) return;
+  await CocLive.put(tblPath("music/queue"), tblMusicQueue().concat(ids));
   paintSide();
 }
 async function tblMusicQueueMove(id, by) {
@@ -496,13 +537,15 @@ async function tblMusicAdd() {
    and the filename is the name, which is why the README asks for filenames a DM can pick from. */
 async function tblMusicAddRepo(file) {
   if (tbl.role !== "dm" || !file) return;
-  await tblMusicSaveTrack({ kind: "repo", src: file, title: file.replace(/\.[^.]+$/, "") });
+  await tblMusicSaveTrack({ kind: "repo", src: file, title: file.split("/").pop().replace(/\.[^.]+$/, "") });
 }
-async function tblMusicAddAllRepo() {
+/* Every file in one folder, or — with no folder named — everything that is not on the shelf yet. */
+async function tblMusicAddAllRepo(folder) {
   if (tbl.role !== "dm") return;
-  for (const f of tblRepoMusicLeft()) {
+  const want = tblRepoMusicLeft().filter((f) => folder == null || folder === "" ? true : tblMusicFolder(f) === folder);
+  for (const f of want) {
     await CocLive.push(tblPath("music/tracks"),
-      { at: Date.now(), kind: "repo", src: f, title: f.replace(/\.[^.]+$/, "") });
+      { at: Date.now(), kind: "repo", src: f, title: f.split("/").pop().replace(/\.[^.]+$/, "") });
   }
   tblMusicSay("Added.", " good");
   paintSide();
@@ -546,12 +589,17 @@ function repoMusicHTML() {
   const left = tblRepoMusicLeft();
   if (!left.length) return `<p class="muted">Everything in <strong>music/</strong> is already on the
     shelf above.</p>`;
-  return `<div class="scene-list">${left.map((f) => `<div class="scene-row">
-      <span class="scene-static"><strong>${esc(f.replace(/\.[^.]+$/, ""))}</strong>
+  return tblMusicByFolder(left, tblMusicFolder).map(([folder, files]) => `
+    <p class="panel-sub">${esc(tblMusicFolderName(folder))}
+      <span class="muted">— ${esc(files.length)} track${files.length === 1 ? "" : "s"}</span></p>
+    <div class="scene-list">${files.map((f) => `<div class="scene-row">
+      <span class="scene-static"><strong>${esc(f.split("/").pop().replace(/\.[^.]+$/, ""))}</strong>
         <span class="muted">${esc(f)}</span></span>
       <button class="btn-quiet" data-tbl="music-repo-add" data-val="${esc(f)}">Add</button>
     </div>`).join("")}</div>
-    ${left.length > 1 ? `<button class="btn-quiet" data-tbl="music-repo-all">Add all ${left.length}</button>` : ""}`;
+    ${files.length > 1
+      ? `<button class="btn-quiet" data-tbl="music-repo-all" data-val="${esc(folder)}">Add all ${files.length}</button>`
+      : ""}`).join("");
 }
 
 function musicPanelHTML() {
@@ -613,16 +661,26 @@ function musicPanelHTML() {
     : `<p class="muted">Nothing queued. Add tracks below and they play one after another, without you
         touching anything mid-fight.</p>`;
 
-  const list = tracks.length ? `<div class="scene-list">${tracks.map(([id, t]) => `
-      <div class="scene-row ${now && now.trackId === id ? "on" : ""}">
-        <button class="scene-pick" data-tbl="music-play" data-val="${esc(id)}">
-          <strong>${esc(t.title || "Untitled")}</strong>
-          <span class="muted">${esc(TBL_MUSIC_WORDS[t.kind] || t.kind)}</span>
-        </button>
-        <button class="btn-quiet" data-tbl="music-queue" data-val="${esc(id)}">Queue</button>
-        <button class="btn-quiet" data-tbl="music-drop" data-val="${esc(id)}">Delete</button>
-      </div>`).join("")}</div>
-      <p class="muted">Tapping the name plays it now; <strong>Queue</strong> puts it at the back of the
+  const row = ([id, t]) => `<div class="scene-row ${now && now.trackId === id ? "on" : ""}">
+      <button class="scene-pick" data-tbl="music-play" data-val="${esc(id)}">
+        <strong>${esc(t.title || "Untitled")}</strong>
+        <span class="muted">${esc(TBL_MUSIC_WORDS[t.kind] || t.kind)}</span>
+      </button>
+      <button class="btn-quiet" data-tbl="music-queue" data-val="${esc(id)}">Queue</button>
+      <button class="btn-quiet" data-tbl="music-drop" data-val="${esc(id)}">Delete</button>
+    </div>`;
+  /* Grouped the same way music/ is, so a scene's set stays a set on the shelf too — and every group of
+     committed tracks can go into the queue whole, in order, which is what the folders are for. */
+  const grouped = tblMusicByFolder(tracks, ([, t]) => (t.kind === "repo" ? tblMusicFolder(t) : ""));
+  const list = tracks.length
+    ? grouped.map(([folder, rows]) => `
+        ${grouped.length > 1 || folder
+          ? `<p class="panel-sub">${esc(tblMusicFolderName(folder))}</p>` : ""}
+        <div class="scene-list">${rows.map(row).join("")}</div>
+        ${folder && rows.length > 1
+          ? `<button class="btn-quiet" data-tbl="music-q-folder" data-val="${esc(folder)}">Queue all ${rows.length}</button>`
+          : ""}`).join("")
+      + `<p class="muted">Tapping the name plays it now; <strong>Queue</strong> puts it at the back of the
         list above. Neither interrupts the other.</p>`
     : `<p class="muted">Nothing saved yet. Add one below and it stays on this table.</p>`;
 
@@ -634,11 +692,22 @@ function musicPanelHTML() {
           : `<button class="btn" data-tbl="music-resume">Play</button>`) : ""}
         ${queue.length ? `<button class="btn-quiet" data-tbl="music-next">Next &rarr;</button>` : ""}
         ${now ? `<button class="btn-quiet" data-tbl="music-stop">Stop</button>` : ""}
-        ${now ? `<button class="chip ${now.loop ? "on" : ""}" data-tbl="music-loop">Loop</button>` : ""}
       </div>
+      ${/* WHAT HAPPENS AT THE END, said as two buttons rather than left to be inferred from a Loop chip.
+            It is the same one bit of data; what changed is that both answers are now on screen and one
+            of them is always lit, so there is never a question of which the room is in. */""}
+      ${now ? `<p class="panel-sub">When it ends</p>
+      <div class="chips">
+        <button class="chip ${now.loop ? "on" : ""}" data-tbl="music-end" data-val="repeat">Keep repeating it</button>
+        <button class="chip ${now.loop ? "" : "on"}" data-tbl="music-end" data-val="next">Play the next one</button>
+      </div>
+      <p class="muted">${now.loop
+        ? "It will go round for ever. The queue waits — a track on repeat never ends, so nothing follows it."
+        : (queue.length
+          ? `When it finishes, <strong>${esc((shelf[queue[0]] || {}).title || "the next one")}</strong> starts by itself.`
+          : "Nothing is queued, so when it finishes the room goes quiet.")}</p>` : ""}
       <p class="muted">Everyone hears it at once. Each device plays its own copy from the source, so
-        somebody joining halfway comes in where the room is${now && now.loop && queue.length
-          ? ` — though on a loop it never ends, so the queue waits.` : "."}</p>
+        somebody joining halfway comes in where the room is.</p>
     </section>
     ${gate}${mine}
     <section class="panel">

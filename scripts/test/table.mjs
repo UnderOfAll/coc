@@ -2645,10 +2645,24 @@ click($('[data-tbl="music-pause"]'));
 await until(async () => ((await aget(`CocLive.get("tables/482910/music/now")`)) || {}).playing === false);
 now = await aget(`CocLive.get("tables/482910/music/now")`);
 ok(now.playing === false && now.pos >= 0, "pause writes the position it stopped at");
+/* WHAT HAPPENS AT THE END IS TWO BUTTONS, not a chip you have to infer the state of. Exactly one is
+   always lit, and pressing the one already lit does nothing rather than flipping the room. */
 peek(`paintSide();`);
-click($('[data-tbl="music-loop"]'));
+ok($$('[data-tbl="music-end"]').length === 2, "the end of a track is offered as two answers");
+ok($('[data-tbl="music-end"][data-val="next"]').className.includes("on"),
+  "and Play the next is the one lit to begin with");
+click($('[data-tbl="music-end"][data-val="next"]'));
+await wait(120);
+ok(((await aget(`CocLive.get("tables/482910/music/now")`)) || {}).loop !== true,
+  "pressing the one already lit changes nothing");
+click($('[data-tbl="music-end"][data-val="repeat"]'));
 await until(async () => ((await aget(`CocLive.get("tables/482910/music/now")`)) || {}).loop === true);
-ok(true, "and a loop can be set for everyone");
+peek(`paintSide();`);
+ok($('[data-tbl="music-end"][data-val="repeat"]').className.includes("on"), "and the other sets repeat");
+ok(/go round for ever/.test($("#tool").textContent), "saying plainly that nothing will follow it");
+click($('[data-tbl="music-end"][data-val="next"]'));
+await until(async () => ((await aget(`CocLive.get("tables/482910/music/now")`)) || {}).loop === false);
+ok(true, "and back again");
 
 /* THE VOLUME IS THIS DEVICE'S AND NEVER GOES NEAR THE DATABASE — a table where the DM's slider moved
    everybody's is a table where nobody can hear their own game. */
@@ -2739,6 +2753,36 @@ click($('[data-tbl="music-q-clear"]'));
 await until(async () => (await aget(`CocLive.get("tables/482910/music/queue")`)) === null);
 peek(`tbl.ui.musicKind = "repo"; paintSide();`);
 ok(/music\//.test($("#tool").textContent), "and the fourth source is what is committed in music/");
+/* FOLDERS. Kayki keeps a scene's music in a folder of its own, so both lists group by it and a whole
+   folder goes into the queue in one press — which is the thing the folders are for. */
+ok(peek(`tblMusicFolder("backstage/waking-up.mp3")`) === "backstage", "a track's folder is read off its path");
+ok(peek(`tblMusicFolder("loose.mp3")`) === "", "and a loose one has none");
+ok(peek(`tblMusicFolderName("main-stage")`) === "main stage", "a folder is named readably");
+ok(peek(`tblMusicFolderName("")`) === "Loose", "and the top level is called what it is");
+ok(peek(`tblMusicSrc({ kind: "repo", src: "main stage/a b.mp3" })`) === "music/main%20stage/a%20b.mp3",
+  "a committed track's address escapes each segment but not the slashes");
+peek(`tblRepoMusic = ["backstage/one.mp3", "backstage/two.mp3", "main-stage/boss.mp3", "loose.mp3"]; paintSide();`);
+ok(/backstage/.test($("#tool").textContent) && /main stage/.test($("#tool").textContent),
+  "the repo list is grouped by folder");
+ok($$('[data-tbl="music-repo-all"]').some((b) => b.dataset.val === "backstage"),
+  "with one press to add a whole folder");
+click($$('[data-tbl="music-repo-all"]').find((b) => b.dataset.val === "backstage"));
+await until(async () => Object.values((await aget(`CocLive.get("tables/482910/music/tracks")`)) || {})
+  .filter((t) => t.kind === "repo").length === 2);
+const repoAdded = Object.values(await aget(`CocLive.get("tables/482910/music/tracks")`)).filter((t) => t.kind === "repo");
+ok(repoAdded.every((t) => t.src.startsWith("backstage/")), "which adds that folder and no other");
+ok(repoAdded.some((t) => t.title === "one"), "named by the file, not by the path");
+peek(`paintSide();`);
+click($('[data-tbl="music-q-folder"][data-val="backstage"]'));
+await until(async () => ((await aget(`CocLive.get("tables/482910/music/queue")`)) || []).length === 2);
+ok(true, "and a whole folder can be queued in one press, in order");
+click($('[data-tbl="music-q-clear"]'));
+await until(async () => (await aget(`CocLive.get("tables/482910/music/queue")`)) === null);
+for (const [id, t] of Object.entries(await aget(`CocLive.get("tables/482910/music/tracks")`))) {
+  if (t.kind === "repo") await aget(`CocLive.del("tables/482910/music/tracks/${id}")`);
+}
+await wait(120);
+peek(`tblRepoMusic = null; tbl.ui.musicKind = "youtube"; paintSide();`);
 
 /* MUSIC OUTLIVES THE ROOM IT IS PLAYING IN. Kayki: "the music should survive scene change, only stops
    when the dm does it." It is table data, not scene data, so moving everyone from the backstage to the

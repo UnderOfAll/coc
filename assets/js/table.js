@@ -1366,7 +1366,7 @@ document.addEventListener("click", (e) => {
   else if (act === "music-pause") tblMusicPause().catch(tblFail);
   else if (act === "music-resume") tblMusicResume().catch(tblFail);
   else if (act === "music-stop") tblMusicStop().catch(tblFail);
-  else if (act === "music-loop") tblMusicToggleLoop().catch(tblFail);
+  else if (act === "music-end") tblMusicWhenEnds(val).catch(tblFail);
   else if (act === "music-drop") tblMusicDropTrack(val).catch(tblFail);
   else if (act === "music-next") tblMusicNext().catch(tblFail);
   else if (act === "music-queue") tblMusicQueueAdd(val).catch(tblFail);
@@ -1375,7 +1375,8 @@ document.addEventListener("click", (e) => {
   else if (act === "music-q-drop") tblMusicQueueDrop(val).catch(tblFail);
   else if (act === "music-q-clear") tblMusicQueueClear().catch(tblFail);
   else if (act === "music-repo-add") tblMusicAddRepo(val).catch(tblFail);
-  else if (act === "music-repo-all") tblMusicAddAllRepo().catch(tblFail);
+  else if (act === "music-repo-all") tblMusicAddAllRepo(val).catch(tblFail);
+  else if (act === "music-q-folder") tblMusicQueueFolder(val).catch(tblFail);
   else if (act === "scene-add") tblAddScene().catch(tblFail);
   else if (act === "grid-cols") tblNudgeGrid("cols", Number(val)).catch(tblFail);
   else if (act === "grid-rows") tblNudgeGrid("rows", Number(val)).catch(tblFail);
