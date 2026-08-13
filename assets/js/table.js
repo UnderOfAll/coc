@@ -1328,6 +1328,11 @@ document.addEventListener("click", (e) => {
   else if (act === "repo-pick") { tbl.ui.repoPick = val; paintSide(); }
   else if (act === "scene") { CocLive.put(tblPath("meta/activeScene"), val).catch(tblFail); tbl.view.fitted = false; }
   else if (act === "scene-del") tblDeleteScene(val).catch(tblFail);
+  else if (act === "scene-move") {
+    const [id, by] = val.split("|");
+    tblSceneMove(id, Number(by)).catch(tblFail);
+  }
+  else if (act === "scene-flip") tblSceneFlip(val).catch(tblFail);
   else if (act === "scene-add") tblAddScene().catch(tblFail);
   else if (act === "grid-cols") tblNudgeGrid("cols", Number(val)).catch(tblFail);
   else if (act === "grid-rows") tblNudgeGrid("rows", Number(val)).catch(tblFail);

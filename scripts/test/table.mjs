@@ -942,6 +942,50 @@ click($$('[data-tbl="scene"]').find(b => b.dataset.val === otherId));
 await wait(60);
 ok(!$('[data-token="tGob"]'), "changing map leaves the goblins behind");
 ok($('[data-token="tRig"]'), "but the party comes along");
+/* THE ORDER THE NIGHT RUNS IN. Scenes listed in the order they were MADE, which is the order you
+   happened to build them and not the order you are going to play them. A move writes an order onto every
+   scene at once, so one moved row cannot leave the rest of the list without one. */
+const orderBefore = $$("#dm-maps .scene-row .scene-pick").map((b) => b.dataset.val);
+ok(orderBefore.length >= 3, "there are enough scenes to reorder (" + orderBefore.length + ")");
+ok($$('#dm-maps [data-tbl="scene-move"]').length === orderBefore.length * 2, "each one has an up and a down");
+ok($('#dm-maps [data-tbl="scene-move"][data-val="' + orderBefore[0] + '|-1"]').disabled === true,
+  "the first cannot go earlier");
+ok($('#dm-maps [data-tbl="scene-move"][data-val="' + orderBefore[orderBefore.length - 1] + '|1"]').disabled === true,
+  "and the last cannot go later");
+click($('#dm-maps [data-tbl="scene-move"][data-val="' + orderBefore[2] + '|-1"]'));
+await until(() => $$("#dm-maps .scene-row .scene-pick")[1].dataset.val === orderBefore[2]);
+const orderAfter = $$("#dm-maps .scene-row .scene-pick").map((b) => b.dataset.val);
+ok(orderAfter[1] === orderBefore[2] && orderAfter[2] === orderBefore[1], "one press slides it up past its neighbour");
+ok(orderAfter[0] === orderBefore[0], "leaving the rest where they were");
+const stored = await aget(`CocLive.get("tables/482910/scenes")`);
+ok(orderAfter.every((id, i) => stored[id].order === i), "and every scene carries its place, not just the moved one");
+click($('#dm-maps [data-tbl="scene-move"][data-val="' + orderBefore[2] + '|1"]'));
+await until(() => $$("#dm-maps .scene-row .scene-pick")[2].dataset.val === orderBefore[2]);
+ok($$("#dm-maps .scene-row .scene-pick").map((b) => b.dataset.val).join() === orderBefore.join(), "and back down again");
+
+/* FLIPPING THE PICTURE, and only the picture. A map found the wrong way round is a map you cannot use.
+   The figures, the grid and the squares must not move with it. */
+const flipScene = orderBefore.find((id) => (stored[id] || {}).image);
+click($$('[data-tbl="scene"]').find(b => b.dataset.val === flipScene));
+await wait(60);
+const tokenBefore = $('[data-token="tRig"]') && $('[data-token="tRig"]').style.transform;
+ok(!!$('[data-tbl="scene-flip"][data-val="x"]'), "a scene with a picture is offered a flip");
+click($('[data-tbl="scene-flip"][data-val="x"]'));
+await until(async () => ((await aget(`CocLive.get("tables/482910/scenes/${flipScene}")`)) || {}).flipX === true);
+ok(/scale\(-1, ?1\)/.test($("#vtt-map").style.transform), "left to right turns the image over: " + $("#vtt-map").style.transform);
+ok($('[data-token="tRig"]').style.transform === tokenBefore, "and no figure moves an inch with it");
+click($('[data-tbl="scene-flip"][data-val="y"]'));
+await until(async () => ((await aget(`CocLive.get("tables/482910/scenes/${flipScene}")`)) || {}).flipY === true);
+ok(/scale\(-1, ?-1\)/.test($("#vtt-map").style.transform), "and both at once: " + $("#vtt-map").style.transform);
+ok(/on/.test($('[data-tbl="scene-flip"][data-val="y"]').className), "with the chip reading as on");
+click($('[data-tbl="scene-flip"][data-val="x"]'));
+click($('[data-tbl="scene-flip"][data-val="y"]'));
+await until(() => $("#vtt-map").style.transform === "");
+ok($("#vtt-map").style.transform === "", "pressing them again puts it back");
+// Put the board back on the scene the rest of this file expects to be looking at.
+click($$('[data-tbl="scene"]').find(b => b.dataset.val === otherId));
+await wait(60);
+
 const before4 = $$("#dm-maps .scene-row").length;
 click($$('#dm-maps [data-tbl="scene-del"]')[0]);
 await wait(60);

@@ -43,6 +43,11 @@ function paintBoard() {
   grid.style.backgroundPosition = `${offX}px ${offY}px`;
   // Only when it has actually changed: re-assigning the same src re-decodes a half-megabyte data URI,
   // and this now runs on every stream event.
+  /* A map found the wrong way round, turned over — the image only. It is scaled about its own centre
+     inside a box the world already sized, so nothing shifts: the token on square 3,4 is still on square
+     3,4, and because the flip lives on the SCENE every device turns it over together. */
+  const fx = scene.flipX ? -1 : 1, fy = scene.flipY ? -1 : 1;
+  img.style.transform = (fx < 0 || fy < 0) ? `scale(${fx}, ${fy})` : "";
   if (scene.image) {
     if (img.getAttribute("src") !== scene.image) img.src = scene.image;
     img.classList.remove("hidden");

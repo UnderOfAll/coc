@@ -32,15 +32,62 @@ function dmPanelHTML() {
   return dmMapsHTML() + dmFiguresHTML() + dmScreenHTML() + stepDownHTML() + closeTableHTML();
 }
 
+/* THE ORDER THE NIGHT RUNS IN. Scenes used to list in the order they were made, which is the order you
+   happened to build them and not the order you are going to play them — a one-shot with a backstage, a
+   middle and a ring wants those three in that sequence, whatever evening each was uploaded on.
+ *
+ * `order` is the number, and it is written to EVERY scene whenever one moves, so a single moved row can
+ * never leave the rest of the list without one. A scene added afterwards has none, so it sorts to the
+ * end by when it was made — which is where a new scene belongs anyway. */
+function tblSceneIds() {
+  const scenes = tbl.data.scenes || {};
+  const rank = (s) => {
+    const n = Number((s || {}).order);
+    return (s && s.order != null && Number.isFinite(n)) ? n : Infinity;
+  };
+  return Object.keys(scenes).sort((a, b) => {
+    const d = rank(scenes[a]) - rank(scenes[b]);
+    return d || ((scenes[a] || {}).createdAt || 0) - ((scenes[b] || {}).createdAt || 0);
+  });
+}
+
+async function tblSceneMove(id, by) {
+  const ids = tblSceneIds();
+  const at = ids.indexOf(id);
+  const to = at + Number(by);
+  if (at < 0 || to < 0 || to >= ids.length) return;
+  ids.splice(to, 0, ids.splice(at, 1)[0]);
+  await Promise.all(ids.map((sid, i) => CocLive.patch(tblPath("scenes/" + sid), { order: i })));
+  paintSide();
+}
+
+/* TURNING THE PICTURE OVER, and only the picture. A map found the wrong way round is otherwise a map you
+   cannot use: the door is on the west and your notes say east. The figures, the grid and the squares do
+   not move — this mirrors the image inside the same box, so a token standing on square 3,4 is still on
+   square 3,4 and everyone's board agrees, because the flip is stored on the scene. */
+function tblSceneFlip(axis) {
+  const id = tblSceneId();
+  if (!id) return Promise.resolve();
+  const scene = tblScene();
+  const key = axis === "y" ? "flipY" : "flipX";
+  return CocLive.patch(tblPath("scenes/" + id), { [key]: !scene[key] }).then(() => paintSide());
+}
+
 function dmMapsHTML() {
   const scenes = tbl.data.scenes || {};
   const active = tblScene();
   const activeId = tblSceneId();
   const src = tbl.ui.mapSource || "blank";
-  const ids = Object.keys(scenes).sort((a, b) => (scenes[a].createdAt || 0) - (scenes[b].createdAt || 0));
-  const list = ids.map((id) => {
+  const ids = tblSceneIds();
+  const list = ids.map((id, i) => {
     const s = scenes[id];
     return `<div class="scene-row ${id === activeId ? "on" : ""}">
+      ${ids.length > 1 ? `<span class="stepper">
+        <button class="step-btn" data-tbl="scene-move" data-val="${esc(id)}|-1" title="Earlier"
+          ${i === 0 ? "disabled" : ""}>&uarr;</button>
+        <button class="step-btn" data-tbl="scene-move" data-val="${esc(id)}|1" title="Later"
+          ${i === ids.length - 1 ? "disabled" : ""}>&darr;</button>
+      </span>` : ""}
       <button class="scene-pick" data-tbl="scene" data-val="${esc(id)}">
         <strong>${esc(s.name || "Scene")}</strong>
         <span class="muted">${esc(s.cols || 30)}&times;${esc(s.rows || 20)}${s.image ? "" : " · blank"}</span>
@@ -115,7 +162,14 @@ function dmMapsHTML() {
         <button class="btn-quiet" data-tbl="grid-off" data-val="y|1">&darr;</button>
         <button class="btn-quiet" data-tbl="grid-off" data-val="reset">Corner</button>
       </div>
-      ${active.image ? `<button class="btn-quiet" data-tbl="grid-fit">Make the squares square</button>` : ""}
+      ${active.image ? `<button class="btn-quiet" data-tbl="grid-fit">Make the squares square</button>
+      <p class="panel-sub">The picture</p>
+      <div class="chips">
+        <button class="chip ${active.flipX ? "on" : ""}" data-tbl="scene-flip" data-val="x">Flip left to right</button>
+        <button class="chip ${active.flipY ? "on" : ""}" data-tbl="scene-flip" data-val="y">Flip top to bottom</button>
+      </div>
+      <p class="muted">Turns the map over for everyone. Only the picture moves — the grid, the squares and
+        every figure standing on them stay exactly where they are.</p>` : ""}
       <p class="muted">A preset sets how many squares fit ACROSS the picture; how many fit down follows
         the picture's shape, so a square stays a square. Force them apart with the steppers if the map's
         own grid is not square. Five feet a square, so ${esc(active.cols || 30)} across is
