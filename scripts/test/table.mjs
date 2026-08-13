@@ -2334,7 +2334,12 @@ ok((await aget(`CocLive.get("tables/482910/tokens/${gob[0]}")`)) === null, "and 
 console.log("\n— THE DM SCREEN —");
 openPanel("dm");
 await wait(60);
-// Notes are a notepad of their own now — several, each with a title, for the DM and for every player.
+/* Notes are a notepad of their own — several, each with a title. A PLAYER's live in the room (proved
+   further up); the DM's live on their CODE, which is the same list `#/dm` shows, because a campaign with
+   two notepads has two halves of every note. Kayki: "the notes of the dm dont appear on the table, it
+   should all be the same data, not 2 separate." */
+const dmRec = () => JSON.parse(peek(`JSON.stringify(window.__dmrecs[COC_BESTIARY_CODES[0]] || null)`) || "null");
+peek(`window.__dmrecs[COC_BESTIARY_CODES[0]] = { v: 1, name: "Kayki", tables: [], notes: [], enemies: [] };`);
 openPanel("notes");
 await wait(60);
 ok($("#notes-panel"), "everyone has a notepad in the app instead of beside it");
@@ -2344,22 +2349,39 @@ await wait(120);
 ok($("#note-title") && $("#note-body"), "a new note opens ready to write in");
 type($("#note-title"), "The innkeeper");
 type($("#note-body"), "He is lying about the cellar.");
-await wait(950);
-const myNotes = await aget(`Object.values(await CocLive.get("tables/482910/notes"))`);
+await until(() => /innkeeper/.test(JSON.stringify((dmRec() || {}).notes || [])));
+const myNotes = (dmRec() || {}).notes || [];
 ok(myNotes.length === 1 && myNotes[0].title === "The innkeeper", "the title saves as you type");
 ok(/lying about the cellar/.test(myNotes[0].body), "and so does the note");
-ok(myNotes[0].by === "dm", "kept for the DM chair, so it is there on another device");
-ok(/not secret/.test($("#tool").textContent), "with an honest word about who could read it");
+ok((await aget(`CocLive.get("tables/482910/notes")`)) === null,
+  "onto the DM CODE and not into the room — one list, reachable from the DM screen too");
+ok(/onto DM code/.test($("#tool").textContent), "and the panel says whose list it is");
 // A second note, and the list of them.
 click($('[data-tbl="note-new"]'));
 await wait(120);
 ok($$("#notes-panel .scene-row").length === 2, "a second note lists beside the first");
 type($("#note-title"), "Rooftop chase");
-await wait(950);
+await until(() => ((dmRec() || {}).notes || []).length === 2);
 click($$('[data-tbl="note-del"]')[1]);
-await wait(120);
+await until(() => ((dmRec() || {}).notes || []).length === 1);
 ok($$("#notes-panel .scene-row").length === 1, "and a note can be thrown away");
-ok((await aget(`Object.values(await CocLive.get("tables/482910/notes"))`)).length === 1, "for good");
+ok(((dmRec() || {}).notes || []).length === 1, "for good");
+/* AND A ROOM THAT IS STILL HOLDING THE DM'S OLD NOTES HANDS THEM OVER. Two shapes came before this one —
+   a single unnamed box on the room, then a per-room list — and leaving either where it was is exactly the
+   two-lists complaint in another costume. Nothing is deleted until the move has been written. */
+await aget(`CocLive.push("tables/482910/notes", { title: "From the room", body: "written before the move", by: "dm", at: 1 })`);
+await aget(`CocLive.put("tables/482910/dm/notes", "the oldest box of all")`);
+await until(async () => !!(await aget(`CocLive.get("tables/482910/notes")`)));
+peek(`tblDmNotesMoved = ""; tblMigrateDmNotes();`);
+await until(() => ((dmRec() || {}).notes || []).length === 3);
+const moved = (dmRec() || {}).notes || [];
+ok(moved.length === 3, "an old room note and the oldest box both move onto the code");
+ok(moved.some((n) => n.body === "written before the move"), "with what was written in them");
+ok(await until(async () => (await aget(`CocLive.get("tables/482910/notes")`)) === null),
+  "and the room stops holding a second copy");
+ok(await until(async () => (await aget(`CocLive.get("tables/482910/dm/notes")`)) === null), "both of them");
+peek(`paintSide();`);
+ok($$("#notes-panel .scene-row").length === 3, "so the panel shows one list with everything in it");
 openPanel("dm");
 await wait(60);
 // Handouts: shown to everyone at once, closable by each person.

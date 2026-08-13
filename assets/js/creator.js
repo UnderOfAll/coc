@@ -312,6 +312,7 @@ function paint(html) {
   }
   host.innerHTML = html;
   page.scrollTop = top;
+  cocGrowAll(host);
   if (key) {
     const next = host.querySelector(key);
     if (next) {
@@ -320,6 +321,31 @@ function paint(html) {
     }
   }
 }
+
+/* A TEXT BOX THE SIZE OF WHAT IS IN IT. A one-line `<input>` for something that is often a sentence and a
+   half is the worst of both — you cannot see the end of what you wrote, and it looks nothing like the
+   boxes above and below it. A `.auto-grow` textarea opens at one row and takes a row more each time the
+   text wraps, so the field is only ever as tall as it needs to be.
+ *
+ * Measured off `scrollHeight`, which is only honest once the height has been released — hence the reset
+ * to `auto` first. Anything rendered fresh has to be measured again, so `paint()` sweeps the whole host
+ * and the table's panels call `cocGrowAll` themselves. */
+function cocGrow(el) {
+  const n = asEl(el);
+  if (!n || !n.style) return;
+  n.style.height = "auto";
+  // jsdom reports 0 for every measurement; leaving the height at "auto" there is the honest answer.
+  if (n.scrollHeight) n.style.height = n.scrollHeight + "px";
+}
+function cocGrowAll(root) {
+  const host = root || document;
+  if (!host.querySelectorAll) return;
+  host.querySelectorAll("textarea.auto-grow").forEach(cocGrow);
+}
+document.addEventListener("input", (ev) => {
+  const t = evTarget(ev);
+  if (t && t.classList && t.classList.contains("auto-grow")) cocGrow(t);
+});
 
 /* A chip that needs explaining gets its explanation as a SEPARATE ⓘ beside it, not as a tooltip on
    itself. The chip is a control: tapping it picks the armour or toggles the condition. On a phone

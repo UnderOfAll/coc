@@ -42,8 +42,35 @@ function dmHasBestiary(code) {
   return !!c && COC_BESTIARY_CODES.includes(c);
 }
 
+/* AND ON THOSE CODES THEY ARE NOT "THE SYSTEM'S" — THEY ARE YOURS. Kayki: "the created enemies, put them
+ * on my own list, not from 'the system' list, so I can alter and modify them at will." A per-creature
+ * "Copy to yours" already existed and was the wrong shape for this: it is his campaign, so the nine land
+ * on his record ONCE, by themselves, and from that moment they are ordinary built enemies — rename, re-arm,
+ * delete.
+ *
+ * THEY KEEP THEIR IDS. A figure on a board stores only `enemyId`, so a copy under a new id would leave
+ * every Sawdust Hound already standing on a table pointing at a creature the code no longer lists.
+ *
+ * `rec.adopted` remembers what has ever been taken, so deleting one is a decision that STICKS rather than
+ * being undone by the next visit. What is not on the code any more goes back to being offered as a copy.
+ * Returns whether the record changed, so the caller only writes when there is something to write. */
+function dmAdoptShipped(code, rec) {
+  if (!dmHasBestiary(code)) return false;
+  const shipped = (typeof store !== "undefined" && Array.isArray(store.enemies)) ? store.enemies : [];
+  if (!shipped.length) return false;    // the bundle has not landed yet; the next visit does it
+  const have = new Set((rec.enemies || []).map((e) => e.id));
+  const ever = new Set(rec.adopted || []);
+  const take = shipped.filter((e) => e && e.id && !have.has(e.id) && !ever.has(e.id));
+  if (!take.length) return false;
+  rec.enemies = (rec.enemies || []).concat(take.map((e) =>
+    Object.assign(JSON.parse(JSON.stringify(e)), { custom: true, source: "The system's, now yours" })));
+  rec.adopted = (rec.adopted || []).concat(take.map((e) => e.id));
+  return true;
+}
+
 let dm = null;                          // { code, rec } while a DM record is open
-const dmUi = { tab: "enemies", editing: null, draft: null, msg: "", pick: "", pickFrom: "", shareOpen: "" };
+const dmUi = { tab: "enemies", editing: null, draft: null, msg: "", pick: "", pickFrom: "", shareOpen: "",
+  dropArm: "", dropText: "" };   // which creature is armed for deletion, and the word typed so far
 
 /* TWO SIDES OF ONE ARRANGEMENT, and they are stored on DIFFERENT records on purpose.
  *   rec.sharesTo — codes I have lent creatures to, and which ones. Mine, so I can change or revoke it.
@@ -53,7 +80,7 @@ const dmUi = { tab: "enemies", editing: null, draft: null, msg: "", pick: "", pi
  * (storage-security-model): they would then have every enemy, note and table on it. So a share is
  * PUSHED, never pulled, and nobody ever learns a code they were not already given. */
 function dmBlank() {
-  return { v: 1, name: "", tables: [], notes: [], enemies: [], sharesTo: {}, shared: {} };
+  return { v: 1, name: "", tables: [], notes: [], enemies: [], sharesTo: {}, shared: {}, adopted: [] };
 }
 
 /* A built enemy starts as the plainest thing that is still a creature: the tier decides what the form
@@ -116,6 +143,7 @@ async function dmFlushSave() {
     await CocDm.save(code, rec);
     dmCacheEnemies(code, rec.enemies || []);
     dmCacheShared(code, rec.shared || {});
+    dmCacheNotes(code, rec.notes || []);
   } catch (err) { dmSetMsg("not saved — " + dmWhy(err), true); }
 }
 function dmPersist() {
@@ -170,6 +198,85 @@ function dmCachedShared() {
   try { return JSON.parse(localStorage.getItem("coc:dm:shared:" + code) || "[]"); } catch { return []; }
 }
 
+/* ---------------------------------------------------------------- the notes, which are ONE store
+ *
+ * There used to be two notepads with nothing between them: a campaign one on the DM CODE (#/dm) and a
+ * per-room one in the table. Kayki: "the notes of the dm dont appear on the table, it should all be the
+ * same data, not 2 separate." So the code's `notes` array is the truth and BOTH surfaces edit it — the
+ * screen writes it through the open record, the table writes it through the read-change-write below, and
+ * a room's own DM notes are moved onto the code the first time that DM sits down.
+ *
+ * A PLAYER's notepad is untouched and stays in the room: theirs follows a character code, and there is no
+ * DM record to put it on. */
+function dmCacheNotes(code, notes) {
+  try { localStorage.setItem("coc:dm:notes:" + code, JSON.stringify(notes || [])); } catch { /* full */ }
+}
+function dmCachedNotes(code) {
+  const c = String(code || dmCode() || "");
+  if (!c) return [];
+  try { return JSON.parse(localStorage.getItem("coc:dm:notes:" + c) || "[]"); } catch { return []; }
+}
+/* What to draw right now: the open record if it is this code — that is the truth while the DM screen is
+   up — and otherwise this device's copy, so a table never waits on a fetch to show a note. */
+function dmNotesOf(code) {
+  const c = String(code || dmCode() || "");
+  if (!c) return [];
+  if (dm && dm.code === c) return dm.rec.notes || [];
+  return dmCachedNotes(c);
+}
+/* Refreshed from the record when a surface that is not the DM screen opens them, so a note written on the
+   phone is on the laptop. Returns whether anything actually changed, so the caller can skip a repaint. */
+async function dmNotesLoad(code) {
+  const c = String(code || "");
+  if (!CocDm.validCode(c)) return false;
+  const rec = await CocDm.load(c);
+  if (!rec) return false;
+  const notes = rec.notes || [];
+  if (dm && dm.code === c) dm.rec.notes = notes;
+  const changed = JSON.stringify(dmCachedNotes(c)) !== JSON.stringify(notes);
+  dmCacheNotes(c, notes);
+  return changed;
+}
+
+let dmNotesTimer = null;
+let dmNotesPend = null;                 // { code, notes } waiting out the debounce
+/* WRITTEN THE WAY A SHARE IS: read the record, change ONE key, write it back. The table has no open
+   record, and saving a whole one assembled here would take that code's enemies with it. Refused when
+   nothing answers on the code, because a write to an unopened one CREATES it
+   (rtdb-field-write-creates-parent). A failure keeps the payload and tries again rather than dropping a
+   note on the floor — the data surviving is the one condition on this whole project. */
+async function dmNotesFlush() {
+  if (!dmNotesPend) return;
+  const { code, notes } = dmNotesPend;
+  dmNotesPend = null;
+  clearTimeout(dmNotesTimer);
+  try {
+    const rec = await CocDm.load(code);
+    if (!rec) return;
+    rec.notes = notes;
+    await CocDm.save(code, rec);
+  } catch {
+    if (!dmNotesPend) {
+      dmNotesPend = { code, notes };
+      dmNotesTimer = setTimeout(() => { dmNotesFlush().catch(() => {}); }, 2000);
+    }
+  }
+}
+function dmNotesPut(code, notes) {
+  const c = String(code || "");
+  if (!CocDm.validCode(c)) return;
+  const list = (notes || []).map((n) => ({
+    title: String((n && n.title) || "").slice(0, 60), body: String((n && n.body) || "").slice(0, 8000),
+  }));
+  dmCacheNotes(c, list);
+  // One saver per record: with the DM screen open, its own debounce owns the write.
+  if (dm && dm.code === c) { dm.rec.notes = list; dmPersist(); return; }
+  if (dmNotesPend && dmNotesPend.code !== c) dmNotesFlush();
+  clearTimeout(dmNotesTimer);
+  dmNotesPend = { code: c, notes: list };
+  dmNotesTimer = setTimeout(() => { dmNotesFlush().catch(() => {}); }, 600);
+}
+
 /* ---------------------------------------------------------------- routes */
 
 async function routeDm(arg) {
@@ -186,8 +293,10 @@ async function routeDm(arg) {
   if (!rec) { dm = null; renderDmDoor(`Nothing is saved under ${code}. Start a new one below.`); return; }
   dm = { code, rec: Object.assign(dmBlank(), rec) };
   dmRemember(code, dm.rec.name);
+  if (dmAdoptShipped(code, dm.rec)) dmPersist();
   dmCacheEnemies(code, dm.rec.enemies || []);
   dmCacheShared(code, dm.rec.shared || {});
+  dmCacheNotes(code, dm.rec.notes || []);
   dmUi.editing = null; dmUi.shareOpen = "";
   renderDm();
 }
@@ -271,13 +380,33 @@ function renderDm() {
 
 /* ---------------------------------------------------------------- the three panes */
 
+/* DELETING A CREATURE, THE SAME WAY EVERYTHING ELSE IS DELETED. One tap used to be the whole of it, on a
+   button sitting a centimetre from Copy — and an enemy is not recoverable: it is on this code and nowhere
+   else, so a mis-tap loses a stat block somebody spent an evening on. Kayki: "the delete button has to
+   have the CONFIRM window to delete the enemies as everything." So it arms, and the confirmation is the
+   word typed out, exactly as a character and a table already ask for. */
+function dmDropRowHTML(e) {
+  return `<div class="scene-row danger armed">
+    <span class="muted">Delete <strong>${esc(e.name || "Unnamed")}</strong> — it is on this code and
+      nowhere else, and there is no undo. Type <strong>CONFIRM</strong>.</span>
+    <div class="danger-row">
+      <input id="dm-drop-confirm" class="text" type="text" autocomplete="off" spellcheck="false"
+        autocapitalize="characters" autocorrect="off" placeholder="CONFIRM" value="${esc(dmUi.dropText)}" />
+      <button class="btn btn-hot" data-dm="drop-go" data-val="${esc(e.id)}"
+        ${dmUi.dropText === "CONFIRM" ? "" : "disabled"}>Delete permanently</button>
+      <button class="btn-quiet" data-dm="drop-cancel">Cancel</button>
+    </div>
+  </div>`;
+}
+
 function dmEnemiesPane() {
   const list = dm.rec.enemies || [];
   const byTier = DM_TIERS.map(([tier, label, note]) => {
     const inTier = list.filter((e) => (e.tier || "normal") === tier);
     if (!inTier.length) return "";
     return `<p class="panel-sub">${esc(label)} <span class="muted">— ${esc(note)}</span></p>
-      <div class="scene-list">${inTier.map((e) => `<div class="scene-row">
+      <div class="scene-list">${inTier.map((e) => dmUi.dropArm === e.id ? dmDropRowHTML(e)
+        : `<div class="scene-row">
         <button class="scene-pick" data-dm="edit" data-val="${esc(e.id)}">
           <strong>${esc(e.name || "Unnamed")}</strong>
           <span class="muted">AC ${esc(e.ac)} · ${esc(e.hp)} hp${
@@ -303,9 +432,10 @@ function dmEnemiesPane() {
           codes named in COC_BESTIARY_CODES. */""}
     <section class="panel">
       <p class="panel-sub">Who sees these</p>
-      ${dmHasBestiary(dm.code) ? `<p class="muted">This code also carries <strong>the system's own
-        bestiary</strong> — the authored creatures are yours at any table you run, and any of them can be
-        taken as a copy below and then changed like anything else you built.</p>`
+      ${dmHasBestiary(dm.code) ? `<p class="muted">The <strong>authored creatures are on this code as
+        your own</strong> — they were put in the list above the first time you opened it, keeping their
+        names and their numbers, and from there they are yours: rename them, re-arm them, delete them.
+        The files they came from are never written to, so nothing here can break another campaign.</p>`
         : `<p class="muted">The system's authored creatures are <strong>not</strong> on this code: they are
           one campaign's, and a stat block read early is a fight spoiled. Build your own here — the form
           gives you everything an authored one has.</p>`}
@@ -323,11 +453,16 @@ function dmEnemiesPane() {
    re-arm it, delete it. The original stays exactly as it is, for you and for every table you run.
    Shown only to a code the bestiary belongs to; there is nothing to copy for anybody else. */
 function dmShippedPane() {
-  const shipped = (dmHasBestiary(dm.code) && typeof store !== "undefined" && Array.isArray(store.enemies))
+  const all = (dmHasBestiary(dm.code) && typeof store !== "undefined" && Array.isArray(store.enemies))
     ? store.enemies : [];
+  /* Only what this code does NOT already hold. On a code the bestiary belongs to, dmAdoptShipped has
+     already moved all nine into Yours, so this whole pane is gone — it comes back for exactly the ones
+     that have been deleted, which is the only time "take a copy" still means anything. */
+  const have = new Set((dm.rec.enemies || []).map((e) => e.id));
+  const shipped = all.filter((e) => !have.has(e.id));
   if (!shipped.length) return "";
   return `<section class="panel">
-    <p class="panel-sub">The system's <span class="muted">— take one and make it yours</span></p>
+    <p class="panel-sub">Deleted from yours <span class="muted">— take another copy</span></p>
     <div class="scene-list">${shipped.map((e) => `<div class="scene-row">
       <span class="scene-static">
         <strong>${esc(e.name || "Unnamed")}</strong>
@@ -348,8 +483,9 @@ function dmShippedPane() {
    Deduped by id, because a code can hold a copy of an authored one under an id of its own. */
 function dmLendable() {
   const mine = (dm.rec.enemies || []).map((e) => Object.assign({}, e, { own: true }));
+  const have = new Set(mine.map((e) => e.id));
   const shipped = (dmHasBestiary(dm.code) && typeof store !== "undefined" && Array.isArray(store.enemies))
-    ? store.enemies.map((e) => Object.assign({}, e, { own: false })) : [];
+    ? store.enemies.filter((e) => !have.has(e.id)).map((e) => Object.assign({}, e, { own: false })) : [];
   return mine.concat(shipped);
 }
 function dmShareIds(code) {
@@ -473,8 +609,8 @@ function dmNotesPane() {
       </div>`).join("")}
       <button class="btn-quiet" data-dm="note-add">Add a note</button>
       <p class="muted">These live on your code, not in a room, so closing a table does not take them with
-        it. A table's own notepad is still there and still per-room — this is the campaign, that is the
-        session.</p>
+        it — and they are the same notes the <strong>Notes</strong> panel shows when you are in the DM's
+        chair at a table. One set, written from either end.</p>
     </section>`;
 }
 
@@ -487,6 +623,19 @@ function dmField(id, label, value, opts) {
       ${o.min != null ? `min="${o.min}"` : ""} ${o.max != null ? `max="${o.max}"` : ""}
       ${o.maxlength ? `maxlength="${o.maxlength}"` : ""}
       placeholder="${esc(o.placeholder || "")}" value="${esc(value == null ? "" : value)}" /></label>`;
+}
+
+/* A ONE-LINE BOX THAT IS NOT AN INPUT. The creature's description was a single-line `<input>` sitting
+   between two proper text boxes — Kayki: "the description of creatures need to be the same as the notes
+   or the last text on the creature, that one line makes it weird. Start as 1 line but once it fills the
+   line it expands to 2." So it is the same textarea as the notes, styled the same, opening at one row and
+   growing a row at a time as it fills (see `.auto-grow` and `cocGrow`). */
+function dmArea(id, label, value, opts) {
+  const o = opts || {};
+  return `<label class="field"><span>${label}${o.hint ? ` <span class="muted">${esc(o.hint)}</span>` : ""}</span>
+    <textarea id="${esc(id)}" class="text notes-body auto-grow" rows="${o.rows || 1}"
+      ${o.maxlength ? `maxlength="${o.maxlength}"` : ""}
+      placeholder="${esc(o.placeholder || "")}">${esc(value == null ? "" : value)}</textarea></label>`;
 }
 
 /* WHAT IS CHOSEN, PLUS ONE PICKER. This was three walls of thirteen chips each — thirty-nine buttons, of
@@ -528,7 +677,7 @@ function renderDmEnemyForm() {
 
     <section class="panel">
       ${dmField("en-name", "Name", e.name, { maxlength: 40, placeholder: "Sawdust Hound" })}
-      ${dmField("en-flavor", "One line", e.flavor, { maxlength: 200,
+      ${dmArea("en-flavor", "Description", e.flavor, { maxlength: 200,
         placeholder: "A ring dog gone feral, ribs like tent poles." })}
       <div class="grid-row">
         ${dmField("en-ac", "Armour class", e.ac, { num: true, min: 5, max: 25 })}
@@ -846,7 +995,10 @@ function dmTidyEnemy(e) {
   out.attacks = (out.attacks || []).filter((a) => a && a.name && a.damage).slice(0, 3);
   if (!out.attacks.length) out.attacks = [{ name: "Attack", kind: "melee", toHit: 3, reach: "5 ft", damage: "1d4", damageType: "bludgeoning" }];
   out.features = (out.features || []).filter((f) => f && f.name && f.description);
-  if (out.tier === "boss") out.features = out.features.slice(0, DM_MAX_BOSS_FEATURES);
+  /* THE CAP IS ON WHAT THE FORM ASKS FOR, NOT ON WHAT A CREATURE HAS. Slicing here was harmless while
+     bosses could only be built through the form; the moment the authored ones became editable it meant
+     opening Grinsel — who carries seven — and pressing Save would silently take two features off him.
+     Same rule as a normal enemy's features: kept, and shown once they exist. */
   /* A NORMAL ENEMY DOES NOT PARRY — that is the rule, and it is enforced here whatever wrote the draft.
      Its FEATURES are a different matter: the form does not ask for them, but half the authored normals
      have one (a Sawdust Hound runs in a pack), so emptying the list would quietly gut every copy taken of
@@ -918,8 +1070,12 @@ document.addEventListener("click", (ev) => {
     renderDmEnemyForm();
     return;
   }
-  if (act === "drop") {
+  if (act === "drop") { dmUi.dropArm = val; dmUi.dropText = ""; renderDm(); return; }
+  if (act === "drop-cancel") { dmUi.dropArm = ""; dmUi.dropText = ""; renderDm(); return; }
+  if (act === "drop-go") {
+    if (dmUi.dropText !== "CONFIRM" || dmUi.dropArm !== val) return;
     dm.rec.enemies = (dm.rec.enemies || []).filter((e) => e.id !== val);
+    dmUi.dropArm = ""; dmUi.dropText = "";
     dmPersist(); renderDm();
     // Deleted here means gone from anybody it was lent to: dmResolveShare finds nothing to send.
     dmPushSharesWith(val);
@@ -1181,6 +1337,16 @@ document.addEventListener("input", (ev) => {
   if (!t || !t.id && !t.dataset) return;
   if (t.id === "dm-name") { dm.rec.name = String(t.value).slice(0, 40); dmRemember(dm.code, dm.rec.name); dmPersist(); return; }
   if (t.dataset && t.dataset.dmNote) { dmReadNotes(); dmPersist(); return; }
+  /* NO REPAINT WHILE YOU ARE TYPING IN IT. Redrawing the pane replaces this very input, and a phone
+     keyboard that has had its element swapped out drops back to lowercase — so typing CONFIRM in capitals
+     becomes shift, C, shift, O, shift, N. Kayki hit that on the character sheet, on every letter. The only
+     thing that changes as you type is whether the button is live, so that is the only thing touched. */
+  if (t.id === "dm-drop-confirm") {
+    dmUi.dropText = String(t.value);
+    const go = document.querySelector('[data-dm="drop-go"]');
+    if (go) asEl(go).disabled = dmUi.dropText !== "CONFIRM";
+    return;
+  }
   if (t.id === "dm-pick") { dmUi.pick = t.value; if (dmUi.editing) renderDmEnemyForm(); return; }
   if (t.id === "dm-from") { dmReadForm(); dmUi.pickFrom = t.value; renderDmEnemyForm(); return; }
 });

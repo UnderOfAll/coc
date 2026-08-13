@@ -6210,10 +6210,10 @@
       "tier": "boss",
       "size": "Medium",
       "kind": "performer",
-      "partyLevel": "3",
+      "partyLevel": "3 (four or five of them)",
       "ac": 15,
-      "hp": 72,
-      "hpDice": "11d8+22",
+      "hp": 200,
+      "hpDice": "27d8+81",
       "speed": 30,
       "abilities": {
         "Strength": 1,
@@ -6251,6 +6251,11 @@
       ],
       "features": [
         {
+          "name": "An Audience Is Watching",
+          "uses": "passive",
+          "description": "He has been doing this routine to an empty tent for eleven years and he will not spoil the one house he has finally got. **While three or more watchers are in the stands, Grinsel cannot deal damage with an attack.** A watcher is anything that reads as a person in a seat: a creature (yours, his, or the Standing Ovation), a propped-up dummy off the midway, or a 5-foot illusion of one. He still moves, still throws — the Razor Card lands in the sawdust at your feet, because a trick shot is part of the act — still plays Wild Card, and **The Punchline still works**, because a joke is not violence. **He clears the house.** Once on his turn, for free and without using his action, he puts a card into one seat: a dummy is destroyed, a creature is shoved out of the stands (DC 14 Strength save or it loses its seat), or an illusion is called out — he makes an Intelligence (Investigation) check against the caster's trick save DC. Holding three therefore takes more than one person."
+        },
+        {
           "name": "Mayhem",
           "uses": "passive",
           "from": "Joker",
@@ -6276,15 +6281,15 @@
         {
           "name": "Curtain Call",
           "uses": "1 / combat, when he first drops to half hit points or fewer",
-          "description": "The lamps go out all at once. He moves up to his speed without provoking anything, and every other creature in the tent is blinded until the end of its next turn — which means none of them can Parry, and his next attack is made against a party that cannot see it coming."
+          "description": "The lamps go out all at once. He moves up to his speed without provoking anything, and every other creature in the tent is blinded until the end of its next turn — which means none of them can Parry, and his next attack is made against a party that cannot see it coming. And with the lamps out nobody is watching: the house is empty until the end of its next turn, whatever is sitting in it, so An Audience Is Watching does not hold him."
         },
         {
           "name": "Deal Them In",
-          "uses": "1 / round, at the end of another creature's turn",
-          "description": "He throws one Razor Card at a creature he can see within 60 feet. This happens on somebody else's turn and does not use his reaction, so he can still Parry."
+          "uses": "1 / turn, at the end of another creature's turn",
+          "description": "He throws one Razor Card at a creature he can see within 60 feet. This happens on somebody else's turn and does not use his reaction, so he can still Parry. Once at the end of EACH other creature's turn, not once a round — a party of five takes five turns to his one, and this is the whole of his answer to that."
         }
       ],
-      "tactics": "He is a duellist who never stands still and never fights the whole party at once. Round one: keep 30 feet of sand between himself and anything with a reach, Deal Them In at the end of the turn of whoever is closest. He spends Mayhem the moment he has it rather than banking it — a Wild Card a turn, every turn. The Punchline waits for three of you in a group and never comes out early. Curtain Call fires the instant he crosses half, and he uses the dark to cross the ring and start again on the softest target he can find. He does not surrender and he does not run: this is the last show he is ever going to get.",
+      "tactics": "NEVER SAY THIS RULE OUT LOUD. The players are not told that an audience stops him and they are not told the number — Klaus hints at it in play, and the table works it out from what they watch him do. The tell is behaviour, not narration: with a house in the seats he plays TO it — he bows, he lands the card an inch wide, he checks the crowd is still with him — and the moment the third seat empties he stops performing and starts killing, mid-sentence.\n\nHe is a duellist who never stands still and never fights the whole party at once. Round one: keep 30 feet of sand between himself and anything with a reach, Deal Them In at the end of the turn of whoever is closest. He spends Mayhem the moment he has it rather than banking it — a Wild Card a turn, every turn. The Punchline waits for three of you in a group and never comes out early. Curtain Call fires the instant he crosses half, and he uses the dark to cross the ring and start again on the softest target he can find. He does not surrender and he does not run: this is the last show he is ever going to get.\n\nWith an audience up he spends every turn clearing seats and building to The Punchline, which is the one thing he can still land. Curtain Call is his real answer: the lamps go out, nobody is watching, and the round the house is empty is the round he takes somebody down. He does not surrender and he does not run: this is the last show he is ever going to get.",
       "narration": "He is laughing before he moves, and he keeps laughing all the way through it, and at some point you realise the laugh has not paused for breath once.",
       "_file": "enemies/grinsel-the-last-clown.json"
     },

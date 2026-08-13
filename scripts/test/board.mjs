@@ -521,6 +521,53 @@ console.log("\n— 1280px, as the DM, with a mouse —");
   await page.close();
 }
 
+/* ------------------------------------------------------- a box the size of what is in it
+ *
+ * The creature's description opens at one line and takes a second when the text wraps. That is a
+ * MEASUREMENT — `scrollHeight` against a line box — and jsdom reports zero for every one of them, so it
+ * cannot be checked anywhere but here. It must also survive a re-render: the form is painted whole every
+ * time a chip is pressed, and a height set on the node is exactly the sort of thing that gets thrown away
+ * with it. */
+console.log("\n— the creature's description grows —");
+{
+  const page = await browser.newPage();
+  await page.setViewport({ width: 900, height: 900 });
+  await page.goto(base + "/index.html#/dm", { waitUntil: "networkidle0" });
+  await page.evaluate(() => {
+    window.__recs = { "111111": { v: 1, name: "T", tables: [], notes: [], enemies: [] } };
+    CocDm.load = async (c) => window.__recs[c] ? JSON.parse(JSON.stringify(window.__recs[c])) : null;
+    CocDm.save = async (c, r) => { window.__recs[c] = JSON.parse(JSON.stringify(r)); return true; };
+    location.hash = "#/dm/111111";
+    dispatchEvent(new HashChangeEvent("hashchange"));
+  });
+  await page.waitForSelector('[data-dm="add"]');
+  await page.evaluate(() => document.querySelector('[data-dm="add"]').click());
+  await page.waitForSelector("#en-flavor");
+  const size = () => page.evaluate(() => {
+    const n = document.querySelector("#en-flavor");
+    return { tag: n.tagName, h: Math.round(n.getBoundingClientRect().height),
+      line: Math.round(parseFloat(getComputedStyle(n).lineHeight)) };
+  });
+  const write = (t) => page.evaluate((v) => {
+    const n = document.querySelector("#en-flavor");
+    n.value = v; n.dispatchEvent(new Event("input", { bubbles: true }));
+  }, t);
+  const one = await size();
+  ok(one.tag === "TEXTAREA", "the description is the same kind of box as the notes, not a one-line input");
+  await write("A ring dog gone feral.");
+  ok((await size()).h === one.h, "and one line of text leaves it one line tall");
+  await write("A ring dog gone feral, coat matted grey with sawdust and old straw, ribs like tent poles "
+    + "under the fur, still answering to a name nobody alive remembers saying.");
+  const two = await size();
+  ok(two.h > one.h && Math.abs(two.h - one.h - two.line) < 4,
+    `filling the line takes it to exactly two (${one.h} → ${two.h}, line ${two.line})`);
+  // Pressing a weight repaints the whole form; the height has to be measured again after it.
+  await page.evaluate(() => document.querySelector('[data-dm="tier"][data-val="special"]').click());
+  await page.waitForSelector("#en-flavor");
+  ok((await size()).h === two.h, "and it is still two lines after the form is painted again");
+  await page.close();
+}
+
 await browser.close();
 server.close();
 console.log(fails ? `\nFAILURES: ${fails}` : "\nThe board works under a finger and under a mouse.");

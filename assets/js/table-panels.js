@@ -258,9 +258,14 @@ async function tblKeepTableOnDm() {
 function tblBuiltEnemies() {
   return (typeof dmCachedEnemies === "function") ? dmCachedEnemies() : [];
 }
+/* …minus anything this code has already taken as its own. On Kayki's code that is all nine, so the
+   "The system's" group is empty and everything sits under Yours, where it can be edited. Deduped by id
+   rather than by name, because the adopted copies keep the id the figures on the board point at. */
 function tblShippedEnemies() {
   if (typeof dmHasBestiary !== "function" || !dmHasBestiary()) return [];
-  return (typeof store !== "undefined" && Array.isArray(store.enemies)) ? store.enemies : [];
+  const all = (typeof store !== "undefined" && Array.isArray(store.enemies)) ? store.enemies : [];
+  const mine = new Set(tblBuiltEnemies().map((e) => e.id));
+  return all.filter((e) => !mine.has(e.id));
 }
 /* And what another DM has LENT this code, off the same kind of local copy. Deduped against your own, so a
    creature you have already kept a copy of is not offered twice. */
@@ -1918,7 +1923,54 @@ function tblMyNotes() {
     .sort((a, b) => (a[1].at || 0) - (b[1].at || 0));
 }
 
+/* THE DM'S NOTES ARE NOT THE ROOM'S. A DM sitting down with a code open is reading and writing the notes
+   on that CODE — the same ones as `#/dm` — because a campaign that has two notepads has two halves of
+   every note. Empty string when there is no code to read, and the room's own notepad answers instead. */
+function tblDmNotesCode() {
+  if (!tbl || tbl.role !== "dm" || typeof dmCode !== "function" || typeof CocDm === "undefined") return "";
+  const code = dmCode();
+  return CocDm.validCode(code) ? code : "";
+}
+/* The device's copy is drawn at once so the panel never opens empty, and the record is read behind it —
+   once per visit to this table — in case the last note was written on the phone. */
+function tblRefreshDmNotes(code) {
+  if (tbl.ui.notesRead === code) return;
+  tbl.ui.notesRead = code;
+  dmNotesLoad(code).then((changed) => { if (changed && tbl && tbl.ui.panel === "notes") paintSide(); })
+    .catch(() => {});
+}
+
+function dmNotesPanelHTML(code) {
+  const notes = dmNotesOf(code);
+  tblRefreshDmNotes(code);
+  const openIdx = /^dm:(\d+)$/.test(tbl.ui.note || "") ? Number((tbl.ui.note || "").slice(3)) : -1;
+  const open = notes[openIdx] || null;
+  const list = notes.map((n, i) => `<div class="scene-row ${i === openIdx ? "on" : ""}">
+      <button class="scene-pick" data-tbl="note-open" data-val="dm:${i}">
+        <strong>${esc(n.title || "Untitled")}</strong>
+        <span class="muted">${esc(String(n.body || "").replace(/\s+/g, " ").slice(0, 40))}</span>
+      </button>
+      <button class="btn-quiet" data-tbl="note-del" data-val="dm:${i}">Delete</button>
+    </div>`).join("");
+  return `<section class="panel" id="notes-panel">
+      <h2>Notes</h2>
+      <div class="scene-list">${list || `<p class="muted">Nothing written yet.</p>`}</div>
+      <button class="btn-quiet" data-tbl="note-new">New note</button>
+    </section>
+    ${open ? `<section class="panel">
+      <label class="field"><span>Title</span>
+        <input id="note-title" class="text" type="text" maxlength="60" value="${esc(open.title || "")}" /></label>
+      <label class="field"><span>Note</span>
+        <textarea id="note-body" class="text notes-body" rows="12" maxlength="8000">${esc(open.body || "")}</textarea></label>
+      <p class="muted">Saved as you type, onto DM code <strong>${esc(code)}</strong> — so this is the same
+        list as <a href="#/dm/${esc(code)}">your DM screen</a>, from any device, and it outlives this room.</p>
+    </section>` : `<p class="muted">Open a note to write in it. These are the notes on your DM code
+      <strong>${esc(code)}</strong>, not the room's — the campaign travels with you.</p>`}`;
+}
+
 function notesPanelHTML() {
+  const dmNotes = tblDmNotesCode();
+  if (dmNotes) return dmNotesPanelHTML(dmNotes);
   const notes = tblMyNotes();
   const openId = tbl.ui.note && notes.some(([id]) => id === tbl.ui.note) ? tbl.ui.note : "";
   const open = openId ? (tbl.data.notes || {})[openId] : null;
@@ -1941,10 +1993,21 @@ function notesPanelHTML() {
         <textarea id="note-body" class="text notes-body" rows="12" maxlength="8000">${esc(open.body || "")}</textarea></label>
       <p class="muted">Saved as you type. Kept with the table, so it is here on your next device — and
         not secret: anyone with the room code could read it if they went looking.</p>
-    </section>` : `<p class="muted">Open a note to write in it.</p>`}`;
+    </section>` : `<p class="muted">Open a note to write in it.</p>`}
+    ${tbl.role === "dm" ? `<p class="muted">These are this room's, because no DM code is open on this
+      device. <a href="#/dm">Open one</a> and the panel shows your campaign notes instead — the same list
+      as your DM screen — and everything written here moves onto it.</p>` : ""}`;
 }
 
 async function tblNewNote() {
+  const code = tblDmNotesCode();
+  if (code) {
+    const notes = dmNotesOf(code);
+    dmNotesPut(code, notes.concat({ title: "New note", body: "" }));
+    tbl.ui.note = "dm:" + notes.length;
+    paintSide();
+    return;
+  }
   const id = await CocLive.push(tblPath("notes"), {
     title: "New note", body: "", by: tblNoteOwner(), at: Date.now(),
   });
@@ -1952,15 +2015,57 @@ async function tblNewNote() {
   paintSide();
 }
 
-/* The DM used to have a single unnamed notes box. Anything already in it becomes the first note rather
-   than being stranded somewhere the interface no longer shows. */
-function tblMigrateDmNotes() {
+/* One of the DM's notes, edited from the table. The whole array is written because that is what the
+   record holds — there are no ids on a note, only its place in the list. */
+function tblDmNoteWrite(code, idx, field, value) {
+  const notes = dmNotesOf(code).map((n) => ({ title: n.title || "", body: n.body || "" }));
+  if (!notes[idx]) return;
+  notes[idx][field] = value;
+  dmNotesPut(code, notes);
+}
+
+let tblDmNotesMoved = "";               // the room whose DM notes have already been moved onto a code
+/* TWO OLDER SHAPES, BOTH FOLDED INTO THE ONE STORE. First there was a single unnamed box on the room
+   (`dm/notes`), then a per-room list of them; now the DM's notes live on the DM CODE and the table reads
+   that. So the first time a DM sits down here with a code open, everything the ROOM is holding for them
+   moves onto it and comes off the room — otherwise he is looking at two lists again, which is the whole
+   complaint. Nothing is deleted before the record has answered and the move has been written. */
+async function tblMigrateDmNotes() {
   if (!tbl || tbl.role !== "dm") return;
-  const old = (tbl.data.dm || {}).notes;
-  if (!old || !String(old).trim()) return;
-  CocLive.push(tblPath("notes"), { title: "Notes", body: String(old).slice(0, 8000), by: "dm", at: 1 })
-    .then(() => CocLive.put(tblPath("dm/notes"), null))
-    .catch(() => {});
+  const old = String((tbl.data.dm || {}).notes || "");
+  const code = tblDmNotesCode();
+  if (!code) {
+    // No code to move them to: keep the oldest box's contents as a room note rather than stranding it.
+    if (!old.trim()) return;
+    CocLive.push(tblPath("notes"), { title: "Notes", body: old.slice(0, 8000), by: "dm", at: 1 })
+      .then(() => CocLive.put(tblPath("dm/notes"), null))
+      .catch(() => {});
+    return;
+  }
+  const roomNotes = Object.entries(tbl.data.notes || {}).filter(([, n]) => n && n.by === "dm")
+    .sort((a, b) => (a[1].at || 0) - (b[1].at || 0));
+  if (!roomNotes.length && !old.trim()) return;
+  if (tblDmNotesMoved === tbl.code) return;
+  tblDmNotesMoved = tbl.code;
+  const room = tbl.code;
+  const moving = roomNotes.map(([, n]) => ({ title: String(n.title || ""), body: String(n.body || "") }))
+    .filter((n) => n.title.trim() || n.body.trim());
+  if (old.trim()) moving.unshift({ title: "Notes", body: old.slice(0, 8000) });
+  try {
+    // The record is read FIRST, and from the database rather than from this device's copy: appending to
+    // a stale list would write the record's own notes away, and a campaign's notes lost to a migration
+    // is the one thing this app must never do. Nothing answering means nothing moves and nothing goes.
+    const rec = moving.length ? await CocDm.load(code) : { notes: [] };
+    if (!rec) { tblDmNotesMoved = ""; return; }
+    if (moving.length) {
+      dmCacheNotes(code, rec.notes || []);
+      if (typeof dm !== "undefined" && dm && dm.code === code) dm.rec.notes = rec.notes || [];
+      dmNotesPut(code, (rec.notes || []).concat(moving));
+    }
+    for (const [id] of roomNotes) await CocLive.del(tblPath("notes/" + id)).catch(() => {});
+    if (old) await CocLive.put(tblPath("dm/notes"), null).catch(() => {});
+    if (tbl && tbl.code === room && tbl.ui.panel === "notes") paintSide();
+  } catch { tblDmNotesMoved = ""; }
 }
 
 /* Getting a picture onto a FIGURE. Three ways for the same reason the maps have four: Kayki's players

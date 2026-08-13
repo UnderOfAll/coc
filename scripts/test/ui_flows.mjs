@@ -209,30 +209,40 @@ ok($$('[data-dm="clone"]').length===0,"a code the bestiary is not on has nothing
 ok(/not<\/strong> on this code/.test($("#tool").innerHTML),"and the pane says so rather than staying silent");
 ok(/no other DM sees these unless you lend/.test($("#tool").textContent),
   "and says an enemy belongs to the code that built it, unless it is lent");
-/* AND ON THE CODE IT DOES BELONG TO, an authored creature can be TAKEN. Kayki: "the creatures the DM
-   creates can at any time be cloned or edited by himself — that applies to those prefab creatures too."
-   The file in data/enemies/ is never written to: the copy is yours, under an id of its own. */
+/* AND ON THE CODE IT DOES BELONG TO, THE AUTHORED NINE ARE SIMPLY YOURS — there is no copy step in the
+   way any more. Kayki: "the created enemies, put them on my own list, not from 'the system' list, so I can
+   alter and modify them at will." They land the first time the record is opened, keeping their ids so a
+   figure already standing on a board still resolves to a creature the code lists. */
 peek(`window.__dms[COC_BESTIARY_CODES[0]] = { v: 1, name: "Owner", tables: [], notes: [], enemies: [] };`);
 await go("#/dm/"+peek(`COC_BESTIARY_CODES[0]`));
-await new Promise(r=>setTimeout(r,80));
-ok($$('[data-dm="clone"]').length>=9,"the code it belongs to is offered every authored one to copy");
-click($$('[data-dm="clone"]').find(b=>b.dataset.val==="sawdust-hound"));
+await new Promise(r=>setTimeout(r,150));
+const nine=peek(`dm.rec.enemies.length`);
+ok(nine>=9,"the code the bestiary belongs to gets every authored creature as its own ("+nine+")");
+ok(peek(`dm.rec.enemies.some(e => e.id === "sawdust-hound" && e.custom === true)`),
+  "keeping its id, so a figure already on a board still points at something");
+ok(peek(`dm.rec.adopted.includes("sawdust-hound")`),"and the record remembers it was taken");
+ok($$('[data-dm="clone"]').length===0,"with no separate 'the system's' list left to copy out of");
+ok(peek(`dmCachedEnemies().some(e => e.id === "grinsel-the-last-clown")`),
+  "the board's copy on this device carries them too");
+/* Editing one is ordinary editing. The file in data/enemies/ is still never written to. */
+click($$('[data-dm="edit"]').find(b=>b.dataset.val==="cinder-juggler"));
 await new Promise(r=>setTimeout(r,60));
-const taken=peek(`JSON.parse(JSON.stringify(dm.rec.enemies[0]))`);
-ok(peek(`dm.rec.enemies.length`)===1,"copying one puts it on your code");
-ok(taken.id!=="sawdust-hound"&&taken.custom===true,"under an id of its own: "+taken.id);
-/* A NORMAL ENEMY'S FEATURES SURVIVE THE COPY. The builder does not ASK a normal for features, and it used
-   to answer that by emptying the list on save — which would have gutted a Hound of its pack tactics. */
-ok(taken.features.length===1,"keeping what it had: "+((taken.features[0]||{}).name||"nothing"));
-ok(taken.parryDC===null,"and still not Parrying, because a normal enemy does not");
-ok(peek(`dmUi.editing`)===taken.id,"it opens in the builder, because copying means copying and changing");
-ok($$('[data-feat="name|0"]').some(n=>n.value==="Runs in a Pack"),"with the feature it kept there to edit");
-type($("#en-name"),"Rope Hound");
+type($("#en-name"),"Ash Juggler");
 click($('[data-dm="save-enemy"]'));
 await new Promise(r=>setTimeout(r,60));
-ok(peek(`dm.rec.enemies[0].name`)==="Rope Hound","changing the copy is ordinary editing");
-ok(peek(`store.enemies.find(e => e.id === "sawdust-hound").name`)==="Sawdust Hound",
-  "and the authored one it was taken from is untouched");
+ok(peek(`dm.rec.enemies.find(e => e.id === "cinder-juggler").name`)==="Ash Juggler",
+  "an authored creature is renamed in place, on your code, under the same id");
+ok(peek(`store.enemies.find(e => e.id === "cinder-juggler").name`)==="Cinder Juggler",
+  "and the file it came from is untouched");
+/* A BOSS'S FEATURES SURVIVE BEING SAVED. The form asks for at most five; Grinsel carries seven, and the
+   tidy-up used to amputate the rest — which only became reachable when the authored ones became editable. */
+click($$('[data-dm="edit"]').find(b=>b.dataset.val==="grinsel-the-last-clown"));
+await new Promise(r=>setTimeout(r,60));
+const bossFeats=peek(`(dmUi.draft.features || []).length`);
+click($('[data-dm="save-enemy"]'));
+await new Promise(r=>setTimeout(r,60));
+ok(peek(`dm.rec.enemies.find(e => e.id === "grinsel-the-last-clown").features.length`)===bossFeats,
+  "a boss with more features than the form offers keeps all of them ("+bossFeats+")");
 
 /* LENDING, WHICH IS THE ONLY WAY ONE DM'S CREATURE REACHES ANOTHER. Kayki asked for it in the app rather
    than in a line of code I have to republish: their code, the creatures you pick, and Stop whenever you
@@ -265,15 +275,15 @@ ok(lent.length===1&&lent[0].name==="Sawdust Hound","pressing one lends it, whole
 ok(lent[0].features.length===1,"with everything on its card");
 click($('[data-dm="share-all"][data-val="777001"]'));
 await new Promise(r=>setTimeout(r,250));
-ok(peek(`window.__dms["777001"].shared[COC_BESTIARY_CODES[0]].enemies.length`)>=10,
-  "Lend everything lends the built one and the authored nine");
+ok(peek(`window.__dms["777001"].shared[COC_BESTIARY_CODES[0]].enemies.length`)>=9,
+  "Lend everything lends every creature on the code");
 /* THE BORROWER'S SIDE: it shows up on their screen, it reaches their table, and Keep a copy makes it
    theirs for good — after which taking the loan back cannot reach it. */
 await go("#/dm/777001");
 await new Promise(r=>setTimeout(r,120));
 click($$('[data-dm="tab"]').find(b=>b.dataset.val==="sharing"));
 ok(/From code/.test($("#tool").textContent),"the borrower's screen names who lent to them");
-ok(peek(`dmCachedShared().length`)>=10,"and this device keeps a copy for the board to read");
+ok(peek(`dmCachedShared().length`)>=9,"and this device keeps a copy for the board to read");
 ok(peek(`dmCachedShared().every(e => e.sharedFrom === COC_BESTIARY_CODES[0])`),"marked as theirs, not yours");
 ok(peek(`dmCachedEnemies().length`)===2,"without ever mixing into what this code built");
 click($('[data-dm="share-keep"][data-val="'+peek(`COC_BESTIARY_CODES[0]`)+'|sawdust-hound"]'));
@@ -293,10 +303,32 @@ ok(peek(`(window.__dms["777001"].shared || {})[COC_BESTIARY_CODES[0]] === undefi
   "and off their record, so the loan is genuinely gone");
 ok(peek(`window.__dms["777001"].enemies.length`)===3,"while the copy they kept stays theirs");
 
+/* DELETING ONE ASKS FOR THE WORD, exactly as deleting a character or closing a table already does.
+   Kayki: "the delete button has to have the CONFIRM window to delete the enemies as everything." An enemy
+   is on this code and nowhere else, there is no undo, and Delete sat a centimetre from Copy. */
 click($$('[data-dm="tab"]').find(b=>b.dataset.val==="enemies"));
+const wasHolding=peek(`dm.rec.enemies.length`);
 click($$('[data-dm="drop"]')[0]);
 await new Promise(r=>setTimeout(r,60));
-ok(peek(`dm.rec.enemies.length`)===0,"and a built enemy can be thrown away like anything else");
+ok(peek(`dm.rec.enemies.length`)===wasHolding,"one press deletes nothing at all");
+ok(!!$("#dm-drop-confirm"),"it asks for the word instead");
+ok($('[data-dm="drop-go"]').disabled===true,"with the button locked until it is typed");
+const doomed=$('[data-dm="drop-go"]').dataset.val;
+type($("#dm-drop-confirm"),"yes");
+ok($('[data-dm="drop-go"]').disabled===true,"and the wrong word does not unlock it");
+type($("#dm-drop-confirm"),"CONFIRM");
+ok($('[data-dm="drop-go"]').disabled===false,"CONFIRM unlocks it");
+/* AND THE BOX IS NOT REPAINTED WHILE IT IS BEING TYPED IN — redrawing the pane swaps the input out from
+   under a phone keyboard, which drops it back to lowercase on every letter. Only the button changes. */
+ok($("#dm-drop-confirm").value==="CONFIRM","without the pane redrawing under the keyboard");
+click($('[data-dm="drop-go"]'));
+await new Promise(r=>setTimeout(r,80));
+ok(peek(`dm.rec.enemies.length`)===wasHolding-1,"and then it goes");
+ok($$('[data-dm="clone"]').some(b=>b.dataset.val===doomed),"a deleted one is offered back as a copy");
+/* A DELETION STICKS: adoption must not quietly put it back the next time the screen is opened. */
+await go("#/dm/777001"); await new Promise(r=>setTimeout(r,80));
+await go("#/dm/"+peek(`COC_BESTIARY_CODES[0]`)); await new Promise(r=>setTimeout(r,150));
+ok(peek(`dm.rec.enemies.length`)===wasHolding-1,"and reopening the screen does not adopt it again");
 await go("#/dm/777001");
 await new Promise(r=>setTimeout(r,80));
 

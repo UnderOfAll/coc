@@ -1715,6 +1715,12 @@ body:has(.vtt) { height: 100dvh; overflow: hidden; }
 /* The notepad: a title, and a box big enough to actually write in. */
 .notes-body { min-height: 12rem; line-height: 1.55; font-family: var(--sans); }
 
+/* …except where the box should be the size of its contents — the creature's description opens at one
+   line and grows one at a time as it fills (cocGrow). The floor comes off, the handle goes (its height is
+   not yours to set when the text decides it), and nothing may scroll inside it or the measurement that
+   sizes it would be reading a box that is already too small. */
+.notes-body.auto-grow { min-height: 0; resize: none; overflow: hidden; }
+
 /* The dice dock: on a desktop the tray and the whole roll history stay open beside the board, because
    there is room for them and a history you have to go and open is a history nobody reads. A phone has no
    such room, so there the dice use the same slide-over panel as everything else — the one behavioural

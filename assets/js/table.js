@@ -475,7 +475,7 @@ function tblOpen(code) {
     // Placing a figure has to wait until the board's contents are known, or a second device places a
     // second figure. But waiting for the next heartbeat meant sitting down and appearing to the table
     // up to twenty seconds later, which is how it behaved live. Try the moment the data lands.
-    if (first) { tblSettleSeat(); tblEnsureToken(); tblStraightenTokens(); tblUnlinkTwinnedSeats(); tblMigrateDmNotes(); }
+    if (first) { tblSettleSeat(); tblEnsureToken(); tblStraightenTokens(); tblUnlinkTwinnedSeats(); tblMigrateDmNotes().catch(() => {}); }
   }));
   tblAnnounce();
   tbl.beat = setInterval(tblAnnounce, 20000);
@@ -908,6 +908,7 @@ function paintSide() {
   else if (which === "enemy") body = tbl.role === "dm" ? enemySheetHTML(tbl.ui.enemyId) : "";
   else if (which === "sheet") body = `<p class="muted">Opening your sheet…</p>`;
   side.innerHTML = sideHeadHTML(which, which === "enemy" ? (tbl.ui.enemyFrom || "") : which) + body;
+  cocGrowAll(side);
   // The DM's panel is re-rendered on every stream event and compared against what is on screen, so what
   // is stored has to be the whole thing, header and all.
   if (which === "dm") side.dataset.rendered = side.innerHTML;
@@ -1043,8 +1044,12 @@ document.addEventListener("input", (e) => {
   if ((evTarget(e).id === "note-title" || evTarget(e).id === "note-body") && tbl.ui.note) {
     const field = evTarget(e).id === "note-title" ? "title" : "body";
     const cap = field === "title" ? 60 : 8000;
-    CocLive.throttled(tblPath("notes/" + tbl.ui.note + "/" + field),
-      String(evTarget(e).value || "").slice(0, cap), 700);
+    const value = String(evTarget(e).value || "").slice(0, cap);
+    // The DM's go to their CODE, on the same debounce; a player's stay in the room, as they always have.
+    const m = /^dm:(\d+)$/.exec(tbl.ui.note);
+    const code = tblDmNotesCode();
+    if (m && code) { tblDmNoteWrite(code, Number(m[1]), field, value); return; }
+    CocLive.throttled(tblPath("notes/" + tbl.ui.note + "/" + field), value, 700);
   }
 });
 
@@ -1291,6 +1296,17 @@ document.addEventListener("click", (e) => {
   else if (act === "note-new") tblNewNote().catch(tblFail);
   else if (act === "note-open") { tbl.ui.note = tbl.ui.note === val ? "" : val; paintSide(); }
   else if (act === "note-del") {
+    // A DM's notes are on their code and are indexed, not keyed: "dm:2" is the third of the list.
+    const m = /^dm:(\d+)$/.exec(val);
+    const code = tblDmNotesCode();
+    if (m && code) {
+      const notes = dmNotesOf(code).slice();
+      notes.splice(Number(m[1]), 1);
+      dmNotesPut(code, notes);
+      if (tbl.ui.note === val) tbl.ui.note = "";
+      paintSide();
+      return;
+    }
     const n = (tbl.data.notes || {})[val];
     if (n && n.by === tblNoteOwner()) {
       CocLive.del(tblPath("notes/" + val)).catch(tblFail);
