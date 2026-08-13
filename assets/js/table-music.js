@@ -105,10 +105,20 @@ function tblMusicAt(now, duration) {
 
 /* ---------------------------------------------------------------- this device's own settings */
 
+/* HALF, UNLESS THIS DEVICE HAS SAID OTHERWISE — and "has said" has to be tested before the number is,
+   because `localStorage.getItem` answers null when nothing is stored and `Number(null)` is 0, which
+   passed the range check and handed every device that had never touched the slider a volume of ZERO.
+   Nobody at a table full of first-time devices would have heard a thing, and the panel would have said
+   0% while looking like it was working. */
 function tblMusicVol() {
-  const v = Number(localStorage.getItem(TBL_MUSIC_VOL));
+  const raw = localStorage.getItem(TBL_MUSIC_VOL);
+  if (raw == null || raw === "") return 0.5;
+  const v = Number(raw);
   return Number.isFinite(v) && v >= 0 && v <= 1 ? v : 0.5;
 }
+/* SILENT IS SILENT. Nothing plays when the slider is at the bottom or the mute is on — one question with
+   one answer, rather than two states that mostly agree. */
+function tblMusicSilent() { return tblMusicMuted() || tblMusicVol() <= 0; }
 function tblMusicMuted() { return localStorage.getItem(TBL_MUSIC_MUTE) === "1"; }
 function tblMusicAllowed() { return localStorage.getItem(TBL_MUSIC_OK) === "1"; }
 
@@ -125,10 +135,20 @@ function tblMusicToggleMute() {
 /* Volume is the one thing that never goes near the database: it is yours, on this device, and a table
    where the DM's slider moved everybody's is a table where nobody can hear their own game. */
 function tblMusicPushVolume() {
-  const v = tblMusicMuted() ? 0 : tblMusicVol();
+  const off = tblMusicSilent();
+  const v = off ? 0 : tblMusicVol();
   try {
-    if (mus.audio) { mus.audio.volume = v; mus.audio.muted = tblMusicMuted(); }
-    if (mus.yt && mus.ytOn) { mus.yt.setVolume(Math.round(v * 100)); if (tblMusicMuted()) mus.yt.mute(); else mus.yt.unMute(); }
+    // The element's own `muted` as well as a zero volume: one of them is belt and the other braces, and
+    // it costs nothing to be certain the thing is quiet.
+    if (mus.audio) { mus.audio.volume = v; mus.audio.muted = off; }
+    if (mus.yt && mus.ytOn) {
+      /* YOUTUBE WILL NOT GO TO ZERO. Asked for setVolume(0) it reports back 5 — measured, not assumed —
+         so the slider at the bottom left the room with a faint hiss instead of silence, which is exactly
+         what Kayki heard. Its `mute()` is the only thing that actually silences it.
+         And unMute BEFORE setVolume, never after: unMute restores the level from before the mute, so
+         calling it second throws away the number just set. */
+      if (off) { mus.yt.mute(); } else { mus.yt.unMute(); mus.yt.setVolume(Math.round(v * 100)); }
+    }
   } catch { /* a player that has gone away is not an error worth showing anybody */ }
 }
 
@@ -256,10 +276,11 @@ function tblMusicMakeYT() {
         },
         onError: () => { mus.msg = "That video will not play — it may be blocked from being embedded."; paintSide(); },
         onStateChange: (e) => {
-          // 0 is ENDED. Same rule as the audio element: the chair advances, nobody else.
-          const state = tblMusicNow();
-          if (e && e.data === 0 && tbl && tbl.role === "dm" && state && !state.loop
-              && tblMusicQueue().length) tblMusicNext().catch(() => {});
+          // 0 is ENDED, and it is the fast path only — the tick asks the same question every 2.5s in
+          // case this never arrives. The chair advances; nobody else.
+          if (e && e.data === 0 && tbl && tbl.role === "dm" && tblMusicQueue().length && tblMusicOver()) {
+            tblMusicNext().catch(() => {});
+          }
         },
       },
     });
@@ -300,8 +321,9 @@ function tblMusicApply() {
     if (mus.key !== key) mus.key = key;
     let ytDur = 0;
     try { ytDur = (mus.yt && mus.ytOn && mus.yt.getDuration && mus.yt.getDuration()) || 0; } catch { ytDur = 0; }
-    const spot = tblMusicAt(now, ytDur);
-    tblMusicDriveYT(now.src, spot.at, allowed && !spot.over);
+    // Only a LOOP needs the clock wrapped here; whether it is finished is the player's to say, above.
+    const spot = now.loop ? tblMusicAt(now, ytDur) : { at: tblMusicWhere(now), over: false };
+    tblMusicDriveYT(now.src, spot.at, allowed && !tblMusicOver());
     return;
   }
 
@@ -321,7 +343,7 @@ function tblMusicApply() {
     /* THE END OF A TRACK IS THE QUEUE'S CUE, and the DM's browser is the only one that acts on it —
        everybody else finds out the ordinary way, by `now` changing under them. */
     mus.audio.addEventListener("ended", () => {
-      if (tbl && tbl.role === "dm" && tblMusicQueue().length) tblMusicNext().catch(() => {});
+      if (tbl && tbl.role === "dm" && tblMusicQueue().length && tblMusicOver()) tblMusicNext().catch(() => {});
     });
     mus.audio.addEventListener("loadedmetadata", () => {
       const state = tblMusicNow();
@@ -351,6 +373,35 @@ function tblMusicApply() {
   }
 }
 
+/* HAS THIS TRACK FINISHED? Asked of the PLAYER, never of the clock.
+ *
+ * The wall clock — `pos + elapsed` — is what keeps five devices together, and it is the wrong thing to
+ * end a track on. YouTube may put a twenty-second advert in front of the music, and then the player is
+ * twenty seconds behind the clock: ending on the clock cuts the last twenty seconds off the track, on
+ * that device only, and skips ahead of everybody else. So this reads the player's own position, and
+ * takes its state machine's word for it when it has one.
+ *
+ * It is also the answer to the failure Kayki hit: the backstop only ever looked at `mus.audio`, so a
+ * YouTube track had no safety net at all and rode entirely on one event firing. */
+function tblMusicOver() {
+  const now = tblMusicNow();
+  if (!now || now.loop) return false;
+  if (now.kind === "youtube") {
+    if (!mus.yt || !mus.ytOn) return false;
+    try {
+      if (mus.yt.getPlayerState && mus.yt.getPlayerState() === 0) return true;   // 0 is ENDED
+      const dur = Number(mus.yt.getDuration && mus.yt.getDuration()) || 0;
+      const at = Number(mus.yt.getCurrentTime && mus.yt.getCurrentTime()) || 0;
+      return dur > 0 && at > 0 && at >= dur - 0.6;
+    } catch { return false; }
+  }
+  const el = mus.audio;
+  if (!el) return false;
+  if (el.ended) return true;
+  const dur = Number(el.duration);
+  return !!dur && isFinite(dur) && el.currentTime >= dur - 0.25;
+}
+
 /* A TICK, BECAUSE NOTHING ELSE FIRES. Everything else in this app is driven by the table's stream, and a
    track playing quietly for nine minutes produces no events at all — so a device that drifted, or that
    was asleep, would never be corrected. Five seconds is far below anything a room can hear and costs one
@@ -363,15 +414,11 @@ function tblMusicWatch() {
     const now = tblMusicNow();
     if (!now || !now.playing || !tblMusicAllowed()) return;
     try { tblMusicApply(); } catch { /* the next tick will try again */ }
-    /* A BACKSTOP FOR THE ADVANCE. `ended` is the fast path and YouTube has its own; this catches the
-       cases neither sees — a tab that was asleep, a stream that stopped without firing anything. */
-    if (tbl.role === "dm" && !now.loop && tblMusicQueue().length) {
-      const el = mus.audio;
-      const over = el && el.duration && isFinite(el.duration)
-        && tblMusicWhere(now) >= el.duration - 0.25;
-      if (over) tblMusicNext().catch(() => {});
-    }
-  }, 5000);
+    /* THE BACKSTOP, and for YouTube it is the only thing there is that this app controls. The events
+       are the fast path; this catches every case they miss — a tab that was asleep, a player rebuilt
+       mid-track, a stream that stopped without saying so, an event that simply never came. */
+    if (tbl.role === "dm" && tblMusicQueue().length && tblMusicOver()) tblMusicNext().catch(() => {});
+  }, 2500);
 }
 
 function tblMusicSilence() {
@@ -732,6 +779,7 @@ function musicPanelHTML() {
   const now = tblMusicNow();
   const vol = Math.round(tblMusicVol() * 100);
   const muted = tblMusicMuted();
+  const silent = tblMusicSilent();
   const kind = tbl.ui.musicKind || "repo";
   const tracks = tblMusicTracks();
   const shelf = tblMusicData().tracks || {};
@@ -759,7 +807,7 @@ function musicPanelHTML() {
         <button class="btn-quiet ${muted ? "on" : ""}" data-tbl="music-mute">${muted ? "Unmute" : "Mute"}</button>
         <input id="music-vol" class="music-slider" type="range" min="0" max="100" step="1"
           value="${esc(vol)}" aria-label="Volume" />
-        <span class="music-pct">${muted ? "muted" : esc(vol) + "%"}</span>
+        <span class="music-pct">${silent ? "silent" : esc(vol) + "%"}</span>
       </div>
     </section>`;
 

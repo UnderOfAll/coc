@@ -2664,6 +2664,39 @@ click($('[data-tbl="music-end"][data-val="next"]'));
 await until(async () => ((await aget(`CocLive.get("tables/482910/music/now")`)) || {}).loop === false);
 ok(true, "and back again");
 
+/* HALF BY DEFAULT, AND SILENT MEANS SILENT.
+   `localStorage.getItem` answers null when nothing is stored and `Number(null)` is 0, which passed the
+   range check — so every device that had never touched the slider was handed a volume of ZERO. A whole
+   table of first-time devices would have heard nothing while the panel said it was working. */
+peek(`localStorage.removeItem("coc:tbl:music:vol"); localStorage.removeItem("coc:tbl:music:mute");`);
+ok(peek(`tblMusicVol()`) === 0.5, "a device that has never touched the slider starts at half, not at zero");
+ok(peek(`tblMusicSilent()`) === false, "and is not silent");
+peek(`tblMusicSetVol(0)`);
+ok(peek(`tblMusicSilent()`) === true, "the slider at the bottom counts as silence, not as very quiet");
+peek(`paintSide();`);
+ok(/silent/.test($("#tool").textContent), "and the panel says silent rather than 0%");
+peek(`tblMusicSetVol(0.5)`);
+ok(peek(`tblMusicSilent()`) === false, "moving it off the bottom brings it back");
+
+/* WHETHER A TRACK HAS FINISHED IS THE PLAYER'S TO SAY, NEVER THE CLOCK'S. YouTube may put an advert in
+   front of the music, and then the player is twenty seconds behind the wall clock: ending on the clock
+   would cut the last twenty seconds off, on one device, and skip ahead of everybody else. */
+peek(`CocLive.put("tables/482910/music/now", { kind: "youtube", src: "abc", title: "Y", playing: true,
+  pos: 0, at: Date.now() - 600000, loop: false, gen: 500 });`);
+await wait(150);
+peek(`mus.yt = { getPlayerState: () => 1, getDuration: () => 300, getCurrentTime: () => 12 }; mus.ytOn = true;`);
+ok(peek(`tblMusicOver()`) === false,
+  "ten minutes on the clock but twelve seconds into the player is NOT finished");
+peek(`mus.yt.getCurrentTime = () => 299.8;`);
+ok(peek(`tblMusicOver()`) === true, "and the end of the player's own track is");
+peek(`mus.yt.getCurrentTime = () => 12; mus.yt.getPlayerState = () => 0;`);
+ok(peek(`tblMusicOver()`) === true, "as is the player saying so itself");
+peek(`CocLive.put("tables/482910/music/now/loop", true);`);
+await wait(150);
+ok(peek(`tblMusicOver()`) === false, "a track on repeat never finishes, so nothing can follow it");
+peek(`mus.yt = null; mus.ytOn = false; CocLive.put("tables/482910/music/now", null);`);
+await wait(150);
+
 /* THE VOLUME IS THIS DEVICE'S AND NEVER GOES NEAR THE DATABASE — a table where the DM's slider moved
    everybody's is a table where nobody can hear their own game. */
 peek(`paintSide();`);

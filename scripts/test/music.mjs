@@ -100,7 +100,7 @@ async function enter(page, asDm) {
 const state = (page) => page.evaluate(() => {
   const a = document.querySelector("#vtt-audio");
   return a ? { src: !!a.src, paused: a.paused, t: +a.currentTime.toFixed(2), vol: +a.volume.toFixed(2),
-               ready: a.readyState } : null;
+               muted: a.muted, ready: a.readyState } : null;
 });
 
 console.log("\n— MUSIC IN A REAL BROWSER —");
@@ -143,6 +143,17 @@ await pl.evaluate(() => { tbl.ui.panel = "music"; paintSide(); tblMusicSetVol(0.
 await wait(400);
 ok((await state(pl)).vol < 0.2, "a player's volume applies to their own audio");
 ok((await state(dm)).vol > 0.4, "and does not touch anybody else's");
+
+/* THE BOTTOM OF THE SLIDER IS SILENCE, not "very quiet". Kayki: "putting the sound on 0% doesnt put it
+   mute, just really low sound." Measured on both players, because they fail differently and only one of
+   them was at fault. */
+await pl.evaluate(() => tblMusicSetVol(0));
+await wait(300);
+const hushed = await state(pl);
+ok(hushed.vol === 0 && hushed.muted === true, "at the bottom the audio element is muted, not merely quiet");
+await pl.evaluate(() => tblMusicSetVol(0.5));
+await wait(200);
+ok((await state(pl)).muted === false, "and comes back off the bottom");
 
 await dm.evaluate(() => document.querySelector('[data-tbl="music-pause"]').click());
 await wait(1200);
@@ -199,6 +210,21 @@ const yt = await dm.evaluate(() => ({
 ok(yt.frame, "a YouTube track builds its player");
 ok(yt.wide <= 1, "off-screen and one pixel, so nobody sees a video");
 ok(yt.audioPaused !== false, "and the other player is stopped rather than left singing under it");
+/* AND YOUTUBE WILL NOT GO TO ZERO IF YOU ASK IT NICELY. Asked for setVolume(0) it reports back 5 — this
+   is the actual bug Kayki heard, and the only thing that silences it is its own mute(). */
+const ytVol = async (v) => {
+  await dm.evaluate((x) => tblMusicSetVol(x), v);
+  await wait(400);
+  return dm.evaluate(() => { try { return { vol: mus.yt.getVolume(), muted: mus.yt.isMuted() }; }
+    catch { return null; } });
+};
+const loud = await ytVol(1);
+ok(loud && loud.vol === 100 && loud.muted === false, "YouTube takes a volume");
+const off = await ytVol(0);
+ok(off && off.muted === true, `and the bottom of the slider genuinely mutes it (it reports vol ${off && off.vol})`);
+const back = await ytVol(0.5);
+ok(back && back.muted === false && back.vol === 50,
+  "and coming off the bottom unmutes it AND restores the level — unMute must run before setVolume, or it puts the old one back");
 
 /* DRAGGING A TRACK INTO A FOLDER. Pointer events, because HTML5 drag-and-drop does not exist under a
    finger and half this table is played on a phone — the board learned that the hard way. jsdom has no

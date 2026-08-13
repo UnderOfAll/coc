@@ -1069,7 +1069,7 @@ document.addEventListener("input", (e) => {
     tblMusicSetVol(Number(evTarget(e).value) / 100);
     const pct = $(".music-pct");
     // Repainting the panel would take the slider out from under the finger dragging it.
-    if (pct) pct.textContent = tblMusicMuted() ? "muted" : Math.round(tblMusicVol() * 100) + "%";
+    if (pct) pct.textContent = tblMusicSilent() ? "silent" : Math.round(tblMusicVol() * 100) + "%";
     return;
   }
   // The tracker saves itself, and the figure on the board follows the two things it can show.
