@@ -818,13 +818,30 @@ function musicPanelHTML() {
       <button class="btn-quiet" data-tbl="music-drop" data-val="${esc(id)}">Delete</button>
     </div>`;
 
+  /* DELETING A TRACK ASKS FOR THE WORD, the same as deleting a creature or a character or a table. It
+     sits one button from Queue on a crowded row, and for a track uploaded from a device it is the only
+     copy there is — the bytes go with it. */
+  const dropRow = ([id, t]) => `<div class="scene-row danger armed">
+      <span class="muted">Delete <strong>${esc(t.title || "Untitled")}</strong>${
+        t.kind === "file" ? " — the file itself, which is the only copy on this table" : ""}.
+        Type <strong>CONFIRM</strong>.</span>
+      <div class="danger-row">
+        <input id="music-drop-confirm" class="text" type="text" autocomplete="off" spellcheck="false"
+          autocapitalize="characters" autocorrect="off" placeholder="CONFIRM"
+          value="${esc(tbl.ui.musicDropText || "")}" />
+        <button class="btn btn-hot" data-tbl="music-drop-go" data-val="${esc(id)}"
+          ${tbl.ui.musicDropText === "CONFIRM" ? "" : "disabled"}>Delete permanently</button>
+        <button class="btn-quiet" data-tbl="music-drop-cancel">Cancel</button>
+      </div>
+    </div>`;
+
   const group = (fid, name, extra) => {
     const rows = tblMusicGroup(fid);
     return `<div class="mus-folder" data-mus-folder="${esc(fid)}">
       <p class="panel-sub mus-folder-head">${esc(name)}
         <span class="muted">${esc(rows.length)} track${rows.length === 1 ? "" : "s"}</span>${extra || ""}</p>
       <div class="scene-list">${rows.length
-        ? rows.map((r, i) => row(r, i, rows, fid)).join("")
+        ? rows.map((r, i) => (tbl.ui.musicDropArm === r[0] ? dropRow(r) : row(r, i, rows, fid))).join("")
         : `<p class="muted mus-empty">Empty — drag a track onto this heading, or use its Move list.</p>`}</div>
       ${rows.length ? `<button class="btn-quiet" data-tbl="music-q-folder" data-val="${esc(fid)}">Queue all ${rows.length}</button>` : ""}
     </div>`;

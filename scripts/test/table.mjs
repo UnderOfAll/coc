@@ -2739,10 +2739,31 @@ ok(!/Grinsel/.test($("#tool").textContent) || /playing/.test($("#tool").textCont
   "nor the shelf it is drawn from");
 peek(`tbl.role = "dm"; paintSide();`);
 ok(/Up next/.test($("#tool").textContent), "the DM does see it");
-/* DELETING A QUEUED TRACK TAKES IT OUT OF THE QUEUE, rather than leaving an id that plays nothing. */
+/* DELETING A TRACK ASKS FOR THE WORD, the same as a creature, a character and a table. It sits one
+   button from Queue on a crowded row, and for an uploaded track the bytes go with it. */
 click($(`[data-tbl="music-queue"][data-val="${tid2}"]`));
 await until(async () => ((await aget(`CocLive.get("tables/482910/music/queue")`)) || []).length === 2);
+const shelfWas = Object.keys(await aget(`CocLive.get("tables/482910/music/tracks")`)).length;
 click($(`[data-tbl="music-drop"][data-val="${tid2}"]`));
+await wait(120);
+ok(Object.keys(await aget(`CocLive.get("tables/482910/music/tracks")`)).length === shelfWas,
+  "one press on a track's Delete deletes nothing");
+ok(!!$("#music-drop-confirm"), "it asks for the word instead");
+ok($('[data-tbl="music-drop-go"]').disabled === true, "with the button locked until it is typed");
+type($("#music-drop-confirm"), "yes");
+ok($('[data-tbl="music-drop-go"]').disabled === true, "and the wrong word does not unlock it");
+type($("#music-drop-confirm"), "CONFIRM");
+ok($('[data-tbl="music-drop-go"]').disabled === false, "CONFIRM unlocks it");
+ok($("#music-drop-confirm").value === "CONFIRM", "without the panel redrawing under the keyboard");
+// Cancel puts the row back and keeps the track.
+click($('[data-tbl="music-drop-cancel"]'));
+await wait(120);
+ok(!$("#music-drop-confirm") && !!$(`[data-tbl="music-drop"][data-val="${tid2}"]`),
+  "Cancel puts the row back with the track still on it");
+click($(`[data-tbl="music-drop"][data-val="${tid2}"]`));
+await wait(120);
+type($("#music-drop-confirm"), "CONFIRM");
+click($('[data-tbl="music-drop-go"]'));
 await until(async () => Object.keys((await aget(`CocLive.get("tables/482910/music/tracks")`)) || {}).length === 1);
 peek(`paintSide();`);
 ok(peek(`tblMusicQueue().length`) === 1 && peek(`tblMusicQueue()[0]`) === tid,
@@ -2850,6 +2871,9 @@ ok(true, "Stop takes it off every device");
 click($(`[data-tbl="music-play"][data-val="${tid}"]`));
 await until(async () => !!(await aget(`CocLive.get("tables/482910/music/now")`)));
 click($(`[data-tbl="music-drop"][data-val="${tid}"]`));
+await wait(120);
+type($("#music-drop-confirm"), "CONFIRM");
+click($('[data-tbl="music-drop-go"]'));
 await until(async () => (await aget(`CocLive.get("tables/482910/music/tracks")`)) === null);
 ok((await aget(`CocLive.get("tables/482910/music/now")`)) === null,
   "deleting the track that is playing stops it, rather than leaving the room chasing something gone");

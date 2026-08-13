@@ -112,7 +112,7 @@ function tblFresh(code, role) {
     inkNew: new Set(),      // the pieces it created, so they are not drawn twice on the way
     centredOnMe: false,     // the camera has been aimed at this player's own figure, once
     cameraIsYours: false,   // …and after that, only you move it
-    ui: { panel: "", error: "", musicKind: "repo", musicRename: "" },
+    ui: { panel: "", error: "", musicKind: "repo", musicRename: "", musicDropArm: "", musicDropText: "" },
   };
 }
 
@@ -1055,6 +1055,15 @@ document.addEventListener("input", (e) => {
     if (go) go.disabled = tbl.ui.closeText !== tbl.code;
     return;
   }
+  /* NO REPAINT WHILE THE WORD IS BEING TYPED. Rebuilding the panel swaps this input out from under a
+     phone keyboard, which drops it back to lowercase on every letter — the character sheet paid for that
+     lesson once already. Only the button's state changes as you type. */
+  if (evTarget(e).id === "music-drop-confirm") {
+    tbl.ui.musicDropText = String(evTarget(e).value || "");
+    const go = $('[data-tbl="music-drop-go"]');
+    if (go) go.disabled = tbl.ui.musicDropText !== "CONFIRM";
+    return;
+  }
   // Volume: this device's, never written to the table, and applied to whatever is playing as it moves.
   if (evTarget(e).id === "music-vol") {
     tblMusicSetVol(Number(evTarget(e).value) / 100);
@@ -1367,7 +1376,13 @@ document.addEventListener("click", (e) => {
   else if (act === "music-resume") tblMusicResume().catch(tblFail);
   else if (act === "music-stop") tblMusicStop().catch(tblFail);
   else if (act === "music-end") tblMusicWhenEnds(val).catch(tblFail);
-  else if (act === "music-drop") tblMusicDropTrack(val).catch(tblFail);
+  else if (act === "music-drop") { tbl.ui.musicDropArm = val; tbl.ui.musicDropText = ""; paintSide(); }
+  else if (act === "music-drop-cancel") { tbl.ui.musicDropArm = ""; tbl.ui.musicDropText = ""; paintSide(); }
+  else if (act === "music-drop-go") {
+    if (tbl.ui.musicDropText !== "CONFIRM" || tbl.ui.musicDropArm !== val) return;
+    tbl.ui.musicDropArm = ""; tbl.ui.musicDropText = "";
+    tblMusicDropTrack(val).catch(tblFail);
+  }
   else if (act === "music-next") tblMusicNext().catch(tblFail);
   else if (act === "music-queue") tblMusicQueueAdd(val).catch(tblFail);
   else if (act === "music-q-up") tblMusicQueueMove(val, -1).catch(tblFail);
