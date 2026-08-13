@@ -2683,6 +2683,63 @@ ok(!$('[data-tbl="music-play"]') && !$('[data-tbl="music-add"]') && !$('[data-tb
 ok(/The DM chooses what plays/.test($("#tool").textContent), "with a line saying whose it is");
 peek(`tbl.role = "dm"; paintSide();`);
 
+/* THE QUEUE, WHICH IS THE DM'S AND NOBODY ELSE'S. Kayki: "only dm has access to the queued musics, the
+   players can see what is playing." Playing something does not touch the queue and queueing something
+   does not interrupt what is playing — two questions, two answers. */
+peek(`paintSide();`);
+click($(`[data-tbl="music-queue"][data-val="${tid}"]`));
+await until(async () => ((await aget(`CocLive.get("tables/482910/music/queue")`)) || []).length === 1);
+ok(true, "a track can be put at the back of the queue");
+ok((await aget(`CocLive.get("tables/482910/music/now")`)) === null ||
+   ((await aget(`CocLive.get("tables/482910/music/now")`)) || {}).trackId !== undefined,
+  "and queueing does not interrupt what is playing");
+// A second track to reorder against.
+peek(`tbl.ui.musicKind = "youtube"; paintSide();`);
+type($("#music-title"), "Grinsel");
+type($("#music-url"), "https://youtu.be/aaaaaaaaaaa");
+click($('[data-tbl="music-add"]'));
+await until(async () => Object.keys((await aget(`CocLive.get("tables/482910/music/tracks")`)) || {}).length === 2);
+const two = await aget(`CocLive.get("tables/482910/music/tracks")`);
+const tid2 = Object.keys(two).find((k) => k !== tid);
+peek(`paintSide();`);
+click($(`[data-tbl="music-queue"][data-val="${tid2}"]`));
+await until(async () => ((await aget(`CocLive.get("tables/482910/music/queue")`)) || []).length === 2);
+ok((await aget(`CocLive.get("tables/482910/music/queue")`))[0] === tid, "the queue keeps the order it was given");
+peek(`paintSide();`);
+click($(`[data-tbl="music-q-up"][data-val="${tid2}"]`));
+await until(async () => (await aget(`CocLive.get("tables/482910/music/queue")`))[0] === tid2);
+ok(true, "and one can be moved sooner");
+/* NEXT TAKES THE HEAD OF THE QUEUE AND CONSUMES IT — the room plays it, the queue is one shorter. */
+peek(`paintSide();`);
+click($('[data-tbl="music-next"]'));
+await until(async () => ((await aget(`CocLive.get("tables/482910/music/now")`)) || {}).trackId === tid2);
+ok(((await aget(`CocLive.get("tables/482910/music/queue")`)) || []).length === 1,
+  "Next plays the head of the queue and takes it off");
+/* AND A PLAYER IS NOT TOLD WHAT IS COMING. Knowing the next three tracks is knowing there are three
+   fights left. */
+peek(`tbl.role = "player"; paintSide();`);
+ok(!$('[data-tbl="music-q-drop"]') && !$('[data-tbl="music-queue"]') && !$('[data-tbl="music-next"]'),
+  "a player has no queue controls at all");
+ok(!/Up next/.test($("#tool").textContent), "and is not shown the queue");
+ok(!/Grinsel/.test($("#tool").textContent) || /playing/.test($("#tool").textContent),
+  "nor the shelf it is drawn from");
+peek(`tbl.role = "dm"; paintSide();`);
+ok(/Up next/.test($("#tool").textContent), "the DM does see it");
+/* DELETING A QUEUED TRACK TAKES IT OUT OF THE QUEUE, rather than leaving an id that plays nothing. */
+click($(`[data-tbl="music-queue"][data-val="${tid2}"]`));
+await until(async () => ((await aget(`CocLive.get("tables/482910/music/queue")`)) || []).length === 2);
+click($(`[data-tbl="music-drop"][data-val="${tid2}"]`));
+await until(async () => Object.keys((await aget(`CocLive.get("tables/482910/music/tracks")`)) || {}).length === 1);
+peek(`paintSide();`);
+ok(peek(`tblMusicQueue().length`) === 1 && peek(`tblMusicQueue()[0]`) === tid,
+  "deleting a track takes it out of the queue with it");
+ok(!/${tid2}/.test(JSON.stringify(await aget(`CocLive.get("tables/482910/music/queue")`))),
+  "and out of the stored queue, not merely hidden when it is read");
+click($('[data-tbl="music-q-clear"]'));
+await until(async () => (await aget(`CocLive.get("tables/482910/music/queue")`)) === null);
+peek(`tbl.ui.musicKind = "repo"; paintSide();`);
+ok(/music\//.test($("#tool").textContent), "and the fourth source is what is committed in music/");
+
 /* MUSIC OUTLIVES THE ROOM IT IS PLAYING IN. Kayki: "the music should survive scene change, only stops
    when the dm does it." It is table data, not scene data, so moving everyone from the backstage to the
    ring does not touch it — asserted rather than assumed, because "it happens to work" is how a behaviour

@@ -44,6 +44,7 @@ const mus = {
   ytOn: false,      // …and whether it is ready to be told anything
   ytWant: null,     // what to play the moment it is
   key: "",          // what this device currently has loaded, so it reloads only on a real change
+  advancing: false, // a queue advance is in flight; the tick and the `ended` event must not race
   blocked: false,   // the browser refused to start — it needs a gesture
   msg: "",
 };
@@ -52,6 +53,18 @@ const mus = {
 
 function tblMusicData() { return (tbl && tbl.data && tbl.data.music) || {}; }
 function tblMusicNow() { return tblMusicData().now || null; }
+/* UP NEXT, AND IT IS THE DM'S ALONE. Kayki: "only dm has access to the queued musics, the players can
+   see what is playing." So the queue lives in the table (it has to — the DM may run the session from a
+   different device tomorrow) but nothing renders it for anybody else. It is a list of TRACK IDS, and the
+   database hands an array back as an object the moment it has a hole in it, so it is normalised here
+   rather than at every call site. */
+function tblMusicQueue() {
+  const q = tblMusicData().queue;
+  const list = Array.isArray(q) ? q : Object.values(q || {});
+  const shelf = tblMusicData().tracks || {};
+  // A track deleted off the shelf must not sit in the queue as an id that plays nothing.
+  return list.filter((id) => id && shelf[id]);
+}
 function tblMusicTracks() {
   return Object.entries(tblMusicData().tracks || {})
     .sort((a, b) => (a[1].at || 0) - (b[1].at || 0));
@@ -61,6 +74,9 @@ function tblMusicTracks() {
 function tblMusicSrc(t) {
   if (!t) return "";
   if (t.kind === "file") return (tblMusicData().blobs || {})[t.src] || "";
+  // A committed track is named by its file and lives under music/ — resolved against the page, so it
+  // works the same on the live site and on a local server.
+  if (t.kind === "repo") return "music/" + String(t.src || "");
   return t.src || "";
 }
 
@@ -111,6 +127,17 @@ function tblMusicPushVolume() {
     if (mus.audio) { mus.audio.volume = v; mus.audio.muted = tblMusicMuted(); }
     if (mus.yt && mus.ytOn) { mus.yt.setVolume(Math.round(v * 100)); if (tblMusicMuted()) mus.yt.mute(); else mus.yt.unMute(); }
   } catch { /* a player that has gone away is not an error worth showing anybody */ }
+}
+
+/* WHAT IS COMMITTED IN music/. The app cannot list a directory over HTTP, so the build writes the
+   listing and this reads it — exactly as the repo maps work. Fetched once per session, lazily. */
+let tblRepoMusic = null;
+async function tblLoadRepoMusic() {
+  try {
+    const res = await fetch("music/index.json?cb=" + Date.now());
+    tblRepoMusic = res.ok ? (await res.json()) : [];
+  } catch { tblRepoMusic = []; }
+  if (tbl && tbl.ui.panel === "music") paintSide();
 }
 
 /* ---------------------------------------------------------------- YouTube, audio only */
@@ -170,6 +197,12 @@ function tblMusicMakeYT() {
           if (mus.ytWant) { const w = mus.ytWant; mus.ytWant = null; tblMusicDriveYT(w.id, w.at, w.play); }
         },
         onError: () => { mus.msg = "That video will not play — it may be blocked from being embedded."; paintSide(); },
+        onStateChange: (e) => {
+          // 0 is ENDED. Same rule as the audio element: the chair advances, nobody else.
+          const state = tblMusicNow();
+          if (e && e.data === 0 && tbl && tbl.role === "dm" && state && !state.loop
+              && tblMusicQueue().length) tblMusicNext().catch(() => {});
+        },
       },
     });
   } catch { mus.yt = null; }
@@ -227,6 +260,11 @@ function tblMusicApply() {
        who joined ten minutes into a track started at the beginning while everyone else was ten minutes
        ahead. Found in a real browser; jsdom has no media clock and cannot see it. The seek waits for the
        metadata, and reads the position AGAIN at that moment rather than using the stale one. */
+    /* THE END OF A TRACK IS THE QUEUE'S CUE, and the DM's browser is the only one that acts on it —
+       everybody else finds out the ordinary way, by `now` changing under them. */
+    mus.audio.addEventListener("ended", () => {
+      if (tbl && tbl.role === "dm" && tblMusicQueue().length) tblMusicNext().catch(() => {});
+    });
     mus.audio.addEventListener("loadedmetadata", () => {
       const state = tblMusicNow();
       if (!state) return;
@@ -267,6 +305,14 @@ function tblMusicWatch() {
     const now = tblMusicNow();
     if (!now || !now.playing || !tblMusicAllowed()) return;
     try { tblMusicApply(); } catch { /* the next tick will try again */ }
+    /* A BACKSTOP FOR THE ADVANCE. `ended` is the fast path and YouTube has its own; this catches the
+       cases neither sees — a tab that was asleep, a stream that stopped without firing anything. */
+    if (tbl.role === "dm" && !now.loop && tblMusicQueue().length) {
+      const el = mus.audio;
+      const over = el && el.duration && isFinite(el.duration)
+        && tblMusicWhere(now) >= el.duration - 0.25;
+      if (over) tblMusicNext().catch(() => {});
+    }
   }, 5000);
 }
 
@@ -331,12 +377,67 @@ async function tblMusicToggleLoop() {
   if (!now) return;
   await tblMusicSet({ loop: !now.loop, pos: tblMusicWhere(now), at: Date.now() });
 }
+/* PUT ONE AT THE BACK OF THE QUEUE. Playing something does not touch the queue and queueing something
+   does not interrupt what is playing — they are two different questions and the panel asks both. */
+async function tblMusicQueueAdd(id) {
+  if (tbl.role !== "dm") return;
+  if (!(tblMusicData().tracks || {})[id]) return;
+  await CocLive.put(tblPath("music/queue"), tblMusicQueue().concat(id));
+  paintSide();
+}
+async function tblMusicQueueMove(id, by) {
+  if (tbl.role !== "dm") return;
+  const q = tblMusicQueue();
+  const at = q.indexOf(id);
+  const to = at + Number(by);
+  if (at < 0 || to < 0 || to >= q.length) return;
+  q.splice(to, 0, q.splice(at, 1)[0]);
+  await CocLive.put(tblPath("music/queue"), q);
+  paintSide();
+}
+/* By POSITION, not by id: the same track may sit in the queue twice, and removing "the third one"
+   should remove the third one rather than the first that happens to match. */
+async function tblMusicQueueDrop(at) {
+  if (tbl.role !== "dm") return;
+  const q = tblMusicQueue();
+  const i = Number(at);
+  if (!(i >= 0 && i < q.length)) return;
+  q.splice(i, 1);
+  await CocLive.put(tblPath("music/queue"), q.length ? q : null);
+  paintSide();
+}
+async function tblMusicQueueClear() {
+  if (tbl.role !== "dm") return;
+  await CocLive.put(tblPath("music/queue"), null);
+  paintSide();
+}
+
+/* THE NEXT ONE, and only the DM's browser ever calls it. Five devices all noticing the end of a track
+   and all writing the next one is five different tracks starting at once; the chair decides, everybody
+   else follows `now` as they already do. Skips ids whose track has since been deleted rather than
+   stalling the room on one. */
+async function tblMusicNext() {
+  if (tbl.role !== "dm" || mus.advancing) return;
+  mus.advancing = true;
+  try {
+    const q = tblMusicQueue();
+    if (!q.length) { await tblMusicStop(); return; }
+    const [head, ...rest] = q;
+    await CocLive.put(tblPath("music/queue"), rest.length ? rest : null);
+    await tblMusicPlay(head);
+  } finally { mus.advancing = false; }
+}
+
 async function tblMusicDropTrack(id) {
   if (tbl.role !== "dm") return;
   const t = (tblMusicData().tracks || {})[id];
   const now = tblMusicNow();
   if (now && now.trackId === id) await tblMusicStop();
   await CocLive.del(tblPath("music/tracks/" + id));
+  /* And out of the queue. Reading it already filters ids with no track behind them, so this is not
+     correctness — it is not leaving dead ids in the database to accumulate for the life of the room. */
+  const left = tblMusicQueue().filter((q) => q !== id);
+  if (left.length !== tblMusicQueue().length) await CocLive.put(tblPath("music/queue"), left.length ? left : null);
   // And its bytes, if nothing else points at them.
   if (t && t.kind === "file" && t.src) {
     const stillUsed = Object.entries(tblMusicData().tracks || {})
@@ -391,6 +492,22 @@ async function tblMusicAdd() {
   await tblMusicSaveTrack({ kind: "file", src: key, title: title || file.name.replace(/\.[^.]+$/, "") });
 }
 
+/* A COMMITTED TRACK NEEDS NO FORM. There is nothing to validate — the build listed it, so it exists —
+   and the filename is the name, which is why the README asks for filenames a DM can pick from. */
+async function tblMusicAddRepo(file) {
+  if (tbl.role !== "dm" || !file) return;
+  await tblMusicSaveTrack({ kind: "repo", src: file, title: file.replace(/\.[^.]+$/, "") });
+}
+async function tblMusicAddAllRepo() {
+  if (tbl.role !== "dm") return;
+  for (const f of tblRepoMusicLeft()) {
+    await CocLive.push(tblPath("music/tracks"),
+      { at: Date.now(), kind: "repo", src: f, title: f.replace(/\.[^.]+$/, "") });
+  }
+  tblMusicSay("Added.", " good");
+  paintSide();
+}
+
 async function tblMusicSaveTrack(track) {
   await CocLive.push(tblPath("music/tracks"), Object.assign({ at: Date.now() }, track));
   tblMusicSay("Added.", " good");
@@ -402,23 +519,54 @@ async function tblMusicSaveTrack(track) {
 /* ---------------------------------------------------------------- the panel */
 
 const TBL_MUSIC_KINDS = [
+  ["repo", "From the repo", "a file committed into music/ — no cap, loads fast"],
   ["youtube", "YouTube", "a link — the audio only, no video on screen"],
   ["link", "A direct link", "an address ending .mp3, .ogg or .m4a"],
   ["device", "From this device", `a file, up to ${TBL_MUSIC_MAX / 1048576} MB — everyone downloads it`],
 ];
+const TBL_MUSIC_WORDS = { repo: "in the repo", youtube: "YouTube", link: "a link", file: "the DM's file" };
+
+/* What is committed in music/ and not already on this table's shelf. */
+function tblRepoMusicLeft() {
+  const have = new Set(Object.values(tblMusicData().tracks || {})
+    .filter((t) => t.kind === "repo").map((t) => t.src));
+  return (tblRepoMusic || []).filter((f) => !have.has(f));
+}
+
+function repoMusicHTML() {
+  if (tblRepoMusic === null) {
+    tblLoadRepoMusic();
+    return `<p class="muted">Looking in music/…</p>`;
+  }
+  if (!tblRepoMusic.length) {
+    return `<p class="muted">Nothing in <strong>music/</strong> yet. Commit audio files into that folder
+      at the root of the repo, push, and they appear here for every device — no cap, nothing stored in
+      the database, and they keep working once a browser has them.</p>`;
+  }
+  const left = tblRepoMusicLeft();
+  if (!left.length) return `<p class="muted">Everything in <strong>music/</strong> is already on the
+    shelf above.</p>`;
+  return `<div class="scene-list">${left.map((f) => `<div class="scene-row">
+      <span class="scene-static"><strong>${esc(f.replace(/\.[^.]+$/, ""))}</strong>
+        <span class="muted">${esc(f)}</span></span>
+      <button class="btn-quiet" data-tbl="music-repo-add" data-val="${esc(f)}">Add</button>
+    </div>`).join("")}</div>
+    ${left.length > 1 ? `<button class="btn-quiet" data-tbl="music-repo-all">Add all ${left.length}</button>` : ""}`;
+}
 
 function musicPanelHTML() {
   const now = tblMusicNow();
   const vol = Math.round(tblMusicVol() * 100);
   const muted = tblMusicMuted();
-  const kind = tbl.ui.musicKind || "youtube";
+  const kind = tbl.ui.musicKind || "repo";
   const tracks = tblMusicTracks();
+  const shelf = tblMusicData().tracks || {};
+  const queue = tbl.role === "dm" ? tblMusicQueue() : [];
 
   const nowLine = now
     ? `<p class="music-now"><strong>${esc(now.title || "Untitled")}</strong>
         <span class="muted">${esc(now.playing ? "playing" : "paused")}${now.loop ? " · on a loop" : ""}
-        · ${esc(TBL_MUSIC_KINDS.find(([k]) => k === now.kind) ? (now.kind === "youtube" ? "YouTube"
-          : now.kind === "link" ? "a link" : "the DM's file") : now.kind)}</span></p>`
+        · ${esc(TBL_MUSIC_WORDS[now.kind] || now.kind)}</span></p>`
     : `<p class="muted">Nothing playing.</p>`;
 
   /* THE ONE THING A BROWSER WILL NOT DO WITHOUT BEING ASKED. Shown to everybody who has not yet let this
@@ -441,19 +589,41 @@ function musicPanelHTML() {
       </div>
     </section>`;
 
+  /* A PLAYER IS TOLD WHAT IS PLAYING AND NOTHING ELSE — not the shelf, and not what is coming. Kayki:
+     "only dm has access to the queued musics, the players can see what is playing." Knowing the next
+     three tracks is knowing there are three fights left. */
   if (tbl.role !== "dm") {
     return `<section class="panel"><h2>Music</h2>${nowLine}
       <p class="muted">The DM chooses what plays. How loud it is, is yours.</p></section>${gate}${mine}`;
   }
 
+  const upNext = queue.length
+    ? `<div class="scene-list">${queue.map((id, i) => `<div class="scene-row">
+        <span class="stepper">
+          <button class="step-btn" data-tbl="music-q-up" data-val="${esc(id)}" title="Sooner"
+            ${i === 0 ? "disabled" : ""}>&uarr;</button>
+          <button class="step-btn" data-tbl="music-q-down" data-val="${esc(id)}" title="Later"
+            ${i === queue.length - 1 ? "disabled" : ""}>&darr;</button>
+        </span>
+        <span class="scene-static"><strong>${esc(i + 1)}. ${esc((shelf[id] || {}).title || "Untitled")}</strong>
+          <span class="muted">${esc(TBL_MUSIC_WORDS[(shelf[id] || {}).kind] || "")}</span></span>
+        <button class="btn-quiet" data-tbl="music-q-drop" data-val="${esc(i)}">Remove</button>
+      </div>`).join("")}</div>
+      <button class="btn-quiet" data-tbl="music-q-clear">Empty the queue</button>`
+    : `<p class="muted">Nothing queued. Add tracks below and they play one after another, without you
+        touching anything mid-fight.</p>`;
+
   const list = tracks.length ? `<div class="scene-list">${tracks.map(([id, t]) => `
       <div class="scene-row ${now && now.trackId === id ? "on" : ""}">
         <button class="scene-pick" data-tbl="music-play" data-val="${esc(id)}">
           <strong>${esc(t.title || "Untitled")}</strong>
-          <span class="muted">${esc(t.kind === "youtube" ? "YouTube" : t.kind === "link" ? "a link" : "a file")}</span>
+          <span class="muted">${esc(TBL_MUSIC_WORDS[t.kind] || t.kind)}</span>
         </button>
+        <button class="btn-quiet" data-tbl="music-queue" data-val="${esc(id)}">Queue</button>
         <button class="btn-quiet" data-tbl="music-drop" data-val="${esc(id)}">Delete</button>
-      </div>`).join("")}</div>`
+      </div>`).join("")}</div>
+      <p class="muted">Tapping the name plays it now; <strong>Queue</strong> puts it at the back of the
+        list above. Neither interrupts the other.</p>`
     : `<p class="muted">Nothing saved yet. Add one below and it stays on this table.</p>`;
 
   return `<section class="panel"><h2>Music</h2>
@@ -462,13 +632,19 @@ function musicPanelHTML() {
         ${now ? (now.playing
           ? `<button class="btn" data-tbl="music-pause">Pause</button>`
           : `<button class="btn" data-tbl="music-resume">Play</button>`) : ""}
+        ${queue.length ? `<button class="btn-quiet" data-tbl="music-next">Next &rarr;</button>` : ""}
         ${now ? `<button class="btn-quiet" data-tbl="music-stop">Stop</button>` : ""}
         ${now ? `<button class="chip ${now.loop ? "on" : ""}" data-tbl="music-loop">Loop</button>` : ""}
       </div>
       <p class="muted">Everyone hears it at once. Each device plays its own copy from the source, so
-        somebody joining halfway comes in where the room is.</p>
+        somebody joining halfway comes in where the room is${now && now.loop && queue.length
+          ? ` — though on a loop it never ends, so the queue waits.` : "."}</p>
     </section>
     ${gate}${mine}
+    <section class="panel">
+      <p class="panel-sub">Up next <span class="muted">— yours, nobody else sees it</span></p>
+      ${upNext}
+    </section>
     <section class="panel">
       <p class="panel-sub">This table's tracks</p>
       ${list}
@@ -478,14 +654,15 @@ function musicPanelHTML() {
       <div class="chips">${TBL_MUSIC_KINDS.map(([k, label, note]) => chipTip(
         `<button class="chip ${kind === k ? "on" : ""}" data-tbl="music-kind" data-val="${k}">${esc(label)}</button>`,
         esc(note))).join("")}</div>
+      ${kind === "repo" ? repoMusicHTML() : `
       <label class="field"><span>Name it <span class="muted">— what you will look for mid-fight</span></span>
         <input id="music-title" class="text" type="text" maxlength="60" placeholder="The Midway" /></label>
       ${kind === "device"
         ? `<label class="field"><span>Audio file</span>
             <input id="music-file" class="text" type="file" accept="audio/*" /></label>
            <p class="muted">Up to ${TBL_MUSIC_MAX / 1048576} MB, because it is kept in the table itself and
-             every device downloads it on the way in. For anything longer, put it somewhere with an address
-             and use a link — there is no cap on those.</p>`
+             every device downloads it on the way in. For anything longer, commit it into
+             <strong>music/</strong> instead — there is no cap on those.</p>`
         : `<label class="field"><span>${kind === "youtube" ? "YouTube address" : "Direct address"}</span>
             <input id="music-url" class="text" type="url"
               placeholder="${kind === "youtube" ? "https://www.youtube.com/watch?v=…" : "https://…/track.mp3"}" /></label>
@@ -495,7 +672,7 @@ function musicPanelHTML() {
                  is something this app can do anything about.</p>`
              : `<p class="muted">It has to be the file itself, not a page with a player on it — an address
                  that ends .mp3, .ogg or .m4a.</p>`}`}
-      <button class="btn" data-tbl="music-add">Add it</button>
+      <button class="btn" data-tbl="music-add">Add it</button>`}
       <p id="music-msg" class="save-msg">${esc(mus.msg)}</p>
     </section>`;
 }

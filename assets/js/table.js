@@ -112,7 +112,7 @@ function tblFresh(code, role) {
     inkNew: new Set(),      // the pieces it created, so they are not drawn twice on the way
     centredOnMe: false,     // the camera has been aimed at this player's own figure, once
     cameraIsYours: false,   // …and after that, only you move it
-    ui: { panel: "", error: "", musicKind: "youtube" },
+    ui: { panel: "", error: "", musicKind: "repo" },
   };
 }
 
@@ -1368,6 +1368,14 @@ document.addEventListener("click", (e) => {
   else if (act === "music-stop") tblMusicStop().catch(tblFail);
   else if (act === "music-loop") tblMusicToggleLoop().catch(tblFail);
   else if (act === "music-drop") tblMusicDropTrack(val).catch(tblFail);
+  else if (act === "music-next") tblMusicNext().catch(tblFail);
+  else if (act === "music-queue") tblMusicQueueAdd(val).catch(tblFail);
+  else if (act === "music-q-up") tblMusicQueueMove(val, -1).catch(tblFail);
+  else if (act === "music-q-down") tblMusicQueueMove(val, 1).catch(tblFail);
+  else if (act === "music-q-drop") tblMusicQueueDrop(val).catch(tblFail);
+  else if (act === "music-q-clear") tblMusicQueueClear().catch(tblFail);
+  else if (act === "music-repo-add") tblMusicAddRepo(val).catch(tblFail);
+  else if (act === "music-repo-all") tblMusicAddAllRepo().catch(tblFail);
   else if (act === "scene-add") tblAddScene().catch(tblFail);
   else if (act === "grid-cols") tblNudgeGrid("cols", Number(val)).catch(tblFail);
   else if (act === "grid-rows") tblNudgeGrid("rows", Number(val)).catch(tblFail);

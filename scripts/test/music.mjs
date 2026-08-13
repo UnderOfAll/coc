@@ -31,11 +31,16 @@ function tone(seconds = 90, rate = 8000, hz = 220) {
   return buf;
 }
 const WAV = tone();
+const SHORT = tone(3);        // short enough to end while the test is watching
 
 const TYPES = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css",
                 ".json": "application/json", ".jpg": "image/jpeg", ".wav": "audio/wav" };
 const server = http.createServer((req, res) => {
   const u = decodeURIComponent(req.url.split("?")[0]);
+  if (u === "/short.wav") {
+    res.writeHead(200, { "Content-Type": "audio/wav", "Accept-Ranges": "bytes", "Content-Length": SHORT.length });
+    return res.end(SHORT);
+  }
   if (u === "/tone.wav") {
     /* RANGE REQUESTS, because seeking is the whole thing being tested. A browser asked to jump to 0:07
        fetches those bytes with a Range header; a server that answers 200 with the whole file has told it
@@ -161,6 +166,26 @@ await wait(2000);
 const looped = await state(dm);
 ok(looped && looped.paused === false && looped.t > 25 && looped.t < 45,
   `a loop wraps rather than seeking past the end (${looped && looped.t}s)`);
+
+/* THE QUEUE ADVANCES BY ITSELF WHEN A TRACK ENDS — and only the DM's browser does the advancing. Five
+   devices all noticing the end and all writing the next one is five different tracks starting at once.
+   This is the other thing jsdom cannot see: nothing there ever reaches the end of anything. */
+const ids = await dm.evaluate(async (r, host) => {
+  await CocLive.put(`tables/${r}/music/tracks`, null);
+  const a = await CocLive.push(`tables/${r}/music/tracks`, { kind: "link", src: host + "/short.wav", title: "Short", at: 1 });
+  const b = await CocLive.push(`tables/${r}/music/tracks`, { kind: "link", src: host + "/tone.wav", title: "Long", at: 2 });
+  await CocLive.put(`tables/${r}/music/queue`, [b]);
+  await CocLive.put(`tables/${r}/music/now`, { kind: "link", src: host + "/short.wav", title: "Short",
+    trackId: a, playing: true, pos: 0, at: Date.now(), loop: false, gen: 70 });
+  return { a, b };
+}, ROOM, base);
+await wait(6000);
+const after = await dm.evaluate((r) => CocLive.get(`tables/${r}/music/now`), ROOM);
+ok(after && after.trackId === ids.b, `a finished track hands over to the next in the queue (${after && after.title})`);
+ok((await dm.evaluate((r) => CocLive.get(`tables/${r}/music/queue`), ROOM)) === null,
+  "and the queue is one shorter, not replayed forever");
+const playerHeard = await pl.evaluate((r) => CocLive.get(`tables/${r}/music/now`), ROOM);
+ok(playerHeard && playerHeard.trackId === ids.b, "the player's device followed it without doing the advancing");
 
 /* YOUTUBE BUILDS ITS PLAYER, AND NOBODY SEES A VIDEO. */
 await dm.evaluate((r) => CocLive.put(`tables/${r}/music/now`, {

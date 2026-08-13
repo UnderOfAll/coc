@@ -223,6 +223,21 @@ def build_map_index():
     return files
 
 
+def build_music_index():
+    """List the audio committed into music/ so the table's Music panel can offer it.
+
+    Same trade as the maps, for the same reason: the app cannot list a directory over HTTP, so the build
+    writes the listing out for it. A track served from the repo has no size cap and never goes near the
+    database — which is what makes "download it, drop it in, push" the sane way to run a session's music.
+    """
+    folder = ROOT / "music"
+    folder.mkdir(exist_ok=True)
+    exts = {".mp3", ".ogg", ".m4a", ".opus", ".wav", ".webm"}
+    files = sorted(f.name for f in folder.iterdir() if f.suffix.lower() in exts)
+    (folder / "index.json").write_text(json.dumps(files, indent=2) + "\n", encoding="utf-8")
+    return files
+
+
 def stamp_assets():
     """Stamp a short content hash onto each versioned asset's link in index.html.
 
@@ -290,8 +305,10 @@ def main():
 
     stamped = stamp_assets()
     maps = build_map_index()
+    music = build_music_index()
 
     print(f"maps/index.json written — {len(maps)} map image(s) committed to the repo")
+    print(f"music/index.json written — {len(music)} track(s) committed to the repo")
 
     total = sum(len(v) for v in manifest.values())
     print(f"manifest.json + bundle.json written — {total} files across {len(CATEGORIES)} categories")
