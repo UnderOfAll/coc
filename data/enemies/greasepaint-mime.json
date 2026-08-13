@@ -3,6 +3,7 @@
   "name": "Greasepaint Mime",
   "source": "Circus System",
   "flavor": "White face, black tears, both palms pressed flat against nothing at all — and the nothing holds.",
+  "image": "assets/enemies/greasepaint-mime.jpg",
   "tier": "normal",
   "size": "Medium",
   "kind": "performer",

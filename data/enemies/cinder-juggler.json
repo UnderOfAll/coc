@@ -3,6 +3,7 @@
   "name": "Cinder Juggler",
   "source": "Circus System",
   "flavor": "Six clubs in the air and every one of them alight; the fire has been going round so long it has forgotten how to land.",
+  "image": "assets/enemies/cinder-juggler.jpg",
   "tier": "normal",
   "size": "Medium",
   "kind": "performer",

@@ -3,6 +3,7 @@
   "name": "Rigging Crawler",
   "source": "Circus System",
   "flavor": "A thing of knotted rope and pulley-wheels that lives in the roof of the tent and comes down head first.",
+  "image": "assets/enemies/rigging-crawler.jpg",
   "tier": "normal",
   "size": "Small",
   "kind": "rigging",

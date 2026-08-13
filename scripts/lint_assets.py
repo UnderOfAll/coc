@@ -132,9 +132,21 @@ for label, items in (("unused CSS classes", unused), ("schema fields no renderer
     if items:
         print(f"  note: {len(items)} {label}: {', '.join(items)}")
 
+# 5. an enemy naming a picture in the repo must actually have one. A token whose art was renamed or
+#    deleted fails silently: the figure lands on the board as a blank square and nobody finds out until a
+#    fight is running. A real defect, so it fails the gate rather than printing a note.
+for f in sorted((ROOT / "data/enemies").glob("*.json")):
+    e = json.loads(f.read_text(encoding="utf-8"))
+    img = str(e.get("image") or "")
+    if not img or "://" in img or img.startswith("data:"):
+        continue
+    if not (ROOT / img).exists():
+        errors.append(f"{e.get('id', f.stem)} names art that is not in the repo: {img}")
+
 if errors:
     print("ASSET LINT FAILED:", file=sys.stderr)
     for e in errors:
         print("  -", e, file=sys.stderr)
     sys.exit(1)
+
 print(f"asset lint clean: {len(declared)} CSS classes, {len(defs)} functions across {len(list((ROOT/'assets/js').glob('*.js')))} scripts, no missing styles or dead functions")

@@ -3,6 +3,7 @@
   "name": "The Blindfold",
   "source": "Circus System",
   "flavor": "A knife-thrower with a black band over her eyes and a bandolier that is never empty. She has not missed in eleven years.",
+  "image": "assets/enemies/the-blindfold.jpg",
   "tier": "special",
   "size": "Medium",
   "kind": "performer",

@@ -3,6 +3,7 @@
   "name": "The Ringmaster's Voice",
   "source": "Circus System",
   "flavor": "A tall coated figure with a brass megaphone where its face should be, announcing an act nobody agreed to be in.",
+  "image": "assets/enemies/the-ringmasters-voice.jpg",
   "tier": "special",
   "size": "Medium",
   "kind": "performer",

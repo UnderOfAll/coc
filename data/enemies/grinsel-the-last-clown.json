@@ -3,6 +3,7 @@
   "name": "Grinsel, the Last Clown",
   "source": "Circus System",
   "flavor": "The only one of the company who never took the paint off. He has been doing the same routine to an empty tent for years, and he has finally got an audience.",
+  "image": "assets/enemies/grinsel-the-last-clown.jpg",
   "tier": "boss",
   "size": "Medium",
   "kind": "performer",

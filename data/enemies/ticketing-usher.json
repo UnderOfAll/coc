@@ -3,6 +3,7 @@
   "name": "Ticketing Usher",
   "source": "Circus System",
   "flavor": "A thin figure in a moth-eaten uniform, still checking stubs for a show that ended a long time ago.",
+  "image": "assets/enemies/ticketing-usher.jpg",
   "tier": "normal",
   "size": "Medium",
   "kind": "performer",

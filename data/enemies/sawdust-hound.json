@@ -3,6 +3,7 @@
   "name": "Sawdust Hound",
   "source": "Circus System",
   "flavor": "A ring dog gone feral, coat matted grey with sawdust, ribs like tent poles under the fur.",
+  "image": "assets/enemies/sawdust-hound.jpg",
   "tier": "normal",
   "size": "Medium",
   "kind": "beast",

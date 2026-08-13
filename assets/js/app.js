@@ -1435,6 +1435,9 @@ function enemyInitMod(e) {
 function renderEnemy(e) {
   const list = (arr) => (Array.isArray(arr) && arr.length) ? arr.join(", ") : "";
   return head(e.name, e.flavor) +
+    // The same picture the figure on the board wears, so the card and the thing on the map are the same
+    // creature to look at. Behind the DM chair, like the rest of this — a bestiary is not the compendium.
+    (e.image ? `<img class="figure-art figure-thumb" src="${esc(e.image)}" alt="" />` : "") +
     `<div class="detail-grid">
       ${stat("Armor Class", e.ac)}
       ${stat("Hit Points", e.hp + (e.hpDice ? ` (${e.hpDice})` : ""))}

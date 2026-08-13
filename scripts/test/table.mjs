@@ -2216,6 +2216,8 @@ ok(peek(`tblEnemies().length`) === 0, "so a second DM starts with an empty besti
    the exact work this app exists to save, and until now the DM's panel said so in a note apologising for
    itself. One press drops the creature with its hit points, its size and its speed already right. */
 peek(`localStorage.setItem("coc:dm:last", COC_BESTIARY_CODES[0]); paintSide();`);
+ok(peek(`tblShippedEnemies().every(e => /^assets\\/enemies\\/.+\\.jpg$/.test(e.image || ""))`),
+  "every authored creature carries its own token art");
 ok($$('[data-tbl="bestiary"]').length >= 9,
   `every enemy is one press away for its owner (${$$('[data-tbl="bestiary"]').length})`);
 /* AND THE ONES THIS DM HAS BUILT — which are that code's own, and travel with it rather than with the

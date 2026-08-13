@@ -27,6 +27,10 @@
       "type": "string",
       "description": "One line: what it looks like across a dark ring. This is the first thing a DM reads out."
     },
+    "image": {
+      "type": "string",
+      "description": "Top-down token art: a path in the repo (assets/enemies/<id>.jpg) or a URL. The figure on the board and the picture on the card both read it."
+    },
     "tier": {
       "type": "string",
       "enum": [
