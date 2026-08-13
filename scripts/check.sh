@@ -19,6 +19,10 @@
 #   8. npm run test:cross  — the SAME board in every engine this machine can run: real Firefox, real
 #                           WebKit (Safari) and real Chromium, plus a Pixel and an iPhone. This is the step
 #                           that would have caught the native-drag bug that took five reports.
+#   9. npm run test:music  — REAL Chromium, two devices: the audio actually loads and plays, a device
+#                            joining halfway lands where the room already is, a finished track is not
+#                            restarted, a loop wraps, and each device's volume is its own. jsdom has no
+#                            media clock at all, so every one of those passes there on a broken build.
 #   7. npm run test:board  — REAL Chromium on the table: a finger drags a token, two fingers pinch,
 #                           the wheel keeps the square under the cursor, and an upload is resized
 #                           through a canvas. None of that exists in jsdom.
@@ -55,6 +59,9 @@ npm run test:ui
 
 echo "==> npm run test:mobile"
 npm run test:mobile
+
+echo "==> npm run test:music"
+npm run test:music
 
 echo "==> npm run test:board"
 npm run test:board

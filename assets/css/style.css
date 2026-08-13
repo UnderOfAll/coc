@@ -1874,3 +1874,13 @@ body:has(.vtt) { height: 100dvh; overflow: hidden; }
 .wep-dmg { font-family: var(--serif); color: var(--gold); }
 .wep-note { margin: 0; font-size: 0.85rem; }
 .wep-card .btn-quiet { align-self: flex-start; margin-top: 0.15rem; }
+
+/* MUSIC. The players live off-screen — a YouTube frame has to be IN the document and laid out to play at
+   all, so it is one pixel in the corner with nothing able to reach it, rather than `display: none`, which
+   some engines treat as "not playing" and refuse. */
+.music-host { position: fixed; left: -9999px; top: 0; width: 1px; height: 1px;
+  overflow: hidden; pointer-events: none; opacity: 0; }
+.music-now { margin: 0.2rem 0 0.6rem; }
+.music-vol { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+.music-slider { flex: 1 1 8rem; min-width: 6rem; accent-color: var(--gold); }
+.music-pct { min-width: 3.4rem; text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }

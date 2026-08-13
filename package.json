@@ -16,7 +16,8 @@
     "test:dice": "node scripts/test/dice3d.mjs",
     "test:2dev": "node scripts/test/live_two_devices.mjs",
     "test:2dev:sdk": "TRANSPORT=sdk node scripts/test/live_two_devices.mjs",
-    "test:2dev:rest": "TRANSPORT=rest node scripts/test/live_two_devices.mjs"
+    "test:2dev:rest": "TRANSPORT=rest node scripts/test/live_two_devices.mjs",
+    "test:music": "node scripts/test/music.mjs"
   },
   "devDependencies": {
     "jsdom": "^29.1.1",

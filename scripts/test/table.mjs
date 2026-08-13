@@ -21,7 +21,7 @@ window.fetch = async (u) => {
 for (const f of ["assets/js/config.js", "assets/js/storage.js", "assets/js/live.js",
                  "assets/js/app.js", "assets/js/creator.js", "assets/js/dm.js",
                  "assets/js/table-board.js", "assets/js/table-dice.js", "assets/js/table-panels.js",
-                 "assets/js/table.js"]) {
+                 "assets/js/table-music.js", "assets/js/table.js"]) {
   const s = doc.createElement("script");
   s.textContent = fs.readFileSync(path.join(REPO, f), "utf8");
   doc.body.appendChild(s);
@@ -2578,6 +2578,123 @@ await until(async () => (await aget(`CocLive.get("tables/482910/tokens/tGhostCha
 ok(true, "deleting a character takes its figure off every table this browser knows");
 ok(peek(`JSON.parse(localStorage.getItem("coc:table:me:482910")).charCode`) === "",
   "and this browser stops introducing itself with the code that no longer exists");
+
+console.log("\n— MUSIC —");
+/* THE DM CHOOSES, EVERY DEVICE PLAYS ITS OWN COPY, AND THE VOLUME IS YOURS. Nothing is streamed between
+   browsers — there is no server to stream it through. What travels is a few dozen bytes saying WHAT is
+   playing and how far in it was at a moment on the clock, so somebody joining halfway comes in where the
+   room already is. jsdom cannot make a sound, so what is proved here is the wiring and the arithmetic;
+   the audio itself is the one thing in this file no test can hear. */
+peek(`tbl.role = "dm"; renderTableShell();`);
+openPanel("music");
+await wait(60);
+ok(!!$('[data-tbl="panel"][data-val="music"]'), "there is a Music button in the bar");
+ok(/Nothing playing/.test($("#tool").textContent), "and nothing is playing to begin with");
+
+/* ELEVEN CHARACTERS, out of any shape of YouTube address — and nothing out of anything else. */
+const ytCases = [
+  ["https://www.youtube.com/watch?v=dQw4w9WgXcQ", "dQw4w9WgXcQ"],
+  ["https://youtu.be/dQw4w9WgXcQ?t=42", "dQw4w9WgXcQ"],
+  ["https://www.youtube.com/watch?list=PL1&v=dQw4w9WgXcQ&index=2", "dQw4w9WgXcQ"],
+  ["https://www.youtube.com/shorts/dQw4w9WgXcQ", "dQw4w9WgXcQ"],
+  ["https://www.youtube.com/embed/dQw4w9WgXcQ", "dQw4w9WgXcQ"],
+  ["https://example.com/not-a-video", ""],
+  ["", ""],
+];
+ok(ytCases.every(([u, want]) => peek(`tblYouTubeId(${JSON.stringify(u)})`) === want),
+  "a YouTube id is found in every shape of address, and invented for none");
+
+// A link that is not one is refused, and says why rather than saving something that will never play.
+click($('[data-tbl="music-kind"][data-val="youtube"]'));
+await wait(40);
+type($("#music-title"), "The Midway");
+type($("#music-url"), "https://example.com/nope");
+click($('[data-tbl="music-add"]'));
+await wait(80);
+ok(/not a YouTube address/.test($("#music-msg").textContent), "a bad YouTube address is refused");
+ok((await aget(`CocLive.get("tables/482910/music/tracks")`)) === null, "and nothing is saved");
+
+type($("#music-url"), "https://www.youtube.com/watch?v=dQw4w9WgXcQ");
+click($('[data-tbl="music-add"]'));
+await until(async () => !!(await aget(`CocLive.get("tables/482910/music/tracks")`)));
+const tracks = await aget(`CocLive.get("tables/482910/music/tracks")`);
+const tid = Object.keys(tracks)[0];
+ok(tracks[tid].kind === "youtube" && tracks[tid].src === "dQw4w9WgXcQ", "a good one is saved as its id, not its URL");
+ok(tracks[tid].title === "The Midway", "under the name it was given");
+peek(`paintSide();`);
+ok($$("#tool .scene-row").length >= 1, "and it lists on the table's own shelf of tracks");
+
+/* PLAYING IT. What goes on the wire is what, whether, and from where — never the audio. */
+click($(`[data-tbl="music-play"][data-val="${tid}"]`));
+await until(async () => !!(await aget(`CocLive.get("tables/482910/music/now")`)));
+let now = await aget(`CocLive.get("tables/482910/music/now")`);
+ok(now.playing === true && now.kind === "youtube" && now.src === "dQw4w9WgXcQ", "pressing one starts it for the room");
+ok(now.pos === 0 && typeof now.at === "number", "from the top, stamped with when that was");
+ok(JSON.stringify(now).length < 400, "and what travels is bytes, not a track (" + JSON.stringify(now).length + ")");
+
+/* WHERE A LATECOMER COMES IN. This one line is the whole of the synchronising. */
+ok(peek(`tblMusicWhere({ playing: true, pos: 12, at: Date.now() - 5000 })`) > 16.9 &&
+   peek(`tblMusicWhere({ playing: true, pos: 12, at: Date.now() - 5000 })`) < 17.2,
+  "five seconds after a start twelve seconds in, the room is seventeen seconds in");
+ok(peek(`tblMusicWhere({ playing: false, pos: 30, at: Date.now() - 60000 })`) === 30,
+  "and a paused track does not run on while nobody is listening");
+
+/* PAUSE FREEZES THE POSITION, so resuming picks up where the room was rather than where the clock went. */
+peek(`paintSide();`);
+click($('[data-tbl="music-pause"]'));
+await until(async () => ((await aget(`CocLive.get("tables/482910/music/now")`)) || {}).playing === false);
+now = await aget(`CocLive.get("tables/482910/music/now")`);
+ok(now.playing === false && now.pos >= 0, "pause writes the position it stopped at");
+peek(`paintSide();`);
+click($('[data-tbl="music-loop"]'));
+await until(async () => ((await aget(`CocLive.get("tables/482910/music/now")`)) || {}).loop === true);
+ok(true, "and a loop can be set for everyone");
+
+/* THE VOLUME IS THIS DEVICE'S AND NEVER GOES NEAR THE DATABASE — a table where the DM's slider moved
+   everybody's is a table where nobody can hear their own game. */
+peek(`paintSide();`);
+peek(`tblMusicSetVol(0.25)`);
+ok(peek(`tblMusicVol()`) === 0.25, "the volume is remembered on this device");
+ok(!/0\.25/.test(JSON.stringify(await aget(`CocLive.get("tables/482910/music")`))),
+  "and is nowhere in the table");
+click($('[data-tbl="music-mute"]'));
+await wait(40);
+ok(peek(`tblMusicMuted()`) === true, "mute is this device's too");
+ok(!/mute/i.test(JSON.stringify(await aget(`CocLive.get("tables/482910/music/now")`))), "and also stays here");
+click($('[data-tbl="music-mute"]'));
+await wait(40);
+ok(peek(`tblMusicMuted()`) === false, "and unmutes again");
+
+/* A BROWSER WILL NOT MAKE A SOUND UNTIL IT HAS BEEN TOUCHED. Policy everywhere, so the panel says so and
+   offers the one gesture that fixes it. */
+peek(`localStorage.removeItem("coc:tbl:music:ok"); paintSide();`);
+ok(!!$('[data-tbl="music-enable"]'), "a device that has never been touched is offered the sound switch");
+ok(/will not play anything until you have touched/.test($("#tool").textContent), "and told why");
+click($('[data-tbl="music-enable"]'));
+await wait(60);
+ok(peek(`tblMusicAllowed()`) === true, "pressing it unlocks that device");
+ok(!$('[data-tbl="music-enable"]'), "and it stops asking");
+
+/* A PLAYER GETS THE VOLUME AND NOT THE CHOOSING. */
+peek(`tbl.role = "player"; paintSide();`);
+ok(!!$('[data-tbl="music-mute"]') && !!$("#music-vol"), "a player has the volume and the mute");
+ok(!$('[data-tbl="music-play"]') && !$('[data-tbl="music-add"]') && !$('[data-tbl="music-stop"]'),
+  "and none of the choosing");
+ok(/The DM chooses what plays/.test($("#tool").textContent), "with a line saying whose it is");
+peek(`tbl.role = "dm"; paintSide();`);
+
+/* STOP CLEARS THE ROOM, and deleting a track it was playing stops it rather than leaving a ghost. */
+click($('[data-tbl="music-stop"]'));
+await until(async () => (await aget(`CocLive.get("tables/482910/music/now")`)) === null);
+ok(true, "Stop takes it off every device");
+click($(`[data-tbl="music-play"][data-val="${tid}"]`));
+await until(async () => !!(await aget(`CocLive.get("tables/482910/music/now")`)));
+click($(`[data-tbl="music-drop"][data-val="${tid}"]`));
+await until(async () => (await aget(`CocLive.get("tables/482910/music/tracks")`)) === null);
+ok((await aget(`CocLive.get("tables/482910/music/now")`)) === null,
+  "deleting the track that is playing stops it, rather than leaving the room chasing something gone");
+peek(`tbl.ui.panel = ""; paintSide();`);
+
 
 console.log("\n— LEAVING —");
 // A fresh room, since the one above was deleted on purpose. Two people in it: you, and somebody else.

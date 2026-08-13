@@ -101,7 +101,7 @@ function tblFresh(code, role) {
     code, role,
     me: tblMe(code),
     data: { meta: null, scenes: null, tokens: null, log: null, presence: null, handouts: null, dm: null,
-            notes: null, draw: null, sheets: null },
+            notes: null, draw: null, sheets: null, music: null },
     view: { x: 0, y: 0, z: 1 },
     drag: null,
     offs: [],          // live subscriptions, closed on teardown
@@ -112,7 +112,7 @@ function tblFresh(code, role) {
     inkNew: new Set(),      // the pieces it created, so they are not drawn twice on the way
     centredOnMe: false,     // the camera has been aimed at this player's own figure, once
     cameraIsYours: false,   // …and after that, only you move it
-    ui: { panel: "", error: "" },
+    ui: { panel: "", error: "", musicKind: "youtube" },
   };
 }
 
@@ -218,6 +218,8 @@ function routeTable(arg) {
 /* Leaving the table has to close the streams and stop the heartbeat. Nothing tells a route function
    that it is being left, so the hash is watched directly. */
 function tblTeardown() {
+  // Or the music plays on over the menu, and over the next table.
+  try { tblMusicTeardown(); } catch { /* nothing to stop */ }
   if (!tbl) return;
   for (const off of tbl.offs) { try { off(); } catch { /* already closed */ } }
   if (tbl.beat) clearInterval(tbl.beat);
@@ -643,6 +645,7 @@ function renderTableShell() {
             ? `<button class="btn-quiet on" data-tbl="panel" data-val="seat">Choose a character</button>` : ""}
           <button class="btn-quiet" data-tbl="panel" data-val="notes">Notes</button>
           <button class="btn-quiet" data-tbl="panel" data-val="draw">Draw</button>
+          <button class="btn-quiet" data-tbl="panel" data-val="music">Music</button>
           ${tblDebugOn() ? `<button class="btn-quiet" data-tbl="panel" data-val="debug">Debug</button>` : ""}
           ${tbl.role === "dm" || (tbl.me.charCode && tblMyTokens().length)
             ? `<button class="btn-quiet" data-tbl="panel" data-val="sheet">My sheet</button>` : ""}
@@ -730,6 +733,10 @@ function paintEverything() {
   paintWho();
   paintHandout();
   paintDmPanel();
+  paintMusicPanel();
+  // What the room is listening to is table data like any other: it arrives on the stream and is applied
+  // here. It is a no-op unless something actually changed, or a track would restart several times a second.
+  try { tblMusicApply(); } catch (err) { tblFail(err); }
 }
 
 /* Nothing here any more. Say so, take it off this device's list, and stop talking to it. */
@@ -853,7 +860,7 @@ function tblPanel(which) {
 const TBL_PANEL_NAMES = {
   dm: "DM screen", dice: "Dice", claim: "The DM's chair", figure: "Figure", notes: "Notes",
   draw: "Draw", mine: "Your character", seat: "Choose a character", debug: "Debug", sheet: "Your sheet",
-  field: "On the field", enemy: "Its card",
+  field: "On the field", enemy: "Its card", music: "Music",
 };
 
 /* The way back to the board, and the name of what you are in. Rendered always and shown only on a phone,
@@ -904,6 +911,7 @@ function paintSide() {
   else if (which === "seat") body = seatPanelHTML();
   else if (which === "debug") body = tblDebugOn() ? debugPanelHTML() : "";
   else if (which === "field") body = fieldPanelHTML();
+  else if (which === "music") body = musicPanelHTML();
   // The DM's alone: the whole stat block, in the panel, without leaving the table.
   else if (which === "enemy") body = tbl.role === "dm" ? enemySheetHTML(tbl.ui.enemyId) : "";
   else if (which === "sheet") body = `<p class="muted">Opening your sheet…</p>`;
@@ -911,7 +919,7 @@ function paintSide() {
   cocGrowAll(side);
   // The DM's panel is re-rendered on every stream event and compared against what is on screen, so what
   // is stored has to be the whole thing, header and all.
-  if (which === "dm") side.dataset.rendered = side.innerHTML;
+  if (which === "dm" || which === "music") side.dataset.rendered = side.innerHTML;
   // The log lives in the dice panel and is filled by the stream, so a freshly opened panel would sit
   // empty until the next roll — showing "nothing rolled yet" under four rolls.
   else if (which === "dice") paintLog();
@@ -941,15 +949,24 @@ function tblRepaintPanel() {
  * So: build the new markup, and if it is identical, touch nothing at all — which is the common case and
  * costs one string compare. Otherwise swap it and put back the values, the focus and the caret, exactly
  * as paint() does for the sheet. */
-function paintDmPanel() {
-  if (tbl.ui.panel !== "dm") return;
+function paintDmPanel() { tblRepaintLive("dm", dmPanelHTML); }
+/* And the music panel, for the same reason and by the same machinery: what is playing arrives on the
+   stream, so a DM who presses Play must see the button become Pause and a player must see the title
+   change — without the panel being torn out from under a half-typed track name. */
+function paintMusicPanel() { tblRepaintLive("music", musicPanelHTML); }
+
+/* THE SOFT REPAINT, shared. Build the markup; if it is identical, touch nothing at all — which is the
+   common case and costs one string compare. Otherwise swap it and put back the values, the focus and the
+   caret, exactly as paint() does for the sheet. */
+function tblRepaintLive(which, build) {
+  if (tbl.ui.panel !== which) return;
   const side = $("#vtt-side");
   if (!side) return;
   // A chosen file cannot be restored into a file input, so while one is waiting to be uploaded the
   // panel is left alone — a few seconds, and losing the file would be worse than a stale list.
   const file = side.querySelector('input[type="file"]');
   if (file && file.files && file.files.length) return;
-  const next = sideHeadHTML("dm") + dmPanelHTML();
+  const next = sideHeadHTML(which) + build();
   if (next === side.dataset.rendered) return;
   const active = document.activeElement;
   const focusId = active && side.contains(active) && asEl(active).id ? asEl(active).id : "";
@@ -1036,6 +1053,14 @@ document.addEventListener("input", (e) => {
     // the box you are typing in.
     const go = $('[data-tbl="close-go"]');
     if (go) go.disabled = tbl.ui.closeText !== tbl.code;
+    return;
+  }
+  // Volume: this device's, never written to the table, and applied to whatever is playing as it moves.
+  if (evTarget(e).id === "music-vol") {
+    tblMusicSetVol(Number(evTarget(e).value) / 100);
+    const pct = $(".music-pct");
+    // Repainting the panel would take the slider out from under the finger dragging it.
+    if (pct) pct.textContent = tblMusicMuted() ? "muted" : Math.round(tblMusicVol() * 100) + "%";
     return;
   }
   // The tracker saves itself, and the figure on the board follows the two things it can show.
@@ -1293,6 +1318,8 @@ document.addEventListener("click", (e) => {
   else if (act === "ink-clear-mine") {
     for (const [id] of tblMyStrokes()) CocLive.del(tblPath("draw/" + id)).catch(() => {});
   }
+  else if (act === "music-enable") tblMusicEnable();
+  else if (act === "music-mute") tblMusicToggleMute();
   else if (act === "note-new") tblNewNote().catch(tblFail);
   else if (act === "note-open") { tbl.ui.note = tbl.ui.note === val ? "" : val; paintSide(); }
   else if (act === "note-del") {
@@ -1333,6 +1360,14 @@ document.addEventListener("click", (e) => {
     tblSceneMove(id, Number(by)).catch(tblFail);
   }
   else if (act === "scene-flip") tblSceneFlip(val).catch(tblFail);
+  else if (act === "music-kind") { tbl.ui.musicKind = val; paintSide(); }
+  else if (act === "music-add") tblMusicAdd().catch(tblFail);
+  else if (act === "music-play") tblMusicPlay(val).catch(tblFail);
+  else if (act === "music-pause") tblMusicPause().catch(tblFail);
+  else if (act === "music-resume") tblMusicResume().catch(tblFail);
+  else if (act === "music-stop") tblMusicStop().catch(tblFail);
+  else if (act === "music-loop") tblMusicToggleLoop().catch(tblFail);
+  else if (act === "music-drop") tblMusicDropTrack(val).catch(tblFail);
   else if (act === "scene-add") tblAddScene().catch(tblFail);
   else if (act === "grid-cols") tblNudgeGrid("cols", Number(val)).catch(tblFail);
   else if (act === "grid-rows") tblNudgeGrid("rows", Number(val)).catch(tblFail);

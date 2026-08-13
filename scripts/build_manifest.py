@@ -22,7 +22,8 @@ CATEGORIES = ["rules", "classes", "subclasses", "tricks", "skills", "passives", 
 VERSIONED_ASSETS = ["assets/css/style.css", "assets/js/app.js",
                     "assets/js/storage.js", "assets/js/creator.js", "assets/js/dm.js",
                     "assets/js/live.js", "assets/js/table-board.js",
-                    "assets/js/table-dice.js", "assets/js/table-panels.js", "assets/js/table.js"]
+                    "assets/js/table-dice.js", "assets/js/table-panels.js",
+                    "assets/js/table-music.js", "assets/js/table.js"]
 
 
 def entries(path):
