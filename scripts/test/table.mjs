@@ -2683,6 +2683,26 @@ ok(!$('[data-tbl="music-play"]') && !$('[data-tbl="music-add"]') && !$('[data-tb
 ok(/The DM chooses what plays/.test($("#tool").textContent), "with a line saying whose it is");
 peek(`tbl.role = "dm"; paintSide();`);
 
+/* MUSIC OUTLIVES THE ROOM IT IS PLAYING IN. Kayki: "the music should survive scene change, only stops
+   when the dm does it." It is table data, not scene data, so moving everyone from the backstage to the
+   ring does not touch it — asserted rather than assumed, because "it happens to work" is how a behaviour
+   gets broken by the next person to tidy up scene switching. */
+peek(`paintSide();`);
+click($(`[data-tbl="music-play"][data-val="${tid}"]`));
+await until(async () => ((await aget(`CocLive.get("tables/482910/music/now")`)) || {}).playing === true);
+const beforeScene = await aget(`CocLive.get("tables/482910/music/now")`);
+const scenes2 = Object.keys(await aget(`CocLive.get("tables/482910/scenes")`));
+const showing = await aget(`CocLive.get("tables/482910/meta/activeScene")`);
+const elsewhere = scenes2.find((k) => k !== showing);
+peek(`tbl.ui.panel = "dm"; paintSide();`);   // the scene list lives in the DM panel
+click($$('[data-tbl="scene"]').find(b => b.dataset.val === elsewhere));
+await until(async () => (await aget(`CocLive.get("tables/482910/meta/activeScene")`)) === elsewhere);
+const afterScene = await aget(`CocLive.get("tables/482910/music/now")`);
+ok(afterScene && afterScene.playing === true, "changing the scene does not stop the music");
+ok(JSON.stringify(afterScene) === JSON.stringify(beforeScene),
+  "and does not so much as touch it — no restart, no reseek, no new generation");
+peek(`tbl.ui.panel = "music"; paintSide();`);
+
 /* STOP CLEARS THE ROOM, and deleting a track it was playing stops it rather than leaving a ghost. */
 click($('[data-tbl="music-stop"]'));
 await until(async () => (await aget(`CocLive.get("tables/482910/music/now")`)) === null);
