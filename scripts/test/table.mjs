@@ -2753,35 +2753,74 @@ click($('[data-tbl="music-q-clear"]'));
 await until(async () => (await aget(`CocLive.get("tables/482910/music/queue")`)) === null);
 peek(`tbl.ui.musicKind = "repo"; paintSide();`);
 ok(/music\//.test($("#tool").textContent), "and the fourth source is what is committed in music/");
-/* FOLDERS. Kayki keeps a scene's music in a folder of its own, so both lists group by it and a whole
-   folder goes into the queue in one press — which is the thing the folders are for. */
-ok(peek(`tblMusicFolder("backstage/waking-up.mp3")`) === "backstage", "a track's folder is read off its path");
-ok(peek(`tblMusicFolder("loose.mp3")`) === "", "and a loose one has none");
-ok(peek(`tblMusicFolderName("main-stage")`) === "main stage", "a folder is named readably");
-ok(peek(`tblMusicFolderName("")`) === "Loose", "and the top level is called what it is");
+/* FOLDERS, MADE IN THE APP. Kayki: "in the app itself, I create folders for the musics, drag and drop
+   them in there, also I can reorganize the order at will." A folder is a thing the DM MAKES — a YouTube
+   track and a committed one belong in "Main Stage" together, and neither lives in a directory of that
+   name. The drag itself needs a real browser and is covered in music.mjs; this is the data underneath,
+   and the arrows and the Move list, which do the very same write. */
+ok(peek(`tblMusicDiskFolder("backstage/waking-up.mp3")`) === "backstage", "a committed file's folder is read off its path");
 ok(peek(`tblMusicSrc({ kind: "repo", src: "main stage/a b.mp3" })`) === "music/main%20stage/a%20b.mp3",
-  "a committed track's address escapes each segment but not the slashes");
-peek(`tblRepoMusic = ["backstage/one.mp3", "backstage/two.mp3", "main-stage/boss.mp3", "loose.mp3"]; paintSide();`);
-ok(/backstage/.test($("#tool").textContent) && /main stage/.test($("#tool").textContent),
-  "the repo list is grouped by folder");
-ok($$('[data-tbl="music-repo-all"]').some((b) => b.dataset.val === "backstage"),
-  "with one press to add a whole folder");
+  "and its address escapes each segment but not the slashes");
+peek(`tbl.ui.musicKind = "repo"; tblRepoMusic = ["backstage/one.mp3", "backstage/two.mp3", "loose.mp3"]; paintSide();`);
+ok(/backstage/.test($("#tool").textContent), "the Add list groups by the folder they sit in on disk");
 click($$('[data-tbl="music-repo-all"]').find((b) => b.dataset.val === "backstage"));
 await until(async () => Object.values((await aget(`CocLive.get("tables/482910/music/tracks")`)) || {})
   .filter((t) => t.kind === "repo").length === 2);
-const repoAdded = Object.values(await aget(`CocLive.get("tables/482910/music/tracks")`)).filter((t) => t.kind === "repo");
-ok(repoAdded.every((t) => t.src.startsWith("backstage/")), "which adds that folder and no other");
-ok(repoAdded.some((t) => t.title === "one"), "named by the file, not by the path");
+/* ADDING A WHOLE DISK FOLDER MAKES AN APP FOLDER OF THE SAME NAME, so organising in music/ and
+   organising in the app give one answer rather than two arrangements to keep in step. */
+const madeFolders = await aget(`CocLive.get("tables/482910/music/folders")`);
+ok(Object.values(madeFolders || {}).some((f) => f.name === "backstage"),
+  "adding a disk folder makes an app folder of the same name");
+const fBack = Object.keys(madeFolders).find((k) => madeFolders[k].name === "backstage");
+ok(peek(`tblMusicGroup(${JSON.stringify(fBack)}).length`) === 2, "with both of its tracks inside it");
+ok(peek(`tblMusicGroup(${JSON.stringify(fBack)}).map(([, t]) => t.order).join()`) === "0,1",
+  "each carrying its place in that folder");
+
+/* A FOLDER OF HIS OWN, and reordering inside it. */
+peek(`tbl.ui.musicKind = "youtube"; paintSide();`);
+type($("#music-folder"), "Main Stage");
+click($('[data-tbl="music-f-add"]'));
+await until(async () => Object.keys((await aget(`CocLive.get("tables/482910/music/folders")`)) || {}).length === 2);
+const allF = await aget(`CocLive.get("tables/482910/music/folders")`);
+const fMain = Object.keys(allF).find((k) => allF[k].name === "Main Stage");
+ok(!!fMain, "a folder can be made in the app and named");
+// Move a track into it with the Move list — the same write the drag does, without the gesture.
 peek(`paintSide();`);
-click($('[data-tbl="music-q-folder"][data-val="backstage"]'));
-await until(async () => ((await aget(`CocLive.get("tables/482910/music/queue")`)) || []).length === 2);
-ok(true, "and a whole folder can be queued in one press, in order");
-click($('[data-tbl="music-q-clear"]'));
-await until(async () => (await aget(`CocLive.get("tables/482910/music/queue")`)) === null);
+const firstBack = peek(`tblMusicGroup(${JSON.stringify(fBack)})[0][0]`);
+const sel = $(`[data-mus-move="${firstBack}"]`);
+ok(!!sel, "every row has a Move list, so the drag is never the only way");
+sel.value = fMain;
+sel.dispatchEvent(new (doc.defaultView.Event)("change", { bubbles: true }));
+await until(() => peek(`tblMusicGroup(${JSON.stringify(fMain)}).length`) === 1);
+ok(peek(`tblMusicGroup(${JSON.stringify(fBack)}).length`) === 1, "moving one out leaves the other behind");
+ok(peek(`tblMusicGroup(${JSON.stringify(fBack)})[0][1].order`) === 0,
+  "and the folder it left is renumbered, so there is no hole in it");
+// Reorder inside a folder with the arrows.
+peek(`paintSide();`);
+/* DELETING A FOLDER NEVER DELETES MUSIC. Losing an evening's playlist to a mis-tap is not a trade
+   worth making, so its tracks come out loose. */
+const shelfSize = peek(`Object.keys(tblMusicData().tracks || {}).length`);
+click($(`[data-tbl="music-f-drop"][data-val="${fMain}"]`));
+await until(async () => !((await aget(`CocLive.get("tables/482910/music/folders")`)) || {})[fMain]);
+ok(peek(`Object.keys(tblMusicData().tracks || {}).length`) === shelfSize,
+  "deleting a folder deletes no music");
+peek(`paintSide();`);
+ok(peek(`tblMusicGroup("").some(([id]) => id === ${JSON.stringify(firstBack)})`),
+  "its tracks come out loose instead");
+/* AND A FOLDER CAN BE RENAMED AND REORDERED. */
+click($(`[data-tbl="music-f-rename"][data-val="${fBack}"]`));
+await wait(80);
+type($(`#music-rename-${fBack}`), "Backstage");
+click($(`[data-tbl="music-f-save"][data-val="${fBack}"]`));
+await until(async () => (((await aget(`CocLive.get("tables/482910/music/folders")`)) || {})[fBack] || {}).name === "Backstage");
+ok(true, "a folder can be renamed");
+// Tidy up so the blocks after this one see the shelf they expect.
 for (const [id, t] of Object.entries(await aget(`CocLive.get("tables/482910/music/tracks")`))) {
   if (t.kind === "repo") await aget(`CocLive.del("tables/482910/music/tracks/${id}")`);
 }
-await wait(120);
+await aget(`CocLive.put("tables/482910/music/folders", null)`);
+await aget(`CocLive.put("tables/482910/music/queue", null)`);
+await wait(150);
 peek(`tblRepoMusic = null; tbl.ui.musicKind = "youtube"; paintSide();`);
 
 /* MUSIC OUTLIVES THE ROOM IT IS PLAYING IN. Kayki: "the music should survive scene change, only stops

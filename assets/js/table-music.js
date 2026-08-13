@@ -132,16 +132,48 @@ function tblMusicPushVolume() {
   } catch { /* a player that has gone away is not an error worth showing anybody */ }
 }
 
-/* THE FOLDER A COMMITTED TRACK LIVES IN, which is how Kayki separates a scene's music from the next
-   scene's. Everything at the top level is "Loose" rather than being hidden or made up a name for. */
-function tblMusicFolder(pathOrTrack) {
+/* THE FOLDER A COMMITTED FILE SITS IN ON DISK. This is only about the Add list — what music/ is laid out
+   like. Where a track lives once it is ON the shelf is a separate thing the DM decides in the app. */
+function tblMusicDiskFolder(pathOrTrack) {
   const src = typeof pathOrTrack === "string" ? pathOrTrack
     : (pathOrTrack && pathOrTrack.kind === "repo" ? pathOrTrack.src : "");
   const at = String(src || "").lastIndexOf("/");
   return at > 0 ? String(src).slice(0, at) : "";
 }
-function tblMusicFolderName(f) {
-  return f ? f.split("/").map((s) => s.replace(/[-_]+/g, " ")).join(" · ") : "Loose";
+
+/* ---------------------------------------------------------------- folders, made in the app
+ *
+ * Kayki: "in the app itself, I create folders for the musics, drag and drop them in there, also I can
+ * reorganize the order at will." So a folder is a thing the DM MAKES, not a mirror of what is on disk —
+ * a track from YouTube and a track off the repo belong in "Main Stage" together, and neither of them
+ * lives in a directory called that.
+ *
+ * A track carries `folder` (a folder id, or nothing for loose) and `order` (its place inside that
+ * folder). Both are written by ONE function, `tblMusicPlace`, whether the DM dragged the row or pressed
+ * an arrow — so there is a single description of what "put this there" means and the two cannot drift.
+ */
+function tblMusicFolders() {
+  return Object.entries(tblMusicData().folders || {})
+    .sort((a, b) => (Number(a[1].order) || 0) - (Number(b[1].order) || 0) || (a[1].at || 0) - (b[1].at || 0));
+}
+/* Every track in one folder, in its own order. A track pointing at a folder that has been deleted is
+   loose rather than invisible — losing a folder must never lose the music in it. */
+function tblMusicGroup(folder) {
+  const want = folder || "";
+  const folders = tblMusicData().folders || {};
+  return tblMusicTracks()
+    .filter(([, t]) => {
+      const f = t.folder && folders[t.folder] ? t.folder : "";
+      return f === want;
+    })
+    .sort((a, b) => {
+      const ao = a[1].order == null ? Infinity : Number(a[1].order);
+      const bo = b[1].order == null ? Infinity : Number(b[1].order);
+      return (ao - bo) || ((a[1].at || 0) - (b[1].at || 0));
+    });
+}
+function tblMusicDiskName(f) {
+  return f ? f.split("/").map((x) => x.replace(/[-_]+/g, " ")).join(" · ") : "Loose";
 }
 /* Grouped, folders first in the order they are met, "Loose" last — a scene's set is what a DM reaches
    for, and the odds and ends at the top level are what they scroll past. */
@@ -415,13 +447,103 @@ async function tblMusicQueueAdd(id) {
   await CocLive.put(tblPath("music/queue"), tblMusicQueue().concat(id));
   paintSide();
 }
+/* PUT THIS TRACK THERE — the only function that writes `folder` and `order`, whether the row was dragged
+   or an arrow was pressed. Both groups are renumbered whole, so a move can never leave a hole in the one
+   it came from or two tracks fighting over the same place in the one it went to. */
+async function tblMusicPlace(id, folder, index) {
+  if (tbl.role !== "dm") return;
+  const shelf = tblMusicData().tracks || {};
+  if (!shelf[id]) return;
+  const folders = tblMusicData().folders || {};
+  const from = shelf[id].folder && folders[shelf[id].folder] ? shelf[id].folder : "";
+  const to = folder && folders[folder] ? folder : "";
+  const dest = tblMusicGroup(to).map(([tid]) => tid).filter((tid) => tid !== id);
+  const at = Math.max(0, Math.min(dest.length, Number(index) == null ? dest.length : Number(index)));
+  dest.splice(at, 0, id);
+  const patch = {};
+  dest.forEach((tid, i) => { patch[tid + "/order"] = i; patch[tid + "/folder"] = to || null; });
+  if (from !== to) {
+    tblMusicGroup(from).map(([tid]) => tid).filter((tid) => tid !== id)
+      .forEach((tid, i) => { patch[tid + "/order"] = i; });
+  }
+  await CocLive.patch(tblPath("music/tracks"), patch);
+  paintSide();
+}
+/* One step up or down inside its own folder — the arrows, and the reason drag is never the only way in.
+   A phone in a scrolling panel is a bad place to have to be precise. */
+async function tblMusicNudge(id, by) {
+  const shelf = tblMusicData().tracks || {};
+  const t = shelf[id];
+  if (!t) return;
+  const folders = tblMusicData().folders || {};
+  const folder = t.folder && folders[t.folder] ? t.folder : "";
+  const list = tblMusicGroup(folder).map(([tid]) => tid);
+  const at = list.indexOf(id);
+  const to = at + Number(by);
+  if (at < 0 || to < 0 || to >= list.length) return;
+  await tblMusicPlace(id, folder, to);
+}
+
+async function tblMusicFolderAdd(name) {
+  if (tbl.role !== "dm") return;
+  const title = String(name || "").trim().slice(0, 40);
+  if (!title) return tblMusicSay("Give the folder a name.", " bad");
+  const order = tblMusicFolders().length;
+  await CocLive.push(tblPath("music/folders"), { name: title, order, at: Date.now() });
+  tblMusicSay("");
+  const box = $("#music-folder");
+  if (box) box.value = "";
+  paintSide();
+}
+async function tblMusicFolderRename(id) {
+  if (tbl.role !== "dm") return;
+  const box = $("#music-rename-" + id);
+  const name = String((box && box.value) || "").trim().slice(0, 40);
+  if (!name) return;
+  await CocLive.patch(tblPath("music/folders/" + id), { name });
+  tbl.ui.musicRename = "";
+  paintSide();
+}
+/* DELETING A FOLDER NEVER DELETES MUSIC. Its tracks come out loose — a folder is a way of arranging the
+   shelf, and losing an evening's playlist to a mis-tap on the wrong row is not a trade worth making. */
+async function tblMusicFolderDrop(id) {
+  if (tbl.role !== "dm") return;
+  const inside = tblMusicGroup(id).map(([tid]) => tid);
+  const loose = tblMusicGroup("").length;
+  const patch = {};
+  inside.forEach((tid, i) => { patch[tid + "/folder"] = null; patch[tid + "/order"] = loose + i; });
+  if (inside.length) await CocLive.patch(tblPath("music/tracks"), patch);
+  await CocLive.del(tblPath("music/folders/" + id));
+  paintSide();
+}
+async function tblMusicFolderMove(id, by) {
+  if (tbl.role !== "dm") return;
+  const ids = tblMusicFolders().map(([fid]) => fid);
+  const at = ids.indexOf(id);
+  const to = at + Number(by);
+  if (at < 0 || to < 0 || to >= ids.length) return;
+  ids.splice(to, 0, ids.splice(at, 1)[0]);
+  const patch = {};
+  ids.forEach((fid, i) => { patch[fid + "/order"] = i; });
+  await CocLive.patch(tblPath("music/folders"), patch);
+  paintSide();
+}
+/* Used when a whole disk folder is added: the app folder is made to match, so somebody who organises on
+   disk gets the same arrangement in the app without doing it twice. */
+async function tblMusicFolderFor(name) {
+  const want = String(name || "").trim();
+  if (!want) return "";
+  const found = tblMusicFolders().find(([, f]) => (f.name || "").toLowerCase() === want.toLowerCase());
+  if (found) return found[0];
+  return await CocLive.push(tblPath("music/folders"),
+    { name: want.slice(0, 40), order: tblMusicFolders().length, at: Date.now() });
+}
+
 /* A WHOLE FOLDER, QUEUED IN ONE PRESS. This is the thing the folders are FOR: the backstage set goes in
    as a set, in the order it is listed, and the DM does not touch the panel again for that scene. */
 async function tblMusicQueueFolder(folder) {
   if (tbl.role !== "dm") return;
-  const ids = tblMusicTracks()
-    .filter(([, t]) => t.kind === "repo" && tblMusicFolder(t) === (folder || ""))
-    .map(([id]) => id);
+  const ids = tblMusicGroup(folder).map(([id]) => id);
   if (!ids.length) return;
   await CocLive.put(tblPath("music/queue"), tblMusicQueue().concat(ids));
   paintSide();
@@ -542,10 +664,14 @@ async function tblMusicAddRepo(file) {
 /* Every file in one folder, or — with no folder named — everything that is not on the shelf yet. */
 async function tblMusicAddAllRepo(folder) {
   if (tbl.role !== "dm") return;
-  const want = tblRepoMusicLeft().filter((f) => folder == null || folder === "" ? true : tblMusicFolder(f) === folder);
+  const want = tblRepoMusicLeft().filter((f) => !folder || tblMusicDiskFolder(f) === folder);
+  // A disk folder becomes an app folder of the same name, so organising in music/ and organising in the
+  // app give the same answer rather than two arrangements to keep in step.
+  const into = folder ? await tblMusicFolderFor(tblMusicDiskName(folder)) : "";
+  let n = tblMusicGroup(into).length;
   for (const f of want) {
-    await CocLive.push(tblPath("music/tracks"),
-      { at: Date.now(), kind: "repo", src: f, title: f.split("/").pop().replace(/\.[^.]+$/, "") });
+    await CocLive.push(tblPath("music/tracks"), { at: Date.now(), kind: "repo", src: f,
+      title: f.split("/").pop().replace(/\.[^.]+$/, ""), folder: into || null, order: n++ });
   }
   tblMusicSay("Added.", " good");
   paintSide();
@@ -589,8 +715,8 @@ function repoMusicHTML() {
   const left = tblRepoMusicLeft();
   if (!left.length) return `<p class="muted">Everything in <strong>music/</strong> is already on the
     shelf above.</p>`;
-  return tblMusicByFolder(left, tblMusicFolder).map(([folder, files]) => `
-    <p class="panel-sub">${esc(tblMusicFolderName(folder))}
+  return tblMusicByFolder(left, tblMusicDiskFolder).map(([folder, files]) => `
+    <p class="panel-sub">${esc(tblMusicDiskName(folder))}
       <span class="muted">— ${esc(files.length)} track${files.length === 1 ? "" : "s"}</span></p>
     <div class="scene-list">${files.map((f) => `<div class="scene-row">
       <span class="scene-static"><strong>${esc(f.split("/").pop().replace(/\.[^.]+$/, ""))}</strong>
@@ -661,27 +787,73 @@ function musicPanelHTML() {
     : `<p class="muted">Nothing queued. Add tracks below and they play one after another, without you
         touching anything mid-fight.</p>`;
 
-  const row = ([id, t]) => `<div class="scene-row ${now && now.trackId === id ? "on" : ""}">
+  /* A ROW IS DRAGGABLE BY ITS HANDLE AND BY NOTHING ELSE. Dragging from the name would fight the press
+     that plays it, and dragging from anywhere would fight the panel's own scroll — which on a phone is
+     the gesture people actually make. Everything the handle can do, the arrows and the Move list can do
+     too: drag is the quick way, never the only way. */
+  const folders = tblMusicFolders();
+  const moveOptions = (t) => `<select class="text mus-move" data-mus-move="${esc(t.id)}"
+      aria-label="Move to a folder">
+      <option value="">Move to…</option>
+      ${folders.filter(([fid]) => fid !== t.folder).map(([fid, f]) =>
+        `<option value="${esc(fid)}">${esc(f.name)}</option>`).join("")}
+      ${t.folder ? `<option value="~loose">Out of the folder</option>` : ""}
+    </select>`;
+  const row = ([id, t], i, group, folder) => `<div class="scene-row mus-row ${now && now.trackId === id ? "on" : ""}"
+      data-mus-row="${esc(id)}" data-mus-in="${esc(folder || "")}">
+      <button class="mus-handle" data-mus-drag="${esc(id)}" title="Drag to reorder or to another folder"
+        aria-label="Move ${esc(t.title || "track")}">&#8942;&#8942;</button>
       <button class="scene-pick" data-tbl="music-play" data-val="${esc(id)}">
         <strong>${esc(t.title || "Untitled")}</strong>
         <span class="muted">${esc(TBL_MUSIC_WORDS[t.kind] || t.kind)}</span>
       </button>
+      <span class="stepper">
+        <button class="step-btn" data-tbl="music-up" data-val="${esc(id)}" title="Up"
+          ${i === 0 ? "disabled" : ""}>&uarr;</button>
+        <button class="step-btn" data-tbl="music-down" data-val="${esc(id)}" title="Down"
+          ${i === group.length - 1 ? "disabled" : ""}>&darr;</button>
+      </span>
       <button class="btn-quiet" data-tbl="music-queue" data-val="${esc(id)}">Queue</button>
+      ${folders.length ? moveOptions({ id, folder: folder || "" }) : ""}
       <button class="btn-quiet" data-tbl="music-drop" data-val="${esc(id)}">Delete</button>
     </div>`;
-  /* Grouped the same way music/ is, so a scene's set stays a set on the shelf too — and every group of
-     committed tracks can go into the queue whole, in order, which is what the folders are for. */
-  const grouped = tblMusicByFolder(tracks, ([, t]) => (t.kind === "repo" ? tblMusicFolder(t) : ""));
-  const list = tracks.length
-    ? grouped.map(([folder, rows]) => `
-        ${grouped.length > 1 || folder
-          ? `<p class="panel-sub">${esc(tblMusicFolderName(folder))}</p>` : ""}
-        <div class="scene-list">${rows.map(row).join("")}</div>
-        ${folder && rows.length > 1
-          ? `<button class="btn-quiet" data-tbl="music-q-folder" data-val="${esc(folder)}">Queue all ${rows.length}</button>`
-          : ""}`).join("")
-      + `<p class="muted">Tapping the name plays it now; <strong>Queue</strong> puts it at the back of the
-        list above. Neither interrupts the other.</p>`
+
+  const group = (fid, name, extra) => {
+    const rows = tblMusicGroup(fid);
+    return `<div class="mus-folder" data-mus-folder="${esc(fid)}">
+      <p class="panel-sub mus-folder-head">${esc(name)}
+        <span class="muted">${esc(rows.length)} track${rows.length === 1 ? "" : "s"}</span>${extra || ""}</p>
+      <div class="scene-list">${rows.length
+        ? rows.map((r, i) => row(r, i, rows, fid)).join("")
+        : `<p class="muted mus-empty">Empty — drag a track onto this heading, or use its Move list.</p>`}</div>
+      ${rows.length ? `<button class="btn-quiet" data-tbl="music-q-folder" data-val="${esc(fid)}">Queue all ${rows.length}</button>` : ""}
+    </div>`;
+  };
+
+  const folderBlocks = folders.map(([fid, f], i) => group(fid, f.name || "Untitled",
+    `<span class="mus-folder-acts">
+      <span class="stepper">
+        <button class="step-btn" data-tbl="music-f-up" data-val="${esc(fid)}" ${i === 0 ? "disabled" : ""}>&uarr;</button>
+        <button class="step-btn" data-tbl="music-f-down" data-val="${esc(fid)}" ${i === folders.length - 1 ? "disabled" : ""}>&darr;</button>
+      </span>
+      <button class="btn-quiet" data-tbl="music-f-rename" data-val="${esc(fid)}">Rename</button>
+      <button class="btn-quiet" data-tbl="music-f-drop" data-val="${esc(fid)}">Delete folder</button>
+    </span>`)
+    + (tbl.ui.musicRename === fid ? `<div class="danger-row">
+        <input id="music-rename-${esc(fid)}" class="text" type="text" maxlength="40" value="${esc(f.name || "")}" />
+        <button class="btn" data-tbl="music-f-save" data-val="${esc(fid)}">Save the name</button>
+        <button class="btn-quiet" data-tbl="music-f-cancel">Cancel</button>
+      </div>` : "")).join("");
+
+  const list = tracks.length || folders.length
+    ? folderBlocks + group("", "Loose", "")
+      + `<div class="save-row">
+          <input id="music-folder" class="text" type="text" maxlength="40" placeholder="Main Stage" />
+          <button class="btn-quiet" data-tbl="music-f-add">New folder</button>
+        </div>
+        <p class="muted">Drag a track by its <strong>&#8942;&#8942;</strong> handle to reorder it, or onto
+          another folder's heading to move it there. The arrows and the Move list do the same thing
+          without dragging. Deleting a folder never deletes its music — those tracks come out loose.</p>`
     : `<p class="muted">Nothing saved yet. Add one below and it stays on this table.</p>`;
 
   return `<section class="panel"><h2>Music</h2>
@@ -745,3 +917,127 @@ function musicPanelHTML() {
       <p id="music-msg" class="save-msg">${esc(mus.msg)}</p>
     </section>`;
 }
+
+
+/* ---------------------------------------------------------------- dragging a row
+ *
+ * POINTER EVENTS, NOT HTML5 DRAG-AND-DROP. `draggable` does not exist under a finger at all, and half
+ * this table is played on a phone — the board learned that lesson the hard way and it is written down in
+ * RULES.md. So this is the same shape as the board's own drag: pointerdown on a HANDLE (never on the
+ * row, which would fight the press that plays a track and the swipe that scrolls the panel), a few
+ * pixels of slop before anything counts as a drag, and handlers on the window so a release outside the
+ * panel is still a release.
+ *
+ * The drop target is read with `elementFromPoint` rather than tracked with enter/leave events, because
+ * a pointer that is CAPTURED sends every move to the handle and to nothing else — enter and leave never
+ * fire on the rows at all.
+ */
+const TBL_MUS_SLOP = 6;         // pixels before a press becomes a drag
+let musDrag = null;             // { id, from, x, y, live, ghost, over }
+
+function musDragClear() {
+  musEdgeStop();
+  document.querySelectorAll(".drop-into, .drop-before").forEach((n) =>
+    n.classList.remove("drop-into", "drop-before"));
+  if (musDrag && musDrag.ghost) musDrag.ghost.remove();
+  musDrag = null;
+}
+
+/* Where a release would put it: a folder heading means "into that folder, at the end"; a row means
+   "in that row's folder, at its place". */
+function musDropTarget(x, y) {
+  const el = document.elementFromPoint(x, y);
+  if (!el || !el.closest) return null;
+  const row = asEl(el.closest("[data-mus-row]"));
+  if (row && row.dataset && row.dataset.musRow !== musDrag.id) {
+    const box = row.getBoundingClientRect();
+    const rows = [...row.parentElement.querySelectorAll("[data-mus-row]")];
+    let at = rows.indexOf(row);
+    if (y > box.top + box.height / 2) at += 1;              // dropped on the lower half: after it
+    return { node: row, folder: row.dataset.musIn || "", index: at, how: "before" };
+  }
+  const folder = asEl(el.closest("[data-mus-folder]"));
+  if (folder && folder.dataset) {
+    const head = folder.querySelector(".mus-folder-head") || folder;
+    return { node: head, folder: folder.dataset.musFolder || "", index: null, how: "into" };
+  }
+  return null;
+}
+
+window.addEventListener("pointerdown", (e) => {
+  const handle = evTarget(e).closest ? evTarget(e).closest("[data-mus-drag]") : null;
+  if (!handle || !tbl || tbl.role !== "dm") return;
+  e.preventDefault();               // or the browser starts its own selection/scroll gesture
+  musDrag = { id: handle.dataset.musDrag, x: e.clientX, y: e.clientY, live: false, ghost: null, over: null };
+  try { handle.setPointerCapture(e.pointerId); } catch { /* not all engines, and it still works */ }
+});
+
+window.addEventListener("pointermove", (e) => {
+  if (!musDrag) return;
+  if (!musDrag.live) {
+    if (Math.hypot(e.clientX - musDrag.x, e.clientY - musDrag.y) < TBL_MUS_SLOP) return;
+    musDrag.live = true;
+    const src = document.querySelector(`[data-mus-row="${musDrag.id}"] .scene-pick strong`);
+    const ghost = document.createElement("div");
+    ghost.className = "mus-ghost";
+    ghost.textContent = (src && src.textContent) || "Track";
+    document.body.appendChild(ghost);
+    musDrag.ghost = ghost;
+  }
+  musDrag.ghost.style.transform = `translate(${e.clientX + 12}px, ${e.clientY - 10}px)`;
+  document.querySelectorAll(".drop-into, .drop-before").forEach((n) =>
+    n.classList.remove("drop-into", "drop-before"));
+  const hit = musDropTarget(e.clientX, e.clientY);
+  musDrag.over = hit;
+  if (hit) hit.node.classList.add(hit.how === "into" ? "drop-into" : "drop-before");
+  musEdgeScroll(e.clientY);
+});
+
+/* THE PANEL SCROLLS, AND THE FOLDER YOU WANT IS OFTEN BELOW THE FOLD. Found by measuring rather than by
+   thinking: with two folders open the second one's heading sat at y=1042 in an 850px window, so there was
+   no way to reach it at all — you cannot drop onto something that is not on screen.
+ *
+ * On a TIMER, not on pointermove. The first version crept 12px per move event, which meant it only
+ * scrolled while your hand was still travelling: park at the edge and hold, which is exactly what
+ * everyone does, and it sat there. Held near an edge it now keeps going until you leave it or let go. */
+let musScroll = null;
+function musEdgeScroll(y) {
+  const side = document.querySelector("#vtt-side");
+  if (!side) return;
+  const box = side.getBoundingClientRect();
+  const near = 70;
+  const dir = y < box.top + near ? -1 : y > box.bottom - near ? 1 : 0;
+  if (!dir) { musEdgeStop(); return; }
+  if (musScroll && musScroll.dir === dir) return;
+  musEdgeStop();
+  musScroll = { dir, id: setInterval(() => {
+    if (!musDrag) { musEdgeStop(); return; }
+    side.scrollTop += dir * 14;
+  }, 16) };
+}
+function musEdgeStop() {
+  if (musScroll) { clearInterval(musScroll.id); musScroll = null; }
+}
+
+window.addEventListener("pointerup", () => {
+  if (!musDrag) return;
+  const { id, live, over } = musDrag;
+  musDragClear();
+  // A press that never became a drag is just a press; it must not move anything.
+  if (!live || !over) return;
+  tblMusicPlace(id, over.folder, over.index == null ? tblMusicGroup(over.folder).length : over.index)
+    .catch(tblFail);
+});
+window.addEventListener("pointercancel", () => musDragClear());
+
+/* The Move list, which is the same write without the gesture. */
+document.addEventListener("change", (e) => {
+  const t = evTarget(e).closest ? evTarget(e).closest("[data-mus-move]") : null;
+  if (!t || !tbl || tbl.role !== "dm") return;
+  const id = t.dataset.musMove;
+  const to = t.value;
+  t.value = "";
+  if (!to) return;
+  tblMusicPlace(id, to === "~loose" ? "" : to, tblMusicGroup(to === "~loose" ? "" : to).length)
+    .catch(tblFail);
+});

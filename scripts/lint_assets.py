@@ -48,6 +48,8 @@ for m in re.finditer(r'class="([^"]+)"', HTML):
 # visible to any static scan, so the few that exist are declared here rather than chased with an
 # ever-greedier regex (a wider one starts reading data-act values as class names).
 used.update(["on", "blocked", "btn-hot", "down", "hurt", "primary", "spent", "warn", "good", "bad",
+             # chosen by a ternary inside classList.add(), which no static scan can read
+             "drop-before", "drop-into", "mus-empty",
              "hidden", "active", "empty", "over", "prof", "resolved", "inplay-tip", "wide", "caption",
              "who-dm", "mine", "movable", "npc", "turn", "dragging", "dropped", "half", "low",
              "rolling", "landed", "nat20", "nat1", "crit-high", "crit-low", "now"])

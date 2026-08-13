@@ -112,7 +112,7 @@ function tblFresh(code, role) {
     inkNew: new Set(),      // the pieces it created, so they are not drawn twice on the way
     centredOnMe: false,     // the camera has been aimed at this player's own figure, once
     cameraIsYours: false,   // …and after that, only you move it
-    ui: { panel: "", error: "", musicKind: "repo" },
+    ui: { panel: "", error: "", musicKind: "repo", musicRename: "" },
   };
 }
 
@@ -1377,6 +1377,15 @@ document.addEventListener("click", (e) => {
   else if (act === "music-repo-add") tblMusicAddRepo(val).catch(tblFail);
   else if (act === "music-repo-all") tblMusicAddAllRepo(val).catch(tblFail);
   else if (act === "music-q-folder") tblMusicQueueFolder(val).catch(tblFail);
+  else if (act === "music-up") tblMusicNudge(val, -1).catch(tblFail);
+  else if (act === "music-down") tblMusicNudge(val, 1).catch(tblFail);
+  else if (act === "music-f-add") tblMusicFolderAdd(($("#music-folder") || {}).value).catch(tblFail);
+  else if (act === "music-f-up") tblMusicFolderMove(val, -1).catch(tblFail);
+  else if (act === "music-f-down") tblMusicFolderMove(val, 1).catch(tblFail);
+  else if (act === "music-f-rename") { tbl.ui.musicRename = val; paintSide(); }
+  else if (act === "music-f-cancel") { tbl.ui.musicRename = ""; paintSide(); }
+  else if (act === "music-f-save") tblMusicFolderRename(val).catch(tblFail);
+  else if (act === "music-f-drop") tblMusicFolderDrop(val).catch(tblFail);
   else if (act === "scene-add") tblAddScene().catch(tblFail);
   else if (act === "grid-cols") tblNudgeGrid("cols", Number(val)).catch(tblFail);
   else if (act === "grid-rows") tblNudgeGrid("rows", Number(val)).catch(tblFail);

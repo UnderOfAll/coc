@@ -200,6 +200,91 @@ ok(yt.frame, "a YouTube track builds its player");
 ok(yt.wide <= 1, "off-screen and one pixel, so nobody sees a video");
 ok(yt.audioPaused !== false, "and the other player is stopped rather than left singing under it");
 
+/* DRAGGING A TRACK INTO A FOLDER. Pointer events, because HTML5 drag-and-drop does not exist under a
+   finger and half this table is played on a phone — the board learned that the hard way. jsdom has no
+   `elementFromPoint` worth the name and no layout to read a drop target out of, so this is the only
+   place the gesture can be shown to work at all. */
+await dm.evaluate(async (r) => {
+  await CocLive.put(`tables/${r}/music/now`, null);
+  await CocLive.put(`tables/${r}/music/queue`, null);
+  await CocLive.put(`tables/${r}/music/tracks`, null);
+  await CocLive.put(`tables/${r}/music/folders`, null);
+  const a = await CocLive.push(`tables/${r}/music/folders`, { name: "Backstage", order: 0, at: 1 });
+  const b = await CocLive.push(`tables/${r}/music/folders`, { name: "Main Stage", order: 1, at: 2 });
+  await CocLive.push(`tables/${r}/music/tracks`,
+    { kind: "link", src: "/tone.wav", title: "Dragged", at: 1, folder: a, order: 0 });
+  window.__f = { a, b };
+}, ROOM);
+await wait(600);
+await dm.evaluate(() => { tbl.ui.panel = "music"; paintSide(); });
+await wait(400);
+
+/* HELD AT THE EDGE, THE PANEL SCROLLS. Measured before anything else, because without it the folder you
+   are dragging to is often simply not on screen — with two folders open the second heading sat a couple
+   of hundred pixels below the window, and you cannot drop onto what is not there. */
+const sideBox = await dm.evaluate(() => {
+  const s = document.querySelector("#vtt-side");
+  const b = s.getBoundingClientRect();
+  return { x: b.x + b.width / 2, bottom: b.bottom, top: b.top, scroll: s.scrollTop,
+    scrollable: s.scrollHeight > s.clientHeight + 10 };
+});
+ok(sideBox.scrollable, "the music panel is long enough to scroll, which is why the edge matters");
+const h0 = await dm.evaluate(() => {
+  const b = document.querySelector("[data-mus-drag]").getBoundingClientRect();
+  return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
+});
+await dm.mouse.move(h0.x, h0.y);
+await dm.mouse.down();
+await dm.mouse.move(h0.x + 14, h0.y + 14, { steps: 4 });
+await dm.mouse.move(sideBox.x, sideBox.bottom - 20, { steps: 8 });
+await wait(700);                        // held still at the edge — no further movement at all
+const scrolled = await dm.evaluate(() => document.querySelector("#vtt-side").scrollTop);
+ok(scrolled > sideBox.scroll + 40, `holding at the bottom edge keeps scrolling (${sideBox.scroll} -> ${scrolled})`);
+await dm.mouse.up();
+await wait(300);
+
+const boxes = await dm.evaluate(() => {
+  const handle = document.querySelector("[data-mus-drag]");
+  const target = document.querySelector(`[data-mus-folder="${window.__f.b}"] .mus-folder-head`);
+  if (!handle || !target) return null;
+  target.scrollIntoView({ block: "center" });
+  const h = handle.getBoundingClientRect(), t = target.getBoundingClientRect();
+  if (h.height < 1 || t.height < 1) return null;
+  return { hx: h.x + h.width / 2, hy: h.y + h.height / 2, tx: t.x + t.width / 2, ty: t.y + t.height / 2 };
+});
+ok(!!boxes, "a track row has a drag handle and a folder has a heading to drop it on");
+if (boxes) {
+  await dm.mouse.move(boxes.hx, boxes.hy);
+  await dm.mouse.down();
+  // Past the slop first, then to the target, in steps — one jump is not a drag anywhere.
+  await dm.mouse.move(boxes.hx + 12, boxes.hy + 12, { steps: 4 });
+  await wait(120);
+  const lit = await dm.evaluate(() => !!document.querySelector(".mus-ghost"));
+  ok(lit, "moving past the slop starts a drag, with something following the pointer");
+  await dm.mouse.move(boxes.tx, boxes.ty, { steps: 12 });
+  await wait(150);
+  const marked = await dm.evaluate(() => !!document.querySelector(".drop-into"));
+  ok(marked, "and the folder under the pointer says it is the one that would take it");
+  await dm.mouse.up();
+  await wait(700);
+  const landed = await dm.evaluate((r) => CocLive.get(`tables/${r}/music/tracks`), ROOM);
+  const t = Object.values(landed)[0];
+  const want = await dm.evaluate(() => window.__f.b);
+  ok(t.folder === want, `releasing puts it in that folder (folder=${t.folder === want ? "Main Stage" : t.folder})`);
+  ok(!(await dm.evaluate(() => !!document.querySelector(".mus-ghost"))), "and the ghost is cleared up after it");
+}
+/* A PRESS THAT NEVER BECAME A DRAG MUST NOT MOVE ANYTHING — the handle is a hair from the play button. */
+const before = await dm.evaluate((r) => CocLive.get(`tables/${r}/music/tracks`), ROOM);
+const h2 = await dm.evaluate(() => {
+  const n = document.querySelector("[data-mus-drag]");
+  const b = n.getBoundingClientRect();
+  return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
+});
+await dm.mouse.move(h2.x, h2.y); await dm.mouse.down(); await dm.mouse.move(h2.x + 2, h2.y + 1); await dm.mouse.up();
+await wait(400);
+ok(JSON.stringify(await dm.evaluate((r) => CocLive.get(`tables/${r}/music/tracks`), ROOM)) === JSON.stringify(before),
+  "a press that never travelled is a press, and moves nothing");
+
 await browser.close();
 server.close();
 console.log(fails ? `\nFAILURES: ${fails}` : "\nThe music plays, syncs across devices, and the volume is each device's own.");

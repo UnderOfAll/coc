@@ -1884,3 +1884,26 @@ body:has(.vtt) { height: 100dvh; overflow: hidden; }
 .music-vol { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
 .music-slider { flex: 1 1 8rem; min-width: 6rem; accent-color: var(--gold); }
 .music-pct { min-width: 3.4rem; text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* A track's drag handle. Its own control rather than the whole row: dragging from the name would fight
+   the press that plays it, and dragging from anywhere would fight the panel's scroll — which under a
+   finger is the gesture people actually make. `touch-action: none` is what stops the browser claiming
+   the gesture before the first pointermove arrives. */
+.mus-handle { touch-action: none; cursor: grab; background: none; border: 0; padding: 0 0.35rem;
+  color: var(--muted); font-size: 0.9rem; letter-spacing: -2px; line-height: 1; }
+.mus-handle:active { cursor: grabbing; color: var(--gold); }
+.mus-row { align-items: center; }
+.mus-move { max-width: 8.5rem; padding: 0.15rem 0.3rem; font-size: 0.78rem; }
+.mus-folder { border-left: 2px solid var(--border); padding-left: 0.5rem; margin: 0.6rem 0; }
+.mus-folder-head { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+.mus-folder-acts { display: flex; gap: 0.3rem; align-items: center; margin-left: auto; }
+.mus-empty { padding: 0.3rem 0; }
+/* Where a release would put it. Into a folder is a ring round the heading; between two rows is a line
+   above the row it would land before — the two readings a drop can have, drawn differently. */
+.drop-into { outline: 2px dashed var(--gold); outline-offset: 3px; border-radius: 4px; }
+.drop-before { box-shadow: inset 0 2px 0 0 var(--gold); }
+/* What follows the pointer. Fixed, so the panel scrolling under it does not drag it along. */
+.mus-ghost { position: fixed; left: 0; top: 0; z-index: 60; pointer-events: none;
+  background: rgba(11,11,10,0.92); border: 1px solid var(--gold); border-radius: 4px;
+  padding: 0.2rem 0.5rem; font-size: 0.8rem; max-width: 12rem; overflow: hidden;
+  white-space: nowrap; text-overflow: ellipsis; }
