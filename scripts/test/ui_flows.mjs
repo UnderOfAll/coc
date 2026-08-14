@@ -365,6 +365,28 @@ ok(spent<=27,"never goes over the 27-point budget (spent "+spent+")");
 ok($$('[data-pick="abil"]').filter(b=>b.dataset.val.endsWith("|1")&&!b.disabled).every(b=>true),"steppers rendered");
 const anyAfford=$$('[data-pick="abil"]').filter(b=>b.dataset.val.endsWith("|1")&&!b.disabled).length;
 ok(spent<27||anyAfford===0,"when the budget is gone every + is disabled");
+/* ALL 27, NOT AT MOST 27. Kayki: "if a player dont put the 27 points in the character creation, he can
+   still create the character, which isnt supposed to be." Only over-budget was ever checked, and the +
+   button already makes going over impossible — so the check that existed could not fire and the one that
+   mattered was missing. */
+ok(peek(`draft.method`)==="buy","point buy is the method a new character starts on");
+ok(peek(`blankDraft().method`)==="buy","and the one a blank draft carries");
+ok($$('[data-pick="method"]')[0].dataset.val==="buy","and the first of the three to offer");
+peek(`draft.scores = { Strength: 8, Dexterity: 8, Constitution: 8, Intelligence: 8, Wisdom: 8, Charisma: 8 };
+  draft.method = "buy"; renderCreator();`);
+ok(peek(`validateDraft(derive(draft)).some(t => /Spend the last 27 points/.test(t))`),
+  "spending nothing is refused, and says how much is left");
+peek(`draft.scores.Charisma = 15; draft.scores.Dexterity = 15; renderCreator();`);
+ok(peek(`validateDraft(derive(draft)).some(t => /Spend the last 9 points/.test(t))`),
+  "and so is stopping nine points short");
+peek(`draft.scores = { Strength: 8, Dexterity: 15, Constitution: 14, Intelligence: 13, Wisdom: 12, Charisma: 10 };
+  renderCreator();`);
+ok(peek(`ABILITIES.reduce((n,a)=>n+(POINT_COST[draft.scores[a]]??0),0)`)===27,"a full spread is exactly 27");
+ok(!peek(`validateDraft(derive(draft)).some(t => /point buy uses all/.test(t))`),
+  "and spending all of them is accepted");
+// Put back the spread the block above built, so what follows measures the character it expects.
+peek(`draft.scores = { Strength: 8, Dexterity: 15, Constitution: 15, Intelligence: 8, Wisdom: 8, Charisma: 15 };
+  renderCreator();`);
 
 // the creator picks a discipline off the same cards, not off a row of names
 type($("#lvl"),"3"); blur($("#lvl"));

@@ -398,7 +398,12 @@ function rememberCode(code, name) {
 function blankDraft() {
   return {
     v: 1, name: "", classId: "", subclassId: "", level: 1, levelText: "1", size: "",
-    method: "array", scores: {}, origin: {},
+    /* POINT BUY IS THE ONE THIS SYSTEM IS BALANCED ON. Kayki: "put point buy as the main one and the
+       other 2 as optional in the creation." The array and the manual box stay for a table that wants
+       them, but the form opens on the 27 points, already spread as six 8s the way pressing the button
+       does — an ability with no value at all is what let a half-built character through. */
+    method: "buy", scores: { Strength: 8, Dexterity: 8, Constitution: 8, Intelligence: 8, Wisdom: 8, Charisma: 8 },
+    origin: {},
     skills: [], armorId: "", shieldId: "", weapons: [], photo: "", notes: "",
     // Filled in from the sheet, not the form: a bag starts empty and what goes in it is a table
     // decision, not a creation one.
@@ -474,7 +479,7 @@ function stepBasics(cls) {
 
 function stepAbilities(cls) {
   const m = draft.method;
-  const tabs = [["array", "Standard array"], ["buy", "Point buy"], ["manual", "Manual"]].map(([k, l]) =>
+  const tabs = [["buy", "Point buy"], ["array", "Standard array"], ["manual", "Manual"]].map(([k, l]) =>
     `<button class="toggle-btn ${m === k ? "active" : ""}" data-pick="method" data-val="${k}">${l}</button>`).join("");
   const spent = ABILITIES.reduce((n, a) => n + (POINT_COST[draft.scores[a]] ?? 0), 0);
   const left = POINT_BUDGET - spent;
@@ -519,8 +524,10 @@ function stepAbilities(cls) {
     ${m === "buy" ? `<p class="muted"><span class="budget ${left < 0 ? "over" : ""}">${esc(left)}</span>
       of ${POINT_BUDGET} points left. Costs rise past 13, and nothing starts above 15 — there are no
       races to raise it.</p>` : ""}
-    ${m === "array" ? `<p class="muted">Assign 15, 14, 13, 12, 10 and 8 in any order.</p>` : ""}
-    ${m === "manual" ? `<p class="muted">Type what your table rolled. Nothing is validated beyond 3–20.</p>` : ""}
+    ${m === "array" ? `<p class="muted">Assign 15, 14, 13, 12, 10 and 8 in any order. An alternative to point
+      buy, for a table that prefers it — every class in this system is balanced against the 27 points.</p>` : ""}
+    ${m === "manual" ? `<p class="muted">Type what your table rolled. Nothing is validated beyond 3&ndash;20 —
+      this one trusts you, so it is the only way to end up with numbers the system was not built for.</p>` : ""}
     <div class="abils ${m === "buy" ? "wide" : ""}">${rows}</div>
     ${stepOrigin()}</section>`;
 }
@@ -681,9 +688,18 @@ function validateDraft(d) {
   if (unset.length) out.push(`Set ${unset.length} more ability score${unset.length === 1 ? "" : "s"}.`);
   const originLeft = ORIGIN_POINTS - originSpent();
   if (originLeft > 0) out.push(`Assign ${originLeft} more starting bonus point${originLeft === 1 ? "" : "s"}.`);
+  /* ALL 27, NOT AT MOST 27. Kayki: "if a player dont put the 27 points in the character creation, he can
+     still create the character, which isnt supposed to be." Only the over-budget half was ever checked —
+     and the + button already makes going over impossible, so the check that could fire never did and the
+     one that mattered did not exist. A character built on 19 points is not a cheaper character, it is a
+     weaker one that nothing at the table will ever tell you about. */
   if (draft.method === "buy") {
     const spent = ABILITIES.reduce((n, a) => n + (POINT_COST[draft.scores[a]] ?? 0), 0);
     if (spent > POINT_BUDGET) out.push(`Point buy is over budget by ${spent - POINT_BUDGET}.`);
+    else if (spent < POINT_BUDGET) {
+      const left = POINT_BUDGET - spent;
+      out.push(`Spend the last ${left} point${left === 1 ? "" : "s"} — point buy uses all ${POINT_BUDGET}.`);
+    }
   }
   const parsed = cls ? parseSkillChoice(cls.proficiencies?.skills) : null;
   const need = parsed?.count || 2;
