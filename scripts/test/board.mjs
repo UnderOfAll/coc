@@ -292,6 +292,48 @@ console.log("\n— 393px, as a player, by touch —");
   });
   const edge = await fits();
   ok(edge.open && edge.inside, `a figure's card at the right-hand edge stays on the board (${edge.w}px)`);
+
+  /* THE PICTURE, FULL SCREEN. The whole point of it is SIZE — a viewer that opened at 40px would pass
+     every assertion jsdom can make, because jsdom has no layout at all. So it is measured here: the
+     overlay covers the window and the picture is most of it. Kayki: "the players can click on the
+     enemies to see their picture in a bigger size… just cant see the stats, only name, picture." */
+  const artView = await page.evaluate(async () => {
+    const all = await CocLive.get("tables/482910/tokens");
+    const other = Object.keys(all).find((k) => !tblIsMine(all[k]));
+    // A 1x1 red pixel is enough: what is being measured is the box it is drawn in.
+    await CocLive.patch("tables/482910/tokens/" + other, { image:
+      "data:image/gif;base64,R0lGODlhAQABAIAAAP8AAAAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==" });
+    await new Promise((r) => setTimeout(r, 250));
+    tbl.ui.peek = other; paintPeek();
+    const btn = document.querySelector('#vtt-peek [data-tbl="art"]');
+    if (!btn) return { offered: false };
+    btn.click();
+    await new Promise((r) => setTimeout(r, 250));
+    const node = document.getElementById("tbl-art");
+    const img = node && node.querySelector("img.art-big");
+    const r = img && img.getBoundingClientRect();
+    return {
+      offered: true,
+      on: !!(node && node.classList.contains("on")),
+      named: !!(node && /\S/.test((node.querySelector("strong") || {}).textContent || "")),
+      w: r ? Math.round(r.width) : 0, h: r ? Math.round(r.height) : 0,
+      vw: window.innerWidth, vh: window.innerHeight,
+      // Nothing but the name and the picture: no numbers on it at all.
+      numbers: node ? /\d+\s*\/\s*\d+/.test(node.textContent) : false,
+    };
+  });
+  ok(artView.offered, "a figure with a picture offers it from its card");
+  ok(artView.on && artView.named, "pressing it opens the viewer, with the figure's name on it");
+  ok(artView.h >= artView.vh * 0.5,
+    `and the picture is most of the screen, not a thumbnail (${artView.w}x${artView.h} in ${artView.vw}x${artView.vh})`);
+  ok(!artView.numbers, "with no hit points or any other number on it");
+  const artGone = await page.evaluate(async () => {
+    document.getElementById("tbl-art").click();
+    await new Promise((r) => setTimeout(r, 200));
+    return !document.getElementById("tbl-art").classList.contains("on");
+  });
+  ok(artGone, "and tapping it puts it away");
+  await page.evaluate(() => { tbl.ui.peek = ""; paintPeek(); });
   // And an area's card, opened from its label — the handle that replaced the corner ×.
   await page.evaluate(async () => {
     await CocLive.put("tables/482910/areas/a1",

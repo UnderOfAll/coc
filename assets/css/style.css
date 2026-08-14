@@ -1407,6 +1407,24 @@ body:has(.vtt) { height: 100dvh; overflow: hidden; }
   /* Transparent, but PRESENT: the two crit lines take a real border, and without this every one of them
      stood a pixel taller than its neighbours and nudged the column sideways. */
   border: 1px solid transparent; border-radius: 6px; }
+/* A FIGURE'S PICTURE, FULL SCREEN. Name at the top, picture under it, nothing else — the stats a figure
+   has are already withheld from whoever should not see them, and this window has none to withhold.
+   Above the side panel (which on a phone is a full screen of its own) but below the dice, because a roll
+   landing is the one thing allowed to interrupt looking at something. */
+.art-stage { position: fixed; inset: 0; z-index: 68; display: flex; flex-direction: column;
+  gap: 0.6rem; padding: 1rem; background: rgba(6,6,5,0.92); opacity: 0; pointer-events: none;
+  transition: opacity 0.16s ease; }
+.art-stage.on { opacity: 1; pointer-events: auto; }
+.art-head { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; }
+.art-head strong { font-family: var(--serif); font-size: 1.3rem; color: var(--gold); }
+/* min-height: 0 — a flex child will not shrink below its content, and without it a tall picture pushes
+   the name off the top of the screen instead of fitting inside what is left. */
+.art-big { flex: 1; min-height: 0; width: 100%; object-fit: contain; border-radius: var(--radius); }
+/* The picture in a panel is the button that opens the big one. A button, not an <img> with a handler:
+   it is reachable by keyboard and it says out loud that it does something. */
+.art-open { display: block; padding: 0; border: 0; background: none; cursor: zoom-in; width: 100%; }
+.art-open .figure-art { display: block; margin-inline: auto; }
+
 /* A roll you can watch. Dice tumble for half a second and land on the truth — the moment the table
    looks up for. Used on a sheet away from a table as well, because a roll is a roll. */
 .roll-stage { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center;

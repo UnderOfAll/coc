@@ -641,6 +641,29 @@ ok(peek(`tblArt(${JSON.stringify(artRef)})`) === "data:image/jpeg;base64,MINE",
   "and the board resolves the key back to something it can draw");
 ok((await aget(`CocStore.load("123456").then((c) => c && c.photo)`)) === "data:image/jpeg;base64,MINE",
   "and the CHARACTER gets the real picture, not a key that means nothing away from this table");
+/* THE PICTURE, FULL SCREEN, FOR A PLAYER. Kayki: "the players can click on the enemies to see their
+   picture in a bigger size… just cant see the stats, only name, picture." A figure on the board is a
+   70px tile; the panel's copy is a third of a phone. This is the whole screen, and it carries the name
+   and the picture and nothing a player is not entitled to. */
+await peek(`CocLive.put("tables/482910/tokens/tOrc/image", ${JSON.stringify(artRef)})`);
+await until(() => peek(`tblTokens().tOrc && tblTokens().tOrc.image`) === artRef);
+peek(`tbl.role = "player"; tbl.ui.peek = "tOrc"; paintPeek();`);
+ok(!!$('#vtt-peek [data-tbl="art"]'), "a player's one tap on a monster offers its picture");
+click($('#vtt-peek [data-tbl="art"]'));
+await wait(40);
+ok($("#tbl-art") && $("#tbl-art").classList.contains("on"), "and pressing it opens the picture full screen");
+ok(/Orc/.test($("#tbl-art").textContent), "with the figure's name on it");
+ok(!!$("#tbl-art img.art-big"), "and the picture itself");
+ok($("#tbl-art img.art-big").getAttribute("src") === "data:image/jpeg;base64,MINE",
+  "resolved from the art key, not left as one");
+// The point of the window: it has no stats to leak, so it leaks none.
+ok(!/\d+\s*\/\s*\d+/.test($("#tbl-art").textContent), "and no hit points anywhere on it");
+ok(!/Conditions|Speed|ft/.test($("#tbl-art").textContent), "nor conditions, nor speed — name and picture only");
+click($("#tbl-art"));
+ok(!$("#tbl-art").classList.contains("on"), "tapping it puts it away");
+peek(`tbl.ui.peek = ""; paintPeek();`);
+await peek(`CocLive.del("tables/482910/tokens/tOrc/image")`);
+
 /* AND A COPY IS A COPY OF THE KEY. This is the whole point: eight goblins, one photo. */
 peek(`tbl.role = "dm";`);
 const copyId = await aget(`tblDuplicate("tRig")`);
@@ -1762,6 +1785,67 @@ await until(async () => ((await aget(`CocLive.get("tables/482910/tokens/tOrc/con
   .indexOf("grappled") >= 0);
 ok(true, "and it is held, as a condition the whole table can read");
 ok(peek(`tbl.picking`) === null, "with nothing left to tap");
+
+/* A PUPPETEER'S STRINGS — the same gesture saying a different word, plus the three rules Kayki asked
+   for: "if he puts more strings then he can, it will detach the oldest, if he want to detach at will he
+   can at no cost, if the enemy gets far then 60ft it gets detached… at l5 its 90ft." */
+ok(peek(`boardRange({ range: 60, rangeAtLevel: { 5: 90 } }, 3)`) === 60, "a leash is 60 ft at level 3");
+ok(peek(`boardRange({ range: 60, rangeAtLevel: { 5: 90 } }, 5)`) === 90, "and 90 from 5th, off Web of Strings");
+await peek(`CocLive.patch("tables/482910/tokens/tRig", { x: 2, y: 2 })`);
+await peek(`CocLive.patch("tables/482910/tokens/tOrc", { x: 3, y: 2, conditions: null })`);
+await until(() => peek(`tblTokens().tOrc.x`) === 3);
+peek(`tbl.me.tokenId = "tRig"; tblMoveOnBoard({ verb: "lock", name: "Strings", of: "Rig", range: 60,
+  mark: "stringed", cap: 2 })`);
+ok(/Attach a String|Tap the figure/.test($("#vtt-placing").textContent), "attaching one asks for a figure");
+await peek(`tblPickFigure("tOrc")`);
+await until(() => (peek(`JSON.stringify(tblConds("tOrc", tblTokens().tOrc))`) || "").includes("stringed"));
+ok(true, "the creature is marked, in the same place a grapple is shown");
+ok(peek(`!!(tblTokens().tRig.marks && tblTokens().tRig.marks.stringed && tblTokens().tRig.marks.stringed.tOrc)`),
+  "and the Puppeteer's own figure remembers whose it is");
+// Detaching is the same button again, at no cost.
+peek(`tblMoveOnBoard({ verb: "lock", name: "Strings", of: "Rig", range: 60, mark: "stringed", cap: 2 })`);
+await peek(`tblPickFigure("tOrc")`);
+await until(() => !(peek(`JSON.stringify(tblConds("tOrc", tblTokens().tOrc))`) || "").includes("stringed"));
+ok(true, "pressing it again lets go, which is what 'detach, no action' means");
+// AT THE CAP, THE OLDEST GOES. Three figures, a cap of two.
+await peek(`CocLive.put("tables/482910/tokens/tStr1", { name: "A", kind: "npc", x: 3, y: 3, size: 1, hp: 5, hpMax: 5 })`);
+await peek(`CocLive.put("tables/482910/tokens/tStr2", { name: "B", kind: "npc", x: 4, y: 3, size: 1, hp: 5, hpMax: 5 })`);
+await until(() => !!peek(`tblTokens().tStr2`));
+for (const id of ["tOrc", "tStr1", "tStr2"]) {
+  peek(`tblMoveOnBoard({ verb: "lock", name: "Strings", of: "Rig", range: 60, mark: "stringed", cap: 2 })`);
+  await peek(`tblPickFigure(${JSON.stringify(id)})`);
+  await wait(60);
+}
+ok(Object.keys(peek(`JSON.parse(JSON.stringify(tblTokens().tRig.marks.stringed))`)).length === 2,
+  "a third String past a cap of two leaves two");
+ok(!(peek(`JSON.stringify(tblConds("tOrc", tblTokens().tOrc))`) || "").includes("stringed"),
+  "and it is the OLDEST that was let go, off the creature as well as off the list");
+// THE LEASH. Walk one out past 60 feet and the wire goes with it.
+await peek(`CocLive.patch("tables/482910/tokens/tStr1", { x: 40, y: 3 })`);
+await until(() => peek(`tblTokens().tStr1.x`) === 40);
+await aget(`tblMarksSettle()`);
+await until(() => !(peek(`JSON.stringify(tblConds("tStr1", tblTokens().tStr1))`) || "").includes("stringed"));
+ok(true, "a creature that walks beyond the leash is no longer strung");
+await until(() => !peek(`!!(tblTokens().tRig.marks && tblTokens().tRig.marks.stringed && tblTokens().tRig.marks.stringed.tStr1)`));
+ok(!peek(`!!(tblTokens().tRig.marks && tblTokens().tRig.marks.stringed && tblTokens().tRig.marks.stringed.tStr1)`),
+  "and the Puppeteer's list drops it too");
+/* AND THEY SNAP WHEN THE FIGHT DOES. The fight running here belongs to the sections after this one, so
+   it is put back exactly as it was rather than left cleared. */
+const turnWas = await aget(`CocLive.get("tables/482910/meta/turn")`);
+await peek(`CocLive.put("tables/482910/meta/turn", null)`);
+await until(() => peek(`tblRoundNow()`) === 0);
+await aget(`tblMarksSettle()`);
+await until(() => !peek(`!!tblTokens().tRig.marks`));
+ok(!peek(`!!tblTokens().tRig.marks`), "ending the fight snaps every String at once");
+await until(() => !(peek(`JSON.stringify(tblConds("tStr2", tblTokens().tStr2))`) || "").includes("stringed"));
+ok(!(peek(`JSON.stringify(tblConds("tStr2", tblTokens().tStr2))`) || "").includes("stringed"),
+  "and takes the mark off whoever was carrying one");
+for (const id of ["tStr1", "tStr2"]) await peek(`CocLive.del("tables/482910/tokens/" + ${JSON.stringify(id)})`);
+peek(`tbl.me.tokenId = "";`);
+if (turnWas) {
+  await peek(`CocLive.put("tables/482910/meta/turn", ${JSON.stringify(turnWas)})`);
+  await until(() => peek(`tblRoundNow()`) > 0);
+}
 /* SWAP: one beat too, and the destination is not yours to pick — it is where the other one is standing.
    It had been riding the generic `move`, which asked for a second tap and then put the Clone wherever
    that tap landed, which is not a swap at all. Kayki: "the swap feature for Doppelganger doesn't work." */
@@ -1857,8 +1941,14 @@ ok(!$('[data-tbl="mine-remove"][data-val="tRig"]'), "so the way off the table is
    Kayki: "the functionality of the conditions will pass to the ALREADY EXISTING conditions field on the
    status field on the character sheet, don't double it." The vocabulary is authored once. */
 ok(peek(`JSON.stringify(Object.keys(TBL_CONDITION_NAMES))`)
-   === peek(`JSON.stringify(UNIVERSAL_STATE_IDS)`),
+   === peek(`JSON.stringify(UNIVERSAL_STATE_IDS.concat(MARK_STATES.map(([k]) => k)))`),
   "the board's conditions ARE the sheet's, one list authored once");
+/* PLUS THE MARKS SOMEBODY ELSE PUTS ON YOU, which are authored in the same file and shown the same way,
+   and are deliberately NOT in a player's own list of states: seven of the eight classes have no business
+   being offered a String. */
+ok(peek(`UNIVERSAL_STATE_IDS.includes("stringed")`) === false,
+  "a mark is not offered as one of your own states");
+ok(peek(`!!TBL_CONDITION_NAMES.stringed`), "but the board knows what to call it");
 /* AND IT ANSWERS ON THE PRESS, not when the database says so. It used to repaint when the write was
    ACKNOWLEDGED: instant on a good moment, five to ten seconds on a bad one, and every press in between
    read the stored list — still the old one — and asked for the very same change again. Kayki: "if I click
@@ -2301,8 +2391,64 @@ ok(/Bite/.test(peek(`enemyReadHTML(${JSON.stringify(dropped)})`)), "attacks and 
 const droppedId = Object.entries(peek(`JSON.parse(JSON.stringify(tblTokens()))`)).find(([, t]) => t.enemyId === "sawdust-hound")[0];
 peek(`tbl.role = "player"; tbl.ui.peek = ${JSON.stringify(droppedId)}; paintPeek();`);
 ok(!/AC/.test($("#vtt-peek").textContent), "a player tapping it is not shown its armour class");
+/* NOR HOW FAST IT IS. Kayki: "the players are able to see the enemies speed when opening the sheet."
+   A monster's speed is the number that says whether you can outrun it, which is the guess a fight is
+   made of — it belongs with its hit points, on the DM's side. */
+ok(!/40 ft/.test($("#vtt-peek").textContent), "nor how fast it is");
+ok(!/ft/.test(peek(`figureInfoHTML(${JSON.stringify(droppedId)})`).replace(/DM's to know/g, "")),
+  "and its panel does not print it either");
+ok(/DM's to know/.test(peek(`figureInfoHTML(${JSON.stringify(droppedId)})`)),
+  "it says whose number it is instead of leaving a hole");
 peek(`tbl.role = "dm"; paintPeek();`);
 ok(/AC/.test($("#vtt-peek").textContent), "and the DM is");
+
+/* A BOSS'S OWN ENGINE, COUNTED. Kayki: "theres no way to track grinsel engine in game, his sheet doesnt
+   have any option to do so, every boss that has an engine needs to have this type of feature." Grinsel
+   wears the Joker and carries 5 Mayhem, and the only record of it was a sentence inside a feature. */
+const grinselBtn = $$('[data-tbl="bestiary"]').find((b) => /Grinsel/.test(b.textContent));
+ok(!!grinselBtn, "Grinsel is in the bestiary");
+const beforeBoss = Object.keys(peek(`JSON.parse(JSON.stringify(tblTokens()))`)).length;
+click(grinselBtn);
+await until(() => Object.keys(peek(`JSON.parse(JSON.stringify(tblTokens()))`)).length === beforeBoss + 1);
+const bossId = Object.entries(peek(`JSON.parse(JSON.stringify(tblTokens()))`))
+  .find(([, t]) => t.enemyId === "grinsel-the-last-clown")[0];
+ok(peek(`!!tblTokenEngine(tblTokens()[${JSON.stringify(bossId)}])`), "its figure knows it carries a pool");
+ok(peek(`tblTokenEngine(tblTokens()[${JSON.stringify(bossId)}]).cap`) === 5, "of five, off its own card");
+// Out of a fight the meter is dead, exactly as a player's engine is — it cannot be banked beforehand.
+await peek(`CocLive.put("tables/482910/meta/turn", null)`);
+await until(() => peek(`tblRoundNow()`) === 0);
+peek(`tbl.ui.peek = ${JSON.stringify(bossId)}; paintPeek();`);
+ok(/Mayhem/.test($("#vtt-peek").textContent), "and the DM's card for it names the pool");
+ok($$('#vtt-peek .pip[data-tbl="ed-eng"]').length === 5, "with one pip per point of it");
+ok($$('#vtt-peek [data-tbl="ed-eng"]').every((b) => b.disabled), "every one dead out of combat");
+// A fight on: the pips wake up and one of them sets the number.
+await peek(`CocLive.put("tables/482910/meta/turn", { order: [${JSON.stringify(bossId)}], idx: 0, round: 1, at: Date.now() })`);
+await until(() => peek(`tblRoundNow()`) > 0);
+peek(`paintPeek();`);
+ok($$('#vtt-peek [data-tbl="ed-eng"]').some((b) => !b.disabled), "a fight starting wakes the meter");
+click($$('#vtt-peek [data-tbl="ed-eng"]').find((b) => b.dataset.val === bossId + "|3"));
+await until(() => peek(`tblTokens()[${JSON.stringify(bossId)}].eng`) === 3);
+ok(peek(`tblTokens()[${JSON.stringify(bossId)}].eng`) === 3, "pressing the third pip sets it to three");
+click($('#vtt-peek [data-tbl="ed-eng-step"][data-val="' + bossId + '|1"]'));
+await until(() => peek(`tblTokens()[${JSON.stringify(bossId)}].eng`) === 4);
+ok(peek(`tblTokens()[${JSON.stringify(bossId)}].eng`) === 4, "and +1 steps it");
+peek(`tbl.ui.peek = ${JSON.stringify(bossId)}; paintPeek();`);
+for (let i = 0; i < 4; i++) click($('#vtt-peek [data-tbl="ed-eng-step"][data-val="' + bossId + '|1"]'));
+await wait(120);
+ok(peek(`tblTokens()[${JSON.stringify(bossId)}].eng`) === 5, "and it cannot be pushed past its cap");
+// It is the DM's number: a player tapping the boss is shown nothing of it.
+peek(`tbl.role = "player"; paintPeek();`);
+ok(!/Mayhem/.test($("#vtt-peek").textContent), "a player tapping the boss is told nothing about its pool");
+peek(`tbl.role = "dm"; paintPeek();`);
+/* AND IT EMPTIES WITH THE FIGHT, like every engine in this system — otherwise the next fight opens with
+   the boss already holding what it built in the last one. */
+await peek(`CocLive.put("tables/482910/meta/turn", null)`);
+await until(() => peek(`tblRoundNow()`) === 0);
+await aget(`tblSpawnsSettle()`);
+await until(() => !Number(peek(`tblTokens()[${JSON.stringify(bossId)}].eng`)));
+ok(!Number(peek(`tblTokens()[${JSON.stringify(bossId)}].eng`)), "ending the fight empties the pool");
+peek(`tbl.ui.peek = ""; paintPeek();`);
+await peek(`CocLive.del("tables/482910/tokens/" + ${JSON.stringify(bossId)})`);
 /* AND THE WHOLE CARD OPENS IN THE PANEL, the DM's alone. The bestiary used to be a tab in the
    compendium, which put every enemy's hit points, weaknesses and tactics in front of the players. */
 click($('[data-tbl="enemy-card"][data-val="sawdust-hound"]'));

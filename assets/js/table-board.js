@@ -312,6 +312,12 @@ function bindStage() {
      happens to end on a figure does not open anything. */
   stage.addEventListener("click", (e) => {
     if (!tbl || (tbl.ui.ink && tbl.ui.ink.on)) return;    // the pen owns the board while it is out
+    /* A CONTROL DRAWN OVER THE BOARD IS NOT THE BOARD. Anything carrying `data-tbl` — the buttons on a
+       figure's card, the pips on a boss's meter — belongs to the ordinary click handler, and this one
+       must keep its hands off it: the line below reads "no figure under the pointer" and closes the card,
+       so pressing a button ON the card made the card vanish underneath the press. The board's GESTURES
+       already leave `data-tbl` alone for exactly this reason; the click listener had been missed. */
+    if (evTarget(e).closest("[data-tbl]")) return;
     /* WHICH FIGURE WAS UNDER THE POINTER, asked of the SCREEN rather than of the event. `pointerdown`
        calls preventDefault and takes a pointer capture — that is what makes dragging and panning work —
        and the price is that the click arrives targeted at the stage, not at the figure. So the target is
@@ -411,7 +417,21 @@ function paintPeek() {
     ${/* Its own numbers, for the DM only. A player tapping a goblin still gets what a player is entitled
           to — name, conditions, speed — and not the thing's AC and to-hit. */""}
     ${tbl.role === "dm" ? enemyReadHTML(t) : ""}
-    <p class="peek-foot">${esc(Number(t.speed) || 30)} ft${size > 1 ? ` &middot; ${esc(size)} squares` : ""}</p>
+    ${/* The boss's own pool, one tap away rather than a panel away: during a fight the DM taps the boss
+          constantly and this is the number that changes most. DM only, like everything else here. */""}
+    ${tbl.role === "dm" ? tokenEngineHTML(id, t) : ""}
+    ${/* HOW FAST A MONSTER IS, IS THE DM'S TO KNOW. Kayki: "the players are able to see the enemies
+          speed when opening the sheet." It was offered as a thing a player is entitled to, and it is not
+          — it is the number that says whether you can outrun the thing, which is exactly the guess a
+          fight is made of. A player's own figure and another player's still show it: those are theirs. */""}
+    ${showHp || t.kind !== "npc"
+      ? `<p class="peek-foot">${esc(Number(t.speed) || 30)} ft${size > 1 ? ` &middot; ${esc(size)} squares` : ""}</p>`
+      : size > 1 ? `<p class="peek-foot">${esc(size)} squares</p>` : ""}
+    ${/* The picture, full screen, for anybody — a player's one tap on a goblin now reaches the art
+          without having to know that a second tap opens a panel. Withholds nothing: the viewer carries
+          the name and the picture and no numbers at all. */""}
+    ${tblArt(t.image)
+      ? `<button class="btn-quiet" data-tbl="art" data-val="${esc(id)}">See the picture</button>` : ""}
     ${tbl.role === "dm"
       ? `<button class="btn-quiet" data-tbl="peek-edit" data-val="${esc(id)}">Edit this figure</button>` : ""}`;
   tblFitPeek(host, sx, sy);
@@ -1764,6 +1784,14 @@ async function tblSpawnsSettle() {
     if (!t || !t.spawn) continue;
     if (!fighting || Number(t.hp) <= 0) await CocLive.put(tblPath("tokens/" + id), null);
   }
+  /* AND A CREATURE'S ENGINE EMPTIES WITH THE FIGHT, for the same reason a player's does: every engine in
+     this system is per-combat and starts a fight at none of it. Left standing, the next fight would open
+     with the boss already holding the Mayhem it built in the last one. */
+  if (!fighting) {
+    for (const [id, t] of Object.entries(tblTokens())) {
+      if (t && Number(t.eng) > 0) await tblTokenField(id, "eng", 0);
+    }
+  }
 }
 
 
@@ -1793,12 +1821,78 @@ function tblMoveOnBoard(spec) {
     verb: spec.verb === "lock" ? "lock" : spec.verb === "swap" ? "swap" : "move",
     name: spec.name || "", of: spec.of || "",
     distance: spec.distance, targets: spec.targets === "many" ? "many" : "one",
+    // WHICH condition a lock shows. A grapple is the default because that is what `lock` was written
+    // for; a Puppeteer's String is the same gesture saying a different word.
+    mark: String(spec.mark || "grappled"),
+    // How many may be attached at once, 0 for no limit. The sheet works it out; the board enforces it.
+    cap: Math.max(0, Number(spec.cap) || 0),
     range: Number(spec.range) || 0, fromId: tblCasterToken(), pickedId: "",
   };
   tblClosePanelSoon();
   paintPlacing();
   paintAreas();
   return true;
+}
+
+/* Taking a mark off a figure, wherever it came from. Guarded like every other single-field write: a
+   figure that has left the board must not be brought back into existence by having a condition removed
+   from it (the ghost-figure trap). */
+async function tblDropMark(id, mark) {
+  const t = tblTokens()[id];
+  if (!t) return;
+  const had = tblConds(id, t);
+  if (had.includes(mark)) await tblTokenField(id, "conditions", had.filter((c) => c !== mark));
+}
+
+/* A LEASH IS A DISTANCE, SO IT HAS TO BE MEASURED — every stream event, on the browser that laid the
+ * marks. Kayki's three rules for a String, and the app can honour all three because it now knows whose
+ * String is on whom: attaching past the cap drops the oldest (done where it is attached), detaching is
+ * free and is the same button pressed again, and "the creature moves beyond your leash range" is this.
+ *
+ * THE DM'S BROWSER SWEEPS, once, the same as the areas and the spawned figures — so a figure walking out
+ * of range is one write and not five, and it does not matter whose device the Puppeteer is on or whether
+ * they are looking at the board. Chebyshev
+ * feet, the same metric the reach ring and every movement on this board use — a String is a length of
+ * wire and it is measured the way walking is, not the way a burst is.
+ *
+ * A figure that has left the board, or gone to another map, is out of reach by definition. */
+async function tblMarksSettle() {
+  /* AND THEY SNAP WHEN THE FIGHT DOES. The Strings engine says it in its own words — "every String you
+     have snaps the moment combat ends, and you enter every fight with none" — and it is the rule every
+     engine in this system follows. Out of a fight there is nothing to keep, so the whole set goes. */
+  if (tbl.role !== "dm") return;
+  const fighting = tblRoundNow() > 0;
+  for (const [ownerId, owner] of Object.entries(tblTokens())) {
+    if (!owner || !owner.marks) continue;
+    if (!fighting) {
+      for (const [mark, held] of Object.entries(owner.marks)) {
+        for (const id of Object.keys(held || {})) await tblDropMark(id, mark);
+      }
+      await tblTokenField(ownerId, "marks", null);
+      continue;
+    }
+    const leash = Math.max(0, Number(owner.markRange) || 0);
+    for (const [mark, held] of Object.entries(owner.marks)) {
+      if (!held || typeof held !== "object") continue;
+      let changed = false;
+      const kept = Object.assign({}, held);
+      for (const id of Object.keys(held)) {
+        const t = tblTokens()[id];
+        const gone = !t
+          || (t.scene && owner.scene && t.scene !== owner.scene)
+          || (leash > 0 && tblFeetBetween(Number(owner.x) || 0, Number(owner.y) || 0,
+                                          Number(t.x) || 0, Number(t.y) || 0) > leash);
+        if (!gone) continue;
+        delete kept[id];
+        changed = true;
+        await tblDropMark(id, mark);
+      }
+      if (changed) {
+        const marks = Object.assign({}, owner.marks, { [mark]: kept });
+        await tblTokenField(ownerId, "marks", marks);
+      }
+    }
+  }
 }
 
 /* How far this may go, in feet — a number, or measured off the figure's own legs. */
@@ -1816,11 +1910,43 @@ async function tblPickFigure(id) {
   const t = tblTokens()[id];
   if (!pick || !t) return;
   if (pick.verb === "lock") {
+    const mark = pick.mark || "grappled";
     const had = tblConds(id, t);
-    if (!had.includes("grappled")) await tblTokenField(id, "conditions", had.concat("grappled"));
+    /* PRESSING IT AGAIN TAKES IT OFF. A String is detached at no action cost by the Puppeteer who laid
+       it, so the same button has to be able to undo itself — otherwise the only way to let go of one is
+       to ask the DM to clear a chip. A grapple reads the same way round: you are holding it, or you are
+       not. */
+    const on = had.includes(mark);
+    await tblTokenField(id, "conditions", on ? had.filter((c) => c !== mark) : had.concat(mark));
+    /* WHOSE IT IS, AND WHEN IT WENT ON. The condition is what the table READS; this is what the rules
+       need to be enforceable — a cap has to know which is the oldest, and a leash has to know who is at
+       the other end of it. Kept on the caster's own figure, keyed by target, so a second Puppeteer's
+       Strings are a separate set and neither can stand on the other's. */
+    if (mark !== "grappled" && pick.fromId) {
+      const mine = Object.assign({}, (tblTokens()[pick.fromId] || {}).marks || {});
+      const held = Object.assign({}, mine[mark] || {});
+      if (on) delete held[id]; else held[id] = Date.now();
+      /* AT THE CAP, THE OLDEST GOES — the class's own rule, done rather than asked about mid-fight, the
+         same call already made for a Doppelganger's Clones. */
+      if (!on && pick.cap > 0) {
+        const byAge = Object.entries(held).sort((a, b2) => Number(a[1]) - Number(b2[1]));
+        while (byAge.length > pick.cap) {
+          const [oldest] = byAge.shift();
+          delete held[oldest];
+          await tblDropMark(oldest, mark);
+        }
+      }
+      mine[mark] = held;
+      await tblTokenField(pick.fromId, "marks", mine);
+      // The leash travels with the set, because the sweep runs long after the button was pressed.
+      if (!on) await tblTokenField(pick.fromId, "markRange", pick.range || 0);
+    }
+    const word = (typeof TBL_CONDITION_NAMES !== "undefined" && TBL_CONDITION_NAMES[mark]) || mark;
     await CocLive.push(tblPath("log"), {
       t: Date.now(), who: pick.of || tbl.me.name || "Someone", kind: "system",
-      text: `${t.name || "Someone"} is held${pick.name ? " — " + pick.name : ""}`,
+      text: mark === "grappled"
+        ? `${t.name || "Someone"} is ${on ? "let go" : "held"}${pick.name ? " — " + pick.name : ""}`
+        : `${t.name || "Someone"} is ${on ? "no longer " + String(word).toLowerCase() : String(word).toLowerCase()}${pick.name ? " — " + pick.name : ""}`,
     });
     tbl.picking = null;
     paintPlacing();

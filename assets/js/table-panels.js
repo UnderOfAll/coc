@@ -410,6 +410,48 @@ function enemySheetHTML(id) {
   return `<section class="panel enemy-sheet">${typeof renderEnemy === "function" ? renderEnemy(e) : ""}</section>`;
 }
 
+/* A CREATURE'S OWN ENGINE, COUNTED FOR THE DM.
+ *
+ * Kayki: "theres no way to track grinsel engine in game, his sheet doesnt have any option to do so, every
+ * boss that has an engine needs to have this type of feature." Grinsel wears the Joker, so he carries 5
+ * Mayhem — and the only record of that was a sentence inside one of his features, which means the DM
+ * counting on their fingers while running five other creatures and a boss.
+ *
+ * It lives on the FIGURE, not on the creature: two Grinsels on one board are two pools, exactly as two
+ * Sawdust Hounds are two sets of hit points. The cap and the name come from the bestiary card, which is
+ * the only side that knows them.
+ *
+ * DM ONLY, on purpose. A player watching the boss's Mayhem tick up is reading the DM's screen — the same
+ * rule that keeps hit points off a monster's figure (RULES.md). */
+function tblTokenEngine(t) {
+  const e = t && t.enemyId ? tblEnemy(t.enemyId) : null;
+  const eng = e && e.engine;
+  return eng && eng.name && Number(eng.cap) > 0 ? eng : null;
+}
+
+function tokenEngineHTML(id, t) {
+  const eng = tblTokenEngine(t);
+  if (!eng) return "";
+  const cap = Math.max(1, Math.min(20, Number(eng.cap) || 0));
+  const now = Math.max(0, Math.min(cap, Number(t.eng) || 0));
+  // Every engine in this system is per-combat and starts at none, so out of a fight the meter is dead
+  // rather than hidden — the same thing a player's sheet says, in the same words.
+  const fighting = tblRoundNow() > 0;
+  const pips = Array.from({ length: cap }, (_, i) =>
+    `<button class="pip ${i < now ? "on" : ""}" data-tbl="ed-eng" data-val="${esc(id)}|${i + 1}"
+      title="Set to ${i + 1}" ${fighting ? "" : "disabled"}></button>`).join("");
+  return `<p class="panel-sub">${esc(eng.name)} <span class="muted">${esc(now)} / ${esc(cap)}</span></p>
+    <div class="pips">${pips}</div>
+    ${eng.note ? `<p class="muted">${esc(eng.note)}</p>` : ""}
+    ${fighting ? "" : `<p class="muted">Built during a fight and lost when it ends — it sits at 0 until
+      you start one.</p>`}
+    <div class="hp-controls">
+      <button class="btn-quiet" data-tbl="ed-eng-step" data-val="${esc(id)}|-1" ${fighting ? "" : "disabled"}>&minus;1</button>
+      <button class="btn-quiet" data-tbl="ed-eng-step" data-val="${esc(id)}|1" ${fighting ? "" : "disabled"}>+1</button>
+      <button class="btn-quiet" data-tbl="ed-eng" data-val="${esc(id)}|0" ${fighting ? "" : "disabled"}>Clear</button>
+    </div>`;
+}
+
 /* What a figure from the bestiary is, read off the data rather than off the token. The DM should never
    have to leave the board to find out what the thing they just dropped hits for. */
 function enemyReadHTML(t) {
@@ -1383,6 +1425,9 @@ function tblShapeOf(t) {
 const TBL_CONDITION_NAMES = Object.fromEntries(
   (typeof UNIVERSAL_STATES !== "undefined" ? UNIVERSAL_STATES : [])
     .concat(typeof ROLL_STATES !== "undefined" ? ROLL_STATES : [])
+    // Marks somebody else put on you — a Puppeteer's String. They are shown and cleared exactly as a
+    // condition is, because the board is where the whole table reads them.
+    .concat(typeof MARK_STATES !== "undefined" ? MARK_STATES : [])
     .map(([k, label]) => [k, label]));
 /* Advantage and disadvantage cancel, so the board never lets a figure carry both. */
 const TBL_EXCLUSIVE = { advantage: "disadvantage", disadvantage: "advantage" };
@@ -1459,7 +1504,9 @@ function figureInfoHTML(id) {
   const conds = tblConds(id, t);
   return `<section class="panel">
     <h2>${esc(t.name || "Figure")}</h2>
-    ${t.image ? `<img class="figure-art" src="${esc(tblArt(t.image))}" alt="" />` : ""}
+    ${t.image ? `<button type="button" class="art-open" data-tbl="art" data-val="${esc(id)}"
+        title="See the picture">
+        <img class="figure-art" src="${esc(tblArt(t.image))}" alt="${esc(t.name || "")}" /></button>` : ""}
     ${showHp && t.hpMax ? `<div class="hp-head"><span class="panel-sub">Hit points</span>
         <div class="hp-num ${pct <= 25 ? "hurt" : ""}"><strong>${esc(t.hp)}</strong><span>/ ${esc(t.hpMax)}</span></div></div>
       <div class="hp-bar"><div class="hp-fill ${pct <= 25 ? "hurt" : ""}" style="transform:scaleX(${pct / 100})"></div></div>`
@@ -1470,8 +1517,12 @@ function figureInfoHTML(id) {
       ? conds.map((c) => `<span class="chip on">${esc(TBL_CONDITION_NAMES[c] || c)}</span>`).join("")
       : `<span class="muted">None.</span>`}</div>
     ${t.play ? `<p class="panel-sub">In this fight</p>${tblPlayReadHTML(t)}` : ""}
-    <p class="panel-sub">Speed</p>
-    <p>${esc(Number(t.speed) || 30)} ft${t.size > 1 ? ` <span class="muted">· ${esc(t.size)} squares across</span>` : ""}</p>
+    ${/* Same rule as the card: a monster's speed belongs to the DM. */""}
+    ${showHp || t.kind !== "npc"
+      ? `<p class="panel-sub">Speed</p>
+         <p>${esc(Number(t.speed) || 30)} ft${t.size > 1 ? ` <span class="muted">&middot; ${esc(t.size)} squares across</span>` : ""}</p>`
+      : `<p class="panel-sub">Speed</p><p class="muted">How fast it is, is the DM's to know.${
+          t.size > 1 ? ` It covers ${esc(t.size)} squares.` : ""}</p>`}
     <p class="muted">Read-only: the DM owns this figure. Double-tap any figure to look at it.</p>
   </section>`;
 }
@@ -1516,6 +1567,7 @@ function tokenEditorHTML(id) {
       <button class="btn-quiet" data-tbl="ed-del" data-val="${esc(id)}">Remove</button>
       <button class="btn-quiet" data-tbl="ed-close">Close</button>
     </div>
+    ${tokenEngineHTML(id, t)}
     ${t.enemyId ? `<p class="panel-sub">Its card</p>${enemyReadHTML(t)}` : ""}
     ${t.play ? `<p class="panel-sub">In this fight <span class="muted">— from their sheet</span></p>
       ${tblPlayReadHTML(t)}` : ""}
@@ -2242,6 +2294,56 @@ function tblArtKey(s) {
   }
   // Two independent hashes and the length: a collision would need all three to agree.
   return (a.toString(36) + b.toString(36) + s.length.toString(36)).slice(0, 24);
+}
+
+/* THE PICTURE, AS BIG AS THE SCREEN ALLOWS — and nothing else with it.
+ *
+ * Kayki: "the players can click on the enemies to see their picture in a bigger size… just cant see the
+ * stats, only name, picture." A figure on the board is a 70px tile and the panel's copy is capped at
+ * 30dvh, which on a phone is a third of a screen already sharing itself with conditions and speed. A
+ * picture is the one thing at this table that is worth looking AT, so it gets the whole screen.
+ *
+ * Deliberately name and picture ONLY. Everything else about a figure — hit points, conditions, what it
+ * is carrying — is already decided elsewhere by who is allowed to know it, and a second window with a
+ * different idea of that is how a player ends up reading a goblin's AC off a lightbox. There is nothing
+ * to withhold here because there is nothing here but the art.
+ *
+ * Body-level, like the roll overlay, so the board's gestures never see it: a press inside #vtt-stage is
+ * captured and would be eaten before it reached anything drawn over the map. */
+function tblArtStage() {
+  let node = document.getElementById("tbl-art");
+  if (!node) {
+    node = document.createElement("div");
+    node.id = "tbl-art";
+    node.className = "art-stage";
+    // Tap anywhere to put it away — the picture included, which is what every viewer of this shape does.
+    node.addEventListener("click", tblArtClose);
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && node.classList.contains("on")) tblArtClose();
+    });
+    document.body.appendChild(node);
+  }
+  return node;
+}
+
+function tblArtClose() {
+  const node = document.getElementById("tbl-art");
+  if (!node) return;
+  node.classList.remove("on");
+  node.innerHTML = "";
+}
+
+function tblArtOpen(id) {
+  const t = tblTokens()[id];
+  const src = t && tblArt(t.image);
+  if (!src) return;                       // nothing to show, and an empty black screen says nothing
+  const node = tblArtStage();
+  node.innerHTML = `<div class="art-head">
+      <strong>${esc(t.name || "Figure")}</strong>
+      <button type="button" class="btn-quiet" aria-label="Close">&times;</button>
+    </div>
+    <img class="art-big" src="${esc(src)}" alt="${esc(t.name || "")}" />`;
+  node.classList.add("on");
 }
 
 function tblArtStore() { return (tbl && tbl.data && tbl.data.art) || {}; }

@@ -1340,7 +1340,7 @@ function attacksPanel(d) {
     return `<div class="atk-card">
       <div class="atk-head">
         <strong class="atk-name">${esc(w.name)}</strong>
-        ${w.range ? `<span class="muted atk-range">${esc(w.range.normal)}/${esc(w.range.long)} ft</span>`
+        ${w.range ? `<span class="muted atk-range">${rangeTermHTML(w.range)}</span>`
           : `<span class="muted atk-range">melee</span>`}
       </div>
       <div class="atk-nums">
@@ -1572,6 +1572,16 @@ const ROLL_STATES = [
   ["advantage", "Advantage", "Roll two d20 and take the higher. Cancels disadvantage."],
   ["disadvantage", "Disadvantage", "Roll two d20 and take the lower. Cancels advantage."],
 ];
+/* MARKS SOMEBODY ELSE PUT ON YOU, which is not the same thing as a condition you are in. A String is
+   the case: Kayki — "a pupetteer dont have anyway to keep track on which creatures he has strings on…
+   that creature gets an notify on top of it, like if its grappled or restrained, but instead, its with a
+   string, that way we can all track it." It rides the condition machinery because that is what the whole
+   table already reads off a figure, and it is kept out of UNIVERSAL_STATES because seven of the eight
+   classes have no business being offered it in their own "what I am under" list. The board names it, the
+   DM can clear it, and the Puppeteer's own button takes it off again. */
+const MARK_STATES = [
+  ["stringed", "Stringed", "A Puppeteer has a String attached to you. It is the prerequisite for their control features, not an effect in itself — Manipulate, Tangle and the rest each force their own save."],
+];
 const UNIVERSAL_STATE_IDS = UNIVERSAL_STATES.concat(ROLL_STATES).map(([k]) => k);
 
 function statePanel(d, p) {
@@ -1623,7 +1633,7 @@ function gearPanel(d, ch) {
         ? row(plainTermHTML("Weapon", "The one you chose when you built this character. Its to-hit and "
             + "its damage are worked out under Attacks, proficiency already included."),
             held.name,
-            `${esc(held.damage.die)} ${esc(held.damage.type)}${held.range ? ` · ${esc(held.range.normal)}/${esc(held.range.long)} ft` : ""}`,
+            `${esc(held.damage.die)} ${esc(held.damage.type)}${held.range ? ` &middot; ${rangeTermHTML(held.range)}` : ""}`,
             propsHTML(held.properties) + (held.mastery ? " " + masteryHTML(held.mastery) : ""))
         : ""}
     </div>
@@ -2002,7 +2012,13 @@ function sheetAction(e) {
       tblMoveOnBoard({ verb: b.verb, name: f.name, of: ch.name, distance: b.distance,
         targets: b.targets, range: b.range });
     } else if (b && b.verb === "lock" && typeof tblMoveOnBoard === "function") {
-      tblMoveOnBoard({ verb: "lock", name: f.name, of: ch.name, range: b.range });
+      /* A LEASH, A CAP AND A MARK — all three of which only the sheet knows. The board can measure a
+         distance but it cannot know that Web of Strings took the leash from 60 feet to 90 at 5th, or
+         that this character's String cap is their engine cap. Kayki: "if he puts more strings then he
+         can, it will detach the oldest… if the enemy gets far then 60ft it gets detached… at l5 its
+         90ft." */
+      tblMoveOnBoard({ verb: "lock", name: f.name, of: ch.name, range: boardRange(b, d.level),
+        mark: b.mark, cap: b.cap === "engine" ? (d.engineCap ?? 0) : 0 });
     } else if (b && typeof tblCastOnBoard === "function") {
       tblCastOnBoard({ name: f.name, board: b });
     }
@@ -2042,6 +2058,20 @@ function sheetAction(e) {
          had not started anything. A cooldown and an engine cost ARE measured in rounds, so those still
          start it. */
       if (!p.inCombat && (t.cooldown || t.engineCost || t.tier === "prestige")) p.inCombat = true;
+      /* CASTING A FREE TURN FEEDS THE METER — Kayki: "illusionist never generates phantasm when cast a
+         free turn… put an option to generate it when he casts a turn." He was right that it never fired,
+         and for a reason worth recording: `free-turn` was a BUTTON on the engine panel, and every one of
+         those buttons was removed on his own earlier call ("the meter is a number, and WHY it went up is
+         something the player and the DM settle"). The trigger stayed in the data with nothing left to
+         press it, so a full caster's whole loop quietly stopped paying.
+         It is not a button now, it is the cast itself: this is the one gain in the game the app already
+         KNOWS happened, because the app is the thing that spent the cooldown. A FREE Turn is one with no
+         engine cost — which is every Illusionist Turn but Waking Nightmare, and every Jester Turn but
+         Bad Beat — and a costed one still pays nothing back, which is the rule as written. */
+      const onCast = (d.cls.play?.triggers || []).find((x) => x.id === "free-turn");
+      if (onCast && t.tier === "turn" && !t.engineCost) {
+        p.engine = Math.max(0, Math.min(d.engineCap ?? 0, p.engine + (onCast.gain || 1)));
+      }
       // The app never sees the roll, so it asks. Only worth asking when the answer changes
       // something: a failed save feeds a full caster's engine.
       const asks = t.save && (d.cls.play?.triggers || []).some((x) => x.id === "failed-save");
@@ -2231,13 +2261,24 @@ document.addEventListener("keydown", (e) => {
    stringed creature, Heave throwing one, Iron Grip holding one, a Trapeze Swing — could be read and not
    used. The button appears only where the data says there is something to do, and only at a table, since
    away from one there is no board to do it on. */
+/* A range that grows with level. `range` is the 1st-level number; `rangeAtLevel` names the levels it
+   changes at, and the highest one at or below you wins. */
+function boardRange(b, level) {
+  let out = Number(b.range) || 0;
+  for (const [at, v] of Object.entries(b.rangeAtLevel || {})) {
+    if (Number(level) >= Number(at)) out = Math.max(out, Number(v) || 0);
+  }
+  return out;
+}
+
 function boardCtl(f, d, p) {
   const b = f && f.board;
   if (!b || !atATable()) return "";
   /* SPAWNING IS THIS BUTTON TOO. It used to be the engine's — the meter going up and a figure appearing
      are the same event for a class whose engine IS a count of things on the map — but the engine is a
      number with three buttons now, and "make a Clone" is a thing the Clones feature does. */
-  const label = b.verb === "lock" ? "Hold a figure"
+  const label = b.label ? esc(b.label)
+    : b.verb === "lock" ? "Hold a figure"
     : b.verb === "move" ? "Move a figure"
     : b.verb === "swap" ? "Trade places"
     : b.verb === "spawn" ? `Put ${esc(b.figure ? "a " + b.figure : "one")} on the map`

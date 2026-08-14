@@ -107,6 +107,31 @@
       ],
       "default": "one",
       "description": "move only: whether one figure moves or several chosen ones do."
+    },
+    "mark": {
+      "type": "string",
+      "description": "lock only: WHICH condition the board shows on the figure. Defaults to `grappled`, which is what a grapple is. A Puppeteer's String is the other case — Kayki, 2026-08-14: \"a pupetteer dont have anyway to keep track on which creatures he has strings on… that creature gets an notify on top of it, like if its grappled or restrained, but instead, its with a string, that way we can all track it.\" It has to be a condition the whole table already reads, or it is a private note again: the figure shows it, the DM can clear it, and a second press of the same button takes it off, which is what \"detach, no action\" means."
+    },
+    "label": {
+      "type": "string",
+      "maxLength": 40,
+      "description": "What the button on the sheet says. Omit and the verb picks the words — 'Hold a figure', 'Move a figure', 'Trade places'. Worth setting the moment the verb's default is a lie: a String is not a grapple, and 'Hold a figure' would be the wrong instruction for it."
+    },
+    "rangeAtLevel": {
+      "type": "object",
+      "description": "A range that GROWS. `range` is the number at 1st level; each key here is the level from which the value applies, and the highest key at or below the character's level wins. Authored rather than computed because a formula mini-language for one or two cases is a language nobody else will ever read — Web of Strings taking a Puppeteer's leash from 60 feet to 90 at 5th is the case it exists for.",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0,
+        "multipleOf": 5
+      }
+    },
+    "cap": {
+      "type": "string",
+      "enum": [
+        "engine"
+      ],
+      "description": "lock only: how many of these may be attached at once. `engine` means the class's own engine cap is the answer — a Puppeteer may hold as many Strings as their String cap, and attaching one past it detaches the OLDEST, which is what the class says happens. The sheet is the only side that knows the cap, so it hands it to the board."
     }
   },
   "allOf": [

@@ -719,6 +719,7 @@ function paintEverything() {
   paintAreas();
   tblAreasSettle();
   tblSpawnsSettle();
+  tblMarksSettle();
   tblArtSettle();
   paintPlacing();
   // The list of what you have out there follows the board, so an area that expires leaves it by itself.
@@ -1314,6 +1315,26 @@ document.addEventListener("click", (e) => {
   else if (act === "sheet-close") { closeSheetPanel(); tbl.ui.panel = ""; paintSide(); }
 
   else if (act === "ed-open") tblOpenToken(val);
+  /* A creature's engine, set from its card or from its figure's panel. Written straight to the figure —
+     it is that figure's pool, not the bestiary's — and repainted from the press rather than from the
+     stream, because a meter that waits for the echo reads as a button that did nothing. */
+  else if (act === "ed-eng" || act === "ed-eng-step") {
+    const [id, arg] = String(val).split("|");
+    const t = tblTokens()[id];
+    const eng = t && tblTokenEngine(t);
+    if (eng) {
+      const cap = Math.max(1, Math.min(20, Number(eng.cap) || 0));
+      const want = act === "ed-eng" ? Number(arg) : (Number(t.eng) || 0) + Number(arg);
+      const next = Math.max(0, Math.min(cap, want));
+      // Pressing the pip that is already the last one lit turns it off — the way a one-pip meter is
+      // cleared without hunting for the Clear button.
+      const set = act === "ed-eng" && next === (Number(t.eng) || 0) && next > 0 ? next - 1 : next;
+      tblTokenField(id, "eng", set).catch(tblFail);
+      t.eng = set;
+      tblRepaintPanel();
+      paintPeek();
+    }
+  }
   else if (act === "ink-pen" || act === "ink-erase" || act === "ink-bucket" || act === "ink-off") {
     const ink = tblInkState();
     ink.on = act !== "ink-off";
@@ -1328,6 +1349,9 @@ document.addEventListener("click", (e) => {
   else if (act === "ink-shape") { tblInkState().shape = val; paintSide(); }
   else if (act === "ink-fill") { tblInkState().fill = val || false; paintSide(); }
   else if (act === "ink-undo") tblUndoInk().catch(tblFail);
+  // The picture, full screen. Above the DM-only guard further down, because this is a PLAYER's action
+  // first — the whole point of it is that a player can look at the thing about to eat them.
+  else if (act === "art") tblArtOpen(val);
   else if (act === "peek-close") { tbl.ui.peek = ""; tbl.ui.peekArea = ""; paintPeek(); }
   else if (act === "peek-edit") { tbl.ui.peek = ""; tbl.ui.peekArea = ""; paintPeek(); tblOpenToken(val); }
   // An area's card, opened from its label — the one part of it that takes a press, because a corner

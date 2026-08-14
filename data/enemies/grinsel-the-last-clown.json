@@ -27,6 +27,11 @@
   "parryDC": 11,
   "senses": "",
   "multiattack": "He throws two Razor Cards on his turn, at the same target or at two different ones.",
+  "engine": {
+    "name": "Mayhem",
+    "cap": 5,
+    "note": "Starts a fight with none. +1 the first time each turn he deals damage, takes damage, or anybody at the table rolls a natural 1 or a natural 20. Spent on Wild Card and The Punchline."
+  },
   "attacks": [
     {
       "name": "Razor Card",

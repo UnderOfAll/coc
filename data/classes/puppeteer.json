@@ -72,6 +72,17 @@
         "action": "Bonus Action",
         "uses": "Cap = prof bonus",
         "range": "60 ft (90 at L5)"
+      },
+      "board": {
+        "verb": "lock",
+        "anchor": "creature",
+        "range": 60,
+        "rangeAtLevel": {
+          "5": 90
+        },
+        "mark": "stringed",
+        "cap": "engine",
+        "label": "Attach a String"
       }
     },
     {

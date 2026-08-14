@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Enemy",
-  "description": "A creature the party fights. DELIBERATELY THREE WEIGHTS, because a fight made only of full stat blocks is a fight nobody finishes: most enemies are an AC, some hit points and two attacks, and that is the whole of them. Kayki: \"some enemies just have attacks, AC and HP, nothing else; some have 1 feature, some have more, and the bosses will have class and features.\"\n\nNOTHING HERE IS ROLLED BY THE APP. The numbers are what a DM reads off a card — this system's app is a tracker, not a referee (RULES.md). The one thing the app does with an enemy is put it on the board with its hit points already filled in.\n\nWHAT AN ENEMY DOES NOT HAVE: levels, ability score improvements, an engine, tricks with cooldowns, or a character sheet. A boss BORROWS a handful of a class's features, written out here in full and each saying where it came from — which is the only place the class it wears is recorded, because that IS what wearing a class means. It never resolves against the class data: a boss is a one-off and a class is a twenty-level ladder.\n\nDEFENCE, AND IT IS DECIDED BY TIER (Kayki, 2026-08-11): **specials and bosses Parry; normal enemies do not.** Every enemy has an AC and an attack must meet or beat it; a `normal` then simply takes the hit, which is what keeps a room of six moving — six mobs each rolling a Parry is six more d20 rolls a round. A `special` or a `boss` carries a `parryDC` and Parries exactly as a player does (MECHANICS §1): a flat d20 against it, above takes nothing, on it takes half, below takes half again as much.\n\nIT HAS THE SIX ABILITIES, AT EVERY TIER (Kayki, 2026-08-11). A player forcing a save on a goblin is the commonest thing that happens in a fight, so it cannot be gated to the upper tiers — and the enemies here force saves on players, which would be one-way otherwise. They are MODIFIERS, not scores: nothing in this system rolls against a raw 14, and every use is the modifier (a save, a check, and Dexterity for initiative). The spread is by tier: a `normal` is below a player, a `special` is nearly one, a `boss` equals or beats one — because it is meant to be above their level.",
+  "description": "A creature the party fights. DELIBERATELY THREE WEIGHTS, because a fight made only of full stat blocks is a fight nobody finishes: most enemies are an AC, some hit points and two attacks, and that is the whole of them. Kayki: \"some enemies just have attacks, AC and HP, nothing else; some have 1 feature, some have more, and the bosses will have class and features.\"\n\nNOTHING HERE IS ROLLED BY THE APP. The numbers are what a DM reads off a card — this system's app is a tracker, not a referee (RULES.md). The one thing the app does with an enemy is put it on the board with its hit points already filled in.\n\nWHAT AN ENEMY DOES NOT HAVE: levels, ability score improvements, tricks with cooldowns, or a character sheet. It MAY have an `engine` if it is a special or a boss \u2014 a pool with a ceiling that the DM counts during the fight \u2014 because a boss wearing a class wears its engine too, and a number nobody can see is a number the DM tracks on their fingers. A boss BORROWS a handful of a class's features, written out here in full and each saying where it came from — which is the only place the class it wears is recorded, because that IS what wearing a class means. It never resolves against the class data: a boss is a one-off and a class is a twenty-level ladder.\n\nDEFENCE, AND IT IS DECIDED BY TIER (Kayki, 2026-08-11): **specials and bosses Parry; normal enemies do not.** Every enemy has an AC and an attack must meet or beat it; a `normal` then simply takes the hit, which is what keeps a room of six moving — six mobs each rolling a Parry is six more d20 rolls a round. A `special` or a `boss` carries a `parryDC` and Parries exactly as a player does (MECHANICS §1): a flat d20 against it, above takes nothing, on it takes half, below takes half again as much.\n\nIT HAS THE SIX ABILITIES, AT EVERY TIER (Kayki, 2026-08-11). A player forcing a save on a goblin is the commonest thing that happens in a fight, so it cannot be gated to the upper tiers — and the enemies here force saves on players, which would be one-way otherwise. They are MODIFIERS, not scores: nothing in this system rolls against a raw 14, and every use is the modifier (a save, a check, and Dexterity for initiative). The spread is by tier: a `normal` is below a player, a `special` is nearly one, a `boss` equals or beats one — because it is meant to be above their level.",
   "type": "object",
   "required": [
     "name",
@@ -226,6 +226,31 @@
     "multiattack": {
       "type": "string",
       "description": "One line saying how many attacks it makes on its turn and which. Omit for one attack."
+    },
+    "engine": {
+      "type": "object",
+      "description": "A POOL THE DM HAS TO COUNT. Kayki, 2026-08-14: \"theres no way to track grinsel engine in game… every boss that has an engine needs to have this type of feature.\" A boss that wears a class wears its engine too — Grinsel carries 5 Mayhem — and until this existed the only record of it was a sentence inside a feature, which means the DM counting on their fingers while running five other creatures.\n\nThis is the TRACKER half only: how the pool is gained and what it is spent on stays in the feature that describes it, because that is rules text and this is a number with a ceiling. Bosses and specials only — a `normal` is an AC, some hit points and two attacks, and that is the whole point of the tier.",
+      "required": [
+        "name",
+        "cap"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "What the pool is called, in the creature's own words: 'Mayhem', 'Mirth', 'Strings'."
+        },
+        "cap": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20,
+          "description": "The most it can hold. A fight starts at none of it, like every engine in this system."
+        },
+        "note": {
+          "type": "string",
+          "description": "One line for the DM's screen on how it is gained and spent. The full rule belongs in the feature."
+        }
+      }
     },
     "features": {
       "type": "array",

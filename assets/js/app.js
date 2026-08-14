@@ -912,6 +912,20 @@ function tipTermHTML(label, formula) {
    explanation that happens to mention "at levels 1-4" was being swapped for the scaling-uses ladder:
    the Proficiency box explained itself as a uses counter. Only authored {{Label|formula}} tokens
    should ever be resolved. */
+/* WHAT "30/60 ft" ACTUALLY MEANS. Kayki: "the weapons that have a range 30/60 or 20/60, theres nowhere
+   explaining what that means, put a pop up on it explaining." It is written on five surfaces — the class
+   page's attack table, a weapon's own page, the sheet's attacks, the gear list, the DM's weapon picker —
+   and on none of them did anything say that the second number is where you start rolling at a
+   disadvantage. One helper, so the answer is the same wherever the pair is printed. */
+function rangeTermHTML(range) {
+  if (!range) return "";
+  const near = range.normal ?? "?", far = range.long ?? "?";
+  return plainTermHTML(`${near}/${far} ft`,
+    `Two ranges. Out to ${near} ft you attack normally. Past that and out to ${far} ft you can still ` +
+    `shoot, with DISADVANTAGE on the attack roll. Beyond ${far} ft it is out of range and you cannot ` +
+    `attack at all.`, "");
+}
+
 function plainTermHTML(label, tip, cls) {
   return `<span class="tip-term${cls ? " " + cls : ""}" tabindex="0" title="${esc(tip)}">${esc(label)}<sup class="tip-mark">&#9432;</sup>` +
     `<span class="term-tip" role="tooltip">${esc(tip)}</span></span>`;
@@ -1076,7 +1090,7 @@ function attacksSection(c) {
       (hasVers && w.versatileDamage ? ` <span class="muted">(${esc(w.versatileDamage)} two-handed)</span>` : "");
     const type = esc(w.damage.type || "—");
     const props = propsHTML(w.properties);
-    const rng = w.range ? ` <span class="muted">${esc((w.range.normal ?? "?") + "/" + (w.range.long ?? "?") + " ft")}</span>` : "";
+    const rng = w.range ? ` <span class="muted">${rangeTermHTML(w.range)}</span>` : "";
     return `<tr><td><strong>${esc(w.name)}</strong>${rng}</td><td>${dmg}</td><td>${type}</td><td>${props}</td><td>${masteryHTML(w.mastery)}</td></tr>`;
   }).join("");
   return `<h2>Attacks</h2>
@@ -1322,7 +1336,7 @@ function renderWeapon(w) {
       ${stat("Damage", dmg)}
       ${stat("Category", w.category ? cap(w.category) : "—")}
       ${statHTML("Properties", propsHTML(w.properties))}
-      ${w.range ? stat("Range", `${w.range.normal ?? "?"}/${w.range.long ?? "?"} ft`) : ""}
+      ${w.range ? statHTML("Range", rangeTermHTML(w.range)) : ""}
       ${hasVersatile && w.versatileDamage ? stat("Versatile", w.versatileDamage) : ""}
       ${w.mastery ? stat("Mastery", w.mastery) : ""}
     </div>
@@ -1473,6 +1487,11 @@ function renderEnemy(e) {
             d20 against DC ${esc(e.parryDC)} — above it takes nothing, on it takes half, below it takes half
             again as much. The same roll you make.</p>`
         : `<p class="muted">It does not Parry: an attack that hits it simply lands.</p>`}
+      ${/* A pool with a ceiling, said on the card as well as tracked at the table — the DM reading this
+            creature for the first time has to know there is a number to count before the fight starts. */""}
+      ${e.engine ? `<p><strong>${esc(e.engine.name)}.</strong> A pool of ${esc(e.engine.cap)}, starting a
+          fight with none of it.${e.engine.note ? " " + esc(e.engine.note) : ""}
+          <span class="muted">Tracked on its figure at the table.</span></p>` : ""}
       ${e.senses ? `<p><strong>Senses.</strong> ${esc(e.senses)}</p>` : ""}
       ${list(e.resist) ? `<p><strong>Takes half from</strong> ${esc(list(e.resist))}.</p>` : ""}
       ${list(e.immune) ? `<p><strong>Ignores</strong> ${esc(list(e.immune))}.</p>` : ""}

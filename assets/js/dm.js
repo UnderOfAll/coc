@@ -760,6 +760,19 @@ function renderDmEnemyForm() {
           { num: true, min: 3, max: 20, hint: "lower is better" })}
         ${dmField("en-senses", "Senses", e.senses, { maxlength: 60, placeholder: "blindsight 30 ft" })}
       </div>`}
+      ${/* A POOL THE TABLE CAN COUNT. A boss that wears a class wears its engine, and until this existed
+            the only record of one was a sentence inside a feature — so the DM counted Grinsel's Mayhem on
+            their fingers. Name it and cap it here and its figure grows a meter at the table. Specials and
+            bosses only: a normal is an AC, some hit points and two attacks. */""}
+      ${isNormal ? "" : `<p class="panel-sub">Its engine <span class="muted">— leave the name empty for none</span></p>
+      <div class="grid-row">
+        ${dmField("en-engname", "Pool", (e.engine || {}).name || "",
+          { maxlength: 24, placeholder: "Mayhem" })}
+        ${dmField("en-engcap", "Cap", (e.engine || {}).cap == null ? "" : e.engine.cap,
+          { num: true, min: 1, max: 20, hint: "starts a fight at 0" })}
+      </div>
+      ${dmField("en-engnote", "How it is gained and spent", (e.engine || {}).note || "",
+        { maxlength: 200, placeholder: "+1 the first time each turn it deals damage…" })}`}
     </section>
 
     <section class="panel">
@@ -903,7 +916,7 @@ function dmAttacksSection(e) {
               <strong>${esc(w.name)}</strong>
               <span class="wep-dmg">${esc(w.damage.die)} <span class="muted">${esc(w.damage.type)}</span></span>
             </div>
-            ${w.range ? `<p class="muted wep-note">${esc(w.range.normal)}/${esc(w.range.long)} ft</p>` : ""}
+            ${w.range ? `<p class="muted wep-note">${rangeTermHTML(w.range)}</p>` : ""}
             ${(w.properties || []).length ? `<p class="wep-note">${propsHTML(w.properties)}</p>` : ""}
             ${w.mastery ? `<p class="wep-note"><span class="dmg-k">Mastery</span> ${masteryHTML(w.mastery)}</p>` : ""}
             <button class="btn-quiet" data-dm="atk-from" data-val="${esc(w.name)}">Use this one</button>
@@ -1029,6 +1042,23 @@ function dmReadForm() {
   const parry = dmVal("en-parry");
   e.parryDC = (e.tier === "normal" || parry === undefined || parry === "") ? null
     : Math.max(3, Math.min(20, Number(parry) || 10));
+  /* THE NAME IS WHAT SAYS THERE IS ONE. Clearing it takes the meter off the creature; a cap with no name
+     is a number with nothing to call it, and a name with no cap gets 1 rather than a pool of nothing. */
+  const engName = dmVal("en-engname");
+  if (engName !== undefined) {
+    const nm = String(engName).trim().slice(0, 24);
+    if (!nm || e.tier === "normal") delete e.engine;
+    else {
+      const capRaw = dmVal("en-engcap");
+      const note = dmVal("en-engnote");
+      e.engine = {
+        name: nm,
+        cap: Math.max(1, Math.min(20, Number(capRaw === undefined ? (e.engine || {}).cap : capRaw) || 1)),
+      };
+      const n = String(note === undefined ? (e.engine || {}).note || "" : note).trim();
+      if (n) e.engine.note = n.slice(0, 200);
+    }
+  }
   for (const node of document.querySelectorAll("[data-atk]")) {
     const n = asEl(node);
     const [field, i] = n.dataset.atk.split("|");
@@ -1067,6 +1097,11 @@ function dmTidyEnemy(e) {
      one and would break this pane's own promise that changing the weight keeps what the new weight does
      not use. They are kept, and the form shows them once they exist. */
   if (out.tier === "normal") out.parryDC = null;
+  /* An engine belongs to the upper two weights, the same call the Parry gets: a normal is an AC, some hit
+     points and two attacks. Dropped to normal, the pool goes with the Parry — and a half-filled one (a
+     name with no cap, or a cap with no name) is not a pool, so it goes too. */
+  if (out.tier === "normal" || !out.engine || !out.engine.name) delete out.engine;
+  else out.engine = Object.assign({}, out.engine, { cap: Math.max(1, Math.min(20, Number(out.engine.cap) || 1)) });
   for (const k of ["resist", "immune", "vulnerable"]) out[k] = (out[k] || []).filter(Boolean);
   // A +0 is the default, so it is not written down: a plain enemy stores nothing it does not use.
   const ab = {};
