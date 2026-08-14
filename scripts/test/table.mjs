@@ -2880,6 +2880,24 @@ type($(`#music-rename-${fBack}`), "Backstage");
 click($(`[data-tbl="music-f-save"][data-val="${fBack}"]`));
 await until(async () => (((await aget(`CocLive.get("tables/482910/music/folders")`)) || {})[fBack] || {}).name === "Backstage");
 ok(true, "a folder can be renamed");
+/* AND DELETING A TRACK OUT OF A FOLDER REALLY DELETES IT. Kayki: "when i delete something from the
+   track, it just go back to the loose" — which is the repo Add list below, not the shelf: a committed
+   file cannot be deleted from a browser, so it rejoins the list of files not yet added. The shelf entry
+   is gone, and it must not reappear under Loose up here. */
+peek(`paintSide();`);
+const inFolder = peek(`tblMusicGroup(${JSON.stringify(fBack)})[0][0]`);
+click($(`[data-tbl="music-drop"][data-val="${inFolder}"]`));
+await wait(120);
+type($("#music-drop-confirm"), "CONFIRM");
+click($('[data-tbl="music-drop-go"]'));
+await until(async () => !((await aget(`CocLive.get("tables/482910/music/tracks")`)) || {})[inFolder]);
+peek(`paintSide();`);
+ok(!peek(`tblMusicGroup("").some(([id]) => id === ${JSON.stringify(inFolder)})`),
+  "a track deleted out of a folder does not come back loose");
+ok(!peek(`tblMusicTracks().some(([id]) => id === ${JSON.stringify(inFolder)})`),
+  "it is off the shelf altogether");
+ok(peek(`tblMusicDiskName("")`) === "In music/",
+  "and the repo list's top level is not a second heading called Loose");
 // Tidy up so the blocks after this one see the shelf they expect.
 for (const [id, t] of Object.entries(await aget(`CocLive.get("tables/482910/music/tracks")`))) {
   if (t.kind === "repo") await aget(`CocLive.del("tables/482910/music/tracks/${id}")`);

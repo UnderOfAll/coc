@@ -1355,18 +1355,25 @@ body:has(.vtt) { height: 100dvh; overflow: hidden; }
 
 /* The DM's map list: one row per scene, the one on everyone's screen marked. */
 .scene-list { display: flex; flex-direction: column; }
-.scene-row { display: flex; gap: 0.4rem; align-items: center; padding: 0.35rem 0;
-  border-top: 1px solid var(--border); }
+/* THE NAME WRAPS THE ROW, IT DOES NOT SHRINK TO NOTHING. Kayki: "the buttons queue move to and delete
+   are overstepping and going on top of the name of the track." A button does not shrink and a <select>
+   has a width of its own, so on a phone the name was the only thing left that could give — and
+   `min-width: 0` let it give all the way to ZERO WIDE, at which point its text stopped being clipped and
+   started being painted straight through the buttons. A floor plus `flex-wrap` is the fix: when the name
+   cannot have its 8rem the controls go to a line of their own instead, which is the shape a narrow panel
+   wanted anyway. */
+.scene-row { display: flex; flex-wrap: wrap; gap: 0.4rem; row-gap: 0.3rem; align-items: center;
+  padding: 0.35rem 0; border-top: 1px solid var(--border); }
 .scene-list > .scene-row:first-child { border-top: none; }
 .scene-row.on .scene-pick strong { color: var(--gold); }
-.scene-pick { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; gap: 0.2rem 0.5rem;
-  align-items: baseline; text-align: left; background: none; border: none; color: inherit;
-  font: inherit; cursor: pointer; padding: 0.2rem 0; }
+.scene-pick { flex: 1 1 8rem; min-width: 8rem; overflow-wrap: anywhere; display: flex; flex-wrap: wrap;
+  gap: 0.2rem 0.5rem; align-items: baseline; text-align: left; background: none; border: none;
+  color: inherit; font: inherit; cursor: pointer; padding: 0.2rem 0; }
 .scene-pick:hover strong { color: var(--gold); }
 /* The same row where the name is NOT a control: an authored enemy on the DM's screen is read, and the one
    thing you can do to it is take a copy. Laid out like .scene-pick, without the pointer that would lie. */
-.scene-static { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; gap: 0.2rem 0.5rem;
-  align-items: baseline; padding: 0.2rem 0; }
+.scene-static { flex: 1 1 8rem; min-width: 8rem; overflow-wrap: anywhere; display: flex; flex-wrap: wrap;
+  gap: 0.2rem 0.5rem; align-items: baseline; padding: 0.2rem 0; }
 /* A figure opened from the DM's list unfolds UNDER its own name, indented so the list it belongs to is
    still readable around it, rather than being lifted to the top of the panel away from where it was
    tapped. The panel inside loses its own frame — it is already inside one. */
@@ -1893,7 +1900,16 @@ body:has(.vtt) { height: 100dvh; overflow: hidden; }
   color: var(--muted); font-size: 0.9rem; letter-spacing: -2px; line-height: 1; }
 .mus-handle:active { cursor: grabbing; color: var(--gold); }
 .mus-row { align-items: center; }
-.mus-move { max-width: 8.5rem; padding: 0.15rem 0.3rem; font-size: 0.78rem; }
+/* Queue, Move and Delete travel together: three separate flex items wrap one at a time and leave a
+   button stranded on a line by itself. As one item they drop under the title in a block, and
+   `margin-left: auto` keeps them against the right edge whichever line they end up on. `nowrap` inside,
+   because a wrapping flex line WRAPS BEFORE IT SHRINKS — with wrap on, the Move list kept its full width
+   and pushed Delete onto a third line rather than giving up the 20px that would have fitted it. */
+.mus-acts { display: flex; flex-wrap: nowrap; gap: 0.35rem; align-items: center; margin-left: auto;
+  flex: 0 1 auto; min-width: 0; }
+/* The Move list shrinks before the buttons do: it is the widest thing on the line and the only one whose
+   label ("Move to…") survives being narrow. Without a shrink it forced Delete onto a third line. */
+.mus-move { flex: 0 1 auto; min-width: 5rem; max-width: 8.5rem; padding: 0.15rem 0.3rem; font-size: 0.78rem; }
 .mus-folder { border-left: 2px solid var(--border); padding-left: 0.5rem; margin: 0.6rem 0; }
 .mus-folder-head { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
 .mus-folder-acts { display: flex; gap: 0.3rem; align-items: center; margin-left: auto; }

@@ -192,8 +192,12 @@ function tblMusicGroup(folder) {
       return (ao - bo) || ((a[1].at || 0) - (b[1].at || 0));
     });
 }
+/* The name a DISK folder goes by. The top level is "In music/" and not "Loose", which is what the shelf
+   calls its own unfoldered tracks: two lists one above the other, both headed "Loose", read as one list —
+   and a repo track taken off the shelf reappears in this one, which then looks exactly like a delete that
+   moved the track instead of removing it. */
 function tblMusicDiskName(f) {
-  return f ? f.split("/").map((x) => x.replace(/[-_]+/g, " ")).join(" · ") : "Loose";
+  return f ? f.split("/").map((x) => x.replace(/[-_]+/g, " ")).join(" · ") : "In music/";
 }
 /* Grouped, folders first in the order they are met, "Loose" last — a scene's set is what a DM reaches
    for, and the odds and ends at the top level are what they scroll past. */
@@ -747,7 +751,14 @@ function repoMusicHTML() {
   const left = tblRepoMusicLeft();
   if (!left.length) return `<p class="muted">Everything in <strong>music/</strong> is already on the
     shelf above.</p>`;
-  return tblMusicByFolder(left, tblMusicDiskFolder).map(([folder, files]) => `
+  /* WHY A DELETED TRACK TURNS UP HERE AGAIN, said on the screen where it happens. Kayki: "when i delete
+     something from the track, it just go back to the loose." Delete takes a track off THIS TABLE; the mp3
+     is committed in the repo and no browser can remove it, so it rejoins the list of files not yet on the
+     shelf. Nothing was moved and nothing was kept — but from the panel it looks like both. */
+  const why = `<p class="muted">These are files committed in <strong>music/</strong>. Deleting one from
+    the shelf above only takes it off this table — the file stays in the repo and comes back to this
+    list, ready to be added again.</p>`;
+  return why + tblMusicByFolder(left, tblMusicDiskFolder).map(([folder, files]) => `
     <p class="panel-sub">${esc(tblMusicDiskName(folder))}
       <span class="muted">— ${esc(files.length)} track${files.length === 1 ? "" : "s"}</span></p>
     <div class="scene-list">${files.map((f) => `<div class="scene-row">
@@ -846,9 +857,11 @@ function musicPanelHTML() {
         <strong>${esc(t.title || "Untitled")}</strong>
         <span class="muted">${esc(TBL_MUSIC_WORDS[t.kind] || t.kind)}</span>
       </button>
-      <button class="btn-quiet" data-tbl="music-queue" data-val="${esc(id)}">Queue</button>
-      ${folders.length ? moveOptions({ id, folder: folder || "" }) : ""}
-      <button class="btn-quiet" data-tbl="music-drop" data-val="${esc(id)}">Delete</button>
+      <span class="mus-acts">
+        <button class="btn-quiet" data-tbl="music-queue" data-val="${esc(id)}">Queue</button>
+        ${folders.length ? moveOptions({ id, folder: folder || "" }) : ""}
+        <button class="btn-quiet" data-tbl="music-drop" data-val="${esc(id)}">Delete</button>
+      </span>
     </div>`;
 
   /* DELETING A TRACK ASKS FOR THE WORD, the same as deleting a creature or a character or a table. It
