@@ -48,6 +48,19 @@ for tool in yt-dlp ffmpeg; do
   }
 done
 
+# A THIRD PROGRAM, and only because YouTube made it necessary. The page hands out a JavaScript puzzle
+# that has to be run to get a working media URL; without an engine to run it yt-dlp falls back to a
+# client that now answers 403 on plenty of tracks — it fails per-video, so it looks like a broken link
+# rather than a missing dependency. Deno is the runtime yt-dlp enables by default (node is detected but
+# refused unless it is very new). Nothing else in this project uses it.
+command -v deno >/dev/null 2>&1 || {
+  echo "deno is not installed — without it YouTube returns 403 for many tracks."
+  echo "  sudo apt-get install -y unzip"
+  echo "  curl -fsSL https://deno.land/install.sh | DENO_INSTALL=/usr/local sh -s -- -y"
+  echo
+  echo "Carrying on anyway; if a link fails with 403, that is why."
+}
+
 folder="$1"; shift
 dest="music/${folder}"
 [ "$folder" = "." ] && dest="music"
@@ -77,7 +90,7 @@ for url in "${urls[@]}"; do
       --no-playlist \
       --extract-audio --audio-format mp3 --audio-quality 192K \
       --embed-metadata \
-      --postprocessor-args "ffmpeg:-af loudnorm=I=-16:TP=-1.5:LRA=11" \
+      --postprocessor-args "ExtractAudio:-af loudnorm=I=-16:TP=-1.5:LRA=11" \
       --output "$dest/%(title)s.%(ext)s" \
       --no-progress \
       "$url"; then

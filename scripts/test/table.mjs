@@ -2849,12 +2849,24 @@ await until(() => peek(`tblMusicGroup(${JSON.stringify(fMain)}).length`) === 1);
 ok(peek(`tblMusicGroup(${JSON.stringify(fBack)}).length`) === 1, "moving one out leaves the other behind");
 ok(peek(`tblMusicGroup(${JSON.stringify(fBack)})[0][1].order`) === 0,
   "and the folder it left is renumbered, so there is no hole in it");
-// Reorder inside a folder with the arrows.
 peek(`paintSide();`);
-/* DELETING A FOLDER NEVER DELETES MUSIC. Losing an evening's playlist to a mis-tap is not a trade
-   worth making, so its tracks come out loose. */
+/* NO UP/DOWN ARROWS ON A TRACK ROW — they crowded the title off its own row. */
+ok(!$$('[data-tbl="music-up"]').length && !$$('[data-tbl="music-down"]').length,
+  "a track row carries no stepper, so the title keeps the room");
+/* DELETING A FOLDER ASKS FIRST, and NEVER DELETES MUSIC. Losing an evening's playlist to a mis-tap is
+   not a trade worth making, so its tracks come out loose. */
 const shelfSize = peek(`Object.keys(tblMusicData().tracks || {}).length`);
 click($(`[data-tbl="music-f-drop"][data-val="${fMain}"]`));
+await wait(80);
+ok(!!((await aget(`CocLive.get("tables/482910/music/folders")`)) || {})[fMain],
+  "pressing Delete folder asks rather than deleting");
+ok(!!$(`[data-tbl="music-f-drop-go"][data-val="${fMain}"]`), "and puts the question on the row");
+click($('[data-tbl="music-f-drop-cancel"]'));
+await wait(80);
+ok(!!((await aget(`CocLive.get("tables/482910/music/folders")`)) || {})[fMain], "Cancel keeps the folder");
+click($(`[data-tbl="music-f-drop"][data-val="${fMain}"]`));
+await wait(80);
+click($(`[data-tbl="music-f-drop-go"][data-val="${fMain}"]`));
 await until(async () => !((await aget(`CocLive.get("tables/482910/music/folders")`)) || {})[fMain]);
 ok(peek(`Object.keys(tblMusicData().tracks || {}).length`) === shelfSize,
   "deleting a folder deletes no music");

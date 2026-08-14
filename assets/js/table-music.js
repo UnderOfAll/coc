@@ -516,21 +516,6 @@ async function tblMusicPlace(id, folder, index) {
   await CocLive.patch(tblPath("music/tracks"), patch);
   paintSide();
 }
-/* One step up or down inside its own folder — the arrows, and the reason drag is never the only way in.
-   A phone in a scrolling panel is a bad place to have to be precise. */
-async function tblMusicNudge(id, by) {
-  const shelf = tblMusicData().tracks || {};
-  const t = shelf[id];
-  if (!t) return;
-  const folders = tblMusicData().folders || {};
-  const folder = t.folder && folders[t.folder] ? t.folder : "";
-  const list = tblMusicGroup(folder).map(([tid]) => tid);
-  const at = list.indexOf(id);
-  const to = at + Number(by);
-  if (at < 0 || to < 0 || to >= list.length) return;
-  await tblMusicPlace(id, folder, to);
-}
-
 async function tblMusicFolderAdd(name) {
   if (tbl.role !== "dm") return;
   const title = String(name || "").trim().slice(0, 40);
@@ -837,8 +822,14 @@ function musicPanelHTML() {
 
   /* A ROW IS DRAGGABLE BY ITS HANDLE AND BY NOTHING ELSE. Dragging from the name would fight the press
      that plays it, and dragging from anywhere would fight the panel's own scroll — which on a phone is
-     the gesture people actually make. Everything the handle can do, the arrows and the Move list can do
-     too: drag is the quick way, never the only way. */
+     the gesture people actually make. What the handle cannot reach, the Move list can: drag is the quick
+     way, never the only way.
+
+     NO UP/DOWN ARROWS ON A TRACK ROW. Kayki: "remove the arrows up and down, its overwriting the music
+     name which is bad." The row already carries a handle, the title, Queue, Move and Delete; a stepper on
+     top of that leaves the title too little room and it runs under the buttons on a narrow panel. The
+     title is the one thing on the row that has to stay readable — it is what the DM picks from — so the
+     stepper is what goes. Reordering stays on the handle and the Move list. */
   const folders = tblMusicFolders();
   const moveOptions = (t) => `<select class="text mus-move" data-mus-move="${esc(t.id)}"
       aria-label="Move to a folder">
@@ -847,7 +838,7 @@ function musicPanelHTML() {
         `<option value="${esc(fid)}">${esc(f.name)}</option>`).join("")}
       ${t.folder ? `<option value="~loose">Out of the folder</option>` : ""}
     </select>`;
-  const row = ([id, t], i, group, folder) => `<div class="scene-row mus-row ${now && now.trackId === id ? "on" : ""}"
+  const row = ([id, t], folder) => `<div class="scene-row mus-row ${now && now.trackId === id ? "on" : ""}"
       data-mus-row="${esc(id)}" data-mus-in="${esc(folder || "")}">
       <button class="mus-handle" data-mus-drag="${esc(id)}" title="Drag to reorder or to another folder"
         aria-label="Move ${esc(t.title || "track")}">&#8942;&#8942;</button>
@@ -855,12 +846,6 @@ function musicPanelHTML() {
         <strong>${esc(t.title || "Untitled")}</strong>
         <span class="muted">${esc(TBL_MUSIC_WORDS[t.kind] || t.kind)}</span>
       </button>
-      <span class="stepper">
-        <button class="step-btn" data-tbl="music-up" data-val="${esc(id)}" title="Up"
-          ${i === 0 ? "disabled" : ""}>&uarr;</button>
-        <button class="step-btn" data-tbl="music-down" data-val="${esc(id)}" title="Down"
-          ${i === group.length - 1 ? "disabled" : ""}>&darr;</button>
-      </span>
       <button class="btn-quiet" data-tbl="music-queue" data-val="${esc(id)}">Queue</button>
       ${folders.length ? moveOptions({ id, folder: folder || "" }) : ""}
       <button class="btn-quiet" data-tbl="music-drop" data-val="${esc(id)}">Delete</button>
@@ -883,17 +868,33 @@ function musicPanelHTML() {
       </div>
     </div>`;
 
-  const group = (fid, name, extra) => {
+  /* `extra` sits inside the heading line; `below` comes after it, because a rename box and a delete
+     question are rows of their own — a <div> inside the heading's <p> is markup a browser closes early
+     and then draws somewhere the code did not ask for. */
+  const group = (fid, name, extra, below) => {
     const rows = tblMusicGroup(fid);
     return `<div class="mus-folder" data-mus-folder="${esc(fid)}">
       <p class="panel-sub mus-folder-head">${esc(name)}
         <span class="muted">${esc(rows.length)} track${rows.length === 1 ? "" : "s"}</span>${extra || ""}</p>
+      ${below || ""}
       <div class="scene-list">${rows.length
-        ? rows.map((r, i) => (tbl.ui.musicDropArm === r[0] ? dropRow(r) : row(r, i, rows, fid))).join("")
+        ? rows.map((r) => (tbl.ui.musicDropArm === r[0] ? dropRow(r) : row(r, fid))).join("")
         : `<p class="muted mus-empty">Empty — drag a track onto this heading, or use its Move list.</p>`}</div>
       ${rows.length ? `<button class="btn-quiet" data-tbl="music-q-folder" data-val="${esc(fid)}">Queue all ${rows.length}</button>` : ""}
     </div>`;
   };
+
+  /* DELETING A FOLDER ASKS FIRST. It is one button along from Rename in a heading a thumb reaches for,
+     and until now it went through on the first press. It does not ask for the typed word the way a track
+     does — a folder holds no bytes and its music comes out loose rather than dying with it — but it does
+     have to be answered, and the question says where the tracks go so the answer is an informed one. */
+  const folderDropRow = (fid, name, n) => `<div class="danger-row armed">
+      <span class="muted">Delete the folder <strong>${esc(name)}</strong>?${n
+        ? ` Its ${n} track${n === 1 ? "" : "s"} come out loose — no music is lost.`
+        : ""}</span>
+      <button class="btn btn-hot" data-tbl="music-f-drop-go" data-val="${esc(fid)}">Delete the folder</button>
+      <button class="btn-quiet" data-tbl="music-f-drop-cancel">Cancel</button>
+    </div>`;
 
   const folderBlocks = folders.map(([fid, f], i) => group(fid, f.name || "Untitled",
     `<span class="mus-folder-acts">
@@ -903,12 +904,14 @@ function musicPanelHTML() {
       </span>
       <button class="btn-quiet" data-tbl="music-f-rename" data-val="${esc(fid)}">Rename</button>
       <button class="btn-quiet" data-tbl="music-f-drop" data-val="${esc(fid)}">Delete folder</button>
-    </span>`)
-    + (tbl.ui.musicRename === fid ? `<div class="danger-row">
+    </span>`,
+    (tbl.ui.musicRename === fid ? `<div class="danger-row">
         <input id="music-rename-${esc(fid)}" class="text" type="text" maxlength="40" value="${esc(f.name || "")}" />
         <button class="btn" data-tbl="music-f-save" data-val="${esc(fid)}">Save the name</button>
         <button class="btn-quiet" data-tbl="music-f-cancel">Cancel</button>
-      </div>` : "")).join("");
+      </div>` : "")
+    + (tbl.ui.musicFolderArm === fid
+      ? folderDropRow(fid, f.name || "Untitled", tblMusicGroup(fid).length) : ""))).join("");
 
   const list = tracks.length || folders.length
     ? folderBlocks + group("", "Loose", "")
@@ -917,8 +920,8 @@ function musicPanelHTML() {
           <button class="btn-quiet" data-tbl="music-f-add">New folder</button>
         </div>
         <p class="muted">Drag a track by its <strong>&#8942;&#8942;</strong> handle to reorder it, or onto
-          another folder's heading to move it there. The arrows and the Move list do the same thing
-          without dragging. Deleting a folder never deletes its music — those tracks come out loose.</p>`
+          another folder's heading to move it there. The Move list does the same thing without dragging.
+          Deleting a folder never deletes its music — those tracks come out loose.</p>`
     : `<p class="muted">Nothing saved yet. Add one below and it stays on this table.</p>`;
 
   return `<section class="panel"><h2>Music</h2>
