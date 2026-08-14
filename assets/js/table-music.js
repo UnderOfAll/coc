@@ -495,15 +495,20 @@ function tblMusicWatch() {
     if (!tbl) { clearInterval(tblMusicTick); tblMusicTick = null; return; }
     const now = tblMusicNow();
     if (!now || !now.playing) return;
-    /* THE END-CHECK COMES BEFORE THE ALLOWED-CHECK. A DM who has not enabled sound on this device, or
-       who muted it, has no player — and the backstop sat below a return that fires in exactly that
-       case, so the room's queue depended on the DM being able to HEAR it. */
-    if (tbl.role === "dm") tblMusicEnded().catch(() => {});
-    if (!tblMusicAllowed()) return;
-    /* THE BACKSTOP, and for YouTube it is the only thing there is that this app controls. The events
-       are the fast path; the check above catches every case they miss — a tab that was asleep, a player
-       rebuilt mid-track, a stream that stopped without saying so, an event that simply never came. */
+    /* THE TICK RUNS WHETHER OR NOT THIS DEVICE CAN MAKE A SOUND, and that turned out to be the whole
+       bug. Kayki: "if i dont have the music option open as dm it doesnt go to the next on queue."
+       `tblMusicApply` is what builds the player, learns how long the track is and publishes that length
+       for everybody — and it sat behind an allowed-check here, so a DM who had not enabled sound on that
+       device only ever ran it when something ELSE repainted the table. Opening the music panel repaints;
+       a quiet table with the panel closed does not. So the room's queue depended on the DM LOOKING at
+       it. Apply is safe when sound is not allowed — it cues the player rather than playing it, which is
+       exactly what a stream event has always made it do in that state. */
     try { tblMusicApply(); } catch { /* the next tick will try again */ }
+    /* THE BACKSTOP, and for YouTube it is the only thing there is that this app controls. The events are
+       the fast path; this catches every case they miss — a tab that was asleep, a player rebuilt
+       mid-track, a stream that stopped without saying so, an event that simply never came. It runs after
+       apply, so it is asking a player that has just been brought up to date. */
+    if (tbl.role === "dm") tblMusicEnded().catch(() => {});
   }, 2500);
 }
 

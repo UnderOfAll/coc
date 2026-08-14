@@ -2999,6 +2999,24 @@ ok(true, "with nothing queued, the end of the last track writes the quiet");
   ok(peek(`tblMusicOver()`) === true, "well past it, with a length everybody agrees on, is");
   ok(peek(`typeof tblMusicPublishDuration`) === "function",
     "and the length is published by whichever device could see it");
+  /* AND THE TICK DOES ITS WORK WITHOUT THIS DEVICE BEING ABLE TO MAKE A SOUND. Kayki: "if i dont have
+     the music option open as dm it doesnt go to the next on queue." tblMusicApply is what builds the
+     player, learns the length and publishes it — and it sat behind an allowed-check inside the tick, so
+     a DM who had not enabled sound only ran it when something else repainted the table. Opening the
+     panel repaints; a quiet table with it closed does not. */
+  {
+    const was = peek(`localStorage.getItem(TBL_MUSIC_OK)`);
+    peek(`localStorage.removeItem(TBL_MUSIC_OK); window.__applied = 0;
+      window.__realApply = tblMusicApply; tblMusicApply = function () { window.__applied++; return window.__realApply.apply(null, arguments); };`);
+    ok(peek(`tblMusicAllowed()`) === false, "sound is not enabled on this device");
+    // Drive one tick's worth of work the way the interval does.
+    peek(`(function () { const now = tblMusicNow(); if (!now || !now.playing) return;
+      try { tblMusicApply(); } catch {} if (tbl.role === "dm") tblMusicEnded().catch(() => {}); })();`);
+    await wait(80);
+    ok(peek(`window.__applied`) > 0, "the tick still applies, so the player and the length still happen");
+    peek(`tblMusicApply = window.__realApply;
+      ${JSON.stringify("x")} && (${JSON.stringify(was)} === null ? localStorage.removeItem(TBL_MUSIC_OK) : localStorage.setItem(TBL_MUSIC_OK, ${JSON.stringify(was)}));`);
+  }
   peek(`mus.yt = null; mus.ytOn = false;`);
   await peek(`CocLive.put("tables/482910/music/now", null)`);
   for (const id of ["fo1", "fo2", "fo3", "fo9"]) await peek(`CocLive.del("tables/482910/music/tracks/${id}")`);
