@@ -1268,7 +1268,13 @@ function statusPanel(d) {
       <span class="ab-save">save ${rollBtn("1d20" + sign(save), ABIL_SHORT[a] + " save", sign(save))}</span></div>`;
   }).join("");
   const ch = sheet.ch;
-  const stats = d.classStats.map((k) => n(k.label, k.hit.value, "", k.hit.explain + (k.note ? " — " + k.note : ""))).join("")
+  /* The same words on the sheet as on the class page: a Joker's Gambit DC IS his trick save DC, and a
+     player hunting for the second name should not have to open a tooltip to find out. */
+  const stats = d.classStats.map((k) => {
+    const alsoTrick = d.tricks.length && /DC$/i.test(k.label || "") && !/trick/i.test(k.label || "");
+    return n(alsoTrick ? k.label + " · trick save DC" : k.label, k.hit.value, "",
+      k.hit.explain + (k.note ? " — " + k.note : ""));
+  }).join("")
     + (d.tricks.length ? n("Trick attack", sign(d.attackBonus), "roll a trick attack", "Your proficiency bonus + your " + ABIL_SHORT[d.primary] + " modifier, for the tricks that make an attack roll instead of forcing a save. Weapon attacks are worked out per weapon under Attacks.", { spec: "1d20" + sign(d.attackBonus), label: "Trick attack" }) : "");
   return `<section class="panel"><h2>Your numbers</h2>
   ${stats ? `<div class="kn-grid">${stats}</div>` : ""}

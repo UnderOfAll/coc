@@ -1017,7 +1017,7 @@ function renderClass(c) {
       ${stat("Saving Throws", (c.savingThrows || []).join(", ") || "—")}
       ${stat("Subclass At", c.subclassLevel ? "Level " + c.subclassLevel : "—")}
     </div>
-    ${keyStatsSection(c.keyStats)}
+    ${keyStatsSection(c.keyStats, c)}
     <div class="detail-body">
       ${c.proficiencies ? `<h2>Proficiencies</h2><p>${esc(profText(c.proficiencies))}</p>` : ""}
       ${skillChoiceSection(c)}
@@ -1031,8 +1031,20 @@ function renderClass(c) {
 /* The class's headline mechanic numbers (save/effect DC, resource cap, base Parry DC…) shown
    in a prominent stat block up top, like a Monk's Ki save DC. Data-driven via keyStats so every
    class — current and future — surfaces its own mechanic without touching the renderer. */
-function keyStatsSection(list) {
+/* THE WORD "TRICK" HAS TO BE ON THE NUMBER. Kayki: "the trick dc doesnt appear on the character screen on
+   compendium". It was there all along — as "Gambit DC" on the Joker, "Save DC" on the Doppelganger,
+   "Control DC" on the Puppeteer. One number, eight names, and a player looking for their trick DC has to
+   read a note under a differently-named stat to learn it is the same thing. The class's own name for it
+   stays (a Joker's DC really is his Gambit DC, and it covers more than tricks), with the words a player
+   actually searches for appended — and only for a class that HAS tricks, and only when its own label does
+   not already say it. */
+function classHasTricks(c) {
+  const id = c && (c.id || slug(c));
+  return !!id && (store.tricks || []).some((t) => (t.classes || []).includes(id));
+}
+function keyStatsSection(list, cls) {
   if (!Array.isArray(list) || !list.length) return "";
+  const alsoTrick = cls && classHasTricks(cls);
   return `<h2 class="key-stats-title">Key Numbers</h2>
     <div class="key-stats">` + list.map((s) => {
       // A `formula` turns the value into a hover term: the at-a-glance progression stays
@@ -1040,8 +1052,11 @@ function keyStatsSection(list) {
       const val = s.formula
         ? `<span class="tip-term" title="${esc(s.formula)}">${esc(s.value || "")}<sup class="tip-mark">&#9432;</sup><span class="term-tip">${esc(s.formula)}</span></span>`
         : esc(s.value || "");
+      const label = (alsoTrick && /DC$/i.test(s.label || "") && !/trick/i.test(s.label || "")
+        && !/parry/i.test(s.label || ""))
+        ? `${s.label} <span class="muted">&middot; trick save DC</span>` : esc(s.label || "");
       return `<div class="key-stat">
-         <div class="label">${esc(s.label || "")}</div>
+         <div class="label">${label}</div>
          <div class="value">${val}</div>
          ${s.note ? `<div class="note">${esc(s.note)}</div>` : ""}
        </div>`;

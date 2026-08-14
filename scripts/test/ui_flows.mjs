@@ -568,8 +568,15 @@ ok($$('.sheet-pic [data-act="clear-photo"]').length === 1,"with a way to take it
 peek(`(() => { sheet.ch.photo = ""; renderSheet(); return 1; })()`);
 ok(/Add a picture/.test(picBtn().textContent),"which puts it back to adding one");
 const knLabels=$$(".kn").map(knLabel);
-ok(knLabels.includes("Gambit DC"),"a Joker sees his Gambit DC by name ("+knLabels.join(", ")+")");
-ok(!knLabels.includes("Trick save DC"),"and not a generic 'Trick save DC'");
+ok(knLabels.some(l=>/^Gambit DC/.test(l)),"a Joker sees his Gambit DC by name ("+knLabels.join(", ")+")");
+/* AND THE WORDS HE ACTUALLY SEARCHES FOR, BESIDE IT — not instead of it. Kayki: "the trick dc doesnt
+   appear on the character screen on compendium." It was there under eight different names: Gambit DC on
+   the Joker, Save DC on the Doppelganger, Control DC on the Puppeteer. The class's own name is the true
+   one and covers more than tricks, so it stays and the second name is appended — only for a class that
+   HAS tricks, and only when its label does not already say it. */
+ok(knLabels.some(l=>/^Gambit DC · trick save DC$/.test(l)),
+  "with 'trick save DC' beside it, since a Joker's Gambit DC is his trick DC");
+ok(!knLabels.some(l=>/^Trick save DC$/.test(l)),"and never a bare generic label instead of the class's own");
 const gambit=$$(".kn").find(k=>/Gambit DC/.test(k.textContent));
 ok(gambit.querySelector(".kn-v").textContent===String(peek("derive(sheet.ch).saveDC")),"with the right number");
 ok(/Wild Cards/.test(gambit.querySelector(".term-tip").textContent),"and the class's own note in the tooltip");
