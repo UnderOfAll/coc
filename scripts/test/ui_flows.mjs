@@ -414,6 +414,21 @@ ok(peek(`validateDraft(derive(draft)).some(m=>/starting bonus/i.test(m))`)===fal
 const before=peek(`(function(){const d=derive(draft);return d.mods.Charisma;})()`);
 ok(before===Math.floor((peek("draft.scores.Charisma")+2-10)/2),"the bonus reaches the modifier ("+before+")");
 // The number on screen is the score you HAVE, not the one you bought.
+/* AND IT REACHES THE GEAR STEP TOO. Kayki's friend, building a Joker with 17 Dexterity: "on the sheet by
+   the side showed 13 ac with clothing, which is right, but on the gear field it shows the conjurers
+   longcoat ac12." stepGear read `draft.scores` raw — the point-buy half, which the starting +2/+1 is
+   deliberately kept out of — so every AC on that step was short by the bonus. */
+{
+  const dexTotal=peek(`draft.scores.Dexterity + (draft.origin.Dexterity || 0)`);
+  const dexMod=Math.floor((dexTotal-10)/2);
+  const coat=$$('[data-pick="armor"]').find(b=>/Conjurer's Longcoat/.test(b.textContent));
+  ok(!!coat,"the Conjurer's Longcoat is on offer");
+  ok(new RegExp("AC "+(10+dexMod)+"\\b").test(coat.textContent),
+    `and its AC counts the starting bonus (Dex ${dexTotal}, expected ${10+dexMod}, got "${coat.textContent.trim().replace(/\s+/g," ")}")`);
+  peek(`draft.armorId = "conjurers-longcoat"; renderCreator();`);
+  ok(peek(`derive(draft).ac`)===10+dexMod,"and the sheet's own AC agrees with it");
+  peek(`draft.armorId = ""; renderCreator();`);
+}
 const chaRow=$$(".abil").find(r=>/CHA/.test(r.textContent));
 ok(chaRow.querySelector(".step-val").textContent===String(peek("draft.scores.Charisma")+2),
   "point buy shows the total, not the base ("+chaRow.querySelector(".step-val").textContent+")");

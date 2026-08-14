@@ -600,7 +600,14 @@ function weaponTipHTML(w, d) {
 
 function stepGear(cls) {
   const { wearable, shields } = armorFor(cls);
-  const dex = abilMod(draft.scores.Dexterity ?? 10);
+  /* THE DEXTERITY YOU HAVE, NOT THE ONE YOU BOUGHT. `draft.scores` is the point-buy half only — the
+     starting +2/+1 is kept apart from it on purpose (point buy must not see it, and a level-up undo
+     rewinds `scores`), so reading it raw here made every AC on this step short by the bonus. Kayki's
+     friend, building a Joker with 17 Dexterity: "on the sheet by the side showed 13 ac with clothing,
+     which is right, but on the gear field it shows the conjurers longcoat ac12" — 15 bought +2 origin,
+     and the gear step was pricing the 15. derive() is the one place that knows, and it already did. */
+  const dGear = derive(draft);
+  const dex = dGear ? dGear.mods.Dexterity : abilMod(draft.scores.Dexterity ?? 10);
   const byCat = {};
   for (const a of wearable.filter((a) => a.availability !== "bought")) (byCat[a.category] ||= []).push(a);
   const blocks = ["clothing", "light", "medium", "heavy"].filter((c) => byCat[c]).map((c) => {
@@ -618,7 +625,7 @@ function stepGear(cls) {
 
   // Proficiency is what the CLASS grants; carrying is a choice. Previously every proficient weapon
   // turned up on the sheet as though the character had all three in hand at once.
-  const d = derive(draft);
+  const d = dGear;
   const weps = (cls.proficiencies?.weapons || []).map((n) => {
     const w = idx.weaponsByName.get(n);
     if (!w) return "";
