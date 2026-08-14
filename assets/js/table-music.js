@@ -333,10 +333,20 @@ function tblMusicApply() {
   if (now.kind === "youtube") {
     if (mus.audio) { try { mus.audio.pause(); } catch { /* already gone */ } }
     if (mus.key !== key) mus.key = key;
+    /* HOW LONG IS *THIS* TRACK — asked only of a player that is actually showing it. Kayki: "the musics
+       now isnt waiting to finish to start the next ones." A player handed a new video goes on reporting
+       the PREVIOUS one's duration for a moment, and a 2-minute answer published for a 5-minute track
+       ends it three minutes early, on every device, for good. Same fault as the ENDED state reporting
+       about the wrong song; this is the other half of it. */
     let ytDur = 0;
-    try { ytDur = (mus.yt && mus.ytOn && mus.yt.getDuration && mus.yt.getDuration()) || 0; } catch { ytDur = 0; }
+    try {
+      const holding = (mus.yt && mus.ytOn && mus.yt.getVideoData && mus.yt.getVideoData().video_id) || "";
+      if (mus.yt && mus.ytOn && (!holding || holding === now.src)) {
+        ytDur = Number(mus.yt.getDuration && mus.yt.getDuration()) || 0;
+      }
+    } catch { ytDur = 0; }
     // Published once, so a device with no player of its own can still tell when this ends.
-    if (ytDur) tblMusicPublishDuration(ytDur);
+    if (ytDur > 5) tblMusicPublishDuration(ytDur);
     if (!ytDur) ytDur = Number(now.dur) || 0;
     /* THE CLOCK IS CLAMPED TO THE END OF THE TRACK, not left to run past it. Kayki: "when it finishes the
        queue it just keep repeating the last 5sec of the last music infinitely." A finished track keeps
@@ -373,7 +383,12 @@ function tblMusicApply() {
     mus.audio.addEventListener("loadedmetadata", () => {
       const state = tblMusicNow();
       if (!state) return;
-      tblMusicPublishDuration(mus.audio.duration);
+      // Same rule for a file: an element still holding the previous track knows the previous length.
+      {
+        const el = mus.audio, src = tblMusicSrc(state);
+        const mine = !el.src || !src || el.src === src || String(el.src).endsWith(String(src));
+        if (mine) tblMusicPublishDuration(el.duration);
+      }
       try { mus.audio.currentTime = tblMusicAt(state, mus.audio.duration).at; }
       catch { /* unseekable stream: it plays from wherever it can, which is the best there is */ }
     });
@@ -424,7 +439,7 @@ function tblMusicPublishDuration(dur) {
   const now = tblMusicNow();
   if (!now || !tbl || Number(now.dur) > 0) return;
   const d = Number(dur);
-  if (!d || !isFinite(d) || d <= 0) return;
+  if (!d || !isFinite(d) || d <= 5) return;      // a "duration" of nothing is a player mid-load
   const gen = Number(now.gen) || 0;
   // The track may have changed between learning the number and writing it; a duration on the wrong
   // track would end the next one early, which is worse than not having one at all.
@@ -540,8 +555,16 @@ function tblMusicEnable() {
 
 async function tblMusicSet(patch) {
   if (tbl.role !== "dm") return;
-  const now = Object.assign({}, tblMusicNow() || {}, patch);
-  now.gen = (Number((tblMusicNow() || {}).gen) || 0) + 1;
+  const was = tblMusicNow() || {};
+  const now = Object.assign({}, was, patch);
+  now.gen = (Number(was.gen) || 0) + 1;
+  /* A DURATION BELONGS TO THE TRACK IT WAS MEASURED ON, and this is a MERGE — so `dur` survived into the
+     next track and ended it at the wrong length. Kayki: "the musics now isnt waiting to finish to start
+     the next ones." A five-minute song following a two-minute one inherited 120 seconds and was cut off
+     at two minutes, on every device, for good. Cleared here rather than in tblMusicPlay so no future
+     caller can reintroduce it: change what is playing and the old length goes with it. */
+  if ((patch.src != null && patch.src !== was.src)
+    || (patch.trackId != null && patch.trackId !== was.trackId)) now.dur = null;
   await CocLive.put(tblPath("music/now"), now);
 }
 

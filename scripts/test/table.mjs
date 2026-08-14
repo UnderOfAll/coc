@@ -2999,6 +2999,23 @@ ok(true, "with nothing queued, the end of the last track writes the quiet");
   ok(peek(`tblMusicOver()`) === true, "well past it, with a length everybody agrees on, is");
   ok(peek(`typeof tblMusicPublishDuration`) === "function",
     "and the length is published by whichever device could see it");
+  /* AND A LENGTH BELONGS TO THE TRACK IT WAS MEASURED ON. Kayki: "the musics now isnt waiting to finish
+     to start the next ones." `now` is written as a MERGE, so `dur` survived into the next track — a
+     five-minute song after a two-minute one inherited 120 seconds and was cut off at two minutes. */
+  await peek(`CocLive.put("tables/482910/music/now/dur", 120)`);
+  await until(() => Number(peek(`(tblMusicNow() || {}).dur`)) === 120);
+  await aget(`tblMusicPlay("fo3")`);
+  await until(() => (peek(`(tblMusicNow() || {}).trackId`)) === "fo3");
+  ok(!Number(peek(`(tblMusicNow() || {}).dur`)),
+    "playing another track drops the last one's length rather than inheriting it");
+  // A patch that does NOT change the track keeps it — pausing must not throw the length away.
+  await peek(`CocLive.put("tables/482910/music/now/dur", 200)`);
+  await until(() => Number(peek(`(tblMusicNow() || {}).dur`)) === 200);
+  await aget(`tblMusicPause()`);
+  await until(() => peek(`(tblMusicNow() || {}).playing`) === false);
+  ok(Number(peek(`(tblMusicNow() || {}).dur`)) === 200, "while pausing the same track keeps it");
+  await aget(`tblMusicPlay("fo1")`);
+  await until(() => (peek(`(tblMusicNow() || {}).trackId`)) === "fo1");
   /* AND THE TICK DOES ITS WORK WITHOUT THIS DEVICE BEING ABLE TO MAKE A SOUND. Kayki: "if i dont have
      the music option open as dm it doesnt go to the next on queue." tblMusicApply is what builds the
      player, learns the length and publishes it — and it sat behind an allowed-check inside the tick, so
