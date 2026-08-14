@@ -1231,7 +1231,7 @@ async function tblStandUp(id) {
   await tblTokenField(id, "conditions", left.length ? left : null);
   await tblTokenField(id, "moved", spent);
   await CocLive.push(tblPath("log"), {
-    t: Date.now(), who: t.name || "Someone", kind: "system",
+    t: tblStamp(), who: t.name || "Someone", kind: "system",
     text: `${t.name || "Someone"} stands up (${tblStandCost(t)} ft)`,
   });
 }
@@ -1523,7 +1523,7 @@ async function tblPlaceAt(x, y) {
   /* The list, to the log, for the DM to roll against. This is the whole point of the verb: the counting
      is done and the judgement is not. */
   await CocLive.push(tblPath("log"), {
-    t: Date.now(), who: tbl.me.name || (tbl.role === "dm" ? "DM" : "Player"), kind: "system",
+    t: tblStamp(), who: tbl.me.name || (tbl.role === "dm" ? "DM" : "Player"), kind: "system",
     text: `${p.name} — ${p.size} ft ${p.shape === "cube" ? "cube" : "radius"} — ${
       inside.length ? "catches " + inside.join(", ") : "catches nobody"}`,
   });
@@ -1685,7 +1685,7 @@ function tblAnnounceCast(trick, who) {
     : trick.cooldown ? "Turn · back in " + trick.cooldown + (trick.cooldown === 1 ? " round" : " rounds")
     : "Pledge";
   CocLive.push(tblPath("log"), {
-    t: Date.now(), who: who || tbl.me.name || "Someone", kind: "system",
+    t: tblStamp(), who: who || tbl.me.name || "Someone", kind: "system",
     text: `${who || "Someone"} casts ${trick.name}${trick.range ? " — " + trick.range : ""} (${cost})`,
   }).catch(() => {});
 }
@@ -1757,7 +1757,7 @@ async function tblSpawnAt(x, y) {
     spawn: true, spawnOf: p.ofCode || "", at: Date.now(),
   });
   await CocLive.push(tblPath("log"), {
-    t: Date.now(), who: p.of || "Someone", kind: "system",
+    t: tblStamp(), who: p.of || "Someone", kind: "system",
     text: `${p.name} appears${p.cap ? ` (${Math.min(p.cap, mine.length + 1)} of ${p.cap})` : ""}`,
   });
 }
@@ -1943,7 +1943,7 @@ async function tblPickFigure(id) {
     }
     const word = (typeof TBL_CONDITION_NAMES !== "undefined" && TBL_CONDITION_NAMES[mark]) || mark;
     await CocLive.push(tblPath("log"), {
-      t: Date.now(), who: pick.of || tbl.me.name || "Someone", kind: "system",
+      t: tblStamp(), who: pick.of || tbl.me.name || "Someone", kind: "system",
       text: mark === "grappled"
         ? `${t.name || "Someone"} is ${on ? "let go" : "held"}${pick.name ? " — " + pick.name : ""}`
         : `${t.name || "Someone"} is ${on ? "no longer " + String(word).toLowerCase() : String(word).toLowerCase()}${pick.name ? " — " + pick.name : ""}`,
@@ -1967,7 +1967,7 @@ async function tblPickFigure(id) {
     await tblTokenField(id, "x", mx);
     await tblTokenField(id, "y", my);
     await CocLive.push(tblPath("log"), {
-      t: Date.now(), who: pick.of || tbl.me.name || "Someone", kind: "system",
+      t: tblStamp(), who: pick.of || tbl.me.name || "Someone", kind: "system",
       text: `${me.name || "Someone"} and ${t.name || "it"} trade places${pick.name ? " — " + pick.name : ""}`,
     });
     tbl.picking = null;
@@ -1997,7 +1997,7 @@ async function tblMoveTo(x, y) {
   /* NOT CHARGED TO THE FIGURE'S OWN MOVEMENT. Being hauled, thrown or swapped is not walking, and the
      turn bar's "20 of 30 ft left" is about walking. */
   await CocLive.push(tblPath("log"), {
-    t: Date.now(), who: pick.of || tbl.me.name || "Someone", kind: "system",
+    t: tblStamp(), who: pick.of || tbl.me.name || "Someone", kind: "system",
     text: `${t.name || "Someone"} is moved ${feet} ft${pick.name ? " — " + pick.name : ""}`,
   });
   // "Any number of creatures" keeps the gesture open for the next one; one target ends it.

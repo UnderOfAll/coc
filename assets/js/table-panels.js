@@ -390,7 +390,7 @@ async function tblDropEnemy(id) {
     image: await tblKeepArt(e.image || ""),
   });
   await CocLive.push(tblPath("log"), {
-    t: Date.now(), who: "DM", kind: "system", text: `${e.name} enters the ring`,
+    t: tblStamp(), who: "DM", kind: "system", text: `${e.name} enters the ring`,
   });
   return made;
 }
@@ -690,7 +690,7 @@ async function tblInitOpen() {
   await CocLive.put(tblPath("meta/turn"), null);
   await CocLive.put(tblPath("meta/init"), { at: Date.now(), need, have: {} });
   await CocLive.push(tblPath("log"), {
-    t: Date.now(), who: "DM", kind: "system", text: "Roll for initiative.",
+    t: tblStamp(), who: "DM", kind: "system", text: "Roll for initiative.",
   });
 }
 
@@ -765,7 +765,7 @@ async function tblInitSettle(force) {
   await CocLive.put(tblPath("meta/init"), null);
   for (const r of rolled) await tblTokenField(r.id, "moved", 0);
   await CocLive.push(tblPath("log"), {
-    t: Date.now(), who: "DM", kind: "system",
+    t: tblStamp(), who: "DM", kind: "system",
     text: "Initiative — " + rolled.map((r) => `${r.name} ${r.total}`).join(", "),
   });
 }
@@ -799,7 +799,7 @@ async function tblInitRollMine() {
   const said = rolls.map((r) => `${r.name} ${r.face + r.mod}`).join(", ");
   const who = tbl.me.name || (tbl.role === "dm" ? "DM" : "Player");
   const entry = {
-    t: Date.now(), who, kind: "roll", label: "Initiative",
+    t: tblStamp(), who, kind: "roll", label: "Initiative",
     text: `${who} rolled Initiative — ${said}`,
     dice: rolls.map((r) => ({ s: 20, v: r.face })),
     mod: 0, mode: "normal", keptIdx: -1, total: 0, noTotal: true,
@@ -907,7 +907,7 @@ async function tblJoinSettle() {
   await CocLive.patch(tblPath("meta/turn"), { order, idx });
   await CocLive.put(tblPath("meta/turn/late"), null);
   await CocLive.push(tblPath("log"), {
-    t: Date.now(), who: "DM", kind: "system",
+    t: tblStamp(), who: "DM", kind: "system",
     text: waiting.map((id) => `${(tokens[id] || {}).name || "Someone"} ${
       turn.order.indexOf(id) >= 0 ? "moves to" : "joins the fight at"} ${late[id]}`).join(", "),
   });
@@ -979,7 +979,7 @@ async function tblPruneOrder() {
   await CocLive.patch(tblPath("meta/turn"),
     { order: kept, idx: at >= 0 ? at : Math.min(wasIdx, kept.length - 1) });
   await CocLive.push(tblPath("log"), {
-    t: Date.now(), who: "DM", kind: "system",
+    t: tblStamp(), who: "DM", kind: "system",
     text: (turn.order.length - kept.length) + " figure(s) left the fight",
   });
 }

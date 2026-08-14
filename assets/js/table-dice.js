@@ -156,7 +156,7 @@ function tblRollAndPost(spec, label, mode, whoOverride, quiet) {
   const who = whoOverride || (tbl ? (tbl.me.name || (tbl.role === "dm" ? "DM" : "Player")) : "You");
   const text = tblRollLine(who, label, res);
   const entry = {
-    t: Date.now(), who, kind: "roll", text,
+    t: tblStamp(), who, kind: "roll", text,
     nat: res.natural === 20 ? 20 : res.natural === 1 ? 1 : 0,
     // The numbers, not just the sentence: every screen at the table renders the roll itself from these,
     // and a sentence cannot be animated or laid out.
@@ -173,7 +173,15 @@ function tblRollAndPost(spec, label, mode, whoOverride, quiet) {
        for seven creatures is seven rolls in a row, and seven throws back to back is not a moment, it is
        a wait. The one roll you make yourself still gets its dice. */
     if (!quiet) res.settled = tblShowRoll(entry);
-    CocLive.push(tblPath("log"), entry).catch(() => {});
+    /* THE ONE WRITE THAT MAKES A ROLL PUBLIC, and it used to fail in silence. If this does not land,
+       the roller sees their dice and nobody else sees anything — which is indistinguishable, from the
+       other side of the table, from not having rolled. It says so now. */
+    CocLive.push(tblPath("log"), entry).catch((err) => {
+      if (typeof tblFail === "function") {
+        tblFail(new Error("That roll did not reach the table — everyone else saw nothing. "
+          + (err && err.message ? err.message : "The connection may be down.")));
+      }
+    });
   } else if (!quiet) {
     res.settled = tblShowRoll(entry);
   }
@@ -593,6 +601,14 @@ function tblShowRoll(entry) {
         // the commonest roll in the game. It gets one, for the 3D case only.
         : `<span class="roll-total only-3d">${esc(entry.total)}</span>`}
     </p>
+    ${/* A ROLL NOBODY ELSE CAN SEE HAS TO SAY SO. Kayki: "there is a player that the dice doesnt show
+          for anyone, no one can sees it outside of the character." A sheet opened on its own — from My
+          characters, or its own address in another tab — is not at a table, so its rolls go nowhere but
+          this screen, and until now nothing said as much: a player could roll all evening in private
+          and only find out when somebody asked what they got. The dice are the same dice; what changes
+          is who is watching, and that is worth one line. */""}
+    ${tbl ? "" : `<p class="roll-alone">Only you can see this. Open your sheet
+      <strong>at the table</strong> — the <em>My sheet</em> button there — to roll where everyone can.</p>`}
   </div>`;
   // The tumble: real dice do not fade in, they clatter. Each settles within its OWN range, so a d4 in a
   // mixed handful never flashes a 17 on its way to landing.

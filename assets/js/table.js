@@ -156,6 +156,30 @@ function tblCanMove(token) {
  * kind of figure. The guard reads this browser's own copy of the table, which is the same copy every
  * caller here has just decided to act on.
  */
+/* A TIME NOBODY'S CLOCK CAN ARGUE WITH.
+ *
+ * Every entry in the log is stamped with the ROLLING DEVICE'S `Date.now()`, and the whole table then
+ * sorts and compares on it: the newest entry is "the last roll", and a screen shows a roll when it sees
+ * one NEWER than the last it showed. A device whose clock is a few minutes slow therefore rolls into the
+ * past — its entry sorts below rolls that happened before it, so no other screen ever calls it new and
+ * nobody sees the dice; and its own screen, finding a later-stamped roll still sitting at the top,
+ * re-shows THAT one instead. Kayki: "there is a player that the dice doesnt show for anyone" and, a
+ * minute later, "hes now rolling a d4 and its appearing the 19 i rolled before" — one cause, both halves.
+ *
+ * The fix does not need a server: a device may not stamp anything as older than the newest thing it has
+ * already SEEN. A slow clock then contributes a stamp one millisecond after the last event it knows
+ * about, which is enough to order it correctly on every screen. Clocks that are right are untouched. */
+function tblStamp() {
+  const now = Date.now();
+  if (!tbl || !tbl.data) return now;
+  let newest = 0;
+  for (const e of Object.values(tbl.data.log || {})) {
+    const t = Number(e && e.t) || 0;
+    if (t > newest) newest = t;
+  }
+  return now > newest ? now : newest + 1;
+}
+
 function tblTokenField(id, field, value) {
   if (!id || !tblTokens()[id]) return Promise.resolve(null);
   return CocLive.put(tblPath("tokens/" + id + "/" + field), value);

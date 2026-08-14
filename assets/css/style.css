@@ -1434,6 +1434,10 @@ body:has(.vtt) { height: 100dvh; overflow: hidden; }
 .roll-stage { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center;
   background: rgba(6,6,5,0.55); opacity: 0; pointer-events: none; transition: opacity 0.16s ease; }
 .roll-stage.on { opacity: 1; pointer-events: auto; }
+/* Said under a roll that is going nowhere but this screen — a sheet open on its own rather than at a
+   table. Quiet, because it is a note about the plumbing and not about the number. */
+.roll-alone { margin: 0.5rem 0 0; font-size: 0.8rem; color: var(--muted); max-width: 22rem;
+  line-height: 1.5; }
 /* Where the real dice are thrown: the whole window, behind the roll box and in front of everything else,
    and never in the way of a finger. It is empty and invisible until a throw, and swept after one. */
 .roll-3d { position: fixed; inset: 3.2rem 0 0 0; z-index: 69; overflow: hidden; pointer-events: none;

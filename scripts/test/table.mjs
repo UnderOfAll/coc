@@ -3027,6 +3027,57 @@ ok(true, "with nothing queued, the end of the last track writes the quiet");
 peek(`mus.yt = null; mus.ytOn = false; CocLive.put("tables/482910/music/now", null);`);
 await wait(150);
 
+/* A SLOW CLOCK MUST NOT ROLL INTO THE PAST. Kayki: "there is a player that the dice doesnt show for
+   anyone, no one can sees it outside of the character" and, a minute later, "hes now rolling a d4 and
+   its appearing the 19 i rolled before." One cause, both halves: the log is stamped with the ROLLING
+   device's clock and every screen decides what is new by comparing those stamps, so a device a few
+   minutes slow sorts its rolls below rolls that happened before them — no other screen ever calls one
+   new, and its own screen keeps re-showing the later-stamped roll that is still sitting at the top. */
+{
+  const future = Date.now() + 5 * 60 * 1000;
+  await peek(`CocLive.push("tables/482910/log", { t: ${future}, who: "DM", kind: "roll",
+    text: "DM rolled 19", label: "Check", dice: [{ s: 20, v: 19 }], keptIdx: -1, mod: 0,
+    mode: "normal", total: 19, spec: "1d20", nat: 0 })`);
+  await until(() => Object.values(peek(`JSON.parse(JSON.stringify(tbl.data.log || {}))`))
+    .some((e) => e.t === future));
+  const stamp = peek(`tblStamp()`);
+  ok(stamp > future, `a stamp is never older than the newest entry already seen (${stamp} > ${future})`);
+  const res = peek(`JSON.stringify(tblRollAndPost("1d4", "Damage", "normal", "Slowclock", true))`);
+  ok(!!res, "a slow device can still roll");
+  await until(() => Object.values(peek(`JSON.parse(JSON.stringify(tbl.data.log || {}))`))
+    .some((e) => e.who === "Slowclock"));
+  const mine = Object.values(JSON.parse(peek(`JSON.stringify(tbl.data.log || {})`)))
+    .find((e) => e.who === "Slowclock");
+  ok(mine.t > future, "and its roll lands AFTER the one it can see, not before it");
+  const newest = Object.values(JSON.parse(peek(`JSON.stringify(tbl.data.log || {})`)))
+    .sort((a, b) => (b.t || 0) - (a.t || 0))[0];
+  ok(newest.who === "Slowclock", "so the table's newest roll is the one just made, not the old 19");
+}
+
+/* A ROLL NOBODY ELSE CAN SEE SAYS SO. Kayki: "there is a player that the dice doesnt show for anyone,
+   no one can sees it outside of the character." A sheet opened on its own — from My characters, or its
+   own address in another tab — is not at a table, so its rolls go nowhere but that screen, and nothing
+   said as much. The dice are the same dice; what changes is who is watching. */
+{
+  const was = peek(`tbl`);
+  peek(`window.__tblWas = tbl; tbl = null;`);
+  peek(`tblShowRoll({ t: Date.now(), who: "Alone", kind: "roll", text: "x", label: "Check",
+    dice: [{ s: 20, v: 11 }], keptIdx: -1, mod: 0, mode: "normal", total: 11, spec: "1d20", nat: 0 });`);
+  await wait(60);
+  ok(/Only you can see this/.test((doc.getElementById("roll-stage") || {}).textContent || ""),
+    "a roll made away from a table says only you can see it");
+  ok(/My sheet/.test((doc.getElementById("roll-stage") || {}).textContent || ""),
+    "and says where to go to roll where everyone can");
+  peek(`tbl = window.__tblWas;`);
+  ok(!!peek(`tbl`), "the table is back");
+  peek(`tblShowRoll({ t: Date.now(), who: "Rig", kind: "roll", text: "x", label: "Check",
+    dice: [{ s: 20, v: 12 }], keptIdx: -1, mod: 0, mode: "normal", total: 12, spec: "1d20", nat: 0 });`);
+  await wait(60);
+  ok(!/Only you can see this/.test((doc.getElementById("roll-stage") || {}).textContent || ""),
+    "and a roll made AT one does not");
+  if (!was) peek(`tbl = null;`);
+}
+
 /* THE VOLUME IS THIS DEVICE'S AND NEVER GOES NEAR THE DATABASE — a table where the DM's slider moved
    everybody's is a table where nobody can hear their own game. */
 peek(`paintSide();`);
