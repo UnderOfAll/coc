@@ -1911,7 +1911,11 @@ body:has(.vtt) { height: 100dvh; overflow: hidden; }
    label ("Move to…") survives being narrow. Without a shrink it forced Delete onto a third line. */
 .mus-move { flex: 0 1 auto; min-width: 5rem; max-width: 8.5rem; padding: 0.15rem 0.3rem; font-size: 0.78rem; }
 .mus-folder { border-left: 2px solid var(--border); padding-left: 0.5rem; margin: 0.6rem 0; }
-.mus-folder-head { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+.mus-folder-head { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: baseline; }
+/* The name is the DM's own words, so it keeps the case they typed and the size of ordinary text — the
+   panel's small-uppercase is for LABELS, and a folder called "Grinsel's lair" is not a label. */
+.mus-folder-name { text-transform: none; letter-spacing: 0; font-size: 1rem; color: var(--text);
+  font-weight: 600; overflow-wrap: anywhere; }
 .mus-folder-acts { display: flex; gap: 0.3rem; align-items: center; margin-left: auto; }
 .mus-empty { padding: 0.3rem 0; }
 /* Where a release would put it. Into a folder is a ring round the heading; between two rows is a line

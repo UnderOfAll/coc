@@ -282,9 +282,7 @@ function tblMusicMakeYT() {
         onStateChange: (e) => {
           // 0 is ENDED, and it is the fast path only — the tick asks the same question every 2.5s in
           // case this never arrives. The chair advances; nobody else.
-          if (e && e.data === 0 && tbl && tbl.role === "dm" && tblMusicQueue().length && tblMusicOver()) {
-            tblMusicNext().catch(() => {});
-          }
+          if (e && e.data === 0 && tbl && tbl.role === "dm") tblMusicEnded().catch(() => {});
         },
       },
     });
@@ -302,6 +300,11 @@ function tblMusicDriveYT(id, at, play) {
       return;
     }
     // Already the right track: only correct the position if it has genuinely drifted.
+    const state = Number(mus.yt.getPlayerState && mus.yt.getPlayerState());
+    // A FINISHED PLAYER IS NEVER SEEKED. `seekTo` on a player in ENDED restarts it, so a correction meant
+    // to nudge it into line replays the tail instead. Caller-side this is already handled; this is the
+    // second lock on the same door, because the cost of getting it wrong is a track that never stops.
+    if (state === 0 && !play) return;
     const cur = Number(mus.yt.getCurrentTime && mus.yt.getCurrentTime()) || 0;
     if (Math.abs(cur - at) > TBL_MUSIC_SLIP) mus.yt.seekTo(at, true);
     if (play) mus.yt.playVideo(); else mus.yt.pauseVideo();
@@ -325,9 +328,17 @@ function tblMusicApply() {
     if (mus.key !== key) mus.key = key;
     let ytDur = 0;
     try { ytDur = (mus.yt && mus.ytOn && mus.yt.getDuration && mus.yt.getDuration()) || 0; } catch { ytDur = 0; }
-    // Only a LOOP needs the clock wrapped here; whether it is finished is the player's to say, above.
-    const spot = now.loop ? tblMusicAt(now, ytDur) : { at: tblMusicWhere(now), over: false };
-    tblMusicDriveYT(now.src, spot.at, allowed && !tblMusicOver());
+    /* THE CLOCK IS CLAMPED TO THE END OF THE TRACK, not left to run past it. Kayki: "when it finishes the
+       queue it just keep repeating the last 5sec of the last music infinitely." A finished track keeps
+       `playing: true` with nothing queued to replace it, so the wall clock walks on — 3:20, 3:22, 3:25 —
+       while the player sits at 3:20, and every tick the two are further apart than TBL_MUSIC_SLIP. The
+       drift correction then seeked a player that had ENDED, and seeking an ended YouTube player does not
+       just move it, it starts it again. That is the loop, once every 2.5 seconds, for ever. A loop still
+       wraps; anything else stops at its own end. */
+    const spot = tblMusicAt(now, ytDur);
+    const over = spot.over || tblMusicOver();
+    if (over) { try { mus.yt && mus.ytOn && mus.yt.pauseVideo(); } catch { /* mid-load */ } return; }
+    tblMusicDriveYT(now.src, spot.at, allowed);
     return;
   }
 
@@ -347,7 +358,7 @@ function tblMusicApply() {
     /* THE END OF A TRACK IS THE QUEUE'S CUE, and the DM's browser is the only one that acts on it —
        everybody else finds out the ordinary way, by `now` changing under them. */
     mus.audio.addEventListener("ended", () => {
-      if (tbl && tbl.role === "dm" && tblMusicQueue().length && tblMusicOver()) tblMusicNext().catch(() => {});
+      if (tbl && tbl.role === "dm") tblMusicEnded().catch(() => {});
     });
     mus.audio.addEventListener("loadedmetadata", () => {
       const state = tblMusicNow();
@@ -421,7 +432,7 @@ function tblMusicWatch() {
     /* THE BACKSTOP, and for YouTube it is the only thing there is that this app controls. The events
        are the fast path; this catches every case they miss — a tab that was asleep, a player rebuilt
        mid-track, a stream that stopped without saying so, an event that simply never came. */
-    if (tbl.role === "dm" && tblMusicQueue().length && tblMusicOver()) tblMusicNext().catch(() => {});
+    if (tbl.role === "dm") tblMusicEnded().catch(() => {});
   }, 2500);
 }
 
@@ -615,6 +626,18 @@ async function tblMusicQueueClear() {
    and all writing the next one is five different tracks starting at once; the chair decides, everybody
    else follows `now` as they already do. Skips ids whose track has since been deleted rather than
    stalling the room on one. */
+/* WHAT THE END OF A TRACK MEANS, in one place. There is a next one, or the room goes quiet — and the
+   quiet has to be WRITTEN. Leaving a finished track in `now` with `playing: true` says "playing" in the
+   panel under a title nobody can hear, and leaves every device's clock walking past the end of a track
+   that stopped minutes ago; on YouTube that was a tail replayed for ever. The three ways in (`ended`,
+   YouTube's state change, the tick) all come through here. */
+async function tblMusicEnded() {
+  if (tbl.role !== "dm" || mus.advancing || !tblMusicOver()) return;
+  if (tblMusicQueue().length) return tblMusicNext();
+  mus.advancing = true;
+  try { await tblMusicStop(); } finally { mus.advancing = false; }
+}
+
 async function tblMusicNext() {
   if (tbl.role !== "dm" || mus.advancing) return;
   mus.advancing = true;
@@ -886,9 +909,14 @@ function musicPanelHTML() {
      and then draws somewhere the code did not ask for. */
   const group = (fid, name, extra, below) => {
     const rows = tblMusicGroup(fid);
+    /* THE FOLDER SAYS ITS OWN NAME. Kayki: "the title of the folder in the dm page need to be properly
+       stated." It was the name and the count run together in the panel's small uppercase — "MAIN STAGE
+       2 TRACKS" reads as one phrase, and a folder called after a scene stopped looking like a title at
+       all. The name is set in the ordinary text size, in the ordinary case the DM typed it in, and the
+       count is a separate clause behind a dash. */
     return `<div class="mus-folder" data-mus-folder="${esc(fid)}">
-      <p class="panel-sub mus-folder-head">${esc(name)}
-        <span class="muted">${esc(rows.length)} track${rows.length === 1 ? "" : "s"}</span>${extra || ""}</p>
+      <p class="panel-sub mus-folder-head"><span class="mus-folder-name">${esc(name)}</span>
+        <span class="muted">&mdash; ${esc(rows.length)} track${rows.length === 1 ? "" : "s"}</span>${extra || ""}</p>
       ${below || ""}
       <div class="scene-list">${rows.length
         ? rows.map((r) => (tbl.ui.musicDropArm === r[0] ? dropRow(r) : row(r, fid))).join("")
@@ -903,7 +931,7 @@ function musicPanelHTML() {
      have to be answered, and the question says where the tracks go so the answer is an informed one. */
   const folderDropRow = (fid, name, n) => `<div class="danger-row armed">
       <span class="muted">Delete the folder <strong>${esc(name)}</strong>?${n
-        ? ` Its ${n} track${n === 1 ? "" : "s"} come out loose — no music is lost.`
+        ? ` Its ${n} track${n === 1 ? "" : "s"} move to <strong>Not in a folder</strong> — no music is lost.`
         : ""}</span>
       <button class="btn btn-hot" data-tbl="music-f-drop-go" data-val="${esc(fid)}">Delete the folder</button>
       <button class="btn-quiet" data-tbl="music-f-drop-cancel">Cancel</button>
@@ -927,14 +955,15 @@ function musicPanelHTML() {
       ? folderDropRow(fid, f.name || "Untitled", tblMusicGroup(fid).length) : ""))).join("");
 
   const list = tracks.length || folders.length
-    ? folderBlocks + group("", "Loose", "")
+    ? folderBlocks + group("", "Not in a folder", "")
       + `<div class="save-row">
           <input id="music-folder" class="text" type="text" maxlength="40" placeholder="Main Stage" />
           <button class="btn-quiet" data-tbl="music-f-add">New folder</button>
         </div>
         <p class="muted">Drag a track by its <strong>&#8942;&#8942;</strong> handle to reorder it, or onto
           another folder's heading to move it there. The Move list does the same thing without dragging.
-          Deleting a folder never deletes its music — those tracks come out loose.</p>`
+          Deleting a folder never deletes its music — those tracks move to <strong>Not in a
+          folder</strong>.</p>`
     : `<p class="muted">Nothing saved yet. Add one below and it stays on this table.</p>`;
 
   return `<section class="panel"><h2>Music</h2>

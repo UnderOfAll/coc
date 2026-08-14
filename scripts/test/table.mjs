@@ -2694,6 +2694,26 @@ ok(peek(`tblMusicOver()`) === true, "as is the player saying so itself");
 peek(`CocLive.put("tables/482910/music/now/loop", true);`);
 await wait(150);
 ok(peek(`tblMusicOver()`) === false, "a track on repeat never finishes, so nothing can follow it");
+/* AND WHEN THE QUEUE IS EMPTY, THE END OF A TRACK IS SILENCE. Kayki: "when it finishes the queue it just
+   keep repeating the last 5sec of the last music infinitely." A finished track kept `playing: true` with
+   nothing to replace it, so the wall clock walked on past the end while the player stood at it — and the
+   drift correction seeked a player that had ENDED, which does not nudge a YouTube player, it starts it
+   again. Every 2.5 seconds, for ever. */
+peek(`CocLive.put("tables/482910/music/queue", null);`);
+peek(`CocLive.put("tables/482910/music/now", { kind: "youtube", src: "abc", title: "Y", playing: true,
+  pos: 0, at: Date.now() - 600000, loop: false, gen: 501 });`);
+await wait(150);
+peek(`mus.ytSeeks = 0; mus.ytPlays = 0; mus.ytOn = true;
+  mus.yt = { getPlayerState: () => 0, getDuration: () => 200, getCurrentTime: () => 200,
+    getVideoData: () => ({ video_id: "abc" }), seekTo: () => { mus.ytSeeks++; },
+    playVideo: () => { mus.ytPlays++; }, pauseVideo: () => {}, cueVideoById: () => {},
+    loadVideoById: () => {}, setVolume: () => {}, mute: () => {}, unMute: () => {} };`);
+peek(`tblMusicApply();`);
+ok(peek(`mus.ytSeeks`) === 0, "a finished track is never seeked back into line — that is what replayed it");
+ok(peek(`mus.ytPlays`) === 0, "nor started again");
+peek(`tblMusicEnded();`);
+await until(async () => (await aget(`CocLive.get("tables/482910/music/now")`)) === null);
+ok(true, "with nothing queued, the end of the last track writes the quiet");
 peek(`mus.yt = null; mus.ytOn = false; CocLive.put("tables/482910/music/now", null);`);
 await wait(150);
 

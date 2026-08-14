@@ -198,6 +198,25 @@ ok((await dm.evaluate((r) => CocLive.get(`tables/${r}/music/queue`), ROOM)) === 
 const playerHeard = await pl.evaluate((r) => CocLive.get(`tables/${r}/music/now`), ROOM);
 ok(playerHeard && playerHeard.trackId === ids.b, "the player's device followed it without doing the advancing");
 
+/* AND THE END OF THE LAST ONE IS SILENCE. Kayki: "when it finishes the queue it just keep repeating the
+   last 5sec of the last music infinitely." A finished track was left in `now` still marked playing, with
+   the wall clock walking on past its end — which every 2.5s looked like a device that had fallen behind
+   and needed seeking back into line. The room goes quiet instead, and the quiet is WRITTEN so the panel
+   stops claiming a title is playing. */
+await dm.evaluate((r, host) => CocLive.put(`tables/${r}/music/now`, {
+  kind: "link", src: host + "/short.wav", title: "Short", trackId: "x", playing: true,
+  pos: 0, at: Date.now(), loop: false, gen: 71 }), ROOM, base);
+await wait(6000);
+const quiet = await dm.evaluate((r) => CocLive.get(`tables/${r}/music/now`), ROOM);
+ok(quiet === null, `with nothing queued the room goes quiet at the end (${JSON.stringify(quiet)})`);
+const stillQuiet = await dm.evaluate(() => {
+  const a = document.querySelector("#vtt-audio");
+  return { paused: !a || a.paused, t: a ? Number(a.currentTime.toFixed(1)) : -1 };
+});
+ok(stillQuiet.paused, `and nothing is replaying the tail (paused at ${stillQuiet.t}s)`);
+const playerQuiet = await pl.evaluate((r) => CocLive.get(`tables/${r}/music/now`), ROOM);
+ok(playerQuiet === null, "on every device, not only the chair's");
+
 /* YOUTUBE BUILDS ITS PLAYER, AND NOBODY SEES A VIDEO. */
 await dm.evaluate((r) => CocLive.put(`tables/${r}/music/now`, {
   kind: "youtube", src: "dQw4w9WgXcQ", title: "YT", playing: false, pos: 0, at: Date.now(), gen: 44 }), ROOM);
