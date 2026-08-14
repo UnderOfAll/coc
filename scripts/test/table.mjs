@@ -534,9 +534,13 @@ await wait(150);
 ok($("#note-body"), "a player can keep notes too");
 ok((await aget(`Object.values(await CocLive.get("tables/482910/notes") || {}).some(n => n.by === "pc:123456")`)) === true,
   "kept under their own name");
-// Tidied away, so the DM's own notepad section further down counts only the DM's.
+// Tidied away, so the DM's own notepad section further down counts only the DM's. Deleting asks for the
+// word now, here as everywhere else.
 click($$('[data-tbl="note-del"]')[0]);
 await wait(120);
+type($("#note-drop-confirm"), "CONFIRM");
+click($('[data-tbl="note-del-go"]'));
+await wait(150);
 peek(`tbl.ui.panel = ""; paintSide(); tbl.role = "dm"; tbl.me.charCode = ""; renderTableShell(); paintTokens();`);
 
 console.log("\n— THE CHARACTER PANEL —");
@@ -2408,9 +2412,25 @@ await wait(120);
 ok($$("#notes-panel .scene-row").length === 2, "a second note lists beside the first");
 type($("#note-title"), "Rooftop chase");
 await until(() => ((dmRec() || {}).notes || []).length === 2);
+/* DELETING A NOTE ASKS FOR THE WORD. Kayki: "where is the confirm button on deleting the notes??" — it
+   was the last destructive button in the app that went through on the first press, and it sits an inch
+   from the name you tap to open one. */
 click($$('[data-tbl="note-del"]')[1]);
+await wait(150);
+ok(((dmRec() || {}).notes || []).length === 2, "one press on a note's Delete deletes nothing");
+ok(!!$("#note-drop-confirm"), "it asks for the word instead");
+ok($('[data-tbl="note-del-go"]').disabled === true, "with the button locked until it is typed");
+type($("#note-drop-confirm"), "nope");
+ok($('[data-tbl="note-del-go"]').disabled === true, "and the wrong word does not unlock it");
+click($('[data-tbl="note-del-cancel"]'));
+await wait(120);
+ok(((dmRec() || {}).notes || []).length === 2 && !$("#note-drop-confirm"), "Cancel keeps the note");
+click($$('[data-tbl="note-del"]')[1]);
+await wait(150);
+type($("#note-drop-confirm"), "CONFIRM");
+click($('[data-tbl="note-del-go"]'));
 await until(() => ((dmRec() || {}).notes || []).length === 1);
-ok($$("#notes-panel .scene-row").length === 1, "and a note can be thrown away");
+ok($$("#notes-panel .scene-row").length === 1, "and then a note can be thrown away");
 ok(((dmRec() || {}).notes || []).length === 1, "for good");
 /* NOTES GO IN FOLDERS. Kayki, once the campaign notes passed a dozen: "right now its a mess to find what
    is what." A folder is a NAME ON THE NOTE — a note has no id, only its place in the array, so a string
@@ -2447,6 +2467,9 @@ await until(() => !(((dmRec() || {}).notes || [])[1] || {}).folder);
 peek(`paintSide();`);
 ok(/No folder/.test($("#notes-panel").textContent), "clearing the box takes a note out again");
 click($$('[data-tbl="note-del"]')[1]);
+await wait(150);
+type($("#note-drop-confirm"), "CONFIRM");
+click($('[data-tbl="note-del-go"]'));
 await until(() => ((dmRec() || {}).notes || []).length === 1);
 
 /* AND A ROOM THAT IS STILL HOLDING THE DM'S OLD NOTES HANDS THEM OVER. Two shapes came before this one —

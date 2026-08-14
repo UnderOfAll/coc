@@ -113,7 +113,7 @@ function tblFresh(code, role) {
     centredOnMe: false,     // the camera has been aimed at this player's own figure, once
     cameraIsYours: false,   // …and after that, only you move it
     ui: { panel: "", error: "", musicKind: "repo", musicRename: "", musicDropArm: "", musicDropText: "",
-      musicFolderArm: "" },
+      musicFolderArm: "", noteDropArm: "", noteDropText: "" },
   };
 }
 
@@ -1060,6 +1060,12 @@ document.addEventListener("input", (e) => {
     if (go) go.disabled = tbl.ui.closeText !== tbl.code;
     return;
   }
+  if (evTarget(e).id === "note-drop-confirm") {
+    tbl.ui.noteDropText = String(evTarget(e).value || "");
+    const go = $('[data-tbl="note-del-go"]');
+    if (go) go.disabled = tbl.ui.noteDropText !== "CONFIRM";
+    return;
+  }
   /* NO REPAINT WHILE THE WORD IS BEING TYPED. Rebuilding the panel swaps this input out from under a
      phone keyboard, which drops it back to lowercase on every letter — the character sheet paid for that
      lesson once already. Only the button's state changes as you type. */
@@ -1336,7 +1342,12 @@ document.addEventListener("click", (e) => {
   else if (act === "music-mute") tblMusicToggleMute();
   else if (act === "note-new") tblNewNote(val).catch(tblFail);
   else if (act === "note-open") { tbl.ui.note = tbl.ui.note === val ? "" : val; paintSide(); }
-  else if (act === "note-del") {
+  // Deleting a note asks for the word, the same as a track, a creature, a character and a table.
+  else if (act === "note-del") { tbl.ui.noteDropArm = val; tbl.ui.noteDropText = ""; paintSide(); }
+  else if (act === "note-del-cancel") { tbl.ui.noteDropArm = ""; tbl.ui.noteDropText = ""; paintSide(); }
+  else if (act === "note-del-go") {
+    if (tbl.ui.noteDropText !== "CONFIRM" || tbl.ui.noteDropArm !== val) return;
+    tbl.ui.noteDropArm = ""; tbl.ui.noteDropText = "";
     // A DM's notes are on their code and are indexed, not keyed: "dm:2" is the third of the list.
     const m = /^dm:(\d+)$/.exec(val);
     const code = tblDmNotesCode();

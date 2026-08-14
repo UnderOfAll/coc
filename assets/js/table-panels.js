@@ -1998,6 +1998,25 @@ function tblRefreshDmNotes(code) {
    exist yet, and every alternative (a picker plus a "new folder" row, a second dialog) is two controls
    where one does. The `list=` gives the names already in use, so it is a picker as well when there is
    something to pick — and emptying the box is how a note comes out of its folder. */
+/* DELETING A NOTE ASKS FOR THE WORD, like a track, a creature, a character and a table. Kayki: "where is
+   the confirm button on deleting the notes??" — it was the one destructive button in the app that went
+   through on the first press, and it sits an inch from the name you tap to open a note. What it takes is
+   not recoverable: a note is the only copy of whatever was typed into it. */
+function noteDropRowHTML(val, note) {
+  return `<div class="scene-row danger armed">
+      <span class="muted">Delete <strong>${esc((note && note.title) || "Untitled")}</strong> — there is no
+        undo, and this is the only copy of what is written in it. Type <strong>CONFIRM</strong>.</span>
+      <div class="danger-row">
+        <input id="note-drop-confirm" class="text" type="text" autocomplete="off" spellcheck="false"
+          autocapitalize="characters" autocorrect="off" placeholder="CONFIRM"
+          value="${esc(tbl.ui.noteDropText || "")}" />
+        <button class="btn btn-hot" data-tbl="note-del-go" data-val="${esc(val)}"
+          ${tbl.ui.noteDropText === "CONFIRM" ? "" : "disabled"}>Delete permanently</button>
+        <button class="btn-quiet" data-tbl="note-del-cancel">Cancel</button>
+      </div>
+    </div>`;
+}
+
 /* WHAT UNFOLDS UNDER THE ROW. One editor for both notepads: the DM's, which live on their code, and a
    player's, which live in the room. Only the line underneath differs, because only that differs. */
 function noteEditorHTML(notes, open, code) {
@@ -2037,6 +2056,7 @@ function dmNotesPanelHTML(code) {
      under the row, so the list stays readable around it. */
   const row = ([n, i]) => {
     const isOpen = i === openIdx;
+    if (tbl.ui.noteDropArm === "dm:" + i) return noteDropRowHTML("dm:" + i, n);
     return `<div class="scene-row ${isOpen ? "on" : ""}">
       <button class="scene-pick" data-tbl="note-open" data-val="dm:${i}" aria-expanded="${isOpen}">
         <strong><span class="caret">${isOpen ? "&#9662;" : "&#9656;"}</span> ${esc(n.title || "Untitled")}</strong>
@@ -2068,6 +2088,7 @@ function notesPanelHTML() {
   // Unfolds under its own name, exactly as the DM's does above.
   const row = ([id, n]) => {
     const isOpen = id === openId;
+    if (tbl.ui.noteDropArm === id) return noteDropRowHTML(id, n);
     return `<div class="scene-row ${isOpen ? "on" : ""}">
       <button class="scene-pick" data-tbl="note-open" data-val="${esc(id)}" aria-expanded="${isOpen}">
         <strong><span class="caret">${isOpen ? "&#9662;" : "&#9656;"}</span> ${esc(n.title || "Untitled")}</strong>

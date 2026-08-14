@@ -70,7 +70,8 @@ function dmAdoptShipped(code, rec) {
 
 let dm = null;                          // { code, rec } while a DM record is open
 const dmUi = { tab: "enemies", editing: null, draft: null, msg: "", pick: "", pickFrom: "", shareOpen: "",
-  dropArm: "", dropText: "" };   // which creature is armed for deletion, and the word typed so far
+  dropArm: "", dropText: "",     // which creature is armed for deletion, and the word typed so far
+  noteArm: -1, noteText: "" };   // and the same pair for a note, which is text nobody else has a copy of
 
 /* TWO SIDES OF ONE ARRANGEMENT, and they are stored on DIFFERENT records on purpose.
  *   rec.sharesTo — codes I have lent creatures to, and which ones. Mine, so I can change or revoke it.
@@ -649,7 +650,16 @@ function dmNotesPane() {
         <label class="field note-folder"><span>Folder</span>
           <input class="text" data-dm-note="f${i}" type="text" maxlength="40" list="dm-note-folders"
             value="${esc(n.folder || "")}" placeholder="No folder" /></label>
-        <button class="btn-quiet" data-dm="note-drop" data-val="${i}">Delete this note</button>
+        ${dmUi.noteArm === i ? `<div class="danger-row">
+          <span class="muted">There is no undo, and this is the only copy of what is in it.
+            Type <strong>CONFIRM</strong>.</span>
+          <input id="dm-note-confirm" class="text" type="text" autocomplete="off" spellcheck="false"
+            autocapitalize="characters" autocorrect="off" placeholder="CONFIRM" value="${esc(dmUi.noteText)}" />
+          <button class="btn btn-hot" data-dm="note-drop-go" data-val="${i}"
+            ${dmUi.noteText === "CONFIRM" ? "" : "disabled"}>Delete permanently</button>
+          <button class="btn-quiet" data-dm="note-drop-cancel">Cancel</button>
+        </div>`
+        : `<button class="btn-quiet" data-dm="note-drop" data-val="${i}">Delete this note</button>`}
       </div>`;
   return `<section class="panel">
       <p class="panel-sub">Notes</p>
@@ -1237,9 +1247,13 @@ document.addEventListener("click", (ev) => {
     dmPersist(); renderDm();
     return;
   }
-  if (act === "note-drop") {
+  if (act === "note-drop") { dmReadNotes(); dmUi.noteArm = Number(val); dmUi.noteText = ""; renderDm(); return; }
+  if (act === "note-drop-cancel") { dmUi.noteArm = -1; dmUi.noteText = ""; renderDm(); return; }
+  if (act === "note-drop-go") {
+    if (dmUi.noteText !== "CONFIRM" || dmUi.noteArm !== Number(val)) return;
     dmReadNotes();
     dm.rec.notes.splice(Number(val), 1);
+    dmUi.noteArm = -1; dmUi.noteText = "";
     dmPersist(); renderDm();
     return;
   }
@@ -1398,6 +1412,12 @@ document.addEventListener("input", (ev) => {
     dmUi.dropText = String(t.value);
     const go = document.querySelector('[data-dm="drop-go"]');
     if (go) asEl(go).disabled = dmUi.dropText !== "CONFIRM";
+    return;
+  }
+  if (t.id === "dm-note-confirm") {
+    dmUi.noteText = String(t.value);
+    const go = document.querySelector('[data-dm="note-drop-go"]');
+    if (go) asEl(go).disabled = dmUi.noteText !== "CONFIRM";
     return;
   }
   if (t.id === "dm-pick") { dmUi.pick = t.value; if (dmUi.editing) renderDmEnemyForm(); return; }
