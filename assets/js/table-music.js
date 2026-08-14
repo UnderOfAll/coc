@@ -889,11 +889,21 @@ function musicPanelHTML() {
 
   /* DELETING A TRACK ASKS FOR THE WORD, the same as deleting a creature or a character or a table. It
      sits one button from Queue on a crowded row, and for a track uploaded from a device it is the only
-     copy there is — the bytes go with it. */
+     copy there is — the bytes go with it.
+
+     AND IT SAYS WHETHER THE TRACK CAN BE GOT BACK. Only a `repo` track returns to the Add list below,
+     because only that one is a file in music/ that this app did not put there and cannot remove. A link
+     or an upload is gone with the row — which is what Kayki met head-on: a deleted track "just
+     dissapeared" instead of turning up in the list to be picked again. */
+  const dropWhere = {
+    repo: " It stays in <strong>music/</strong> and comes back to the Add list below.",
+    file: " Its bytes go with it — this table holds the only copy.",
+    youtube: " The link goes with it; it is not in <strong>music/</strong>, so it does not come back.",
+    link: " The address goes with it; it is not in <strong>music/</strong>, so it does not come back.",
+  };
   const dropRow = ([id, t]) => `<div class="scene-row danger armed">
-      <span class="muted">Delete <strong>${esc(t.title || "Untitled")}</strong>${
-        t.kind === "file" ? " — the file itself, which is the only copy on this table" : ""}.
-        Type <strong>CONFIRM</strong>.</span>
+      <span class="muted">Delete <strong>${esc(t.title || "Untitled")}</strong> from this table.
+        ${dropWhere[t.kind] || ""} Type <strong>CONFIRM</strong>.</span>
       <div class="danger-row">
         <input id="music-drop-confirm" class="text" type="text" autocomplete="off" spellcheck="false"
           autocapitalize="characters" autocorrect="off" placeholder="CONFIRM"
