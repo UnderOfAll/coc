@@ -641,8 +641,9 @@ function stepIdentity() {
       <div class="portrait-actions"><input id="photo" type="file" accept="image/*" />
       ${draft.photo ? `<button class="btn-quiet" data-pick="clearphoto" data-val="1">Remove</button>` : ""}</div>
     </div>
-    <label class="field-label">Notes <span class="muted">(appearance, background — anything you like)</span></label>
-    <textarea id="notes" class="text" rows="3" maxlength="2000" placeholder="Free text. No mechanical weight.">${esc(draft.notes)}</textarea>
+    <label class="field-label">Background <span class="muted">(the story of this character — appearance, past, anything)</span></label>
+    <textarea id="notes" class="text" rows="3" maxlength="2000"
+      placeholder="Free text, no mechanical weight. You can write it now or on the sheet later.">${esc(draft.notes)}</textarea>
   </section>`;
 }
 
@@ -1285,9 +1286,9 @@ function statusPanel(d) {
    This system has no background as a mechanic (MECHANICS §2.3 — no races, no backgrounds), so what it
    needs is not a stat, it is a box with the word on it, in the first thing the sheet opens on. */
 function aboutYouHTML(ch) {
-  return `<p class="panel-sub">Background &amp; notes</p>
+  return `<p class="panel-sub">Background <span class="muted">&mdash; the story of this character</span></p>
     <textarea id="sheet-notes" class="text notes-body" rows="4" maxlength="2000"
-      placeholder="Where you come from, what you look like, who wants you dead. No mechanical weight."
+      placeholder="Who you were before tonight, where you come from, what you look like, who wants you dead."
       >${esc(ch.notes || "")}</textarea>`;
 }
 
