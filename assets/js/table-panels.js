@@ -729,6 +729,14 @@ async function tblInitRoll(id, quiet) {
      ORDER is the result of it, and a result that arrives before its own dice have landed makes the throw
      pointless. A quiet roll threw no dice and does not wait. */
   await res.settled;
+  /* AND IT MUST NOT CLOBBER A NUMBER ALREADY IN. Kayki, mid-session: "a player rolled 22, it appeared 17,
+     and it kept appearing for me to roll for him instead of it." The write waits for the dice to LAND —
+     deliberately, so the order does not appear mid-throw — and for those two seconds the gather still
+     shows that figure as owed, so the DM rolls for them too and the later write wins. The player's 22
+     was in first and the DM's 17 landed on top of it. Whoever got there first keeps it; the DM's typed
+     correction goes through tblInitApply directly and still overrides anything. */
+  const already = ((tbl.data.meta || {}).init || {}).have || {};
+  if (already[id] != null) return;
   await tblInitApply(id, res.total);
 }
 
@@ -856,13 +864,24 @@ async function tblJoinSettle() {
   if (!turn || !Array.isArray(turn.order) || !turn.order.length) return;
   const late = turn.late || {};
   const tokens = tblTokens();
-  const waiting = Object.keys(late).filter((id) => tokens[id] && turn.order.indexOf(id) < 0);
+  const waiting = Object.keys(late).filter((id) => tokens[id]);
   if (!waiting.length) {
     if (Object.keys(late).length) await CocLive.put(tblPath("meta/turn/late"), null);
     return;
   }
+  /* A NUMBER FOR SOMEBODY ALREADY IN THE ORDER IS A CORRECTION, AND IT HAS TO MOVE THEM.
+     Kayki, mid-session: "when i put the number for the initiative it just bugged, and it kept putting
+     the player on 17 even tho i forced to 22." This filtered out anyone already in the order and then
+     deleted the number — so the ONE way to fix a wrong initiative silently threw the fix away, which is
+     the worst possible behaviour for a correction. They are taken out and re-placed by the same rank the
+     gather uses, so a correction lands exactly where that number would have landed from the start. */
   const order = turn.order.slice();
-  let idx = Math.min(Math.max(0, turn.idx || 0), order.length - 1);
+  const upId = order[Math.min(Math.max(0, turn.idx || 0), order.length - 1)];
+  for (const id of waiting) {
+    const at = order.indexOf(id);
+    if (at >= 0) order.splice(at, 1);
+  }
+  let idx = Math.max(0, order.indexOf(upId));
   // The number for someone already in the order is on their figure; for the ones arriving it is in
   // `late`, which the local copy of the figure may not have caught up with yet.
   const rank = (id) => {
@@ -879,16 +898,18 @@ async function tblJoinSettle() {
     let at = order.findIndex((other) => ahead(mine, rank(other)));
     if (at < 0) at = order.length;
     order.splice(at, 0, id);
-    // Whoever was up stays up: an insertion at or before them shifts them one to the right.
-    if (at <= idx) idx += 1;
+    // Whoever was up stays up: an insertion at or before them shifts them one to the right. Read off
+    // the ID rather than counted, so a correction that lifts somebody OUT before re-placing them cannot
+    // leave the gold ring on the wrong person.
+    idx = Math.max(0, order.indexOf(upId));
     await tblTokenField(id, "moved", 0);
   }
   await CocLive.patch(tblPath("meta/turn"), { order, idx });
   await CocLive.put(tblPath("meta/turn/late"), null);
   await CocLive.push(tblPath("log"), {
     t: Date.now(), who: "DM", kind: "system",
-    text: waiting.map((id) => `${(tokens[id] || {}).name || "Someone"} joins the fight at ${late[id]}`)
-      .join(", "),
+    text: waiting.map((id) => `${(tokens[id] || {}).name || "Someone"} ${
+      turn.order.indexOf(id) >= 0 ? "moves to" : "joins the fight at"} ${late[id]}`).join(", "),
   });
 }
 
@@ -1022,6 +1043,11 @@ function initBarHTML(init) {
   const mine = tblInitMine(need).filter((id) => have[id] == null);
   const waiting = need.filter((id) => have[id] == null);
   const row = (id) => initAskHTML(id, tokens, false);
+  /* AND A NUMBER ALREADY IN CAN STILL BE PUT RIGHT. Kayki, mid-session: a wrong number went in and there
+     was no way back to it — the row for a figure disappears the moment it has a number, which is right
+     for "what am I still owed" and wrong for "that is not what he rolled". The DM keeps a box for every
+     figure that is already in, under a heading that says what it is for. Typing in one overwrites. */
+  const fixable = tbl.role === "dm" ? need.filter((id) => have[id] != null) : [];
   return `<span class="turn-round">Initiative</span>
     ${mine.length ? `<span class="init-rows">${mine.map(row).join("")}</span>
       ${mine.length > 1 ? `<button class="btn-quiet" data-tbl="init-roll-mine">Roll all ${mine.length}</button>` : ""}`
@@ -1039,7 +1065,14 @@ function initBarHTML(init) {
       ${tbl.role === "dm" ? `<button class="btn-quiet" data-tbl="init-go"
           ${waiting.length && waiting.length < need.length ? "" : "disabled"}>Start without them</button>
         <button class="btn-quiet" data-tbl="init-cancel">Cancel</button>` : ""}
-    </span>`;
+    </span>
+    ${fixable.length ? `<span class="init-rows init-fix">
+      <span class="muted">Already in — retype to correct:</span>
+      ${fixable.map((id) => `<span class="init-ask">
+        <span class="init-name">${esc((tokens[id] || {}).name || "Figure")}</span>
+        <input class="num init-num" data-init-for="${esc(id)}" type="number" inputmode="numeric"
+          value="${esc(have[id])}" aria-label="Initiative for ${esc((tokens[id] || {}).name || "figure")}" />
+      </span>`).join("")}</span>` : ""}`;
 }
 
 /* Somebody walked in. A line under the running fight, on its own row so the turn above it does not move

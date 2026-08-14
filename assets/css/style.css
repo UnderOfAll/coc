@@ -1333,6 +1333,10 @@ body:has(.vtt) { height: 100dvh; overflow: hidden; }
    the DM a row per creature, a player the one figure they hold — plus a tally so the table can see who
    it is waiting for without asking. */
 .init-rows { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; min-width: 0; }
+/* The DM's second-chance row: everyone already in, with their number in a box that can be retyped. On
+   its own line under the gather, quieter than the rows that are still being waited on. */
+.init-fix { flex-basis: 100%; margin-top: 0.35rem; font-size: 0.9rem; }
+.init-fix .init-ask { opacity: 0.8; }
 .init-ask { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.15rem 0.35rem;
   min-width: 0; background: var(--panel-2); border: 1px solid var(--border); border-radius: var(--radius); }
 .init-name { font-family: var(--serif); color: var(--gold); font-size: 0.95rem;

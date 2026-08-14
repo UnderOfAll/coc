@@ -427,12 +427,16 @@ function tblMusicWatch() {
   tblMusicTick = setInterval(() => {
     if (!tbl) { clearInterval(tblMusicTick); tblMusicTick = null; return; }
     const now = tblMusicNow();
-    if (!now || !now.playing || !tblMusicAllowed()) return;
-    try { tblMusicApply(); } catch { /* the next tick will try again */ }
-    /* THE BACKSTOP, and for YouTube it is the only thing there is that this app controls. The events
-       are the fast path; this catches every case they miss — a tab that was asleep, a player rebuilt
-       mid-track, a stream that stopped without saying so, an event that simply never came. */
+    if (!now || !now.playing) return;
+    /* THE END-CHECK COMES BEFORE THE ALLOWED-CHECK. A DM who has not enabled sound on this device, or
+       who muted it, has no player — and the backstop sat below a return that fires in exactly that
+       case, so the room's queue depended on the DM being able to HEAR it. */
     if (tbl.role === "dm") tblMusicEnded().catch(() => {});
+    if (!tblMusicAllowed()) return;
+    /* THE BACKSTOP, and for YouTube it is the only thing there is that this app controls. The events
+       are the fast path; the check above catches every case they miss — a tab that was asleep, a player
+       rebuilt mid-track, a stream that stopped without saying so, an event that simply never came. */
+    try { tblMusicApply(); } catch { /* the next tick will try again */ }
   }, 2500);
 }
 
@@ -631,9 +635,36 @@ async function tblMusicQueueClear() {
    panel under a title nobody can hear, and leaves every device's clock walking past the end of a track
    that stopped minutes ago; on YouTube that was a tail replayed for ever. The three ways in (`ended`,
    YouTube's state change, the tick) all come through here. */
+/* WHAT PLAYS AFTER THIS ONE WHEN THE QUEUE IS EMPTY. Kayki, mid-session: "the musics isnt working the
+   queue, once it finishs it stops fully… just put it working."
+   It was doing what it was told — an empty queue meant silence — and that is not what a folder called
+   "Main Stage" is for. A track that ends now hands over to the NEXT TRACK IN ITS OWN GROUP: the folder
+   it sits in, in the order the DM arranged, wrapping round to the top so a scene keeps its music for as
+   long as the scene lasts. The queue still wins when there is one; this is only what happens after it.
+   A group of ONE does not wrap — repeating a single track for ever is a thing to ask for (the loop
+   switch on the row), not a thing to be given. */
+function tblMusicFollowOn(id) {
+  const shelf = tblMusicData().tracks || {};
+  const t = shelf[id];
+  if (!t) return "";
+  const folders = tblMusicData().folders || {};
+  const group = tblMusicGroup(t.folder && folders[t.folder] ? t.folder : "").map(([tid]) => tid);
+  if (group.length < 2) return "";
+  const at = group.indexOf(id);
+  if (at < 0) return "";
+  return group[(at + 1) % group.length];
+}
+
 async function tblMusicEnded() {
   if (tbl.role !== "dm" || mus.advancing || !tblMusicOver()) return;
   if (tblMusicQueue().length) return tblMusicNext();
+  const now = tblMusicNow();
+  const after = now && now.trackId ? tblMusicFollowOn(now.trackId) : "";
+  if (after) {
+    mus.advancing = true;
+    try { await tblMusicPlay(after); } finally { mus.advancing = false; }
+    return;
+  }
   mus.advancing = true;
   try { await tblMusicStop(); } finally { mus.advancing = false; }
 }

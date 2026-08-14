@@ -2936,6 +2936,47 @@ ok(peek(`mus.ytPlays`) === 0, "nor started again");
 peek(`tblMusicEnded();`);
 await until(async () => (await aget(`CocLive.get("tables/482910/music/now")`)) === null);
 ok(true, "with nothing queued, the end of the last track writes the quiet");
+/* AND A TRACK IN A FOLDER HANDS OVER TO THE NEXT ONE IN IT. Kayki, mid-session: "the musics isnt
+   working the queue, once it finishs it stops fully… just put it working." Silence was what an empty
+   queue meant, and it is not what a folder called "Main Stage" is for. */
+{
+  // Three tracks in one folder, so the handover has something to hand over to.
+  await peek(`CocLive.put("tables/482910/music/folders/fA", { name: "Main Stage", at: 1 })`);
+  for (const [id, o] of [["fo1", 0], ["fo2", 1], ["fo3", 2]]) {
+    await peek(`CocLive.put("tables/482910/music/tracks/${id}", { kind: "youtube", src: "y${id}",
+      title: "${id}", folder: "fA", order: ${o}, at: ${o + 1} })`);
+  }
+  await until(() => !!peek(`(tblMusicData().tracks || {}).fo3`));
+  const group = JSON.parse(peek(`JSON.stringify(tblMusicGroup("fA").map(([id]) => id))`));
+  ok(group.join(",") === "fo1,fo2,fo3", `the folder reads in the order the DM arranged (${group})`);
+  ok(peek(`tblMusicFollowOn("fo1")`) === "fo2", "the end of one hands over to the next in its folder");
+  ok(peek(`tblMusicFollowOn("fo3")`) === "fo1",
+    "and the last wraps round to the first, so a scene keeps its music");
+  ok(peek(`tblMusicFollowOn("nosuchtrack")`) === "", "a track that is not there hands over to nothing");
+  // A group of ONE does not wrap: repeating a single track for ever is the loop switch's job.
+  await peek(`CocLive.put("tables/482910/music/folders/fB", { name: "Alone", at: 2 })`);
+  await peek(`CocLive.put("tables/482910/music/tracks/fo9", { kind: "youtube", src: "y9", title: "Alone",
+    folder: "fB", order: 0, at: 9 })`);
+  await until(() => !!peek(`(tblMusicData().tracks || {}).fo9`));
+  ok(peek(`tblMusicFollowOn("fo9")`) === "", "a folder of one does not repeat itself for ever");
+  // And the whole thing end to end: a track in a folder ends, the next one is playing.
+  await peek(`CocLive.put("tables/482910/music/now", { kind: "youtube", src: "yfo1", title: "fo1",
+    trackId: "fo1", playing: true, pos: 0, at: Date.now() - 600000, loop: false, gen: 502 })`);
+  await until(() => (peek(`(tblMusicNow() || {}).trackId`)) === "fo1");
+  peek(`mus.ytOn = true; mus.yt = { getPlayerState: () => 0, getDuration: () => 200,
+    getCurrentTime: () => 200, getVideoData: () => ({ video_id: "yfo1" }), seekTo: () => {},
+    playVideo: () => {}, pauseVideo: () => {}, cueVideoById: () => {}, loadVideoById: () => {},
+    setVolume: () => {}, mute: () => {}, unMute: () => {} };`);
+  peek(`tblMusicEnded();`);
+  await until(() => (peek(`(tblMusicNow() || {}).trackId`)) === "fo2");
+  ok(peek(`(tblMusicNow() || {}).trackId`) === "fo2", "so the end of a track starts the next one");
+  peek(`mus.yt = null; mus.ytOn = false;`);
+  await peek(`CocLive.put("tables/482910/music/now", null)`);
+  for (const id of ["fo1", "fo2", "fo3", "fo9"]) await peek(`CocLive.del("tables/482910/music/tracks/${id}")`);
+  await peek(`CocLive.put("tables/482910/music/folders/fA", null)`);
+  await peek(`CocLive.put("tables/482910/music/folders/fB", null)`);
+  await wait(120);
+}
 peek(`mus.yt = null; mus.ytOn = false; CocLive.put("tables/482910/music/now", null);`);
 await wait(150);
 
