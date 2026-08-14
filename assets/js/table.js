@@ -1309,13 +1309,14 @@ document.addEventListener("click", (e) => {
     const t = tblTokens()[id];
     if (!t || !(tbl.role === "dm" || tblIsMine(t))) return;
     if (act === "mine-save") {
-      CocLive.patch(tblPath("tokens/" + id), {
+      // Same rule as the DM's editor: an empty link box leaves a STORED picture alone rather than
+      // wiping it. Only a cleared link means "take it off".
+      CocLive.patch(tblPath("tokens/" + id), Object.assign({
         name: String(($("#mine-name") || {}).value || "Someone").slice(0, 40),
         hp: Math.max(0, Number(($("#mine-hp") || {}).value) || 0),
         hpMax: Math.max(0, Number(($("#mine-hpmax") || {}).value) || 0),
         speed: Math.max(0, Math.min(200, Number(($("#mine-speed") || {}).value) || 0)),
-        image: String(($("#mine-img") || {}).value || "").trim(),
-      }).catch(tblFail);
+      }, tblImagePatch("mine", t.image))).catch(tblFail);
     } else if (act === "mine-hp") {
       const amt = Math.max(1, Number(($("#mine-amt") || {}).value) || 1);
       const next = Math.max(0, (Number(t.hp) || 0) + amt * Number(arg));
@@ -1339,6 +1340,17 @@ document.addEventListener("click", (e) => {
   else if (act === "sheet-close") { closeSheetPanel(); tbl.ui.panel = ""; paintSide(); }
 
   else if (act === "ed-open") tblOpenToken(val);
+  /* Taking a stored picture off, deliberately — the one thing an empty link box is no longer allowed to
+     do by accident. Either editor, and only for a figure this device may change. */
+  else if (act === "ed-nopic" || act === "mine-nopic") {
+    const id = act === "ed-nopic" ? tbl.ui.editToken : (tblMyTokens()[0] || "");
+    const t = id ? tblTokens()[id] : null;
+    if (t && (tbl.role === "dm" || tblIsMine(t))) {
+      tblTokenField(id, "image", "").catch(tblFail);
+      tblRepaintPanel();
+      paintTokens();
+    }
+  }
   /* A creature's engine, set from its card or from its figure's panel. Written straight to the figure —
      it is that figure's pool, not the bestiary's — and repainted from the press rather than from the
      stream, because a meter that waits for the echo reads as a button that did nothing. */

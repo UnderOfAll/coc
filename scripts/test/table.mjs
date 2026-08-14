@@ -694,6 +694,31 @@ await wait(150);
 ok(peek(`tblTokens().tTwin.charCode`) === undefined, "an older clone loses the character code it copied");
 ok(peek(`tblTokens().tRig.charCode`) === "123456", "and the figure actually being played keeps it");
 await peek(`CocLive.del("tables/482910/tokens/tTwin")`);
+/* SAVING A FIGURE MUST NOT WIPE ITS PICTURE. Kayki: "when i healed a player myself, saved it and it
+   removed his immage." An uploaded picture is bytes kept once under a key — it cannot be shown in a text
+   box, so the link box is blank for one, and Save wrote that blankness straight back over it. Healing
+   somebody was enough to take their face off the board. */
+peek(`tbl.role = "dm"; tbl.ui.editToken = "tRig"; tbl.ui.panel = "dm"; paintSide();`);
+await wait(60);
+ok(String(peek(`tblTokens().tRig.image`) || "").startsWith("art:"),
+  "the figure is wearing a stored picture");
+ok(!$("#ed-img").value, "which the link box cannot show, so it is empty");
+ok(!!$('[data-tbl="ed-nopic"]'), "and taking it off is a button of its own");
+ok(peek(`JSON.stringify(tblImagePatch("ed", tblTokens().tRig.image))`) === "{}",
+  "so an empty box leaves a stored picture exactly where it is");
+const artWas = peek(`tblTokens().tRig.image`);
+peek(`$("#ed-hp").value = "7";`);
+await aget(`tblSaveToken("tRig")`);
+await wait(150);
+ok(peek(`tblTokens().tRig.image`) === artWas, "saving after a heal keeps the picture");
+ok(Number(peek(`tblTokens().tRig.hp`)) === 7, "and the heal still lands");
+// A cleared LINK still removes one: that box did show what it held.
+ok(peek(`JSON.stringify(tblImagePatch("ed", "maps/thing.png"))`) === `{"image":""}`,
+  "while clearing a link is still a way to take a picture off");
+ok(peek(`JSON.stringify(tblImagePatch("ed", ""))`) === `{"image":""}`,
+  "and a figure with no picture is unaffected either way");
+peek(`tbl.ui.editToken = ""; tbl.ui.panel = ""; paintSide();`);
+
 /* AND THE CARD OPENS ON ONE. It was hidden for any figure you HOLD, which is not the same as the figure
    you PLAY — and the DM running from the same browser got nothing at all when tapping a clone. */
 peek(`tbl.me.tokenId = "tRig"; tblTokenField(${JSON.stringify(copyId)}, "owner", tbl.me.clientId);`);

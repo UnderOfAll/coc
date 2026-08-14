@@ -1617,15 +1617,15 @@ function tokenEditorHTML(id) {
 }
 
 async function tblSaveToken(id) {
-  const patch = {
+  const t = tblTokens()[id] || {};
+  const patch = Object.assign({
     name: String(($("#ed-name") || {}).value || "Figure").slice(0, 40),
     hp: Math.max(0, Number(($("#ed-hp") || {}).value) || 0),
     hpMax: Math.max(0, Number(($("#ed-hpmax") || {}).value) || 0),
     size: Math.max(1, Math.min(4, Number(($("#ed-size") || {}).value) || 1)),
     speed: Math.max(0, Math.min(200, Number(($("#ed-speed") || {}).value) || 0)),
     initMod: Math.max(-5, Math.min(20, Number(($("#ed-init") || {}).value) || 0)),
-    image: String(($("#ed-img") || {}).value || "").trim(),
-  };
+  }, tblImagePatch("ed", t.image));
   await CocLive.patch(tblPath("tokens/" + id), patch);
 }
 
@@ -2306,7 +2306,26 @@ function tokenImageHTML(who, current) {
       <div class="chips">${repo.map((f) =>
         `<button class="chip" data-tbl="${who}-repo" data-val="${esc(f)}">${esc(f)}</button>`).join("")}</div>` : ""}
     <label class="field"><span>Or a link</span>
-      <input id="${who}-img" class="text" type="text" value="${esc(String(current || "").startsWith("art:") ? "" : (current || ""))}" /></label>`;
+      <input id="${who}-img" class="text" type="text" value="${esc(String(current || "").startsWith("art:") ? "" : (current || ""))}" /></label>
+    ${/* A PICTURE UPLOADED TO THIS TABLE CANNOT BE SHOWN IN A TEXT BOX — it is bytes, kept once under a
+          key — so the box is blank for one, and Save used to write that blankness back and wipe it.
+          Kayki: "when i healed a player myself, saved it and it removed his immage." The box now means
+          "leave it as it is" when it is empty and the picture is a stored one, and taking it off is a
+          button that says so. Clearing a LINK still removes it: that box did show what it held. */""}
+    ${String(current || "").startsWith("art:")
+      ? `<p class="muted">This picture is stored on the table, so it cannot appear in the box above —
+          leaving that empty changes nothing.</p>
+         <button class="btn-quiet" data-tbl="${who}-nopic">Remove the picture</button>` : ""}`;
+}
+
+/* WHAT SAVE SHOULD DO ABOUT THE PICTURE. Empty box plus a stored picture means "untouched"; empty box
+   plus a link means the link was cleared, which is a real way to remove one. */
+function tblImagePatch(who, current) {
+  const box = /** @type {HTMLInputElement|null} */ (document.getElementById(who + "-img"));
+  const typed = String((box && box.value) || "").trim();
+  if (typed) return { image: typed };
+  if (String(current || "").startsWith("art:")) return {};
+  return { image: "" };
 }
 
 /* ---------------------------------------------------------------- pictures, stored once
