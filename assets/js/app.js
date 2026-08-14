@@ -1027,6 +1027,7 @@ function renderClass(c) {
     `<div class="detail-grid">
       ${stat("HP", (c.hitDie || "?") + " at level 1")}
       ${stat("Size", Array.isArray(c.sizes) ? c.sizes.join(" or ") : "Small or Medium")}
+      ${stat("Speed", (c.speed ?? 30) + " ft")}
       ${stat("Primary Ability", c.primaryAbility || "—")}
       ${stat("Saving Throws", (c.savingThrows || []).join(", ") || "—")}
       ${stat("Subclass At", c.subclassLevel ? "Level " + c.subclassLevel : "—")}

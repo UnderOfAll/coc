@@ -565,6 +565,7 @@
         "Small",
         "Medium"
       ],
+      "speed": 30,
       "primaryAbility": "Dexterity",
       "savingThrows": [
         "Dexterity",
@@ -788,6 +789,7 @@
         "Small",
         "Medium"
       ],
+      "speed": 30,
       "primaryAbility": "Constitution",
       "savingThrows": [
         "Constitution",
@@ -1028,6 +1030,7 @@
         "Small",
         "Medium"
       ],
+      "speed": 30,
       "primaryAbility": "Intelligence",
       "savingThrows": [
         "Intelligence",
@@ -1236,6 +1239,7 @@
         "Small",
         "Medium"
       ],
+      "speed": 30,
       "primaryAbility": "Charisma",
       "savingThrows": [
         "Charisma",
@@ -1437,6 +1441,7 @@
         "Small",
         "Medium"
       ],
+      "speed": 30,
       "primaryAbility": "Charisma",
       "attackAbility": {
         "ability": "Charisma",
@@ -1734,6 +1739,7 @@
         "Small",
         "Medium"
       ],
+      "speed": 30,
       "primaryAbility": "Dexterity",
       "savingThrows": [
         "Dexterity",
@@ -1958,6 +1964,7 @@
         "Small",
         "Medium"
       ],
+      "speed": 30,
       "primaryAbility": "Wisdom",
       "savingThrows": [
         "Charisma",
@@ -2195,6 +2202,7 @@
         "Medium",
         "Large"
       ],
+      "speed": 30,
       "primaryAbility": "Strength",
       "savingThrows": [
         "Strength",

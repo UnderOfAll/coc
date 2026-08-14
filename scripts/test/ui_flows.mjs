@@ -432,6 +432,10 @@ ok(before===Math.floor((peek("draft.scores.Charisma")+2-10)/2),"the bonus reache
     "and it survives the parser, so it is a chip and not just words");
   /* AND THE RULES SAY WHAT PROFICIENCY IS. There was no page for it at all. */
   ok(peek(`(store.rules||[]).some(r => r.id === "proficiency")`), "there is a Proficiency rules page");
+  /* SPEED. Kayki: "theres nowhere in the character sheet that they can see their speed." It was nowhere
+     in the DATA either — the board assumed 30, and a dozen features are written as "half your speed". */
+  ok(peek(`store.classes.every(c => Number(c.speed) > 0)`), "every class says how far it walks");
+  ok(peek(`derive(draft).speed`) === 30, "and the sheet works it out (30 ft)");
   ok(new RegExp("AC "+(10+dexMod)+"\\b").test(coat.textContent),
     `and its AC counts the starting bonus (Dex ${dexTotal}, expected ${10+dexMod}, got "${coat.textContent.trim().replace(/\s+/g," ")}")`);
   peek(`draft.armorId = "conjurers-longcoat"; renderCreator();`);
@@ -919,7 +923,13 @@ ok(outside(".engine-panel"),"and so does the engine, which every field spends");
 ok(outside(".sheet-head"),"and the name, class and level");
 const vitLabels=$$(".vital-set .kn").map(k=>{const t=k.querySelector(".kn-l .tip-term");
   return (t?t.firstChild.textContent:k.querySelector(".kn-l").textContent).trim();});
-ok(vitLabels.join(",")==="Armour Class,Parry DC,Initiative","AC, Parry DC and Initiative are up there with them");
+/* SPEED JOINED THEM. Kayki: "theres nowhere in the character sheet that they can see their speed" —
+   and it belongs with the other three numbers a player reads off without being asked. */
+ok(vitLabels.join(",")==="Armour Class,Parry DC,Initiative,Speed",
+  "AC, Parry DC, Initiative and Speed are up there with them ("+vitLabels.join(",")+")");
+const spd=$$(".vital-set .kn").find(k=>/Speed/.test(k.textContent));
+ok(/30 ft/.test(spd.textContent),"the speed is a number of feet, not a bare 30");
+ok(/15 ft is half/.test(spd.textContent),"with the half a dozen features refer to said beside it");
 ok($$(".vital-set .kn").every(k=>!k.closest(".pane")),"none of the three hides inside a field");
 // The panels themselves each belong to exactly one field.
 const paneOf=sel=>{const n=$(sel); const p=n&&n.closest(".pane"); return p?p.dataset.pane:null;};

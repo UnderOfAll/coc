@@ -8,6 +8,7 @@
     "Small",
     "Medium"
   ],
+  "speed": 30,
   "primaryAbility": "Dexterity",
   "savingThrows": [
     "Dexterity",

@@ -167,6 +167,10 @@ function derive(ch) {
   return {
     cls, subclass, level, prof, mods, hpMax, ac, acNote, features, tricks, engine, engineCap, classStats,
     weapons: proficient, carried, armor, shield,
+    /* HOW FAR YOU WALK. Thirty unless the class says otherwise, and it is derived rather than assumed
+       because a dozen features are written as "half your speed" and the number they are half OF was
+       nowhere a player could read it. */
+    speed: Math.max(0, Number(cls.speed) || 30),
     saveDC: 8 + prof + (mods[primary] ?? 0),
     attackBonus: prof + (mods[primary] ?? 0),
     parryDC: cls.parryBaseDC,
@@ -1248,6 +1252,14 @@ function vitals(d, p) {
         ${numBox("Armour Class", d.ac, d.acNote, "An attack roll must equal or beat this to hit you. Only a hit can then be Parried.")}
         ${numBox("Parry DC", d.parryDC, "roll a flat d20", "When a hit lands, spend your reaction and roll a flat d20 — no modifiers. Above this DC: no damage. Equal: half. Below: half again on top. Lower is better, and it never scales with level.", { spec: "1d20", label: "Parry (needs over " + d.parryDC + ")" })}
         ${numBox("Initiative", sign(d.mods.Dexterity), "roll initiative", "Roll d20 and add this at the start of a fight to see who goes when.", { spec: "1d20" + sign(d.mods.Dexterity), label: "Initiative" })}
+        ${/* Kayki: "theres nowhere in the character sheet that they can see their speed." It was nowhere
+              in the DATA either — the board assumed 30 and a dozen features say "half your speed", so the
+              number every one of them refers to was something a player had to be told out loud. */""}
+        ${numBox("Speed", d.speed + " ft", Math.floor(d.speed / 2 / 5) * 5 + " ft is half",
+          "How far you can walk on your turn, in feet — " + Math.floor(d.speed / 5) + " squares. "
+          + "Half of it is " + (Math.floor(d.speed / 2 / 5) * 5) + " ft, which is what a feature means by "
+          + "\u201chalf your speed\u201d and what standing up from prone costs you. At a table the bar "
+          + "above the board counts it down as you drag your figure.")}
       </div>
     </div>
     ${p.hp <= 0 ? `<p class="warn">Down. In this system that is the DM's call — the sheet just stops counting.</p>` : ""}

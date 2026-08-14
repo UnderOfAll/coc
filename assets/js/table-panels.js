@@ -1305,6 +1305,11 @@ function tblSyncTokenFromSheet(code, ch) {
     const patch = {};
     if (hp != null && Number(t.hp) !== hp) patch.hp = hp;
     if (hpMax != null && Number(t.hpMax) !== hpMax) patch.hpMax = hpMax;
+    /* AND HOW FAR IT WALKS. The board defaulted every figure to 30 and the sheet had no opinion at all,
+       so the turn bar's "30/30 ft" was a coincidence rather than a reading of the character. Now the
+       class says, derive() works it out, and the figure follows the sheet like its name and its hit
+       points do. */
+    if (d && d.speed && Number(t.speed) !== Number(d.speed)) patch.speed = Number(d.speed);
     // A name or a portrait can change between sessions; the figure should not be the last one to know.
     if (ch.name && t.name !== String(ch.name).slice(0, 40)) patch.name = String(ch.name).slice(0, 40);
     /* The picture. A player owns their OWN character completely — its face is theirs to change whenever

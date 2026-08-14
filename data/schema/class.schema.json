@@ -46,6 +46,14 @@
       "minItems": 1,
       "description": "Character sizes a member of this class may be (MECHANICS 2.3). There are no races in this system: a player's appearance is entirely free and has no combat effect, but SIZE is a class constraint because two mechanics read off it — the Sandow's Mighty Build and the Impersonator's Mimic. Default is [\"Small\",\"Medium\"]; only the Sandow may be Large."
     },
+    "speed": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 120,
+      "multipleOf": 5,
+      "default": 30,
+      "description": "How far you walk on your turn, in feet. Thirty for everybody in this company — it is here because a dozen features are written in terms of \"half your speed\" and the number they are half OF was nowhere on the sheet, so a player had to know it from outside the app (Kayki, 2026-08-14: \"theres nowhere in the character sheet that they can see their speed\"). A class that ought to move differently now has somewhere to say so."
+    },
     "primaryAbility": {
       "type": "string"
     },
