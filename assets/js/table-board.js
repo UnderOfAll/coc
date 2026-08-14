@@ -301,7 +301,8 @@ function bindStage() {
     e.preventDefault();
     tblZoomBy(e.deltaY < 0 ? 1.12 : 1 / 1.12, e.clientX, e.clientY);
   }, { passive: false });
-  // A double tap on a token is the shortest path to "what is this thing" — for the DM, its editor.
+  // Kept for the case where nothing repainted between the two clicks, and because a browser that fires a
+  // real dblclick at the figure should be answered at once rather than waiting for the click after it.
   stage.addEventListener("dblclick", (e) => {
     const node = evTarget(e).closest("[data-token]");
     if (node) tblOpenToken(node.dataset.token);
@@ -311,8 +312,33 @@ function bindStage() {
      happens to end on a figure does not open anything. */
   stage.addEventListener("click", (e) => {
     if (!tbl || (tbl.ui.ink && tbl.ui.ink.on)) return;    // the pen owns the board while it is out
-    const node = evTarget(e).closest("[data-token]");
+    /* WHICH FIGURE WAS UNDER THE POINTER, asked of the SCREEN rather than of the event. `pointerdown`
+       calls preventDefault and takes a pointer capture — that is what makes dragging and panning work —
+       and the price is that the click arrives targeted at the stage, not at the figure. So the target is
+       tried first, and where it says nothing the point itself is asked. */
+    const under = () => {
+      const hit = evTarget(e).closest("[data-token]");
+      if (hit) return hit;
+      // jsdom has no layout and therefore no elementFromPoint; there, the target is all there is.
+      if (!document.elementFromPoint) return null;
+      const at = document.elementFromPoint(e.clientX, e.clientY);
+      return at && at.closest ? at.closest("[data-token]") : null;
+    };
+    const node = under();
     const id = node && node.dataset.token;
+    /* THE SECOND CLICK OPENS THE FIGURE, and it is counted here rather than left to `dblclick`. Kayki:
+       "when i, the dm, double click a creature… it opens my own part of the panel of that creature
+       automatically." There has been a `dblclick` listener on the stage since the board was built and it
+       had stopped working: the FIRST click repaints to show the peek card, the node under the pointer is
+       replaced, and a browser with no surviving target falls back to dispatching dblclick at the stage —
+       where `closest("[data-token]")` finds nothing. `e.detail` counts the clicks in one burst and does
+       not care that the DOM moved underneath it. */
+    if (id && e.detail >= 2) {
+      tbl.ui.peek = "";
+      paintPeek();
+      tblOpenToken(id);       // the DM gets the editor, a player gets the card — whatever the figure is
+      return;
+    }
     tbl.ui.peek = id && tbl.ui.peek !== id ? id : "";
     paintPeek();
   });

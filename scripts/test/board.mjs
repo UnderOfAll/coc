@@ -411,6 +411,24 @@ console.log("\n— 1280px, as the DM, with a mouse —");
   const orcAfter = await tokenAt(page, "t2");
   ok(orcAfter.x === orcBefore.x - 3, `the DM drags a monster three squares left (${orcBefore.x} -> ${orcAfter.x})`);
 
+  /* DOUBLE-CLICK A FIGURE AND ITS PANEL OPENS — any figure, whoever owns it. Kayki: "when i, the dm,
+     double click a creature, unregard if its an player npc or enemy, it opens my own part of the panel of
+     that creature automatically." There has been a dblclick listener on the stage since the board was
+     built and it had quietly stopped working, which jsdom cannot see: `pointerdown` calls preventDefault
+     and takes a pointer capture, so the browser swallows the first click and targets the second at the
+     STAGE rather than at the figure. The fix asks the SCREEN what is under the pointer. */
+  for (const [id, what] of [["t2", "a monster"], ["t1", "a player's own figure"]]) {
+    await page.evaluate(() => { tbl.ui.editToken = ""; tbl.ui.panel = ""; tbl.ui.peek = ""; paintSide(); paintPeek(); });
+    const box = await tokenBox(page, id);
+    await page.mouse.click(box.x, box.y, { clickCount: 2, delay: 40 });
+    await new Promise((r) => setTimeout(r, 350));
+    const got = await page.evaluate(() => ({ open: tbl.ui.editToken, panel: tbl.ui.panel,
+      editor: !!document.querySelector("#ed-name") }));
+    ok(got.open === id && got.panel === "dm" && got.editor,
+      `double-clicking ${what} opens its editor (${JSON.stringify(got)})`);
+  }
+  await page.evaluate(() => { tbl.ui.editToken = ""; tbl.ui.panel = ""; paintSide(); });
+
   // The ruler, drawn while the button is down. Aimed at where the monster is NOW — it has just been
   // moved, and the earlier rect is three squares out of date.
   const orcNow = await tokenBox(page, "t2");
