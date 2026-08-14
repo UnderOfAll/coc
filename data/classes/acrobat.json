@@ -27,7 +27,7 @@
       "Aerialist's rigging kit",
       "Balancing pole"
     ],
-    "skills": "Choose two from Acrobatics, Athletics, Performance, Persuasion, Sleight of Hand, and Stealth"
+    "skills": "Choose two from Acrobatics, Athletics, Perception, Performance, Persuasion, Sleight of Hand, and Stealth"
   },
   "parryBaseDC": 7,
   "defenseAbility": "Dexterity",

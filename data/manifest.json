@@ -7,6 +7,7 @@
     "rules/character-appearance-and-size.json",
     "rules/character-creation.json",
     "rules/parry.json",
+    "rules/proficiency.json",
     "rules/reaction-economy.json",
     "rules/tricks-and-casting.json",
     "rules/weapon-mastery.json",

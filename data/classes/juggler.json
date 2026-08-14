@@ -26,7 +26,7 @@
     "tools": [
       "One gaming set"
     ],
-    "skills": "Choose two from Acrobatics, Performance, Sleight of Hand, Insight, and Deception"
+    "skills": "Choose two from Acrobatics, Deception, Insight, Perception, Performance, and Sleight of Hand"
   },
   "parryBaseDC": 12,
   "defenseAbility": "Dexterity",

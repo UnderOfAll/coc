@@ -423,6 +423,15 @@ ok(before===Math.floor((peek("draft.scores.Charisma")+2-10)/2),"the bonus reache
   const dexMod=Math.floor((dexTotal-10)/2);
   const coat=$$('[data-pick="armor"]').find(b=>/Conjurer's Longcoat/.test(b.textContent));
   ok(!!coat,"the Conjurer's Longcoat is on offer");
+  /* PERCEPTION IS ON EVERY CLASS'S LIST. Kayki: "theres no perception skill proficiency" — it was in
+     the skill data all along and offered by two of the eight classes, so six of them (his friend's
+     Joker among them) could never train the check a DM calls for most. */
+  ok(peek(`store.classes.every(c => /Perception/.test((c.proficiencies||{}).skills || ""))`),
+    "every class can train Perception");
+  ok(peek(`store.classes.every(c => parseSkillChoice(c.proficiencies.skills).skills.includes("Perception"))`),
+    "and it survives the parser, so it is a chip and not just words");
+  /* AND THE RULES SAY WHAT PROFICIENCY IS. There was no page for it at all. */
+  ok(peek(`(store.rules||[]).some(r => r.id === "proficiency")`), "there is a Proficiency rules page");
   ok(new RegExp("AC "+(10+dexMod)+"\\b").test(coat.textContent),
     `and its AC counts the starting bonus (Dex ${dexTotal}, expected ${10+dexMod}, got "${coat.textContent.trim().replace(/\s+/g," ")}")`);
   peek(`draft.armorId = "conjurers-longcoat"; renderCreator();`);

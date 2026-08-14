@@ -1,0 +1,62 @@
+{
+  "id": "proficiency",
+  "name": "Proficiency",
+  "source": "Circus System",
+  "summary": "One bonus, from your level alone, added to the handful of things you are trained in — and to nothing else.",
+  "sections": [
+    {
+      "heading": "One number, and it comes from your level",
+      "paragraphs": [
+        "Your proficiency bonus is the same number for everything you are trained in, and it depends on your LEVEL alone — never on an ability, never on a class. A 5th-level Sandow and a 5th-level Illusionist both add +3.",
+        "It is already included in every number the sheet prints. You never add it twice, and you never add it by hand: if a box on your sheet shows +6, the proficiency is in there."
+      ],
+      "list": [
+        "Levels 1-4: +2",
+        "Levels 5-8: +3",
+        "Levels 9-12: +4",
+        "Levels 13-16: +5",
+        "Levels 17+: +6"
+      ]
+    },
+    {
+      "heading": "Where it applies",
+      "paragraphs": [
+        "Four places, and you can read all four off your sheet."
+      ],
+      "list": [
+        "SKILLS you are trained in — the two you chose at creation. A trained check is d20 + the skill's ability modifier + your proficiency bonus.",
+        "SAVING THROWS your class is good at — two of the six, shown as gold boxes in the Abilities row. The other four are the bare ability modifier.",
+        "ATTACKS with a weapon your class is proficient with — the to-hit only.",
+        "YOUR TRICK NUMBERS, if you cast: your trick save DC is 8 + proficiency + your class's ability, and a trick that makes an attack roll is d20 + proficiency + that same ability."
+      ]
+    },
+    {
+      "heading": "Where it does not",
+      "paragraphs": [
+        "This is the half people get wrong, so it is worth saying plainly.",
+        "An UNTRAINED skill check is not forbidden — anyone may try to climb a rope or read a room. It is simply the ability modifier with nothing added. Being untrained costs you the bonus, not the attempt.",
+        "Proficiency is never added to DAMAGE, never to your ARMOUR CLASS, and never to your PARRY roll — a Parry is a flat d20 with no modifiers at all, which is the whole point of it (see Parry)."
+      ]
+    },
+    {
+      "heading": "How you get a skill",
+      "paragraphs": [
+        "At creation, from your class's own list: choose TWO. That is the only source of skill training in this system — there are no backgrounds handing out extra proficiencies, and levelling up grants none. Your background is your character's story, not a package of numbers.",
+        "So the two you pick are the two you have, for good. Pick them for the game you expect to play rather than for the class you are reading about: Perception is the check a DM calls for most often at any table, and every class in this company can take it."
+      ]
+    },
+    {
+      "heading": "Tools and armour",
+      "paragraphs": [
+        "Your class also lists TOOLS you are proficient with — a disguise kit, a marionettist's kit, a playing card set. Add your proficiency bonus to a check made using one. What that check is for is a matter between you and your DM: this system does not publish a table of tool DCs, because a tool is an excuse for a scene rather than a subsystem.",
+        "ARMOUR proficiency works differently and carries no bonus at all — it is permission, not arithmetic. Your class names the categories you may wear, the creator offers you only those, and clothing needs no proficiency from anybody (see Armor & AC). There is deliberately no published penalty for wearing something you are not trained in, because there is no way in this app to end up wearing it; if it comes up at your table, it is the DM's call like everything else the app declines to judge."
+      ]
+    },
+    {
+      "heading": "No expertise here",
+      "paragraphs": [
+        "There is no doubled proficiency in this system, and nothing grants half of one. One bonus, one size, the same for everybody at your level — which is what makes it safe for the app to fold it into every number without asking you which version you have."
+      ]
+    }
+  ]
+}

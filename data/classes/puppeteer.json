@@ -27,7 +27,7 @@
       "Marionettist's kit",
       "Disguise kit"
     ],
-    "skills": "Choose two from Deception, Insight, Intimidation, Performance, Persuasion, and Sleight of Hand"
+    "skills": "Choose two from Deception, Insight, Intimidation, Perception, Performance, Persuasion, and Sleight of Hand"
   },
   "parryBaseDC": 15,
   "defenseAbility": "Wisdom",

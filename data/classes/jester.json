@@ -27,7 +27,7 @@
       "Any one musical instrument",
       "Disguise kit"
     ],
-    "skills": "Choose two from Acrobatics, Deception, Insight, Performance, Persuasion, and Sleight of Hand"
+    "skills": "Choose two from Acrobatics, Deception, Insight, Perception, Performance, Persuasion, and Sleight of Hand"
   },
   "parryBaseDC": 13,
   "defenseAbility": "Charisma",

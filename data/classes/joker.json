@@ -33,7 +33,7 @@
       "Playing card set",
       "Forgery kit"
     ],
-    "skills": "Choose two from Acrobatics, Deception, Intimidation, Performance, Persuasion, and Sleight of Hand"
+    "skills": "Choose two from Acrobatics, Deception, Intimidation, Perception, Performance, Persuasion, and Sleight of Hand"
   },
   "parryBaseDC": 11,
   "defenseAbility": "Charisma",
