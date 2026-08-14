@@ -2254,6 +2254,22 @@ ok(builtTok[1].hp === 11, "dropping one uses its own hit points");
 /* AND ITS OWN INITIATIVE. Every enemy dropped on the board used to carry initMod 0 and roll a flat d20,
    so a Rigging Crawler rolled exactly like a Ticketing Usher. It is the creature's Dexterity now. */
 ok(builtTok[1].initMod === 0, "a built enemy with no Dexterity rolls flat");
+/* AND IT BELONGS TO THE MAP IT WAS DROPPED ON. Kayki: "if i put the grinsel in the main stage, when i go
+   to the backstage he isnt there." The board has always hidden an NPC whose scene is not the open one —
+   but only one that HAS a scene, and this drop never wrote one, so a creature from the bestiary stood on
+   every map at once. The form beside it stamped the scene from the first day. */
+const scene0 = peek(`tblSceneId()`);
+ok(builtTok[1].scene === scene0, "and belongs to the scene it was dropped on");
+const otherScene = await aget(`CocLive.push("tables/482910/scenes", { name: "Another room", image: "", cols: 20, rows: 14, cell: 70, createdAt: 2 })`);
+await aget(`CocLive.put("tables/482910/meta/activeScene", ${JSON.stringify(otherScene)})`);
+await wait(200);
+peek(`paintTokens(); paintSide();`);
+ok(!$(`[data-token="${builtTok[0]}"]`), "so changing the map leaves it behind");
+await aget(`CocLive.put("tables/482910/meta/activeScene", ${JSON.stringify(scene0)})`);
+await wait(200);
+peek(`paintTokens(); paintSide();`);
+ok(!!$(`[data-token="${builtTok[0]}"]`), "and coming back finds it where it was");
+await aget(`CocLive.del("tables/482910/scenes/" + ${JSON.stringify(otherScene)})`);
 ok(/Claw/.test(peek(`enemyReadHTML(${JSON.stringify(builtTok[1])})`)), "and its card reads off what was built");
 await peek(`CocLive.del("tables/482910/tokens/" + ${JSON.stringify(builtTok[0])})`);
 peek(`localStorage.removeItem("coc:dm:enemies:777001");

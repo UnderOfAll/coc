@@ -1273,7 +1273,22 @@ function statusPanel(d) {
       return `<span class="skill-chip"><strong>${esc(name)}</strong>
         <em>${rollBtn("1d20" + sign(bonus), name, sign(bonus))}</em>${ab ? `<span class="muted">${esc(ABIL_SHORT[ab])}</span>` : ""}</span>`;
     }).join("")}</div>` : ""}
+  ${aboutYouHTML(ch)}
   </section>`;
+}
+
+/* WHO YOU ARE, ON THE SHEET AND EDITABLE. A player wrote his background into the creator's Notes box and
+   then could not find it again — Kayki: "he created the character and now he cant see his background,
+   dont appear nowhere, to edit or to see even". Both halves were true. It was rendered read-only at the
+   very bottom of the INVENTORY field, under the coins, and only when it was not empty; and nothing on the
+   sheet could change it, so a background written at creation was frozen for the life of the character.
+   This system has no background as a mechanic (MECHANICS §2.3 — no races, no backgrounds), so what it
+   needs is not a stat, it is a box with the word on it, in the first thing the sheet opens on. */
+function aboutYouHTML(ch) {
+  return `<p class="panel-sub">Background &amp; notes</p>
+    <textarea id="sheet-notes" class="text notes-body" rows="4" maxlength="2000"
+      placeholder="Where you come from, what you look like, who wants you dead. No mechanical weight."
+      >${esc(ch.notes || "")}</textarea>`;
 }
 
 /* One row per weapon actually carried, with the to-hit and the damage already worked out — the
@@ -1636,7 +1651,6 @@ function inventoryPanel(ch, items) {
       <button class="btn-quiet" data-act="coin" data-val="1">Gain</button>
       <button class="btn-quiet" data-act="coin" data-val="-1">Spend</button>
     </div>
-    ${ch.notes ? `<p class="panel-sub">Notes</p><p class="notes">${esc(ch.notes)}</p>` : ""}
   </section>`;
 }
 
@@ -2163,6 +2177,14 @@ document.addEventListener("input", (e) => {
       persist();
       renderSheet();
     });
+    return;
+  }
+  /* SAVED AS YOU TYPE, AND THE SHEET IS NOT REDRAWN WHILE YOU ARE IN THE BOX. Repainting would replace
+     the textarea and a phone keyboard would lose the caret — and nothing else on the sheet reads this
+     text, so there is nothing to redraw for. */
+  if (evTarget(e).id === "sheet-notes" && sheet) {
+    sheet.ch.notes = String(evTarget(e).value || "").slice(0, 2000);
+    persist();
     return;
   }
   creatorInput(e);

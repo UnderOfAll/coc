@@ -376,6 +376,12 @@ async function tblDropEnemy(id) {
   const spot = tblFreeSquare("", 1, 1, size, 1, 1);
   const made = await CocLive.push(tblPath("tokens"), {
     name: e.name, enemyId: e.id, kind: "npc", shape: tbl.ui.npcShape || "square",
+    /* IT BELONGS TO THE MAP IT WAS PUT ON. Kayki: "if i put the grinsel in the main stage, when i go to
+       the backstage he isnt there." The board has always hidden an NPC whose `scene` is not the open one
+       — but only an NPC that HAS a scene, and this drop never wrote one, so every creature taken from the
+       bestiary stood on all of them at once. The form below (`tblPlaceNpc`) stamped it from the first
+       day; the bestiary is the door everybody actually uses. */
+    scene: tblSceneId(),
     x: spot.x, y: spot.y, size,
     // Its own initiative, so a Rigging Crawler does not roll like a Ticketing Usher. Dexterity unless
     // the creature says otherwise.

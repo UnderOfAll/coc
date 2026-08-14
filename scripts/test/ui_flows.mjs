@@ -518,6 +518,20 @@ const knLabel=k=>{const t=k.querySelector(".kn-l .tip-term");return (t?t.firstCh
    the one moment you are least likely to have a picture ready, and is why sheets sat blank for good.
    It is a BUTTON THAT SAYS WHAT IT DOES. Four times this was "already there" and four times it could not
    be found, because it was a caption in the corner of a 56px tile. */
+/* A BACKGROUND IS A BOX WITH THE WORD ON IT. A player wrote his into the creator's Notes and then could
+   not find it — it was rendered read-only at the bottom of the INVENTORY field, under the coins, and only
+   when non-empty, and nothing on the sheet could edit it. This system has no background as a mechanic, so
+   what it needs is a box in the first thing the sheet opens on. */
+ok(!!$("#sheet-notes"), "the sheet has a background box, on the field it opens on");
+ok(/Background/i.test($("#tool").textContent), "with the word Background on it, which is what a player looks for");
+peek(`(() => { const t = document.querySelector("#sheet-notes"); t.value = "Ran away from a circus. Came back.";
+  t.dispatchEvent(new Event("input", { bubbles: true })); return 1; })()`);
+ok(/Ran away from a circus/.test(peek(`sheet.ch.notes`) || ""), "typing in it writes to the character");
+ok(!!$("#sheet-notes"), "and the box survives the write, so the caret is not lost mid-sentence");
+peek(`(() => { const t = document.querySelector("#sheet-notes"); t.value = ""; 
+  t.dispatchEvent(new Event("input", { bubbles: true })); renderSheet(); return 1; })()`);
+ok(!!$("#sheet-notes"), "and an empty one is still there to write in — it never disappears");
+
 const picBtn = () => $$(".sheet-pic label").find((n) => /picture/i.test(n.textContent));
 ok($("#sheet-photo"),"a sheet can be given a picture");
 ok(picBtn(),"and says so in words, under the name");
