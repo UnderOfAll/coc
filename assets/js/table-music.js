@@ -33,6 +33,13 @@ const TBL_MUSIC_OK = "coc:tbl:music:ok";        // this browser has been touched
    should ever be pushed — a link costs nothing and has no cap at all, which the panel says. */
 const TBL_MUSIC_MAX = 4 * 1024 * 1024;
 const TBL_MUSIC_SLIP = 2.5;                     // seconds of drift tolerated before a device re-seeks
+/* How long a track is protected from being declared finished. A player handed a new video reports the
+   OLD one's state for a moment, and believing it walks the whole queue in seconds without a sound. Three
+   is comfortably longer than any load and far shorter than any track. */
+const TBL_MUSIC_START = 3;
+/* How far past a track's own length the wall clock must run before a device with NO player will call it
+   finished. Generous, because an advert in front of the music leaves the player behind the clock. */
+const TBL_MUSIC_LATE = 25;
 
 /* The YouTube library hangs itself off the window and the type checker has never heard of it, so this is
    the one door it comes through: everything else in this file reads `ytWin` rather than `window`. */
@@ -328,6 +335,9 @@ function tblMusicApply() {
     if (mus.key !== key) mus.key = key;
     let ytDur = 0;
     try { ytDur = (mus.yt && mus.ytOn && mus.yt.getDuration && mus.yt.getDuration()) || 0; } catch { ytDur = 0; }
+    // Published once, so a device with no player of its own can still tell when this ends.
+    if (ytDur) tblMusicPublishDuration(ytDur);
+    if (!ytDur) ytDur = Number(now.dur) || 0;
     /* THE CLOCK IS CLAMPED TO THE END OF THE TRACK, not left to run past it. Kayki: "when it finishes the
        queue it just keep repeating the last 5sec of the last music infinitely." A finished track keeps
        `playing: true` with nothing queued to replace it, so the wall clock walks on — 3:20, 3:22, 3:25 —
@@ -363,6 +373,7 @@ function tblMusicApply() {
     mus.audio.addEventListener("loadedmetadata", () => {
       const state = tblMusicNow();
       if (!state) return;
+      tblMusicPublishDuration(mus.audio.duration);
       try { mus.audio.currentTime = tblMusicAt(state, mus.audio.duration).at; }
       catch { /* unseekable stream: it plays from wherever it can, which is the best there is */ }
     });
@@ -398,23 +409,79 @@ function tblMusicApply() {
  *
  * It is also the answer to the failure Kayki hit: the backstop only ever looked at `mus.audio`, so a
  * YouTube track had no safety net at all and rode entirely on one event firing. */
+/* HOW LONG THE TRACK IS, PUBLISHED ONCE BY WHOEVER CAN SEE IT.
+ *
+ * The end of a track was only ever noticed by a LOCAL player — the audio element's `ended`, or a YouTube
+ * player reporting state 0 — so a DM with no player of their own (sound never enabled on that device,
+ * a tab the browser put to sleep, a YouTube frame that failed to load) could never advance the room's
+ * queue, and the music simply stopped. Kayki, twice: "queueing music isnt working."
+ *
+ * A duration is the one fact that makes the end knowable WITHOUT a player: the room already agrees on
+ * when the track started, so anybody holding the number can work out that it is over. The first device
+ * that has a player and a finite duration writes it to `now`, and from then on every device — the DM's
+ * included — can end the track off the wall clock alone. */
+function tblMusicPublishDuration(dur) {
+  const now = tblMusicNow();
+  if (!now || !tbl || Number(now.dur) > 0) return;
+  const d = Number(dur);
+  if (!d || !isFinite(d) || d <= 0) return;
+  const gen = Number(now.gen) || 0;
+  // The track may have changed between learning the number and writing it; a duration on the wrong
+  // track would end the next one early, which is worse than not having one at all.
+  CocLive.put(tblPath("music/now/dur"), Math.round(d * 10) / 10).then(() => {
+    const after = tblMusicNow();
+    if (after && (Number(after.gen) || 0) !== gen) CocLive.put(tblPath("music/now/dur"), null).catch(() => {});
+  }).catch(() => {});
+}
+
 function tblMusicOver() {
   const now = tblMusicNow();
   if (!now || now.loop) return false;
+  /* NOTHING IS OVER IN ITS FIRST SECONDS, and this is the guard the whole thing turns on.
+     Kayki: "queue is going one after another instead of playing in queue, not playing anything at all."
+     A YouTube player that has just been handed a new video goes on reporting the PREVIOUS one's ENDED
+     state for a moment — so the 2.5s tick saw "over", advanced, saw "over" again, and walked the whole
+     queue in a few seconds without a note being played. It was always latent; it only became visible
+     when the end of a track stopped meaning silence and started meaning "play the next one". */
+  const played = tblMusicWhere(now);
+  if (played < TBL_MUSIC_START) return false;
+
+  /* THE PLAYER ANSWERS FIRST, AND ITS ANSWER IS FINAL. YouTube may put an advert in front of the music,
+     which leaves the player twenty seconds behind the wall clock: ending on the clock would cut the last
+     twenty seconds off on one device and skip ahead of everybody else. */
   if (now.kind === "youtube") {
-    if (!mus.yt || !mus.ytOn) return false;
-    try {
-      if (mus.yt.getPlayerState && mus.yt.getPlayerState() === 0) return true;   // 0 is ENDED
-      const dur = Number(mus.yt.getDuration && mus.yt.getDuration()) || 0;
-      const at = Number(mus.yt.getCurrentTime && mus.yt.getCurrentTime()) || 0;
-      return dur > 0 && at > 0 && at >= dur - 0.6;
-    } catch { return false; }
+    if (mus.yt && mus.ytOn) {
+      try {
+        /* ONLY A PLAYER SHOWING THIS TRACK MAY DECLARE IT FINISHED. Asked of a player still holding the
+           last video, "have you ended?" is a question about the wrong song. A player that cannot say
+           which video it holds is taken at its word, as it always was. */
+        const loaded = (mus.yt.getVideoData && mus.yt.getVideoData().video_id) || "";
+        if (!loaded || loaded === now.src) {
+          if (mus.yt.getPlayerState && mus.yt.getPlayerState() === 0) return true;   // 0 is ENDED
+          const dur = Number(mus.yt.getDuration && mus.yt.getDuration()) || 0;
+          const at = Number(mus.yt.getCurrentTime && mus.yt.getCurrentTime()) || 0;
+          if (dur > 0 && at > 0 && at >= dur - 0.6) return true;
+        }
+      } catch { /* mid-load: fall through to the clock */ }
+    }
+  } else if (mus.audio) {
+    const el = mus.audio;
+    const mine = !el.src || !now.src || el.src === now.src || String(el.src).endsWith(String(now.src));
+    if (mine) {
+      if (el.ended) return true;
+      const dur = Number(el.duration);
+      if (dur && isFinite(dur) && el.currentTime >= dur - 0.25) return true;
+    }
   }
-  const el = mus.audio;
-  if (!el) return false;
-  if (el.ended) return true;
-  const dur = Number(el.duration);
-  return !!dur && isFinite(dur) && el.currentTime >= dur - 0.25;
+
+  /* AND THE CLOCK IS THE BACKSTOP, for the device that has no player to ask — a DM who never enabled
+     sound here, a tab the browser put to sleep, a YouTube frame that failed to load. Without it the
+     room's queue depended on the DM being able to HEAR it, which is how the music kept stopping.
+     Deliberately LATE: `dur` was published by a device that could see it, and an advert can leave a
+     player well behind the wall clock, so nothing is cut short by this — it only catches the track that
+     is properly, unarguably finished. */
+  if (Number(now.dur) > 0 && now.playing && played >= Number(now.dur) + TBL_MUSIC_LATE) return true;
+  return false;
 }
 
 /* A TICK, BECAUSE NOTHING ELSE FIRES. Everything else in this app is driven by the table's stream, and a

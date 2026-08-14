@@ -2970,6 +2970,35 @@ ok(true, "with nothing queued, the end of the last track writes the quiet");
   peek(`tblMusicEnded();`);
   await until(() => (peek(`(tblMusicNow() || {}).trackId`)) === "fo2");
   ok(peek(`(tblMusicNow() || {}).trackId`) === "fo2", "so the end of a track starts the next one");
+  /* AND IT DOES NOT RUN AWAY WITH THE WHOLE LIST. Kayki: "queue is going one after another instead of
+     playing in queue, not playing anything at all." The player it asks is still holding the PREVIOUS
+     video for a moment and goes on reporting that one's ENDED, so the 2.5s tick advanced, asked again,
+     advanced again. Two guards: a track is never over in its first seconds, and only a player showing
+     THIS track may declare it finished. */
+  ok(peek(`tblMusicOver()`) === false,
+    "a track that has only just started is never over, whatever the player says");
+  peek(`tblMusicEnded(); tblMusicEnded(); tblMusicEnded();`);
+  await wait(150);
+  ok(peek(`(tblMusicNow() || {}).trackId`) === "fo2", "so three ticks in a row do not walk the queue");
+  // Older still: the player is showing something else entirely, and must not be believed about this one.
+  peek(`CocLive.put("tables/482910/music/now/at", Date.now() - 60000)`);
+  await until(() => peek(`tblMusicWhere(tblMusicNow())`) > 10);
+  peek(`mus.yt.getVideoData = () => ({ video_id: "somethingelse" });`);
+  ok(peek(`tblMusicOver()`) === false, "and a player holding another video is answering about that one");
+  /* THE CLOCK IS THE BACKSTOP, for a device with no player at all — which is how the room's queue
+     stopped depending on the DM being able to hear it. Late on purpose: an advert leaves the player
+     behind the clock, so nothing is cut short. */
+  peek(`mus.yt = null; mus.ytOn = false;`);
+  await peek(`CocLive.put("tables/482910/music/now/dur", 100)`);
+  await until(() => Number(peek(`(tblMusicNow() || {}).dur`)) === 100);
+  await peek(`CocLive.put("tables/482910/music/now/at", Date.now() - 101000)`);
+  await until(() => peek(`tblMusicWhere(tblMusicNow())`) > 100);
+  ok(peek(`tblMusicOver()`) === false, "one second past the end is not enough, with no player to ask");
+  await peek(`CocLive.put("tables/482910/music/now/at", Date.now() - 140000)`);
+  await until(() => peek(`tblMusicWhere(tblMusicNow())`) > 130);
+  ok(peek(`tblMusicOver()`) === true, "well past it, with a length everybody agrees on, is");
+  ok(peek(`typeof tblMusicPublishDuration`) === "function",
+    "and the length is published by whichever device could see it");
   peek(`mus.yt = null; mus.ytOn = false;`);
   await peek(`CocLive.put("tables/482910/music/now", null)`);
   for (const id of ["fo1", "fo2", "fo3", "fo9"]) await peek(`CocLive.del("tables/482910/music/tracks/${id}")`);

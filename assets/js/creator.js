@@ -1151,7 +1151,7 @@ function renderSheet() {
 function sheetFields(d, p, ch) {
   const items = invItems(ch);
   const fields = [
-    ["status", "Status", "", statusPanel(d) + statePanel(d, p)],
+    ["status", "Status", "", statusPanel(d) + parryPanel(d) + statePanel(d, p)],
     ["attacks", "Attacks", d.carried.length, attacksPanel(d)],
     ...(d.tricks.length ? [["tricks", "Tricks", d.tricks.length, tricksPanel(d, p)]] : []),
     ["features", "Features", d.features.length, featuresPanel(d, p)],
@@ -1263,6 +1263,32 @@ function vitals(d, p) {
       </div>
     </div>
     ${p.hp <= 0 ? `<p class="warn">Down. In this system that is the DM's call — the sheet just stops counting.</p>` : ""}
+  </section>`;
+}
+
+/* PARRY, AND THE RIPOSTE THAT COMES OFF IT. Kayki: "the riposte and parry dont show in the character
+   sheet." The vitals bar carries the DC and a button to roll it, which answers "what do I roll" — and
+   nothing on the sheet answered "what happens then", or mentioned the Riposte AT ALL. A Riposte is a
+   thing a player DOES (a Puppeteer attaches a String on a clean dodge, at no action cost) and it lived
+   only on the class page in the compendium, which is not open while you are being hit.
+   The class's own words for its defence come with it: a Puppeteer's curtain of wire and a Sandow's
+   braced shoulder are not the same act, and the reskin is where the class says so. */
+function parryPanel(d) {
+  const c = d.cls;
+  if (c.parryBaseDC == null && !c.riposte && !c.parryReskin) return "";
+  return `<section class="panel">
+    <p class="panel-sub">Parry ${c.parryBaseDC != null
+      ? `<span class="muted">— a flat d20 over ${esc(c.parryBaseDC)}, and it costs your reaction</span>` : ""}</p>
+    ${c.parryReskin ? `<p>${fmtDesc(c.parryReskin)}</p>` : ""}
+    ${c.parryBaseDC != null ? `<ul>
+        <li><strong>Above ${esc(c.parryBaseDC)}</strong> — a Full Dodge: no damage at all.</li>
+        <li><strong>Exactly ${esc(c.parryBaseDC)}</strong> — half damage.</li>
+        <li><strong>Below ${esc(c.parryBaseDC)}</strong> — half again on top of the full damage.</li>
+      </ul>
+      <p class="muted">No modifiers of any kind, and it never scales with your level — the DC is the
+        class. It is the same reaction an opportunity attack uses, so you get one or the other.</p>` : ""}
+    ${c.riposte ? `<p class="panel-sub">Riposte <span class="muted">— on a Full Dodge</span></p>
+      <p>${fmtDesc(c.riposte)}</p>` : ""}
   </section>`;
 }
 
