@@ -20,7 +20,8 @@
 #   · LOUDNESS-NORMALISED to -16 LUFS, so the backstage track and the boss track do not need the
 #     players to reach for their volume between scenes. This is the thing the conversion sites do not do
 #     and the reason a homemade playlist usually sounds like a mess.
-#   · a tidy filename, lower case with dashes, because the filename is what the DM picks from in the app
+#   · a READABLE filename — "Soul of Cinder.mp3", not "soul-of-cinder.mp3" — because the filename IS the
+#     title the DM picks from in the app, sitting in a list beside tracks named by hand
 #   · chapters, playlists and anything else clever left alone: one link, one file
 #
 # A NOTE ON WHAT YOU PUT IN HERE, once, and practical rather than moral: `music/` is committed to a
@@ -83,9 +84,8 @@ ok=0
 for url in "${urls[@]}"; do
   echo
   echo "--- $url"
-  # `-x` takes the audio-only stream; the postprocessor makes the mp3. The output template lower-cases
-  # nothing by itself, so the rename below does it — a filename with spaces and brackets in it is a
-  # filename somebody has to escape by hand later.
+  # `-x` takes the audio-only stream; the postprocessor makes the mp3. Spaces in the name are fine: every
+  # path segment is URL-escaped where it is used, and the alternative is a title nobody can read.
   if yt-dlp \
       --no-playlist \
       --extract-audio --audio-format mp3 --audio-quality 192K \
@@ -105,14 +105,20 @@ done
 echo
 echo "==> tidying filenames"
 python3 - "$dest" <<'PY'
+# WHAT THE TIDY DOES AND DOES NOT DO. Kayki, seeing a shelf of hand-named YouTube tracks beside these:
+# "before you were putting the musics like Soul of Cinder, and the last three you were putting
+# like-this-i-doint-know-why". He is right — for a REPO track the filename becomes the title in the app,
+# so lower-casing it and hyphenating it made every downloaded track read like a slug next to the ones he
+# typed himself. What is left is only what genuinely hurts: the (Official Video) noise, characters a URL
+# or a filesystem argues about, and runs of whitespace. Capitals, spaces and words are kept.
 import re, sys, unicodedata
 from pathlib import Path
 folder = Path(sys.argv[1])
 for f in sorted(folder.glob("*.mp3")):
     stem = unicodedata.normalize("NFKD", f.stem).encode("ascii", "ignore").decode()
     stem = re.sub(r"[\(\[].*?[\)\]]", " ", stem)          # (Official Video), [HD] and friends
-    stem = re.sub(r"[^A-Za-z0-9]+", "-", stem).strip("-").lower()
-    stem = re.sub(r"-+", "-", stem) or "track"
+    stem = re.sub(r"[\\/:*?\"<>|#%&{}$!'`~+]", " ", stem)     # what a path or a URL would rather not carry
+    stem = re.sub(r"\s+", " ", stem).strip(" -_") or "track"
     dest = f.with_name(stem + ".mp3")
     n = 2
     while dest.exists() and dest != f:
