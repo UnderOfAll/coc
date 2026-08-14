@@ -1846,6 +1846,10 @@ body:has(.vtt) { height: 100dvh; overflow: hidden; }
 .note-grp-name { text-transform: none; letter-spacing: 0; font-size: 1rem; color: var(--text);
   font-weight: 600; overflow-wrap: anywhere; }
 .note-folder { margin-top: 0.4rem; }
+/* The editor that unfolds under a note's own row. `.figure-open` gives it the indent and the gold rule
+   down the side; a note only needs its boxes not to sit flush against them. */
+.note-open { padding-top: 0.4rem; padding-bottom: 0.2rem; }
+.note-open .field { margin-bottom: 0.5rem; }
 .atk-edit, .note-edit { padding: 0.7rem 0.8rem; margin-bottom: 0.7rem; background: var(--panel-2);
   border: 1px solid var(--border); border-radius: 8px; }
 .atk-edit .grid-row, .note-edit .text { margin-bottom: 0.4rem; }

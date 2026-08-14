@@ -1998,6 +1998,22 @@ function tblRefreshDmNotes(code) {
    exist yet, and every alternative (a picker plus a "new folder" row, a second dialog) is two controls
    where one does. The `list=` gives the names already in use, so it is a picker as well when there is
    something to pick — and emptying the box is how a note comes out of its folder. */
+/* WHAT UNFOLDS UNDER THE ROW. One editor for both notepads: the DM's, which live on their code, and a
+   player's, which live in the room. Only the line underneath differs, because only that differs. */
+function noteEditorHTML(notes, open, code) {
+  return `<label class="field"><span>Title</span>
+      <input id="note-title" class="text" type="text" maxlength="60" value="${esc(open.title || "")}" /></label>
+    ${noteFolderField(notes, open)}
+    <label class="field"><span>Note</span>
+      <textarea id="note-body" class="text notes-body" rows="12" maxlength="8000">${esc(open.body || "")}</textarea></label>
+    ${code
+      ? `<p class="muted">Saved as you type, onto DM code <strong>${esc(code)}</strong> — so this is the
+          same list as <a href="#/dm/${esc(code)}">your DM screen</a>, from any device, and it outlives
+          this room.</p>`
+      : `<p class="muted">Saved as you type. Kept with the table, so it is here on your next device — and
+          not secret: anyone with the room code could read it if they went looking.</p>`}`;
+}
+
 function noteFolderField(notes, open) {
   const folders = cocNoteFolders(notes);
   return `<label class="field"><span>Folder</span>
@@ -2014,13 +2030,21 @@ function dmNotesPanelHTML(code) {
   const open = notes[openIdx] || null;
   /* GROUPED, AND THE INDEX STILL RULES. A note is addressed by its place in the array everywhere else in
      this file, so the group carries the index rather than renumbering inside itself. */
-  const row = ([n, i]) => `<div class="scene-row ${i === openIdx ? "on" : ""}">
-      <button class="scene-pick" data-tbl="note-open" data-val="dm:${i}">
-        <strong>${esc(n.title || "Untitled")}</strong>
+  /* A NOTE UNFOLDS UNDER ITS OWN NAME. Kayki: "when i click the notes i want it to do a dropdown in the
+     place where it is, not to put it down the whole page." It used to open in a panel below the whole
+     list, which on a phone means the thing you tapped scrolls out of sight and you write in a box with no
+     idea which note you are in. Same shape the figure list already uses: a caret, and the editor indented
+     under the row, so the list stays readable around it. */
+  const row = ([n, i]) => {
+    const isOpen = i === openIdx;
+    return `<div class="scene-row ${isOpen ? "on" : ""}">
+      <button class="scene-pick" data-tbl="note-open" data-val="dm:${i}" aria-expanded="${isOpen}">
+        <strong><span class="caret">${isOpen ? "&#9662;" : "&#9656;"}</span> ${esc(n.title || "Untitled")}</strong>
         <span class="muted">${esc(String(n.body || "").replace(/\s+/g, " ").slice(0, 40))}</span>
       </button>
       <button class="btn-quiet" data-tbl="note-del" data-val="dm:${i}">Delete</button>
-    </div>`;
+    </div>${isOpen ? `<div class="figure-open note-open">${noteEditorHTML(notes, n, code)}</div>` : ""}`;
+  };
   const list = cocNoteGroups(notes).map(([folder, rows]) => `
       <p class="panel-sub note-grp"><span class="note-grp-name">${esc(folder || "No folder")}</span>
         <span class="muted">&mdash; ${rows.length} note${rows.length === 1 ? "" : "s"}</span></p>
@@ -2030,17 +2054,9 @@ function dmNotesPanelHTML(code) {
       <h2>Notes</h2>
       ${list || `<p class="muted">Nothing written yet.</p>`}
       <button class="btn-quiet" data-tbl="note-new">New note</button>
-    </section>
-    ${open ? `<section class="panel">
-      <label class="field"><span>Title</span>
-        <input id="note-title" class="text" type="text" maxlength="60" value="${esc(open.title || "")}" /></label>
-      ${noteFolderField(notes, open)}
-      <label class="field"><span>Note</span>
-        <textarea id="note-body" class="text notes-body" rows="12" maxlength="8000">${esc(open.body || "")}</textarea></label>
-      <p class="muted">Saved as you type, onto DM code <strong>${esc(code)}</strong> — so this is the same
-        list as <a href="#/dm/${esc(code)}">your DM screen</a>, from any device, and it outlives this room.</p>
-    </section>` : `<p class="muted">Open a note to write in it. These are the notes on your DM code
-      <strong>${esc(code)}</strong>, not the room's — the campaign travels with you.</p>`}`;
+      ${open ? "" : `<p class="muted">Open a note to write in it. These are the notes on your DM code
+        <strong>${esc(code)}</strong>, not the room's — the campaign travels with you.</p>`}
+    </section>`;
 }
 
 function notesPanelHTML() {
@@ -2049,13 +2065,18 @@ function notesPanelHTML() {
   const notes = tblMyNotes();
   const openId = tbl.ui.note && notes.some(([id]) => id === tbl.ui.note) ? tbl.ui.note : "";
   const open = openId ? (tbl.data.notes || {})[openId] : null;
-  const row = ([id, n]) => `<div class="scene-row ${id === openId ? "on" : ""}">
-      <button class="scene-pick" data-tbl="note-open" data-val="${esc(id)}">
-        <strong>${esc(n.title || "Untitled")}</strong>
+  // Unfolds under its own name, exactly as the DM's does above.
+  const row = ([id, n]) => {
+    const isOpen = id === openId;
+    return `<div class="scene-row ${isOpen ? "on" : ""}">
+      <button class="scene-pick" data-tbl="note-open" data-val="${esc(id)}" aria-expanded="${isOpen}">
+        <strong><span class="caret">${isOpen ? "&#9662;" : "&#9656;"}</span> ${esc(n.title || "Untitled")}</strong>
         <span class="muted">${esc(String(n.body || "").replace(/\s+/g, " ").slice(0, 40))}</span>
       </button>
       <button class="btn-quiet" data-tbl="note-del" data-val="${esc(id)}">Delete</button>
-    </div>`;
+    </div>${isOpen ? `<div class="figure-open note-open">${
+      noteEditorHTML(notes.map(([, x]) => x), n, "")}</div>` : ""}`;
+  };
   // Same grouping and the same order as the DM's; here a note is keyed by id rather than by position.
   const list = cocNoteFolders(notes.map(([, n]) => n)).concat("").map((folder) => {
     const rows = notes.filter(([, n]) => String((n && n.folder) || "").trim() === folder);
@@ -2069,16 +2090,8 @@ function notesPanelHTML() {
       <h2>Notes</h2>
       ${list || `<p class="muted">Nothing written yet.</p>`}
       <button class="btn-quiet" data-tbl="note-new">New note</button>
+      ${open ? "" : `<p class="muted">Open a note to write in it.</p>`}
     </section>
-    ${open ? `<section class="panel">
-      <label class="field"><span>Title</span>
-        <input id="note-title" class="text" type="text" maxlength="60" value="${esc(open.title || "")}" /></label>
-      ${noteFolderField(notes.map(([, n]) => n), open)}
-      <label class="field"><span>Note</span>
-        <textarea id="note-body" class="text notes-body" rows="12" maxlength="8000">${esc(open.body || "")}</textarea></label>
-      <p class="muted">Saved as you type. Kept with the table, so it is here on your next device — and
-        not secret: anyone with the room code could read it if they went looking.</p>
-    </section>` : `<p class="muted">Open a note to write in it.</p>`}
     ${tbl.role === "dm" ? `<p class="muted">These are this room's, because no DM code is open on this
       device. <a href="#/dm">Open one</a> and the panel shows your campaign notes instead — the same list
       as your DM screen — and everything written here moves onto it.</p>` : ""}`;

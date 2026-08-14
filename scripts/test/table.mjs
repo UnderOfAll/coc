@@ -2417,6 +2417,14 @@ ok(((dmRec() || {}).notes || []).length === 1, "for good");
    is the only thing that survives a splice — and the list groups by it. */
 click($$('[data-tbl="note-open"]')[0]);
 await wait(80);
+/* AND IT OPENS WHERE IT IS. Kayki: "when i click the notes i want it to do a dropdown in the place where
+   it is, not to put it down the whole page." The editor used to be a panel BELOW the whole list, so on a
+   phone the note you tapped scrolled away and you typed into a box with no idea which note you were in. */
+ok(!!$("#notes-panel").querySelector("#note-body"),
+  "the editor unfolds inside the list, under the note that was tapped");
+ok(!!$("#notes-panel .note-open"), "indented under its own row, the way a figure opens");
+ok(/&#9662;|▾/.test($$('[data-tbl="note-open"]')[0].innerHTML) || $$('[data-tbl="note-open"]')[0].getAttribute("aria-expanded") === "true",
+  "with a caret saying which one is open");
 ok(!!$("#note-folder"), "an open note has a folder box");
 type($("#note-folder"), "NPCs");
 await until(() => (((dmRec() || {}).notes || [])[0] || {}).folder === "NPCs");
