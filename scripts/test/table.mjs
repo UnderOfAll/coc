@@ -2412,6 +2412,35 @@ click($$('[data-tbl="note-del"]')[1]);
 await until(() => ((dmRec() || {}).notes || []).length === 1);
 ok($$("#notes-panel .scene-row").length === 1, "and a note can be thrown away");
 ok(((dmRec() || {}).notes || []).length === 1, "for good");
+/* NOTES GO IN FOLDERS. Kayki, once the campaign notes passed a dozen: "right now its a mess to find what
+   is what." A folder is a NAME ON THE NOTE — a note has no id, only its place in the array, so a string
+   is the only thing that survives a splice — and the list groups by it. */
+click($$('[data-tbl="note-open"]')[0]);
+await wait(80);
+ok(!!$("#note-folder"), "an open note has a folder box");
+type($("#note-folder"), "NPCs");
+await until(() => (((dmRec() || {}).notes || [])[0] || {}).folder === "NPCs");
+ok(true, "typing a name files the note under it");
+/* THE FIELD MUST SURVIVE THE NEXT KEYSTROKE. Every write rebuilds the whole note, so a field the mapper
+   forgets is erased by the next letter typed into a different box — which is how this would have failed
+   silently rather than loudly. */
+type($("#note-body"), "He is lying about the cellar, and about the well.");
+await until(() => /about the well/.test(JSON.stringify((dmRec() || {}).notes || [])));
+ok((((dmRec() || {}).notes || [])[0] || {}).folder === "NPCs", "and writing in the note does not lose it");
+peek(`paintSide();`);
+ok(/NPCs/.test($("#notes-panel").textContent), "the panel heads the group with the folder's name");
+// A note made from under a heading starts in that folder rather than at the bottom of the panel.
+click($('[data-tbl="note-new"][data-val="NPCs"]'));
+await until(() => ((dmRec() || {}).notes || []).length === 2);
+ok((((dmRec() || {}).notes || [])[1] || {}).folder === "NPCs", "\"New note here\" lands in that folder");
+// And emptying the box takes it back out.
+type($("#note-folder"), "");
+await until(() => !(((dmRec() || {}).notes || [])[1] || {}).folder);
+peek(`paintSide();`);
+ok(/No folder/.test($("#notes-panel").textContent), "clearing the box takes a note out again");
+click($$('[data-tbl="note-del"]')[1]);
+await until(() => ((dmRec() || {}).notes || []).length === 1);
+
 /* AND A ROOM THAT IS STILL HOLDING THE DM'S OLD NOTES HANDS THEM OVER. Two shapes came before this one —
    a single unnamed box on the room, then a per-room list — and leaving either where it was is exactly the
    two-lists complaint in another costume. Nothing is deleted until the move has been written. */

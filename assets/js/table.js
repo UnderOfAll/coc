@@ -1003,6 +1003,10 @@ COC_ROUTES.debug = routeDebug;
    two-step "choose then save" is one more thing to forget. */
 document.addEventListener("change", (e) => {
   if (!tbl) return;
+  /* THE LIST REGROUPS WHEN THE BOX IS FINISHED WITH, not on every letter. The write already happened on
+     `input`; this is only the redraw, and doing it per keystroke would take the box out from under the
+     keyboard halfway through the folder's name. */
+  if (evTarget(e).id === "note-folder") { paintSide(); return; }
   if (evTarget(e).id === "seat-file") {
     // Shrunk and held until the character is created, since there is no figure to hang it on yet.
     const file = evTarget(e).files && evTarget(e).files[0];
@@ -1076,9 +1080,9 @@ document.addEventListener("input", (e) => {
   // The tracker saves itself, and the figure on the board follows the two things it can show.
   if (/^trk-/.test(evTarget(e).id || "")) { tblTrackerInput(e.target); return; }
   // A notepad saves itself. Coalesced, so a paragraph is a handful of writes rather than one per letter.
-  if ((evTarget(e).id === "note-title" || evTarget(e).id === "note-body") && tbl.ui.note) {
-    const field = evTarget(e).id === "note-title" ? "title" : "body";
-    const cap = field === "title" ? 60 : 8000;
+  if (["note-title", "note-body", "note-folder"].includes(evTarget(e).id || "") && tbl.ui.note) {
+    const field = { "note-title": "title", "note-body": "body", "note-folder": "folder" }[evTarget(e).id];
+    const cap = field === "body" ? 8000 : (field === "folder" ? 40 : 60);
     const value = String(evTarget(e).value || "").slice(0, cap);
     // The DM's go to their CODE, on the same debounce; a player's stay in the room, as they always have.
     const m = /^dm:(\d+)$/.exec(tbl.ui.note);
@@ -1330,7 +1334,7 @@ document.addEventListener("click", (e) => {
   }
   else if (act === "music-enable") tblMusicEnable();
   else if (act === "music-mute") tblMusicToggleMute();
-  else if (act === "note-new") tblNewNote().catch(tblFail);
+  else if (act === "note-new") tblNewNote(val).catch(tblFail);
   else if (act === "note-open") { tbl.ui.note = tbl.ui.note === val ? "" : val; paintSide(); }
   else if (act === "note-del") {
     // A DM's notes are on their code and are indexed, not keyed: "dm:2" is the third of the list.

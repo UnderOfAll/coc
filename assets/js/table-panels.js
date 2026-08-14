@@ -1994,26 +1994,47 @@ function tblRefreshDmNotes(code) {
     .catch(() => {});
 }
 
+/* THE FOLDER IS A BOX YOU TYPE IN, not a list you pick from. A picker cannot make a folder that does not
+   exist yet, and every alternative (a picker plus a "new folder" row, a second dialog) is two controls
+   where one does. The `list=` gives the names already in use, so it is a picker as well when there is
+   something to pick — and emptying the box is how a note comes out of its folder. */
+function noteFolderField(notes, open) {
+  const folders = cocNoteFolders(notes);
+  return `<label class="field"><span>Folder</span>
+      <input id="note-folder" class="text" type="text" maxlength="40" list="note-folder-names"
+        value="${esc(open.folder || "")}" placeholder="No folder" /></label>
+    <datalist id="note-folder-names">${folders
+      .map((f) => `<option value="${esc(f)}"></option>`).join("")}</datalist>`;
+}
+
 function dmNotesPanelHTML(code) {
   const notes = dmNotesOf(code);
   tblRefreshDmNotes(code);
   const openIdx = /^dm:(\d+)$/.test(tbl.ui.note || "") ? Number((tbl.ui.note || "").slice(3)) : -1;
   const open = notes[openIdx] || null;
-  const list = notes.map((n, i) => `<div class="scene-row ${i === openIdx ? "on" : ""}">
+  /* GROUPED, AND THE INDEX STILL RULES. A note is addressed by its place in the array everywhere else in
+     this file, so the group carries the index rather than renumbering inside itself. */
+  const row = ([n, i]) => `<div class="scene-row ${i === openIdx ? "on" : ""}">
       <button class="scene-pick" data-tbl="note-open" data-val="dm:${i}">
         <strong>${esc(n.title || "Untitled")}</strong>
         <span class="muted">${esc(String(n.body || "").replace(/\s+/g, " ").slice(0, 40))}</span>
       </button>
       <button class="btn-quiet" data-tbl="note-del" data-val="dm:${i}">Delete</button>
-    </div>`).join("");
+    </div>`;
+  const list = cocNoteGroups(notes).map(([folder, rows]) => `
+      <p class="panel-sub note-grp"><span class="note-grp-name">${esc(folder || "No folder")}</span>
+        <span class="muted">&mdash; ${rows.length} note${rows.length === 1 ? "" : "s"}</span></p>
+      <div class="scene-list">${rows.map(row).join("")}</div>
+      <button class="btn-quiet" data-tbl="note-new" data-val="${esc(folder)}">New note here</button>`).join("");
   return `<section class="panel" id="notes-panel">
       <h2>Notes</h2>
-      <div class="scene-list">${list || `<p class="muted">Nothing written yet.</p>`}</div>
+      ${list || `<p class="muted">Nothing written yet.</p>`}
       <button class="btn-quiet" data-tbl="note-new">New note</button>
     </section>
     ${open ? `<section class="panel">
       <label class="field"><span>Title</span>
         <input id="note-title" class="text" type="text" maxlength="60" value="${esc(open.title || "")}" /></label>
+      ${noteFolderField(notes, open)}
       <label class="field"><span>Note</span>
         <textarea id="note-body" class="text notes-body" rows="12" maxlength="8000">${esc(open.body || "")}</textarea></label>
       <p class="muted">Saved as you type, onto DM code <strong>${esc(code)}</strong> — so this is the same
@@ -2028,21 +2049,31 @@ function notesPanelHTML() {
   const notes = tblMyNotes();
   const openId = tbl.ui.note && notes.some(([id]) => id === tbl.ui.note) ? tbl.ui.note : "";
   const open = openId ? (tbl.data.notes || {})[openId] : null;
-  const list = notes.map(([id, n]) => `<div class="scene-row ${id === openId ? "on" : ""}">
+  const row = ([id, n]) => `<div class="scene-row ${id === openId ? "on" : ""}">
       <button class="scene-pick" data-tbl="note-open" data-val="${esc(id)}">
         <strong>${esc(n.title || "Untitled")}</strong>
         <span class="muted">${esc(String(n.body || "").replace(/\s+/g, " ").slice(0, 40))}</span>
       </button>
       <button class="btn-quiet" data-tbl="note-del" data-val="${esc(id)}">Delete</button>
-    </div>`).join("");
+    </div>`;
+  // Same grouping and the same order as the DM's; here a note is keyed by id rather than by position.
+  const list = cocNoteFolders(notes.map(([, n]) => n)).concat("").map((folder) => {
+    const rows = notes.filter(([, n]) => String((n && n.folder) || "").trim() === folder);
+    if (!rows.length) return "";
+    return `<p class="panel-sub note-grp"><span class="note-grp-name">${esc(folder || "No folder")}</span>
+        <span class="muted">&mdash; ${rows.length} note${rows.length === 1 ? "" : "s"}</span></p>
+      <div class="scene-list">${rows.map(row).join("")}</div>
+      <button class="btn-quiet" data-tbl="note-new" data-val="${esc(folder)}">New note here</button>`;
+  }).join("");
   return `<section class="panel" id="notes-panel">
       <h2>Notes</h2>
-      <div class="scene-list">${list || `<p class="muted">Nothing written yet.</p>`}</div>
+      ${list || `<p class="muted">Nothing written yet.</p>`}
       <button class="btn-quiet" data-tbl="note-new">New note</button>
     </section>
     ${open ? `<section class="panel">
       <label class="field"><span>Title</span>
         <input id="note-title" class="text" type="text" maxlength="60" value="${esc(open.title || "")}" /></label>
+      ${noteFolderField(notes.map(([, n]) => n), open)}
       <label class="field"><span>Note</span>
         <textarea id="note-body" class="text notes-body" rows="12" maxlength="8000">${esc(open.body || "")}</textarea></label>
       <p class="muted">Saved as you type. Kept with the table, so it is here on your next device — and
@@ -2053,17 +2084,22 @@ function notesPanelHTML() {
       as your DM screen — and everything written here moves onto it.</p>` : ""}`;
 }
 
-async function tblNewNote() {
+/* A new note lands in the folder it was asked for from — "New note here" under a heading — because the
+   alternative is writing it, then finding it at the bottom of the panel, then filing it. */
+async function tblNewNote(folder) {
+  const into = String(folder || "").trim().slice(0, 40);
   const code = tblDmNotesCode();
   if (code) {
     const notes = dmNotesOf(code);
-    dmNotesPut(code, notes.concat({ title: "New note", body: "" }));
+    const one = { title: "New note", body: "" };
+    if (into) one.folder = into;
+    dmNotesPut(code, notes.concat(one));
     tbl.ui.note = "dm:" + notes.length;
     paintSide();
     return;
   }
   const id = await CocLive.push(tblPath("notes"), {
-    title: "New note", body: "", by: tblNoteOwner(), at: Date.now(),
+    title: "New note", body: "", folder: into || null, by: tblNoteOwner(), at: Date.now(),
   });
   tbl.ui.note = id;
   paintSide();
@@ -2072,7 +2108,9 @@ async function tblNewNote() {
 /* One of the DM's notes, edited from the table. The whole array is written because that is what the
    record holds — there are no ids on a note, only its place in the list. */
 function tblDmNoteWrite(code, idx, field, value) {
-  const notes = dmNotesOf(code).map((n) => ({ title: n.title || "", body: n.body || "" }));
+  // Rebuilt whole, so every field the note has must be named here — a forgotten one is erased by the
+  // next letter typed into a different box.
+  const notes = dmNotesOf(code).map((n) => ({ title: n.title || "", body: n.body || "", folder: n.folder || "" }));
   if (!notes[idx]) return;
   notes[idx][field] = value;
   dmNotesPut(code, notes);

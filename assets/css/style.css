@@ -1840,6 +1840,12 @@ body:has(.vtt) { height: 100dvh; overflow: hidden; }
 
 /* THE ENEMY BUILDER — one boxed row per attack and per feature, so a form of three attacks and five
    features reads as five things rather than as forty fields in a column. */
+/* A notes folder's heading. Same shape as a music folder's: the name in the DM's own words and case,
+   because it is a name and not a label, and the count as a clause behind it. */
+.note-grp { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: baseline; margin-top: 0.9rem; }
+.note-grp-name { text-transform: none; letter-spacing: 0; font-size: 1rem; color: var(--text);
+  font-weight: 600; overflow-wrap: anywhere; }
+.note-folder { margin-top: 0.4rem; }
 .atk-edit, .note-edit { padding: 0.7rem 0.8rem; margin-bottom: 0.7rem; background: var(--panel-2);
   border: 1px solid var(--border); border-radius: 8px; }
 .atk-edit .grid-row, .note-edit .text { margin-bottom: 0.4rem; }

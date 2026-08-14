@@ -208,6 +208,42 @@ function dmCachedShared() {
  *
  * A PLAYER's notepad is untouched and stays in the room: theirs follows a character code, and there is no
  * DM record to put it on. */
+/* ---------------------------------------------------------------- notes in folders
+ *
+ * Kayki, after the campaign notes grew past a dozen: "right now its a mess to find what is what."
+ *
+ * A FOLDER IS A NAME ON THE NOTE, not a record of its own. Music needed real folder records because a
+ * track is a keyed map entry that can be dragged between them; a note has no id at all — it is its
+ * position in an array — so a string is the only thing that survives a splice. It also means there is no
+ * such thing as an empty folder to clean up: the last note leaving takes the folder with it, and a new
+ * one is made by typing a name that is not there yet.
+ *
+ * Both surfaces group the same way: folders in the order they are first met, unfoldered notes last, and
+ * nothing reordered underneath — the array is still the order, grouping is only how it is drawn. */
+function cocNoteFolders(notes) {
+  const seen = [];
+  for (const n of notes || []) {
+    const f = String((n && n.folder) || "").trim();
+    if (f && !seen.includes(f)) seen.push(f);
+  }
+  return seen;
+}
+/* [folder, [[note, index], …]] — the index travels with the note because every write addresses a note by
+   its place in the array, and grouping must not change what "the third note" means. */
+function cocNoteGroups(notes) {
+  const groups = new Map();
+  (notes || []).forEach((n, i) => {
+    const f = String((n && n.folder) || "").trim();
+    if (!groups.has(f)) groups.set(f, []);
+    groups.get(f).push([n, i]);
+  });
+  const loose = groups.get("");
+  groups.delete("");
+  const out = [...groups.entries()];
+  if (loose) out.push(["", loose]);
+  return out;
+}
+
 function dmCacheNotes(code, notes) {
   try { localStorage.setItem("coc:dm:notes:" + code, JSON.stringify(notes || [])); } catch { /* full */ }
 }
@@ -265,9 +301,15 @@ async function dmNotesFlush() {
 function dmNotesPut(code, notes) {
   const c = String(code || "");
   if (!CocDm.validCode(c)) return;
-  const list = (notes || []).map((n) => ({
-    title: String((n && n.title) || "").slice(0, 60), body: String((n && n.body) || "").slice(0, 8000),
-  }));
+  /* THE MAPPER IS THE SCHEMA. Every write to a note goes through here, so a field this does not name is a
+     field that survives exactly until the next keystroke — which is how `folder` would have silently
+     undone itself on every note the moment somebody typed in one. */
+  const list = (notes || []).map((n) => {
+    const one = { title: String((n && n.title) || "").slice(0, 60), body: String((n && n.body) || "").slice(0, 8000) };
+    const folder = String((n && n.folder) || "").trim().slice(0, 40);
+    if (folder) one.folder = folder;      // omitted rather than empty: a note with no folder has no key
+    return one;
+  });
   dmCacheNotes(c, list);
   // One saver per record: with the DM screen open, its own debounce owns the write.
   if (dm && dm.code === c) { dm.rec.notes = list; dmPersist(); return; }
@@ -599,14 +641,24 @@ function dmTablesPane() {
 
 function dmNotesPane() {
   const notes = dm.rec.notes || [];
-  return `<section class="panel">
-      <p class="panel-sub">Notes</p>
-      ${notes.map((n, i) => `<div class="note-edit">
+  const groups = cocNoteGroups(notes);
+  const one = ([n, i]) => `<div class="note-edit">
         <input class="text" data-dm-note="t${i}" type="text" maxlength="60" value="${esc(n.title || "")}"
           placeholder="What this is" />
         <textarea class="text notes-body" rows="5" data-dm-note="b${i}" maxlength="8000">${esc(n.body || "")}</textarea>
+        <label class="field note-folder"><span>Folder</span>
+          <input class="text" data-dm-note="f${i}" type="text" maxlength="40" list="dm-note-folders"
+            value="${esc(n.folder || "")}" placeholder="No folder" /></label>
         <button class="btn-quiet" data-dm="note-drop" data-val="${i}">Delete this note</button>
-      </div>`).join("")}
+      </div>`;
+  return `<section class="panel">
+      <p class="panel-sub">Notes</p>
+      <datalist id="dm-note-folders">${cocNoteFolders(notes)
+        .map((f) => `<option value="${esc(f)}"></option>`).join("")}</datalist>
+      ${groups.map(([folder, rows]) => `
+        <p class="panel-sub note-grp"><span class="note-grp-name">${esc(folder || "No folder")}</span>
+          <span class="muted">&mdash; ${rows.length} note${rows.length === 1 ? "" : "s"}</span></p>
+        ${rows.map(one).join("")}`).join("")}
       <button class="btn-quiet" data-dm="note-add">Add a note</button>
       <p class="muted">These live on your code, not in a room, so closing a table does not take them with
         it — and they are the same notes the <strong>Notes</strong> panel shows when you are in the DM's
@@ -1207,12 +1259,13 @@ document.addEventListener("click", (ev) => {
 
 function dmReadNotes() {
   if (!dm) return;
+  const FIELD = { t: "title", b: "body", f: "folder" };
   for (const node of document.querySelectorAll("[data-dm-note]")) {
     const n = asEl(node);
     const k = n.dataset.dmNote;
     const i = Number(k.slice(1));
     const note = (dm.rec.notes || [])[i];
-    if (note) note[k[0] === "t" ? "title" : "body"] = n.value;
+    if (note && FIELD[k[0]]) note[FIELD[k[0]]] = n.value;
   }
 }
 
