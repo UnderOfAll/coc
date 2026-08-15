@@ -276,6 +276,7 @@ let sheet = null;      // { code, ch } while a sheet is open
 const ui = {
   openSubs: new Set(), openOpts: new Set(),
   hpAmt: 1, levelUp: null, deleteArmed: false, deleteText: "", sheetScroll: 0, scrollTop: false,
+  engineRules: false,   // the engine's own rules, open on the sheet — interface state, not the character
   tab: "status",   // which field of the sheet is open; interface state, never part of the character
   scrollToFields: false,
 };
@@ -1458,7 +1459,20 @@ function enginePanel(d, p) {
       <button class="btn-quiet" data-act="engine" data-val="-1">−1</button>
       <button class="btn-quiet" data-act="engine" data-val="1">+1</button>
       <button class="btn-quiet" data-act="engine-set" data-val="0">Clear</button>
+      ${/* HOW YOU GAIN IT AND WHAT IT BUYS, on the sheet. Kayki: "nor the generation of the engine
+            directly in the character sheet so they can see it on the session." The meter was a number
+            with three buttons: it never said what makes it go UP, which is the question a player asks
+            every turn — and the answer lived on the class page in the compendium, which nobody has open
+            mid-fight. Folded away by default, because this panel sits ABOVE the fields and is on screen
+            whatever else you are looking at. */""}
+      ${e.generation || e.spend ? `<button class="btn-quiet" data-act="engine-rules">${
+        ui.engineRules ? "Hide the rules" : "How it works"}</button>` : ""}
     </div>
+    ${ui.engineRules && (e.generation || e.spend) ? `<div class="engine-rules">
+      ${e.generation ? `<p class="panel-sub">Gaining ${esc(e.name)}</p><p>${fmtDesc(e.generation)}</p>` : ""}
+      ${e.spend ? `<p class="panel-sub">Spending it</p><p>${fmtDesc(e.spend)}</p>` : ""}
+      ${e.description ? `<p class="muted">${fmtDesc(e.description)}</p>` : ""}
+    </div>` : ""}
   </section>`;
 }
 
@@ -2111,6 +2125,7 @@ function sheetAction(e) {
   } else if (act === "heal") p.hp = Math.min(d.hpMax, p.hp + amt());
   else if (act === "temp") p.tempHp = Math.max(p.tempHp, amt());
   else if (act === "full") { p.hp = d.hpMax; p.tempHp = 0; }
+  else if (act === "engine-rules") { ui.engineRules = !ui.engineRules; }
   else if (act === "engine") p.engine = Math.max(0, Math.min(d.engineCap ?? 0, p.engine + Number(val)));
   else if (act === "engine-set") p.engine = Math.max(0, Math.min(d.engineCap ?? 0, Number(val)));
   else if (act === "cast") {

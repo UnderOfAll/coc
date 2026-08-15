@@ -3094,6 +3094,36 @@ await wait(150);
   const newest = Object.values(JSON.parse(peek(`JSON.stringify(tbl.data.log || {})`)))
     .sort((a, b) => (b.t || 0) - (a.t || 0))[0];
   ok(newest.who === "Slowclock", "so the table's newest roll is the one just made, not the old 19");
+
+  /* AND THE SAME CLOCK BROKE TWO MORE THINGS, which is why there is one estimate now instead of three
+     places doing it separately. A device three minutes slow ALSO reported its own heartbeat as three
+     minutes old — so it read as ABSENT, and the DM was quietly asked to roll initiative for a player
+     who was sitting right there rolling it himself. And the music's position is measured from when the
+     track started, so the same device works out that the track has not begun yet. */
+  ok(peek(`tblSkew()`) > 4 * 60 * 1000, `the table is seen to be ahead of this clock (${peek("Math.round(tblSkew()/1000)")}s)`);
+  ok(peek(`tblNow()`) > future, "so table time is the table's, not this device's");
+  /* THIS device is the slow one here — its Date.now() is five minutes behind the table. A heartbeat
+     stamped with its RAW clock, which is what the old code wrote, reads as five minutes old to
+     everybody; stamped at table time it reads as what it is, which is somebody who is still here. */
+  ok(peek(`tblNow() - Date.now() > 60000`), "this device's own clock is minutes behind the table");
+  ok(peek(`tblNow() - Date.now() < 60000`) === false,
+    "so a heartbeat stamped with it would look older than a minute the moment it landed");
+  ok(peek(`tblNow() - tblNow() < 60000`), "and one stamped at table time is current");
+  await peek(`CocLive.put("tables/482910/presence/slowdevice", { name: "Slow", role: "player",
+    charCode: "", at: Date.now() })`);
+  await until(() => !!peek(`(tbl.data.presence || {}).slowdevice`));
+  ok(peek(`tblPresenceFresh("slowdevice")`) === false,
+    "a heartbeat on the raw slow clock reads as gone");
+  await peek(`CocLive.put("tables/482910/presence/slowdevice/at", tblNow())`);
+  await until(() => Number(peek(`tbl.data.presence.slowdevice.at`)) > Date.now());
+  ok(peek(`tblPresenceFresh("slowdevice")`) === true,
+    "and the same device, beating at table time, reads as present");
+  await peek(`CocLive.del("tables/482910/presence/slowdevice")`);
+  // The music clock, same fix: a track that started at table time is where the table thinks it is.
+  ok(peek(`Math.round(tblMusicWhere({ pos: 0, playing: true, at: ${future} }))`) >= 0,
+    "and the music never computes a negative position from a stamp it cannot reach");
+  ok(peek(`Math.round(tblMusicWhere({ pos: 10, playing: true, at: tblNow() - 5000 }))`) === 15,
+    "a track started five seconds ago at table time is five seconds further on");
 }
 
 /* A ROLL NOBODY ELSE CAN SEE SAYS SO. Kayki: "there is a player that the dice doesnt show for anyone,

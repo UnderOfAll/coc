@@ -169,16 +169,50 @@ function tblCanMove(token) {
  * The fix does not need a server: a device may not stamp anything as older than the newest thing it has
  * already SEEN. A slow clock then contributes a stamp one millisecond after the last event it knows
  * about, which is enough to order it correctly on every screen. Clocks that are right are untouched. */
-function tblStamp() {
-  const now = Date.now();
-  if (!tbl || !tbl.data) return now;
+/* HOW FAR BEHIND THE TABLE THIS DEVICE'S CLOCK IS, in milliseconds, and never below zero.
+ *
+ * Read off the table itself: the newest stamp anybody has written — a roll, a heartbeat, the moment the
+ * music started. If that is ahead of this device's own clock, this device is slow by the difference. A
+ * device whose clock is RIGHT (or fast) gets zero and goes on using its own time.
+ *
+ * One estimate, used everywhere two devices' clocks are compared, because the three places that did it
+ * separately failed in three different ways on the same slow laptop during the 14 August session:
+ *   - rolls sorted into the past, so nobody saw that player's dice;
+ *   - his heartbeat looked a minute old, so he read as ABSENT — which is why the DM kept being asked to
+ *     roll initiative for a player who was sitting right there rolling it himself;
+ *   - and the music's position is measured from when the track started, so a slow device thinks a track
+ *     began later than it did and plays it from the wrong place.
+ * None of it needs a server; it needs everyone to agree on what "now" is, and the table already says. */
+function tblSkew() {
+  if (!tbl || !tbl.data) return 0;
   let newest = 0;
-  for (const e of Object.values(tbl.data.log || {})) {
-    const t = Number(e && e.t) || 0;
-    if (t > newest) newest = t;
-  }
-  return now > newest ? now : newest + 1;
+  const bump = (v) => { const n = Number(v) || 0; if (n > newest) newest = n; };
+  for (const e of Object.values(tbl.data.log || {})) bump(e && e.t);
+  for (const w of Object.values(tbl.data.presence || {})) bump(w && w.at);
+  const m = (tbl.data.music || {}).now;
+  if (m) bump(m.at);
+  const skew = newest - Date.now();
+  // A day is not a clock difference, it is a bad record; adopting it would freeze the table in the
+  // future for good.
+  return skew > 0 && skew < 86400000 ? skew : 0;
 }
+
+/* What time it is AT THE TABLE, which is the only time worth comparing anything against. */
+function tblNow() { return Date.now() + tblSkew(); }
+
+/* IS THAT DEVICE STILL HERE — one place, because the same sum was written out in three files and every
+   one of them measured another device's heartbeat against THIS device's clock. A minute of silence is
+   gone; the heartbeat is every twenty seconds, so a live device misses two before it counts. */
+const TBL_PRESENCE_GRACE = 60000;
+function tblPresenceFresh(clientId, record) {
+  const who = record || (clientId ? (tbl && tbl.data ? (tbl.data.presence || {})[clientId] : null) : null);
+  if (!who) return false;
+  return tblNow() - (Number(who.at) || 0) < TBL_PRESENCE_GRACE;
+}
+
+/* And a stamp for something being written now: at the table's time, and never equal to or older than
+   the newest thing already there, so ordering is strict. */
+function tblStamp() { return tblNow() + 1; }
 
 function tblTokenField(id, field, value) {
   if (!id || !tblTokens()[id]) return Promise.resolve(null);
@@ -419,7 +453,7 @@ async function tblSeatHolder(code) {
   const seat = meta && meta.dmSeat;
   if (!seat) return null;
   const who = await CocLive.get("tables/" + code + "/presence/" + seat);
-  const fresh = who && Date.now() - (Number(who.at) || 0) < 60000;
+  const fresh = tblPresenceFresh("", who);
   return fresh ? { id: seat, name: (who && who.name) || "Someone" } : null;
 }
 
@@ -586,7 +620,8 @@ function tblAnnounce() {
     name: tbl.me.name || (tbl.role === "dm" ? "DM" : "Player"),
     role: tbl.role,
     charCode: tbl.me.charCode || "",
-    at: Date.now(),
+    // At the TABLE's time, so a slow clock does not report itself as having last spoken a minute ago.
+    at: tblNow(),
   }).catch(() => {});
   // Armed once per table. The library re-arms it itself after a reconnection, so the beat must not
   // keep asking — that would be a write every twenty seconds for a promise already made.

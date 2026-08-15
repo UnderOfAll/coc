@@ -679,8 +679,7 @@ function tblInitMine(need) {
    chair does — otherwise a player who closed their laptop mid-fight would stall the whole gather. */
 function tblHolderPresent(t) {
   if (!t || !t.owner) return false;
-  const who = (tbl.data.presence || {})[t.owner];
-  return !!who && Date.now() - (Number(who.at) || 0) < 60000;
+  return tblPresenceFresh(t.owner);
 }
 
 /* The DM opens the gather. Any previous order goes: a fight that is starting is not the old one. */
@@ -1803,8 +1802,7 @@ function tblHeldBy(token) {
   const owner = token && token.owner;
   if (!owner) return null;
   const who = (tbl.data.presence || {})[owner];
-  const fresh = who && Date.now() - (Number(who.at) || 0) < 60000;
-  return fresh ? { id: owner, name: who.name || "someone" } : null;
+  return tblPresenceFresh(owner) ? { id: owner, name: who.name || "someone" } : null;
 }
 
 function seatPanelHTML() {

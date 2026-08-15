@@ -672,6 +672,23 @@ ok(profTip&&/level/i.test(profTip.textContent)&&/\+2 at levels 1-4/.test(profTip
    sheet." The two trained ones were listed as chips and a character with none recorded printed nothing
    at all, so "what do I add to Perception?" — the commonest question at any table — had no answer on
    the sheet. */
+/* THE RIPOSTE AND THE ENGINE'S OWN RULES, ON THE SHEET. Kayki: "theres nowhere to put what the riposte
+   does in the character sheet, nor the generation of the engine directly in the character sheet so they
+   can see it on the session." The meter was a number with three buttons and never said what makes it go
+   UP — the question a player asks every turn, answered only on the class page in the compendium. */
+{
+  const cls=peek("JSON.stringify(derive(sheet.ch).cls.name)").replace(/"/g,"");
+  ok(/Riposte/.test($("#tool").textContent), `the sheet says what a ${cls}'s Riposte does`);
+  ok(/Parry/.test($("#tool").textContent), "and what a Parry does, in the class's own words");
+  const rules=$('[data-act="engine-rules"]');
+  ok(!!rules, "the engine offers its own rules");
+  ok(!/Gaining/.test($(".engine-panel").textContent), "folded away to start with");
+  click(rules);
+  ok(/Gaining/.test($(".engine-panel").textContent), "one press opens how it is gained");
+  ok(/Spending it/.test($(".engine-panel").textContent), "and what it is spent on");
+  click($('[data-act="engine-rules"]'));
+  ok(!/Gaining/.test($(".engine-panel").textContent), "and it folds away again");
+}
 const skillChips=$$(".skill-chip");
 ok(skillChips.length===peek("store.skills.length"),
   "every skill is on the sheet, trained or not ("+skillChips.length+")");

@@ -891,6 +891,13 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 .skill-chip .muted { font-size: 0.80rem; }
 /* ALL EIGHTEEN, GROUPED BY THE ABILITY THEY USE — so the sheet answers "what do I add to Perception?"
    whether or not you trained it. The trained ones are the ones with the gold edge. */
+/* The engine's own rules, folded away under the meter: how it is gained and what it buys. Quiet, and
+   narrow enough to read — this panel is above the fields and is on screen whatever else is open. */
+.engine-rules { margin-top: 0.6rem; padding-top: 0.6rem; border-top: 1px solid var(--border);
+  font-size: 0.9rem; line-height: 1.6; }
+.engine-rules p { margin: 0 0 0.5rem; }
+.engine-rules .panel-sub { margin-bottom: 0.2rem; }
+
 .skill-groups { display: flex; flex-direction: column; gap: 0.5rem; }
 .skill-group { display: flex; align-items: baseline; gap: 0.5rem; flex-wrap: wrap; }
 .skill-ab { flex: 0 0 2.4rem; font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase;

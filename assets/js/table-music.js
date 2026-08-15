@@ -95,7 +95,12 @@ function tblMusicWhere(now) {
   if (!now) return 0;
   const base = Number(now.pos) || 0;
   if (!now.playing) return base;
-  return base + Math.max(0, (Date.now() - (Number(now.at) || Date.now())) / 1000);
+  /* AT THE TABLE'S TIME, not this device's. The position is measured from the moment the track started,
+     which the DM wrote with THEIR clock — so a device three minutes slow works out that the track has
+     not started yet, and one three minutes fast that it is nearly over. Both then fight the drift
+     correction for the whole song. */
+  const t = (typeof tblNow === "function") ? tblNow() : Date.now();
+  return base + Math.max(0, (t - (Number(now.at) || t)) / 1000);
 }
 /* …and where it should be ON A TRACK OF A KNOWN LENGTH, which is a different question once the clock has
    run past the end. A loop wraps — somebody joining two minutes into a thirty-second loop belongs four
@@ -573,19 +578,19 @@ async function tblMusicPlay(id) {
   const t = (tblMusicData().tracks || {})[id];
   if (!t) return;
   await tblMusicSet({ kind: t.kind, src: t.src, title: t.title || "", trackId: id,
-    playing: true, pos: 0, at: Date.now(), loop: !!t.loop });
+    playing: true, pos: 0, at: tblNow(), loop: !!t.loop });
 }
 /* Pause freezes the position, so resuming picks up where the room actually was rather than where the
    clock would have carried it to while nobody was listening. */
 async function tblMusicPause() {
   const now = tblMusicNow();
   if (!now) return;
-  await tblMusicSet({ playing: false, pos: tblMusicWhere(now), at: Date.now() });
+  await tblMusicSet({ playing: false, pos: tblMusicWhere(now), at: tblNow() });
 }
 async function tblMusicResume() {
   const now = tblMusicNow();
   if (!now) return;
-  await tblMusicSet({ playing: true, at: Date.now() });
+  await tblMusicSet({ playing: true, at: tblNow() });
 }
 async function tblMusicStop() {
   if (tbl.role !== "dm") return;
@@ -598,7 +603,7 @@ async function tblMusicWhenEnds(mode) {
   if (!now) return;
   const loop = mode === "repeat";
   if (!!now.loop === loop) return;
-  await tblMusicSet({ loop, pos: tblMusicWhere(now), at: Date.now() });
+  await tblMusicSet({ loop, pos: tblMusicWhere(now), at: tblNow() });
 }
 /* PUT ONE AT THE BACK OF THE QUEUE. Playing something does not touch the queue and queueing something
    does not interrupt what is playing — they are two different questions and the panel asks both. */
