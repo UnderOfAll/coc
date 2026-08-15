@@ -7,6 +7,7 @@
   "discipline": "Fortune",
   "minLevel": 2,
   "cooldown": 2,
+  "engineCost": 1,
   "castingTime": "1 bonus action",
   "range": "30 feet",
   "components": [

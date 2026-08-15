@@ -7,6 +7,7 @@
   "discipline": "Illusion",
   "minLevel": 3,
   "cooldown": 3,
+  "engineCost": 2,
   "castingTime": "1 bonus action",
   "range": "Self",
   "components": [

@@ -7,6 +7,7 @@
   "discipline": "Illusion",
   "minLevel": 3,
   "cooldown": 3,
+  "engineCost": 2,
   "castingTime": "1 action",
   "range": "60 feet",
   "components": [

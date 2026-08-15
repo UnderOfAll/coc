@@ -448,6 +448,47 @@ ok(before===Math.floor((peek("draft.scores.Charisma")+2-10)/2),"the bonus reache
     return known.filter(n => !offered.has(n)).join(",");
   })()`) === "", "every skill in the game is on at least one class's list");
   ok(peek(`(store.rules||[]).some(r => r.id === "skills")`), "and the rules say how skills work");
+  /* SOMETHING TO DO AT LEVEL 1, IN EVERY CLASS. Kayki: "we also need to see things to do on lvl1, for
+     example, doppelganger dont have any action on lvl1." Two real gaps, and the property is worth
+     asserting rather than the fix: at level 1 every class must have a feature that costs an ACTION or
+     rides the Attack action, and every engine must have somewhere to be SPENT. */
+  /* The property, not the fix: at level 1 a class must give its TURN a decision — something that costs
+     an action or a bonus action, or an attack it modifies, or tricks it can already cast. A class whose
+     level 1 is nothing but passives and reactions is a class you play by rolling one attack. */
+  ok(peek(`(function () {
+    const doing = /as an action|as a bonus action|in place of one of your attacks|when you take the Attack action|when you hit/i;
+    const casts = (c) => store.tricks.some(t => (t.classes || []).includes(c.id)
+      && (t.minLevel || 1) <= 1 && !(t.subclasses || []).length);
+    return store.classes.filter(c => !casts(c)
+      && !(c.features || []).some(f => (f.level || 1) === 1
+        && (doing.test(f.description || "") || /action/i.test(((f.meta || {}).action) || "")))
+    ).map(c => c.name).join(",");
+  })()`) === "", "every class has something to decide on its turn at level 1");
+  /* And the Doppelganger's ACTION in particular, which is the one Kayki named: everything he had at
+     level 1 was a bonus action or a reaction, so his action was a plain weapon attack and nothing else. */
+  ok(peek(`(store.classes.find(c => c.id === "doppelganger").features || []).some(f =>
+    (f.level || 1) === 1 && /as an action/i.test(f.description || ""))`),
+    "and the Doppelganger has an ACTION at level 1, not only bonus actions");
+  ok(peek(`(store.classes.find(c => c.id === "acrobat").features || []).some(f =>
+    (f.level || 1) === 1 && /spend 1 Momentum/i.test(f.description || ""))`),
+    "and the Acrobat's meter has somewhere to go at level 1");
+  /* MOST TURNS COST ENGINE. Kayki: "the spells costing engine, not all of them but most has to have."
+     Two classes are DELIBERATELY exempt and their own text says why — the Doppelganger's Clones are
+     bodies on the board and the Puppeteer's Strings are attachments that are never consumed. */
+  {
+    const t = JSON.parse(peek(`(function () {
+      const turns = store.tricks.filter(t => t.tier === "turn");
+      return JSON.stringify({ all: turns.length, costed: turns.filter(t => t.engineCost > 0).length });
+    })()`));
+    ok(t.costed > t.all / 2, `most Turns cost engine (${t.costed} of ${t.all})`);
+  }
+  ok(peek(`store.tricks.filter(t => t.tier === "turn" && (t.classes||[]).includes("illusionist")
+    && !t.engineCost).length`) === 2,
+    "a full caster keeps a couple of free Turns, because a free Turn is what FILLS the meter");
+  ok(peek(`store.tricks.filter(t => t.tier === "turn" && (t.classes||[]).includes("joker")
+    && !t.engineCost).length`) === 0, "the Joker's Turns are all paid for out of Mayhem");
+  ok(peek(`store.tricks.filter(t => t.tier === "pledge" && t.engineCost > 0).length`) === 0,
+    "and a Pledge is still at-will, at every tier of caster");
   ok(new RegExp("AC "+(10+dexMod)+"\\b").test(coat.textContent),
     `and its AC counts the starting bonus (Dex ${dexTotal}, expected ${10+dexMod}, got "${coat.textContent.trim().replace(/\s+/g," ")}")`);
   peek(`draft.armorId = "conjurers-longcoat"; renderCreator();`);

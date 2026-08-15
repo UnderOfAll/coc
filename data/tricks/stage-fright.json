@@ -7,6 +7,7 @@
   "discipline": "Mesmerism",
   "minLevel": 2,
   "cooldown": 2,
+  "engineCost": 1,
   "castingTime": "1 action",
   "range": "60 feet",
   "components": [

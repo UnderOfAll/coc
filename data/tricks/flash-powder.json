@@ -7,6 +7,7 @@
   "discipline": "Pyrotechnics",
   "minLevel": 3,
   "cooldown": 3,
+  "engineCost": 1,
   "castingTime": "1 action",
   "range": "30 feet",
   "components": [
