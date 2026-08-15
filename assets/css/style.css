@@ -742,6 +742,14 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 .sheet-id { display: flex; gap: 0.9rem; align-items: flex-start; flex-wrap: wrap; }
 .sheet-id h1 { margin: 0; line-height: 1.15; }
 .sheet-titles { min-width: 0; display: flex; flex-direction: column; gap: 0.15rem; }
+/* The name is an INPUT that reads as the heading it replaced: same face, same size, no box until you
+   are in it. The place you read it is the place you change it. */
+.sheet-name { width: 100%; min-width: 0; padding: 0.1rem 0.3rem; margin: -0.1rem -0.3rem;
+  font-family: var(--serif); font-size: 1.9rem; line-height: 1.15; color: var(--text);
+  background: transparent; border: 1px solid transparent; border-radius: 6px; }
+.sheet-name:hover { border-color: var(--border); }
+.sheet-name:focus { background: var(--panel-2); border-color: var(--gold); outline: none; }
+.sheet-name::placeholder { color: var(--muted); }
 .sheet-class { margin: 0; font-family: var(--serif); font-size: 1.05rem; color: var(--gold); }
 .sheet-class .sep, .sheet-code .sep { color: var(--muted); }
 .sheet-code { margin: 0; font-size: 0.80rem; color: var(--muted); }

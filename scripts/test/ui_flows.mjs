@@ -672,6 +672,26 @@ ok(profTip&&/level/i.test(profTip.textContent)&&/\+2 at levels 1-4/.test(profTip
    sheet." The two trained ones were listed as chips and a character with none recorded printed nothing
    at all, so "what do I add to Perception?" — the commonest question at any table — had no answer on
    the sheet. */
+/* THE NAME CAN BE CHANGED. Kayki: "theres no way to change the characters name right now." It was an
+   <h1> — the one field on the sheet with no way back to it, so a typo at creation was permanent. */
+{
+  const box=$("#sheet-name");
+  ok(!!box, "the name on the sheet is a box you can type in");
+  ok(box.value===peek("JSON.stringify(sheet.ch.name)").replace(/"/g,""), "carrying the name it has");
+  type(box,"Renamed Mid-Session");
+  ok(peek("JSON.stringify(sheet.ch.name)")==='"Renamed Mid-Session"',
+    "typing in it renames the character");
+  ok(!!$("#sheet-name"), "and the sheet is not redrawn under the keyboard while you type");
+  // It has to reach the SAVE, not just live in the page. persist() is debounced, so this waits for it.
+  peek(`window.__saved = null; window.__realSave = CocStore.save;
+    CocStore.save = async (c, ch) => { window.__saved = ch && ch.name; return true; };`);
+  type($("#sheet-name"),"Renamed Again");
+  await new Promise(r=>setTimeout(r,700));
+  ok(peek("JSON.stringify(window.__saved)")==='"Renamed Again"',
+    "and the new name is what gets saved, not the old one");
+  peek(`CocStore.save = window.__realSave;`);
+}
+
 /* THE RIPOSTE AND THE ENGINE'S OWN RULES, ON THE SHEET. Kayki: "theres nowhere to put what the riposte
    does in the character sheet, nor the generation of the engine directly in the character sheet so they
    can see it on the session." The meter was a number with three buttons and never said what makes it go

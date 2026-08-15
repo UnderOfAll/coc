@@ -1114,7 +1114,15 @@ function renderSheet() {
             : `<div class="portrait empty">${esc((ch.name || "?")[0])}</div>`}
         </label>
         <div class="sheet-titles">
-          <h1>${esc(ch.name || "Unnamed")}</h1>
+          ${/* THE NAME IS EDITABLE, because a character is not finished when it is created. Kayki:
+                "theres no way to change the characters name right now." It was an <h1> — the one field
+                on the sheet with no way back to it, so a typo at creation, or a character who earns a
+                name at the table, was permanent. An input that looks like the heading rather than a
+                Rename button somewhere else: the place you read it is the place you change it, which is
+                how the portrait and the background already work. It reaches the figure on the board on
+                the next save, like the picture and the hit points do. */""}
+          <input id="sheet-name" class="sheet-name" type="text" maxlength="40"
+            value="${esc(ch.name || "")}" placeholder="Unnamed" aria-label="Character name" />
           <p class="sheet-class">${esc(d.cls.name)}${d.subclass ? ` <span class="sep">&middot;</span> ${esc(d.subclass.name)}` : ""}${ch.size ? ` <span class="sep">&middot;</span> ${esc(ch.size)}` : ""}</p>
           <p class="sheet-code">code <strong>${esc(code)}</strong> <span class="sep">&middot;</span> <span id="save-state">saved</span></p>
           <p class="sheet-pic">
@@ -2317,6 +2325,17 @@ document.addEventListener("input", (e) => {
   /* SAVED AS YOU TYPE, AND THE SHEET IS NOT REDRAWN WHILE YOU ARE IN THE BOX. Repainting would replace
      the textarea and a phone keyboard would lose the caret — and nothing else on the sheet reads this
      text, so there is nothing to redraw for. */
+  /* Saved as you type, and the sheet is NOT redrawn while you are in the box — a repaint would replace
+     the input under a phone keyboard and lose the caret. The two things that echo the name (the portrait
+     initial and the browser tab) are nudged by hand instead. */
+  if (evTarget(e).id === "sheet-name" && sheet) {
+    const name = String(evTarget(e).value || "").slice(0, 40);
+    sheet.ch.name = name;
+    const initial = toolEl() && toolEl().querySelector(".portrait.empty");
+    if (initial) initial.textContent = (name || "?")[0];
+    persist();
+    return;
+  }
   if (evTarget(e).id === "sheet-notes" && sheet) {
     sheet.ch.notes = String(evTarget(e).value || "").slice(0, 2000);
     persist();
