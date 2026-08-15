@@ -1679,6 +1679,15 @@ body:has(.vtt) { height: 100dvh; overflow: hidden; }
   cursor: pointer; border-bottom: 1px dashed rgba(201,165,78,0.5); }
 .roll:hover { color: var(--gold); border-bottom-color: var(--gold); }
 .roll:disabled { cursor: default; border-bottom: none; }
+/* AND IT HAS TO BE HITTABLE WITH A THUMB. Kayki, of the session: "on the character sheet mid game they
+   couldnt see anything." Measured afterwards in real Chromium at 393px, inside the drawer where the
+   sheet actually gets used: a skill's "+3" was a FIFTEEN pixel target. It looks like a number, which is
+   the point — so the box around it grows rather than the type, and the dashed underline stays where the
+   digits are so nothing about it reads as a button. Everything else on the sheet is thrown from one of
+   these: saves, attacks, the Parry. */
+.roll { display: inline-flex; align-items: center; justify-content: center;
+  min-width: 2.25rem; min-height: 1.9rem; padding: 0 0.2rem; }
+.skill-chip em .roll, .ab-box .roll { min-width: 2.5rem; }
 
 /* The ruler: a line on the map, and a label that does NOT shrink with it — the whole point is to read
    the distance while zoomed out far enough to see where you are going. */

@@ -222,6 +222,32 @@ console.log("\n— 393px, as a player, by touch —");
   ok(drawer.boardKept, "the board keeps its size behind it, so coming back moves nothing");
   ok(drawer.back, "with a way back to the board at the top of it");
   ok(drawer.fits && drawer.scrolls === "auto", "it fits the width and scrolls on its own");
+  /* AND WHAT THEY ACTUALLY NEED MID-FIGHT IS IN IT. Kayki, of the session: "on the character sheet mid
+     game they couldnt see anything." The Status field is what the sheet opens on, so the skills, the
+     saves and the Parry have to be reachable HERE, in the drawer, on a phone — not only on the full
+     page. jsdom has no layout, so nothing but a real browser at 393px can say whether they fit. */
+  const inDrawer = await page.evaluate(() => {
+    const side = document.querySelector("#vtt-side");
+    const chips = [...side.querySelectorAll(".skill-chip")];
+    const wide = chips.filter((c) => c.getBoundingClientRect().right > document.documentElement.clientWidth + 0.5);
+    const perception = chips.find((c) => /Perception/.test(c.textContent));
+    const roll = perception && perception.querySelector("button.roll");
+    const r = roll && roll.getBoundingClientRect();
+    return {
+      skills: chips.length,
+      spillsOver: wide.length,
+      rollable: !!(r && r.width >= 24 && r.height >= 20),
+      size: r ? { w: Math.round(r.width), h: Math.round(r.height) } : null,
+      parry: /Parry/.test(side.textContent),
+      riposte: /Riposte/.test(side.textContent),
+      speed: /\bft\b/.test(side.textContent),
+    };
+  });
+  ok(inDrawer.skills === 18, `every skill is in the drawer, not only on the full page (${inDrawer.skills})`);
+  ok(inDrawer.spillsOver === 0, "and none of them runs off the side of the phone");
+  ok(inDrawer.rollable, `the number beside one is big enough to hit with a thumb (${JSON.stringify(inDrawer.size)})`);
+  ok(inDrawer.parry && inDrawer.riposte, "the Parry and the Riposte are in there too");
+  ok(inDrawer.speed, "and the speed");
   // Back to the board: a panel over it means the finger belongs to the panel, so everything below here
   // would be dragging the sheet.
   await page.evaluate(() => { document.querySelector(".side-back").click(); });
