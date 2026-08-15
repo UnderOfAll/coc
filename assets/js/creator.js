@@ -1266,6 +1266,35 @@ function vitals(d, p) {
   </section>`;
 }
 
+/* EVERY SKILL, NOT ONLY THE TWO YOU TRAINED. Kayki: "nowhere it shows the skills proficiency in the
+   character sheet." What was here listed the trained ones as chips and, for a character with none
+   recorded, printed nothing at all — so the commonest question at any table, "what do I add to
+   Perception?", had no answer on the sheet.
+   All eighteen now, grouped by the ability they use, each with the number you actually roll and a button
+   that rolls it. Trained ones are marked and carry the proficiency; the rest are the bare ability
+   modifier, which is a real answer and not a blank — being untrained costs you the bonus, never the
+   attempt (see the Proficiency rules page). */
+function skillsHTML(d, ch) {
+  const all = (typeof store !== "undefined" && Array.isArray(store.skills)) ? store.skills : [];
+  if (!all.length) return "";
+  const trained = new Set((ch.skills || []).map((n) => String(n).toLowerCase()));
+  const groups = ABILITIES.map((ab) => [ab, all.filter((sk) => sk.ability === ab)]).filter(([, l]) => l.length);
+  return `<p class="panel-sub">Skills <span class="muted">— a gold one is trained, and carries your
+      ${esc(sign(d.prof))} proficiency</span></p>
+    <div class="skill-groups">${groups.map(([ab, list]) => `<div class="skill-group">
+      <span class="skill-ab">${esc(ABIL_SHORT[ab] || ab)}</span>
+      <div class="skill-row">${list.map((sk) => {
+        const on = trained.has(String(sk.name).toLowerCase());
+        const bonus = (d.mods[ab] || 0) + (on ? d.prof : 0);
+        return chipTip(`<span class="skill-chip ${on ? "on" : ""}">
+          <strong>${esc(sk.name)}</strong>
+          <em>${rollBtn("1d20" + sign(bonus), sk.name, sign(bonus))}</em></span>`,
+          `${esc(sk.description || "")}<br>${esc(ABIL_SHORT[ab] || ab)} ${esc(sign(d.mods[ab] || 0))}`
+          + (on ? ` + proficiency ${esc(sign(d.prof))} — you are trained in this.`
+                : ` — untrained, so no proficiency. You may still try it.`));
+      }).join("")}</div></div>`).join("")}</div>`;
+}
+
 /* PARRY, AND THE RIPOSTE THAT COMES OFF IT. Kayki: "the riposte and parry dont show in the character
    sheet." The vitals bar carries the DC and a button to roll it, which answers "what do I roll" — and
    nothing on the sheet answered "what happens then", or mentioned the Riposte AT ALL. A Riposte is a
@@ -1333,14 +1362,7 @@ function statusPanel(d) {
       "From your LEVEL alone, not from any ability: +2 at levels 1-4, +3 at 5-8, +4 at 9-12, +5 at 13-16, "
       + "+6 at 17+. Already included in every number here that needs it.")}` : ""}</p>
   <div class="ab-grid">${abils}</div>
-  ${ch.skills?.length ? `<p class="panel-sub">Trained skills</p>
-    <div class="skill-row">${ch.skills.map((name) => {
-      const sk = idx.skillsByName.get(String(name).toLowerCase());
-      const ab = sk && sk.ability;
-      const bonus = (ab ? (d.mods[ab] || 0) : 0) + d.prof;
-      return `<span class="skill-chip"><strong>${esc(name)}</strong>
-        <em>${rollBtn("1d20" + sign(bonus), name, sign(bonus))}</em>${ab ? `<span class="muted">${esc(ABIL_SHORT[ab])}</span>` : ""}</span>`;
-    }).join("")}</div>` : ""}
+  ${skillsHTML(d, ch)}
   ${aboutYouHTML(ch)}
   </section>`;
 }

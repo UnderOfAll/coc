@@ -1,0 +1,46 @@
+{
+  "id": "skills",
+  "name": "Skills & Checks",
+  "source": "Circus System",
+  "summary": "Eighteen skills, two of them yours. Everything else you may still attempt — you simply do it without the bonus.",
+  "sections": [
+    {
+      "heading": "What a check is",
+      "paragraphs": [
+        "When the outcome of something you try is genuinely in doubt, the DM calls for an ability check: roll d20, add the ability's modifier, and add your proficiency bonus if you are trained in the skill they named. Beat the DM's number and it works.",
+        "The skill decides which ABILITY you use, and nothing else. Athletics is Strength, Perception is Wisdom, Deception is Charisma — the skill is the label on the situation, the ability is the number."
+      ]
+    },
+    {
+      "heading": "The eighteen, by the ability each uses",
+      "list": [
+        "STRENGTH — Athletics",
+        "DEXTERITY — Acrobatics, Sleight of Hand, Stealth",
+        "INTELLIGENCE — Arcana, History, Investigation, Nature, Religion",
+        "WISDOM — Animal Handling, Insight, Medicine, Perception, Survival",
+        "CHARISMA — Deception, Intimidation, Performance, Persuasion"
+      ]
+    },
+    {
+      "heading": "You get two, at creation, from your class",
+      "paragraphs": [
+        "Each class offers a list and you choose TWO from it. That is the only source of skill training in this system — no backgrounds hand any out and no level grants one, because your background is your character's story rather than a package of numbers (see Character Creation).",
+        "The lists are the class saying what it is: a Puppeteer reads people, a Sandow lifts and endures, an Illusionist knows things. They overlap heavily, and every skill in the game is on at least one of them, so there is nothing a member of this company can never learn.",
+        "Choose for the game you expect to play, not for the class you are reading about. Perception is the check a DM calls for more often than any other, and every class can take it."
+      ]
+    },
+    {
+      "heading": "Untrained is not forbidden",
+      "paragraphs": [
+        "This is the half that matters most at a table, and it is worth saying plainly: you may attempt any check. Not being trained costs you the proficiency bonus, never the attempt.",
+        "So a Sandow with Wisdom +0 and no Perception training rolls a flat d20 to notice something, and sometimes notices it. Your sheet prints every skill with the number you actually roll, trained or not, and a button that rolls it — there is no such thing as a skill your sheet cannot answer for."
+      ]
+    },
+    {
+      "heading": "What the app does and does not do",
+      "paragraphs": [
+        "The app works out the number and throws the dice where the table can see them. It does not decide the DC, it does not decide whether a skill applies, and it never tells you that you failed. This system's app is a tracker, not a referee: what the roll MEANT is the DM's, out loud, like everything else worth arguing about."
+      ]
+    }
+  ]
+}

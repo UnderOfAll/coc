@@ -28,7 +28,7 @@
       "Disguise kit",
       "Painter's supplies"
     ],
-    "skills": "Choose two from Arcana, Deception, Insight, Investigation, Perception, Performance, and Sleight of Hand"
+    "skills": "Choose two from Arcana, Deception, History, Insight, Investigation, Perception, Performance, Religion, and Sleight of Hand"
   },
   "parryBaseDC": 14,
   "defenseAbility": "Intelligence",

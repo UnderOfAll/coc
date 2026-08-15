@@ -436,6 +436,18 @@ ok(before===Math.floor((peek("draft.scores.Charisma")+2-10)/2),"the bonus reache
      in the DATA either — the board assumed 30, and a dozen features are written as "half your speed". */
   ok(peek(`store.classes.every(c => Number(c.speed) > 0)`), "every class says how far it walks");
   ok(peek(`derive(draft).speed`) === 30, "and the sheet works it out (30 ft)");
+  /* EVERY SKILL HAS TO BE REACHABLE. Kayki: "all skill proficiencies needs to exist." Five of the
+     eighteen — Animal Handling, History, Medicine, Nature, Religion — were on no class's list at all,
+     so nobody in this company could ever learn them. */
+  ok(peek(`(function () {
+    const known = store.skills.map(s => s.name);
+    const offered = new Set();
+    for (const c of store.classes) {
+      for (const n of parseSkillChoice(c.proficiencies.skills).skills) offered.add(n);
+    }
+    return known.filter(n => !offered.has(n)).join(",");
+  })()`) === "", "every skill in the game is on at least one class's list");
+  ok(peek(`(store.rules||[]).some(r => r.id === "skills")`), "and the rules say how skills work");
   ok(new RegExp("AC "+(10+dexMod)+"\\b").test(coat.textContent),
     `and its AC counts the starting bonus (Dex ${dexTotal}, expected ${10+dexMod}, got "${coat.textContent.trim().replace(/\s+/g," ")}")`);
   peek(`draft.armorId = "conjurers-longcoat"; renderCreator();`);
@@ -615,8 +627,29 @@ const profTip=$(".panel-sub .term-tip");
 ok(profTip&&/level/i.test(profTip.textContent)&&/\+2 at levels 1-4/.test(profTip.textContent),
   "but still explains itself: "+profTip.textContent.slice(0,55));
 // and the skills carry the number you actually roll, so nothing is lost by dropping the box
+/* ALL EIGHTEEN, NOT ONLY THE TWO. Kayki: "nowhere it shows the skills proficiency in the character
+   sheet." The two trained ones were listed as chips and a character with none recorded printed nothing
+   at all, so "what do I add to Perception?" — the commonest question at any table — had no answer on
+   the sheet. */
 const skillChips=$$(".skill-chip");
-ok(skillChips.length===2,"trained skills are listed with their numbers ("+skillChips.length+")");
+ok(skillChips.length===peek("store.skills.length"),
+  "every skill is on the sheet, trained or not ("+skillChips.length+")");
+const onChips=$$(".skill-chip.on");
+ok(onChips.length===2,"with the trained ones marked ("+onChips.length+")");
+{
+  // The number on an untrained skill is the bare ability modifier; a trained one carries proficiency.
+  const trainedName=peek("JSON.stringify(sheet.ch.skills[0])").replace(/"/g,"");
+  const sk=peek(`JSON.stringify(store.skills.find(s => s.name === ${JSON.stringify(trainedName)}))`);
+  const abil=JSON.parse(sk).ability;
+  const d=peek(`JSON.stringify({ mod: derive(sheet.ch).mods[${JSON.stringify(abil)}], prof: derive(sheet.ch).prof })`);
+  const { mod, prof } = JSON.parse(d);
+  const chip=$$(".skill-chip.on").find(c=>c.textContent.includes(trainedName));
+  ok(!!chip && chip.textContent.includes(String(mod+prof>=0?"+":"")+(mod+prof)),
+    `a trained skill carries proficiency (${trainedName} ${mod}+${prof})`);
+  const untrained=$$(".skill-chip:not(.on)")[0];
+  ok(!!untrained && /[+−-]?\d/.test(untrained.textContent),
+    "and an untrained one still prints the number you would roll");
+}
 const acro=skillChips.find(c=>/Acrobatics/.test(c.textContent));
 ok(acro&&acro.querySelector("em").textContent===peek(`(function(){const d=derive(sheet.ch);
   return ((d.mods.Dexterity>=0?"+":"")+(d.mods.Dexterity+d.prof));})()`),"Acrobatics shows Dex + proficiency");

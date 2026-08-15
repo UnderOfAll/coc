@@ -31,9 +31,9 @@
       "Dice set",
       "Carpenter's tools"
     ],
-    "skills": "Choose two from Athletics, Intimidation, Perception, Performance, and Survival"
+    "skills": "Choose two from Animal Handling, Athletics, Intimidation, Medicine, Nature, Perception, Performance, and Survival"
   },
-  "parryBaseDC": 9,
+  "parryBaseDC": 10,
   "defenseAbility": "Strength",
   "parryReskin": "You don't dodge a hit at all — you plant your feet, turn your shoulder or weapon into the line of the blow, and let your frame do what a lesser body couldn't. A Sandow's Parry is a brace, never a step back.",
   "riposte": "On a Full Dodge (your Parry d20 roll comes up strictly above your effective Parry DC), the braced impact drives the triggering attacker back: it is pushed 5 feet directly away from you, no save required, at no cost beyond the Parry itself — a shove, not a counterattack. On that same clean brace you may also spend 1 Grit to Brace Up: gain temporary hit points equal to your {{Brace Up|proficiency bonus + Constitution modifier}}, lasting until the start of your next turn (like all temporary hit points these don't stack — a new Brace Up replaces any you already have). The shove is free; the Brace Up is the paid option.",
@@ -251,7 +251,7 @@
     },
     {
       "label": "Parry Base DC",
-      "value": "9",
+      "value": "10",
       "note": "Second-best parrier; lower is better."
     }
   ]

@@ -9,6 +9,7 @@
     "rules/parry.json",
     "rules/proficiency.json",
     "rules/reaction-economy.json",
+    "rules/skills.json",
     "rules/tricks-and-casting.json",
     "rules/weapon-mastery.json",
     "rules/weapon-properties.json"

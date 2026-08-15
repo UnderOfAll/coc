@@ -29,7 +29,7 @@
       "Disguise kit",
       "Forgery kit"
     ],
-    "skills": "Choose two from Acrobatics, Deception, Insight, Perception, Sleight of Hand, and Stealth"
+    "skills": "Choose two from Acrobatics, Deception, History, Insight, Medicine, Perception, Sleight of Hand, and Stealth"
   },
   "parryBaseDC": 10,
   "defenseAbility": "Constitution",

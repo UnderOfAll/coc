@@ -889,6 +889,15 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
   background: var(--panel-2); border: 1px solid var(--border); border-radius: var(--radius); }
 .skill-chip em { font-style: normal; font-family: var(--serif); color: var(--gold); font-size: 1.05rem; }
 .skill-chip .muted { font-size: 0.80rem; }
+/* ALL EIGHTEEN, GROUPED BY THE ABILITY THEY USE — so the sheet answers "what do I add to Perception?"
+   whether or not you trained it. The trained ones are the ones with the gold edge. */
+.skill-groups { display: flex; flex-direction: column; gap: 0.5rem; }
+.skill-group { display: flex; align-items: baseline; gap: 0.5rem; flex-wrap: wrap; }
+.skill-ab { flex: 0 0 2.4rem; font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--muted); }
+.skill-group .skill-row { flex: 1 1 12rem; min-width: 0; }
+.skill-chip.on { border-color: var(--gold); background: color-mix(in srgb, var(--gold) 12%, var(--panel-2)); }
+.skill-chip.on strong { color: var(--gold); }
 @media (max-width: 760px) {
   .creator { grid-template-columns: 1fr; }
   /* On a phone the summary sits AFTER the form, not before it. Pinned above, it pushed the first

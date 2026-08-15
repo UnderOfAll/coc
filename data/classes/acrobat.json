@@ -28,9 +28,9 @@
       "Aerialist's rigging kit",
       "Balancing pole"
     ],
-    "skills": "Choose two from Acrobatics, Athletics, Perception, Performance, Persuasion, Sleight of Hand, and Stealth"
+    "skills": "Choose two from Acrobatics, Animal Handling, Athletics, Nature, Perception, Performance, Persuasion, Sleight of Hand, and Stealth"
   },
-  "parryBaseDC": 7,
+  "parryBaseDC": 8,
   "defenseAbility": "Dexterity",
   "parryReskin": "You never block the hit at all — a twist of the spine, a mid-air redirect, a heel that was never fully planted turns solid contact into a near-miss.",
   "riposte": "On a Full Dodge (your Parry d20 roll comes up strictly above your effective Parry DC), you may spend 1 Momentum to lash back at the triggering attacker for damage of your weapon's type (the lash-back hits automatically, no attack roll). The lash-back die grows as you level, on its own curve: 1d4 at 1st level, 1d6 at 3rd, 1d8 at 5th, 1d10 at 7th, 1d12 at 9th, and 1d20 at 12th. This is a small reward for a clean dodge, not a full attack.",
@@ -216,7 +216,7 @@
     },
     {
       "label": "Parry Base DC",
-      "value": "7",
+      "value": "8",
       "note": "Best parrier in the roster; lower is better."
     }
   ]

@@ -238,7 +238,7 @@
       "type": "integer",
       "minimum": 1,
       "maximum": 20,
-      "description": "Circus-system Parry v2: this class's base Parry DC (lower = easier to parry / better parrier). Feeds the effective Parry DC formula (proficiency + half defense-ability modifier subtracted, situational modifiers added, floor of 3). See data/schema/MECHANICS.md §1.5-1.6. Roster spread is 7 (Acrobat, best) to 15 (Puppeteer, worst). Optional/omit for non-circus (e.g. 5e SRD) classes that don't use the rebuilt Parry reaction. REPLACES the removed v1 'parryAffinity' tier field — do not reintroduce parryAffinity."
+      "description": "Circus-system Parry v2: this class's base Parry DC (lower = easier to parry / better parrier). Feeds the effective Parry DC formula (proficiency + half defense-ability modifier subtracted, situational modifiers added, floor of 3). See data/schema/MECHANICS.md §1.5-1.6. Roster spread is 8 (Acrobat, best) to 15 (Puppeteer, worst); The Sandow and the Doppelganger both sit at 10. Two classes MAY share a value — the ordering is what carries the design, not one integer each. Optional/omit for non-circus (e.g. 5e SRD) classes that don't use the rebuilt Parry reaction. REPLACES the removed v1 'parryAffinity' tier field — do not reintroduce parryAffinity."
     },
     "defenseAbility": {
       "type": "string",
