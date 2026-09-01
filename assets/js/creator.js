@@ -271,6 +271,13 @@ function withTokens(d, fn) {
 /* The draft being built, and the character being played. Both are plain JSON. */
 let draft = null;
 let sheet = null;      // { code, ch } while a sheet is open
+/* Bumped on arrival at any route in this file. A hash STRING is not enough to tell "the player is
+   still exactly where I left them" from "same hash, entirely different draft" -- #/create is the
+   address for every character you will ever start, so two saves ten seconds apart both leave a
+   pending redirect looking at the identical "#/create" string. This is what saveDraft()'s delayed
+   #/sheet redirect actually compares against, so a stale one from an earlier save can tell it is
+   stale even when the address bar coincidentally reads the same as it did back then. */
+let navToken = 0;
 /* Pure interface state: what is expanded, what number is sitting in the damage box, whether a
    level-up is being previewed. Never saved — none of it is part of the character. */
 const ui = {
@@ -387,6 +394,26 @@ function suggestCode() {
   return c;
 }
 
+/* This is local and does not touch the store, so a code it hands back can already belong to
+   someone else -- and until this existed, that was exactly what a player saw as "the suggested
+   code is refused, as if already used": nobody typed anything, the first thing shown to them was
+   already somebody's character. Checked against the real store here, in the background, so the
+   box only ever holds a code that was actually free at the moment it was offered. A capped retry
+   (not a loop) so a network hiccup or freak run of collisions can't spin forever; the save button
+   still runs its own check regardless, so a miss here is never unsafe, only unhelpful. */
+async function verifyCodeFree(code, triesLeft = 5) {
+  if (triesLeft <= 0) return;
+  let taken;
+  try { taken = await CocStore.taken(code); } catch { return; } // offline/unreachable: best effort, leave it
+  if (!taken) return;
+  // The draft may have moved on by the time the network answers -- a save already went through,
+  // the player retyped the box themselves, or another reroll already replaced this one.
+  if (!draft || draft._code !== code) return;
+  draft._code = suggestCode();
+  verifyCodeFree(draft._code, triesLeft - 1);
+  renderCreator();
+}
+
 /* Codes this browser has seen, so Manage can offer them without a cloud listing. */
 const RECENT_KEY = "coc:recent";
 function recentCodes() {
@@ -421,6 +448,7 @@ function blankDraft() {
    this — while keeping the old draft meant coming back later handed you the previous character's
    name, scores and portrait to edit by accident. */
 function routeCreate() {
+  navToken++;
   draft = blankDraft();
   ui.openSubs.clear();
   renderCreator();
@@ -725,7 +753,8 @@ function validateDraft(d) {
 function stepSave() {
   const d = derive(draft);
   const missing = d ? validateDraft(d) : ["Choose a class."];
-  const code = draft._code || (draft._code = suggestCode());
+  let code = draft._code;
+  if (!code) { code = draft._code = suggestCode(); verifyCodeFree(code); }
   return `<section class="step step-save">
     <h2>7 · Save</h2>
     <p class="muted">Pick any six digits you will remember — that code <em>is</em> your character.
@@ -781,7 +810,7 @@ function creatorClick(e) {
     // weapon, so picking another replaces it rather than adding to a rack.
     draft.weapons = draft.weapons.includes(val) ? [] : [val];
   } else if (pick === "clearphoto") draft.photo = "";
-  else if (pick === "reroll") draft._code = suggestCode();
+  else if (pick === "reroll") { draft._code = suggestCode(); verifyCodeFree(draft._code); }
   renderCreator();
 }
 
@@ -887,7 +916,13 @@ async function saveDraft() {
     draft = null;                         // the next visit to #/create starts clean
     msg.innerHTML = `Saved. Your code is <strong>${esc(code)}</strong> — opening the sheet…`;
     msg.className = "save-msg good";
-    setTimeout(() => { location.hash = "#/sheet/" + code; }, 700);
+    // Same guard as paintHost(): a stale redirect firing after the player has ALREADY moved on
+    // (clicked a menu link, hit back, started another character) would yank them off wherever
+    // they went. navToken, not the hash string -- #/create is the address for every character
+    // you will ever start, so two saves apart both leave a pending redirect looking at the exact
+    // same "#/create" text even though nothing else about the visit is the same.
+    const myNav = navToken;
+    setTimeout(() => { if (navToken === myNav) location.hash = "#/sheet/" + code; }, 700);
   } catch (err) {
     console.error(err);
     msg.textContent = "Could not save: " + err.message;
@@ -898,6 +933,7 @@ async function saveDraft() {
 /* ---------------------------------------------------------------- manage */
 
 function routeManage() {
+  navToken++;
   const recent = recentCodes();
   paint(`
     <div class="tool-head">
@@ -956,6 +992,7 @@ async function openByCode() {
  * If a database is configured permissively enough to list (the local backend always is), the full
  * table is shown instead — so this page is useful either way rather than assuming one setup. */
 function routeRoster() {
+  navToken++;
   const head = `<div class="tool-head"><a class="back" href="#/">&larr; Menu</a>
     <h1>Find a lost code</h1></div>`;
   const local = () => {
@@ -1035,6 +1072,7 @@ function normalisePlay(ch) {
 }
 
 function routeSheet(code) {
+  navToken++;
   if (!CocStore.validCode(code)) { location.hash = "#/manage"; return; }
   // Already holding this character? Show it straight back, exactly as it was — same open features,
   // same scroll position, same everything. Re-fetching would also be WRONG, not just slow: a save
