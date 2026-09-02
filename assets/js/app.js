@@ -313,7 +313,7 @@ function selectCategory(key) {
   $("#list-view").classList.remove("hidden");
   const label = (CATEGORIES.find((c) => c.key === key) || {}).label || "";
   $("#list-title").textContent = label;
-  setPageMeta(label, `Every ${label.toLowerCase()} in the Circus of Chaos compendium.`);
+  setPageMeta(label, `${label} — part of the Circus of Chaos compendium.`);
   renderList(key);
   if (location.hash !== "#/" + key) history.replaceState(null, "", "#/" + key);
   pageScroller().scrollTop = listScroll[key] || 0;
