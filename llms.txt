@@ -1,0 +1,25 @@
+# Circus of Chaos
+
+> A 5e-derived tabletop RPG compendium and character toolset. Circus of Chaos replaces passive
+> defense with Parry (an active roll made against an attack), replaces Vancian spell slots with
+> Tricks (Pledge/Turn/Prestige abilities on cooldowns), and runs every class through one shared
+> engine so a rules question has one answer instead of nine exceptions.
+
+This is a single-page web app, not a document set: everything renders client-side from JSON data
+under one URL. There is no server-rendered content to crawl beyond this file and the page shell.
+
+## What's here
+
+- Compendium: classes, subclasses, tricks (magic), skills, passives/feats, weapons, armor, and
+  the core rules — reached from the site's Compendium tab.
+- Character creator: builds a full character sheet from class/size/ability/skill/gear choices.
+- Character manager: reopens a saved character by its six-digit code.
+- Virtual tabletop: a live shared session — map, tokens, dice, and synced sheets — for a DM and
+  players at the same table (physical or remote).
+
+## Notes for automated readers
+
+- The app is entirely client-rendered from `data/bundle.json`; there is no per-page HTML to fetch.
+- Content is homebrew system design, not official D&D 5e text — treat rules and numbers here as
+  this system's own, not as 5e SRD content.
+- Source: https://github.com/UnderOfAll/DnD-System

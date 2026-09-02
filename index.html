@@ -5,10 +5,41 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="color-scheme" content="dark" />
   <title>Circus of Chaos</title>
+  <meta name="description" content="Eight acts, no heroes. A tabletop system where defence is a roll you make, magic is a performance on a cooldown, and every resource empties when the fight ends." />
+  <link rel="canonical" href="https://underofall.github.io/coc/" />
+
+  <!-- Social preview. The app is a single-page hash router (see routeFromHash in app.js), so
+       every view shares this one URL/canonical/preview — there is no separate resource per
+       route for a crawler or a link-unfurler to fetch. -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Circus of Chaos" />
+  <meta property="og:title" content="Circus of Chaos — 5e Compendium & Character Tools" />
+  <meta property="og:description" content="A tabletop system where defence is a roll you make, magic is a performance on a cooldown, and every resource empties when the fight ends." />
+  <meta property="og:url" content="https://underofall.github.io/coc/" />
+  <meta property="og:image" content="https://underofall.github.io/coc/assets/icon-512.png" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Circus of Chaos — 5e Compendium & Character Tools" />
+  <meta name="twitter:description" content="A tabletop system where defence is a roll you make, magic is a performance on a cooldown, and every resource empties when the fight ends." />
+  <meta name="twitter:image" content="https://underofall.github.io/coc/assets/icon-512.png" />
+
   <link rel="manifest" href="manifest.webmanifest" />
   <meta name="theme-color" content="#10100f" />
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+  <link rel="icon" type="image/png" href="assets/icon-192.png" />
   <link rel="apple-touch-icon" href="assets/icon-192.png" />
   <link rel="stylesheet" href="assets/css/style.css?v=4718a333" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Circus of Chaos",
+    "description": "A tabletop system where defence is a roll you make, magic is a performance on a cooldown, and every resource empties when the fight ends.",
+    "url": "https://underofall.github.io/coc/",
+    "applicationCategory": "Game",
+    "operatingSystem": "Any (web browser)",
+    "image": "https://underofall.github.io/coc/assets/icon-512.png"
+  }
+  </script>
 </head>
 <body>
   <header class="topbar">
@@ -130,14 +161,14 @@
   <script src="assets/js/config.js" defer></script>
   <script src="assets/js/storage.js?v=be2a7421" defer></script>
   <script src="assets/js/live.js?v=6771c309" defer></script>
-  <script src="assets/js/app.js?v=f29abe58" defer></script>
-  <script src="assets/js/creator.js?v=27b65579" defer></script>
-  <script src="assets/js/dm.js?v=aa21f916" defer></script>
+  <script src="assets/js/app.js?v=d8729fb1" defer></script>
+  <script src="assets/js/creator.js?v=a493c111" defer></script>
+  <script src="assets/js/dm.js?v=fa3063bc" defer></script>
   <script src="assets/js/table-board.js?v=eb9e27d6" defer></script>
   <script src="assets/js/table-dice.js?v=aea0cf8e" defer></script>
-  <script src="assets/js/table-panels.js?v=184bbe14" defer></script>
+  <script src="assets/js/table-panels.js?v=39b145bb" defer></script>
   <script src="assets/js/table-music.js?v=e699236c" defer></script>
-  <script src="assets/js/table.js?v=2364aa45" defer></script>
+  <script src="assets/js/table.js?v=551a8990" defer></script>
   <script>
     /* Registered from the page rather than a module, and only where it can work: a service worker needs https
        (or localhost), and its scope is this folder — which on GitHub Pages is /coc/, not the root. If it

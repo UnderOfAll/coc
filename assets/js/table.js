@@ -268,6 +268,7 @@ function tblIsMine(token) {
 
 function routeTable(arg) {
   const code = String(arg || "").replace(/\D/g, "").slice(0, 6);
+  setPageMeta("Play at a table", "A live Circus of Chaos session — shared map, tokens, dice, and synced sheets.");
   if (!CocStore.validCode(code)) { tblTeardown(); renderTableLanding(); return; }
   if (tbl && tbl.code === code) { return; }   // already sitting at this table; nothing to redo
   tblTeardown();

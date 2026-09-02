@@ -260,6 +260,17 @@ function legendHTML() {
       one.</p>`;
 }
 
+/* Best-effort per-view <title>/description. The app is a hash router on one URL (see routeFromHash
+   below), so this is for the browser tab and social/link previews, not for separate search-engine
+   URLs — a hash fragment isn't a resource a crawler can index on its own. Every route handler that
+   knows its own heading calls this once it does; routes that never call it keep the last title set,
+   which in practice is always the menu default from routeFromHash. */
+function setPageMeta(title, description) {
+  document.title = title ? title + " · Circus of Chaos" : "Circus of Chaos";
+  const meta = document.querySelector('meta[name="description"]');
+  if (meta && description) meta.setAttribute("content", description);
+}
+
 /* Which top-level view is on screen. The compendium is no longer the whole app: the landing menu
    and the character tools (creator, manager, live sheet) are peers of it. Each tool route is handled
    by creator.js, which registers itself in COC_ROUTES — so app.js never needs to know about them. */
@@ -279,7 +290,11 @@ function routeFromHash() {
   const arg = rest.join("/");
 
   // Landing menu: the default, and what an empty hash means.
-  if (!head) { showView("menu"); return; }
+  if (!head) {
+    showView("menu");
+    setPageMeta("", "Eight acts, no heroes. A tabletop system where defence is a roll you make, magic is a performance on a cooldown, and every resource empties when the fight ends.");
+    return;
+  }
 
   // Character tools, registered by creator.js.
   if (COC_ROUTES[head]) { showView("tool"); COC_ROUTES[head](decodeURIComponent(arg)); return; }
@@ -296,7 +311,9 @@ function selectCategory(key) {
   document.querySelectorAll(".nav-btn").forEach((b) => b.classList.toggle("active", asEl(b).dataset.key === key));
   $("#detail-view").classList.add("hidden");
   $("#list-view").classList.remove("hidden");
-  $("#list-title").textContent = (CATEGORIES.find((c) => c.key === key) || {}).label || "";
+  const label = (CATEGORIES.find((c) => c.key === key) || {}).label || "";
+  $("#list-title").textContent = label;
+  setPageMeta(label, `Every ${label.toLowerCase()} in the Circus of Chaos compendium.`);
   renderList(key);
   if (location.hash !== "#/" + key) history.replaceState(null, "", "#/" + key);
   pageScroller().scrollTop = listScroll[key] || 0;
@@ -721,6 +738,9 @@ function showDetail(key, id, keepScroll) {
   $("#list-view").classList.add("hidden");
   $("#detail-view").classList.remove("hidden");
   const entry = CATEGORIES.find((c) => c.key === key);
+  setPageMeta(it.name || id, it.summary || it.tagline || `${it.name || id} — ${entry.label} in the Circus of Chaos compendium.`);
+  const backBtn = $("#back");
+  if (backBtn) backBtn.textContent = "← " + entry.label;
   try {
     $("#detail").innerHTML = entry.render(it);
   } catch (err) {

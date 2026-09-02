@@ -451,6 +451,7 @@ function routeCreate() {
   navToken++;
   draft = blankDraft();
   ui.openSubs.clear();
+  setPageMeta("Create a character", "Build a Circus of Chaos character from scratch — class, size, abilities, skills, gear.");
   renderCreator();
 }
 
@@ -684,7 +685,7 @@ function stepIdentity() {
     <input id="cname" class="text" type="text" maxlength="40" value="${esc(draft.name)}" placeholder="Who are you?" />
     <label class="field-label">Portrait <span class="muted">(optional — stored with the character)</span></label>
     <div class="portrait-row">
-      ${draft.photo ? `<img class="portrait" src="${esc(draft.photo)}" alt="" />` : `<div class="portrait empty caption">No image yet</div>`}
+      ${draft.photo ? `<img class="portrait" src="${esc(draft.photo)}" alt="${esc(draft.name ? draft.name + "'s portrait" : "Character portrait")}" />` : `<div class="portrait empty caption">No image yet</div>`}
       <div class="portrait-actions"><input id="photo" type="file" accept="image/*" />
       ${draft.photo ? `<button class="btn-quiet" data-pick="clearphoto" data-val="1">Remove</button>` : ""}</div>
     </div>
@@ -934,6 +935,7 @@ async function saveDraft() {
 
 function routeManage() {
   navToken++;
+  setPageMeta("My characters", "Open a saved Circus of Chaos character with its six-digit code, or start a live session.");
   const recent = recentCodes();
   paint(`
     <div class="tool-head">
@@ -993,6 +995,7 @@ async function openByCode() {
  * table is shown instead — so this page is useful either way rather than assuming one setup. */
 function routeRoster() {
   navToken++;
+  setPageMeta("Find a lost code", "Recover a Circus of Chaos character code from this browser's history.");
   const head = `<div class="tool-head"><a class="back" href="#/">&larr; Menu</a>
     <h1>Find a lost code</h1></div>`;
   const local = () => {
@@ -1093,6 +1096,7 @@ function routeSheet(code) {
     ch.play = normalisePlay(ch);
     sheet = { code, ch };
     rememberCode(code, ch.name);
+    setPageMeta(ch.name || "Character sheet", `${ch.name || "A character"}'s Circus of Chaos sheet.`);
     renderSheet();
   }).catch((err) => {
     paint(`<div class="tool-head"><a class="back" href="#/manage">&larr; My characters</a>
@@ -1148,7 +1152,7 @@ function renderSheet() {
               its corner, in a wall of numbers, is not a control anybody sees. The portrait still opens
               it — one input, two labels pointing at it. */""}
         <label class="portrait-swap" for="sheet-photo" title="${ch.photo ? "Change the picture" : "Add a picture"}">
-          ${ch.photo ? `<img class="portrait" src="${esc(ch.photo)}" alt="" />`
+          ${ch.photo ? `<img class="portrait" src="${esc(ch.photo)}" alt="${esc(ch.name ? ch.name + "'s portrait" : "Character portrait")}" />`
             : `<div class="portrait empty">${esc((ch.name || "?")[0])}</div>`}
         </label>
         <div class="sheet-titles">

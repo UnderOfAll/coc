@@ -2587,7 +2587,7 @@ function paintHandout() {
       <strong>${esc(h.title || "Handout")}</strong>
       <button class="btn-quiet" data-tbl="hand-dismiss" data-val="${esc(id)}">Close</button>
     </div>
-    ${h.image ? `<img class="handout-img" src="${esc(h.image)}" alt="" />` : ""}
+    ${h.image ? `<img class="handout-img" src="${esc(h.image)}" alt="${esc(h.title || "Handout image")}" />` : ""}
     ${h.body ? `<p class="handout-body">${esc(h.body)}</p>` : ""}
   </div>`;
 }

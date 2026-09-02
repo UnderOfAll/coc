@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Circus of Chaos is a single-page app: every view lives under one URL (index.html, routed by
+     a #/ hash). A hash fragment is not a separate resource a crawler can index, so this sitemap
+     lists the one real URL rather than fabricating entries search engines would ignore anyway. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://underofall.github.io/coc/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>

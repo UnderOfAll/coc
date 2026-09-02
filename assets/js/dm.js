@@ -324,6 +324,7 @@ function dmNotesPut(code, notes) {
 
 async function routeDm(arg) {
   const code = String(arg || "").replace(/\D/g, "").slice(0, 6);
+  setPageMeta("The DM's screen", "Tables, notes, and enemies for a Circus of Chaos game master.");
   await dmFlushSave();          // whatever the last record still owed, before opening another
   if (!CocDm.validCode(code)) { dm = null; renderDmDoor(); return; }
   paint(`<div class="tool-head"><h1>Opening…</h1></div>`);
