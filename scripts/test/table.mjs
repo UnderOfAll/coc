@@ -3650,6 +3650,47 @@ await until(() => !!$('[data-act="tab"]'));
 ok(!$('[data-act="tab"][data-val="pet"]'), "and a character with no companion has no such field");
 await go("#/manage", 120);
 
+console.log("\n— THE DM'S CARDS, FRESH AT THE TABLE —");
+/* Kayki: "make the table refresh it automatically". A card edited after this device last opened #/dm used
+   to stay stale at the table until he remembered to open that page again. */
+const rfRoom = "445622", rfCode = "246802";
+peek(`window.__dmrecs["${rfCode}"] = { v: 1, name: "Fresh", tables: [], enemies: [
+    { id: "probe-beast", name: "Probe Beast", tier: "normal", hp: 7, ac: 11, speed: 30,
+      features: [{ name: "New Trick", description: "Written after the device last opened the DM page." }] }],
+  notes: [{ folder: "S", title: "Fresh note", body: "new" }] };
+  localStorage.setItem("coc:dm:enemies:${rfCode}", JSON.stringify([{ id: "probe-beast", name: "Probe Beast", tier: "normal", hp: 7, ac: 11, features: [] }]));
+  localStorage.setItem("coc:dm:notes:${rfCode}", JSON.stringify([{ folder: "S", title: "Old note", body: "old" }]));
+  window.__dmLoads = 0; window.__dmSaves = 0;
+  window.__realDmLoad = CocDm.load; window.__realDmSave = CocDm.save;
+  CocDm.load = async (c) => { window.__dmLoads++; return window.__realDmLoad(c); };
+  CocDm.save = async (c, r) => { window.__dmSaves++; return window.__realDmSave(c, r); };
+  localStorage.setItem("coc:dm:last", "${rfCode}");`);
+await peek(`CocLive.put("tables/${rfRoom}", { meta: { name: "Refresh test", createdAt: 1, activeScene: "s1" },
+  scenes: { s1: { name: "Ring", cols: 10, rows: 8, cell: 70, createdAt: 1 } } })`);
+// A player's browser first: it must not read anybody's DM record.
+peek(`localStorage.removeItem("coc:table:dm:${rfRoom}")`);
+await go("#/table/" + rfRoom, 300);
+ok(peek(`tbl.role`) === "player" && peek(`window.__dmLoads`) === 0, "a player's browser does not read the DM's record");
+ok(peek(`(tblEnemy("probe-beast").features || []).length`) === 0, "(the stale card is what this device holds)");
+await go("#/manage", 120);
+// Now the DM chair.
+peek(`localStorage.setItem("coc:table:dm:${rfRoom}", "1")`);
+await go("#/table/" + rfRoom, 300);
+await until(() => peek(`(tblEnemy("probe-beast").features || []).length`) === 1);
+ok(peek(`tbl.role`) === "dm" && peek(`(tblEnemy("probe-beast").features || []).map((f) => f.name).join()`) === "New Trick",
+  "sitting in the DM chair brings the card up to date, without opening #/dm");
+ok(peek(`dmCachedNotes("${rfCode}").map((n) => n.title).join()`) === "Fresh note", "and the notes");
+ok(peek(`window.__dmLoads`) === 1, `read once (${peek(`window.__dmLoads`)})`);
+peek(`paintEverything(); paintEverything();`);
+await wait(100);
+ok(peek(`window.__dmLoads`) === 1, "not again on every repaint");
+ok(peek(`window.__dmSaves`) === 0, "and nothing is written back to the record");
+await go("#/manage", 120);
+await peek(`CocLive.put("tables/${rfRoom}", null)`);
+peek(`CocDm.load = window.__realDmLoad; CocDm.save = window.__realDmSave; delete window.__dmrecs["${rfCode}"];
+  localStorage.removeItem("coc:dm:enemies:${rfCode}"); localStorage.removeItem("coc:dm:notes:${rfCode}");
+  localStorage.setItem("coc:dm:last", COC_BESTIARY_CODES[0]);`);
+
 console.log("\n— LEVELLING UP MID-SESSION —");
 /* Kayki: "they can level up without interrupting the table and automatically updating no?" A level-up
    pressed on the sheet beside the board must reach the figure for everyone, with nobody leaving. */

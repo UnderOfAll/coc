@@ -2247,6 +2247,20 @@ function tblDmNotesCode() {
 }
 /* The device's copy is drawn at once so the panel never opens empty, and the record is read behind it —
    once per visit to this table — in case the last note was written on the phone. */
+/* Once per sitting in the DM chair, per DM code: the bestiary and the notes this device copied off that
+   code are read again, so an edit made on another device — or straight in the database — is here
+   without anybody opening #/dm. Repaints the panel if what it shows changed. */
+function tblRefreshDmCaches() {
+  if (!tbl || tbl.role !== "dm" || typeof dmRefreshCaches !== "function") return;
+  const code = (typeof dmCode === "function") ? dmCode() : "";
+  if (!code || tbl.ui.dmCachesRead === code) return;
+  tbl.ui.dmCachesRead = code;
+  tbl.ui.notesRead = code;     // the same read covers the notes, so the notes panel need not repeat it
+  dmRefreshCaches(code).then((changed) => {
+    if (changed && tbl && ["dm", "notes", "enemy"].includes(tbl.ui.panel)) paintSide();
+  }).catch(() => { if (tbl && tbl.ui.dmCachesRead === code) { tbl.ui.dmCachesRead = ""; tbl.ui.notesRead = ""; } });
+}
+
 function tblRefreshDmNotes(code) {
   if (tbl.ui.notesRead === code) return;
   tbl.ui.notesRead = code;

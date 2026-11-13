@@ -813,6 +813,8 @@ function paintEverything() {
   tblSyncSheetCombat();
   // And a companion lent to this character follows it onto the sheet.
   tblSyncPet();
+  // The DM's cards and notes, fresh from the database once per sitting, not only when #/dm is opened.
+  tblRefreshDmCaches();
   paintPeek();
   paintLog();
   paintWho();

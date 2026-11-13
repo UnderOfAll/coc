@@ -275,6 +275,25 @@ async function dmNotesLoad(code) {
   return changed;
 }
 
+/* EVERYTHING THE TABLE KEEPS A COPY OF, re-read from the database. Kayki: "make the table refresh it
+   automatically" — the cards he built, what was lent to him and his notes were copied onto the device
+   only when #/dm was opened, so a card edited anywhere else reached the table only after he remembered
+   to open that page again. Read-only: nothing is adopted or saved here, because the table never holds
+   the whole record and a write assembled from it would be a partial one. A copy still waiting to be
+   saved from the DM page on this device wins — it is newer than what the database has. */
+async function dmRefreshCaches(code) {
+  const c = String(code || "");
+  if (!CocDm.validCode(c)) return false;
+  if (dmPendingSave && dmPendingSave.code === c) return false;
+  const rec = await CocDm.load(c);
+  if (!rec) return false;
+  const before = JSON.stringify([dmCachedEnemies(), dmCachedNotes(c)]);
+  dmCacheEnemies(c, rec.enemies || []);
+  dmCacheShared(c, rec.shared || {});
+  dmCacheNotes(c, rec.notes || []);
+  return JSON.stringify([dmCachedEnemies(), dmCachedNotes(c)]) !== before;
+}
+
 let dmNotesTimer = null;
 let dmNotesPend = null;                 // { code, notes } waiting out the debounce
 /* WRITTEN THE WAY A SHARE IS: read the record, change ONE key, write it back. The table has no open
