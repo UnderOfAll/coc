@@ -1720,6 +1720,10 @@ const UNIVERSAL_STATES = [
   ["restrained", "Restrained", "Speed 0, attacks against you have advantage, and you have disadvantage on Dex saves."],
   ["frightened", "Frightened", "Disadvantage while the source is in sight, and you cannot willingly move closer to it."],
   ["blinded", "Blinded", "You automatically fail sight checks; attacks against you have advantage and yours have disadvantage."],
+  /* Two of the Midway's creatures inflict it, and it had nowhere to be marked: Kayki, "the deafened
+     condition wasnt previously introduced or explained, no one has it". Their cards define it the same way
+     this does, which is what makes it worth a chip — it takes the Parry away. */
+  ["deafened", "Deafened", "You cannot hear, and you cannot take reactions — so you cannot Parry. Usually until the end of your next turn."],
   ["poisoned", "Poisoned", "Disadvantage on attack rolls and on ability checks."],
   ["stunned", "Stunned", "Speed 0, you cannot act, and attacks against you have advantage."],
   ["incapacitated", "Incapacitated", "No actions and no reactions — and you cannot Parry at all."],

@@ -1978,6 +1978,15 @@ ok(peek(`JSON.stringify(Object.keys(TBL_CONDITION_NAMES))`)
 ok(peek(`UNIVERSAL_STATE_IDS.includes("stringed")`) === false,
   "a mark is not offered as one of your own states");
 ok(peek(`!!TBL_CONDITION_NAMES.stringed`), "but the board knows what to call it");
+/* DEAFENED, which the Ovation and the Ringmaster's Voice inflict and nothing could mark. It takes the
+   Parry away, so it is a player's own state as well as a chip the DM presses on a figure. */
+ok(peek(`UNIVERSAL_STATE_IDS.includes("deafened")`) && peek(`TBL_CONDITION_NAMES.deafened`) === "Deafened",
+  "Deafened is in the one list, so the sheet offers it and the board can mark it");
+peek(`tblToggleCond("tRig", "deafened")`);
+await until(async () => ((await aget(`CocLive.get("tables/482910/tokens/tRig/conditions")`)) || []).includes("deafened"));
+ok(((await aget(`CocLive.get("tables/482910/tokens/tRig/conditions")`)) || []).includes("deafened"), "and marking it sticks to the figure");
+peek(`tblToggleCond("tRig", "deafened")`);
+await until(async () => !((await aget(`CocLive.get("tables/482910/tokens/tRig/conditions")`)) || []).includes("deafened"));
 /* AND IT ANSWERS ON THE PRESS, not when the database says so. It used to repaint when the write was
    ACKNOWLEDGED: instant on a good moment, five to ten seconds on a bad one, and every press in between
    read the stored list — still the old one — and asked for the very same change again. Kayki: "if I click
