@@ -134,7 +134,11 @@ peek(`window.__chars = { "123456": { v:1, name:"Rig", classId:"joker", subclassI
     method:"array", scores:{Strength:12,Dexterity:15,Constitution:14,Intelligence:10,Wisdom:8,Charisma:13},
     origin:{Charisma:2,Dexterity:1}, skills:[], armorId:"", shieldId:"", weapons:[], photo:"", notes:"" } };
   CocStore.load = async (c) => window.__chars[c] ? JSON.parse(JSON.stringify(window.__chars[c])) : null;
-  CocStore.save = async (c, ch) => { window.__chars[c] = ch; return true; };`);
+  // A COPY, as a real database keeps: storing the sheet's own object let a write to the "database" reach
+  // straight into the open sheet, which no real backend can do — and hid exactly the bug it should catch.
+  CocStore.save = async (c, ch) => { window.__chars[c] = JSON.parse(JSON.stringify(ch)); return true; };
+  CocStore.setField = async (c, f, v) => { const ch = window.__chars[c]; if (!ch) return false;
+    if (v == null) delete ch[f]; else ch[f] = JSON.parse(JSON.stringify(v)); return true; };`);
 
 console.log("\n— THE FRONT DOOR —");
 await go("#/table");
@@ -3505,6 +3509,137 @@ ok(peek(`tbl`) === null, "walking out closes the session");
 const gone = await aget(`CocLive.get("tables/${room}/presence")`);
 ok(gone && !gone[myClient], "and takes your name off the list");
 ok(gone && Object.keys(gone).length > 0, "while leaving everyone else on it");
+
+console.log("\n— A CREATURE LENT TO A CHARACTER —");
+/* The Sawdust Hound a player tamed in session 1. Kayki's spec: the full sheet for that player ONLY, they
+   move it, it has its own initiative rolled by them, it comes along between maps, one player, and the DM
+   keeps control and can take it back. Lent to the CHARACTER, so it is on their sheet, outside a session
+   and on any device. */
+const petRoom = "445599";
+const toks = () => JSON.parse(peek(`JSON.stringify(tblTokens())`));
+const rigRec = () => JSON.parse(peek(`JSON.stringify(window.__chars["123456"] || null)`));
+peek(`window.__chars["654321"] = Object.assign({}, window.__chars["123456"], { name: "Sable" });`);
+await peek(`CocLive.put("tables/${petRoom}", {
+  meta: { name: "Pet test", createdAt: 1, activeScene: "s1" },
+  scenes: { s1: { name: "Midway", cols: 12, rows: 8, cell: 70, createdAt: 1 },
+            s2: { name: "Backstage", cols: 12, rows: 8, cell: 70, createdAt: 2 } },
+  presence: { cpet: { name: "Rig", role: "player", charCode: "123456", at: Date.now() } },
+  tokens: {
+    tRig:   { name: "Rig", charCode: "123456", owner: "cpet", kind: "pc", x: 1, y: 1, size: 1, hp: 30, hpMax: 44, speed: 30 },
+    tSable: { name: "Sable", charCode: "654321", owner: "cother", kind: "pc", x: 2, y: 1, size: 1, hp: 20, hpMax: 20, speed: 30 },
+    tHound: { name: "Sawdust Hound", enemyId: "sawdust-hound", kind: "npc", scene: "s1", x: 5, y: 5, size: 1, hp: 9, hpMax: 9, speed: 40, initMod: 2 },
+    tUsher: { name: "Ticketing Usher", enemyId: "ticketing-usher", kind: "npc", scene: "s1", x: 7, y: 5, size: 1, hp: 11, hpMax: 11, speed: 30 } } })`);
+peek(`localStorage.setItem("coc:table:dm:${petRoom}", "1"); localStorage.setItem("coc:dm:last", COC_BESTIARY_CODES[0]);
+  localStorage.removeItem("coc:table:me:${petRoom}");`);
+await go("#/table/" + petRoom, 300);
+ok(peek(`tbl.role`) === "dm", "the DM sits down");
+peek(`tbl.ui.editToken = "tHound"; tbl.ui.panel = "dm"; paintSide();`);
+const lendChips = $$('[data-tbl="pet-lend"]').map((b) => b.textContent.trim());
+ok(lendChips.includes("Rig") && lendChips.includes("Sable"), `the editor offers it to the characters on the board (${lendChips})`);
+ok(!$$('[data-tbl="pet-lend"]').some((b) => /tRig|tSable/.test(b.dataset.val.split("|")[0])), "and only on a creature, not on a player's figure");
+click($('[data-tbl="pet-lend"][data-val="tHound|123456"]'));
+await until(() => toks().tHound && toks().tHound.petOf === "123456");
+let petTok = toks().tHound;
+ok(petTok.petOf === "123456", "lending writes the CHARACTER onto the figure, not a browser");
+ok(petTok.petCard && petTok.petCard.name === "Sawdust Hound" && (petTok.petCard.attacks || []).length,
+  "with the creature's whole card, which a player's browser has no other way to read");
+ok(petTok.scene == null, "and no map of its own, so it goes where the party goes");
+await until(() => rigRec() && rigRec().pet);
+ok(rigRec().pet && rigRec().pet.name === "Sawdust Hound" && rigRec().pet.table === petRoom,
+  "and it is on Rig's character record");
+ok(/Take it back/.test($("#vtt-side").textContent), "the DM's editor now says who has it and offers it back");
+ok(peek(`tblCanMove(tblTokens().tHound)`) === true, "the DM still moves it");
+ok(peek(`tblInitMine(["tHound"]).length`) === 0, "and does not roll its initiative while Rig is here");
+
+// Rig's browser.
+peek(`tbl.role = "player"; tbl.me.clientId = "cpet"; tbl.me.charCode = "123456"; tbl.me.name = "Rig";
+  tbl.ui.panel = ""; tbl.ui.editToken = ""; tbl.ui.petSig = ""; renderTableShell(); paintEverything();`);
+ok(peek(`tblCanMove(tblTokens().tHound)`) === true, "Rig can move it");
+ok(peek(`tblCanMove(tblTokens().tUsher)`) === false, "but not the DM's other creatures");
+ok($('[data-token="tHound"]').classList.contains("movable"), "and the board says so on the figure");
+ok(JSON.stringify(peek(`tblInitMine(["tRig", "tHound", "tUsher"])`)) === JSON.stringify(["tRig", "tHound"]),
+  "Rig rolls initiative for himself and for it, not for the usher");
+peek(`tblOpenToken("tHound")`);
+const petText = $("#vtt-side").textContent.replace(/\s+/g, " ");
+ok(/Lent to you by the DM/.test(petText) && /Bite/.test(petText) && /Runs in a Pack/.test(petText),
+  "opening it shows Rig its whole card — the bite, the pack feature");
+$("#mine-amt").value = "3";
+click($('[data-tbl="mine-hp"][data-val="tHound|-1"]'));
+await until(() => toks().tHound.hp === 6);
+ok(toks().tHound.hp === 6, "Rig tracks its hit points (9 - 3 = 6)");
+click($('[data-tbl="mine-cond"][data-val="tHound|prone"]'));
+await until(() => (toks().tHound.conditions || []).includes("prone"));
+ok((toks().tHound.conditions || []).includes("prone"), "and its conditions");
+await until(() => rigRec().pet && rigRec().pet.hp === 6 && (rigRec().pet.conditions || []).includes("prone"));
+ok(rigRec().pet.hp === 6 && rigRec().pet.conditions.includes("prone"), "and the sheet's copy follows the table");
+peek(`tbl.ui.panel = "sheet"; paintSide();`);
+await until(() => !!$('#vtt-sheet [data-act="tab"][data-val="pet"]'));
+ok(!!$('#vtt-sheet [data-act="tab"][data-val="pet"]'), "Rig's sheet, open beside the board, has a Companion field");
+click($('#vtt-sheet [data-act="tab"][data-val="pet"]'));
+await wait(60);
+const petPane = ($('#pane-pet') || {}).textContent || "";
+ok(/Sawdust Hound/.test(petPane) && /Bite/.test(petPane) && /\b6\b/.test(petPane), "with the hound's card and the table's hit points in it");
+// A tap on the sheet saves it whole, from its own copy — which must still have the hound in it.
+peek(`persist()`);
+await wait(600);
+ok(rigRec().pet && rigRec().pet.name === "Sawdust Hound", "and a save from that sheet keeps the companion rather than writing it off");
+// The race that matters: the table changes the hound WHILE the sheet is open, then the sheet saves.
+await peek(`CocLive.put("tables/${petRoom}/tokens/tHound/hp", 5)`);
+await until(() => rigRec().pet && rigRec().pet.hp === 5);
+peek(`persist()`);
+await wait(600);
+ok(rigRec().pet && rigRec().pet.hp === 5,
+  `a change the table made while the sheet was open survives that sheet's next save (${rigRec().pet && rigRec().pet.hp})`);
+click($('[data-tbl="sheet-close"]'));
+
+// Sable's browser: the usual enemy card, nothing more.
+peek(`tbl.me.clientId = "cother"; tbl.me.charCode = "654321"; tbl.me.name = "Sable";
+  tbl.ui.panel = ""; tbl.ui.petSig = ""; renderTableShell(); paintEverything();`);
+ok(peek(`tblCanMove(tblTokens().tHound)`) === false, "another player cannot move it");
+ok(JSON.stringify(peek(`tblInitMine(["tRig", "tHound"])`)) === "[]", "or roll for it");
+const sableSees = peek(`figureInfoHTML("tHound")`).replace(/\s+/g, " ");
+ok(!/Lent to you/.test(sableSees) && !/Bite/.test(sableSees) && /DM's to know/.test(sableSees),
+  "and sees the limited card — no hit points, no attacks");
+ok(rigRec().pet && rigRec().pet.name === "Sawdust Hound", "and Sable's browser never touches Rig's sheet");
+ok(!(rigRec().pet && JSON.parse(peek(`JSON.stringify(window.__chars["654321"].pet || null)`))),
+  "nor puts it on Sable's");
+
+// Back to the DM: Rig steps out, the map changes, then it is taken back.
+peek(`tbl.role = "dm"; tbl.me.charCode = ""; tbl.me.name = "DM"; renderTableShell(); paintEverything();`);
+await peek(`CocLive.put("tables/${petRoom}/presence/cpet/at", Date.now() - 120000)`);
+await until(() => peek(`tblInitMine(["tHound"]).length`) === 1);
+ok(peek(`tblInitMine(["tHound"]).length`) === 1, "with Rig gone from the room, the DM rolls for it");
+await peek(`CocLive.put("tables/${petRoom}/meta/activeScene", "s2")`);
+await until(() => peek(`tblSceneId()`) === "s2");
+ok(peek(`tblInitCandidates()`).includes("tHound") && !peek(`tblInitCandidates()`).includes("tUsher"),
+  "on the next map it is still in the fight and the usher is not");
+ok(!!$('[data-token="tHound"]') && !$('[data-token="tUsher"]'), "and it is standing on the board there");
+peek(`tbl.ui.editToken = "tHound"; tbl.ui.panel = "dm"; paintSide();`);
+click($('[data-tbl="pet-back"][data-val="tHound"]'));
+await until(() => !toks().tHound.petOf);
+petTok = toks().tHound;
+ok(!petTok.petOf && !petTok.petCard, "taking it back clears who had it, and the card copy");
+ok(petTok.scene === "s2", "and it belongs to the map it is standing on now");
+await until(() => !rigRec().pet);
+ok(!rigRec().pet, "and it comes off Rig's sheet");
+ok(peek(`tblInitCandidates()`).includes("tHound"), "still on this map, now as the DM's");
+await go("#/manage", 120);
+await peek(`CocLive.put("tables/${petRoom}", null)`);
+// Outside any table: the plain sheet page shows the companion the table last wrote.
+peek(`window.__chars["654321"].pet = { table: "445599", tableName: "Pet test", token: "tX", name: "Tamed Hound",
+  card: null, hp: 4, hpMax: 9, speed: 40, initMod: 2, conditions: [] };`);
+await go("#/sheet/654321", 300);
+await until(() => !!$('[data-act="tab"][data-val="pet"]'));
+click($('[data-act="tab"][data-val="pet"]'));
+await wait(60);
+ok(/Tamed Hound/.test(($('#pane-pet') || {}).textContent || "") && /\b4\b/.test(($('#pane-pet') || {}).textContent || ""),
+  "the sheet page, outside any session, shows the companion and its hit points");
+await go("#/manage", 120);
+peek(`delete window.__chars["654321"]`);
+await go("#/sheet/123456", 300);
+await until(() => !!$('[data-act="tab"]'));
+ok(!$('[data-act="tab"][data-val="pet"]'), "and a character with no companion has no such field");
+await go("#/manage", 120);
 
 console.log("\n— TABLES YOU HAVE SAT AT —");
 /* HOWEVER YOU GOT THERE. Kayki: "my table even after opening from my dm page doesnt appear in the history

@@ -137,7 +137,7 @@ function tblCanMove(token) {
      class says a Clone does not move on its own once placed, and Kayki asked for that honoured rather
      than merely drawn. It is the one place the board refuses a drag instead of counting it. */
   if (token.spawn) return false;
-  return tblIsMine(token);
+  return tblIsMine(token) || tblIsMyPet(token);
 }
 /* Whose figure this is. A Circus of Chaos player is identified by their character code; anyone playing
    another system has no code, so the browser that placed the figure owns it. Both, because one table
@@ -264,6 +264,16 @@ function tblIsMine(token) {
      stayed "mine" forever. A figure from an older table has no holder, which the seat panel shows as free
      to take, and taking it writes the holder. */
   return !!token && !!token.owner && token.owner === tbl.me.clientId;
+}
+
+/* A CREATURE THE DM HAS LENT TO A CHARACTER — a tamed Sawdust Hound. Kayki: "full sheet visible to that
+   player and only that player", they move it, it rolls its own initiative, it comes along between maps,
+   and the DM keeps everything and can take it back.
+   It is lent to the CHARACTER, not to a browser: `petOf` is a character code, so the player who sits
+   down on a new device with the same character still has it. The DM's chair never counts as the
+   player's — the DM already moves everything, and must not be offered the player's half of it. */
+function tblIsMyPet(token) {
+  return !!token && !!token.petOf && tbl.role !== "dm" && !!tbl.me.charCode && token.petOf === tbl.me.charCode;
 }
 
 
@@ -801,6 +811,8 @@ function paintEverything() {
   paintTurnBar();
   // The DM's fight is the fight: an open sheet follows the order bar in or out of combat.
   tblSyncSheetCombat();
+  // And a companion lent to this character follows it onto the sheet.
+  tblSyncPet();
   paintPeek();
   paintLog();
   paintWho();
@@ -1354,7 +1366,7 @@ document.addEventListener("click", (e) => {
   else if (act === "mine-save" || act === "mine-hp" || act === "mine-cond") {
     const [id, arg] = String(val).split("|");
     const t = tblTokens()[id];
-    if (!t || !(tbl.role === "dm" || tblIsMine(t))) return;
+    if (!t || !(tbl.role === "dm" || tblIsMine(t) || tblIsMyPet(t))) return;
     if (act === "mine-save") {
       // Same rule as the DM's editor: an empty link box leaves a STORED picture alone rather than
       // wiping it. Only a cleared link means "take it off".
@@ -1575,6 +1587,9 @@ document.addEventListener("click", (e) => {
   else if (act === "ed-close") { tbl.ui.editToken = ""; paintSide(); }
   else if (act === "ed-save") tblSaveToken(val).catch(tblFail);
   else if (act === "ed-dup") tblDuplicate(val).catch(tblFail);
+  // The editor is a side panel, which the stream does not repaint — so it says what it just did itself.
+  else if (act === "pet-lend") { const [id, code] = String(val).split("|"); tblLendPet(id, code).then(paintSide, tblFail); }
+  else if (act === "pet-back") tblTakePetBack(val).then(paintSide, tblFail);
   else if (act === "npc-shape") { tbl.ui.npcShape = val; paintSide(); }
   else if (act === "bestiary") tblDropEnemy(val).catch(tblFail);
   else if (act === "keep-table") tblKeepTableOnDm().catch(tblFail);
@@ -1603,6 +1618,9 @@ document.addEventListener("click", (e) => {
     }
   }
   else if (act === "ed-del") {
+    // A companion removed from the board leaves its character's sheet as well.
+    const gone = tblTokens()[val];
+    if (gone && gone.petOf) tblClearPetRecord(gone.petOf, val).catch(() => {});
     CocLive.del(tblPath("tokens/" + val)).catch(tblFail);
     tbl.ui.editToken = ""; paintSide();
   }

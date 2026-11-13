@@ -671,13 +671,19 @@ function tblInitMine(need) {
   return need.filter((id) => {
     const t = tokens[id];
     if (!t) return false;
-    return tblIsMine(t) || (tbl.role === "dm" && !tblHolderPresent(t));
+    return tblIsMine(t) || tblIsMyPet(t) || (tbl.role === "dm" && !tblHolderPresent(t));
   });
 }
 
 /* Is the browser that holds this figure still at the table? Presence answers it, the same way the DM
    chair does — otherwise a player who closed their laptop mid-fight would stall the whole gather. */
 function tblHolderPresent(t) {
+  /* A lent creature is held by its CHARACTER, so the question is whether anybody playing that character
+     is in the room — on whichever device. If not, the DM rolls for it, exactly as for a player who left. */
+  if (t && t.petOf) {
+    return Object.entries(tbl.data.presence || {})
+      .some(([cid, w]) => w && w.role !== "dm" && w.charCode === t.petOf && tblPresenceFresh(cid, w));
+  }
   if (!t || !t.owner) return false;
   return tblPresenceFresh(t.owner);
 }
@@ -1434,6 +1440,10 @@ async function tblDuplicate(id) {
   delete copy.charCode;
   delete copy.owner;
   delete copy.play;
+  // Nor is a copy of somebody's companion theirs too: the DM lends one creature, and a duplicate is the
+  // DM's own (tblPlaceNpc puts it on the map it was made on).
+  delete copy.petOf;
+  delete copy.petCard;
   // The copy carries the same `art:` key its twin does — one picture, however many goblins.
   return tblPlaceNpc(copy);
 }
@@ -1525,6 +1535,7 @@ function figureInfoHTML(id) {
   }
   // Your own figure, in a game with no Circus of Chaos sheet behind it: this IS your sheet, so it is
   // yours to change. Somebody else's is read-only.
+  if (tblIsMyPet(t)) return petPanelHTML(id, t);
   if (tblIsMine(t) && !tbl.me.charCode) return myFigureHTML(id, t);
   /* Your own figure, with a sheet behind it, has no panel of its own any more: the conditions and the way
      off the table both live on the sheet, and a second window saying the same things is what Kayki asked
@@ -1605,6 +1616,7 @@ function tokenEditorHTML(id) {
       <button class="btn-quiet" data-tbl="ed-close">Close</button>
     </div>
     ${tokenEngineHTML(id, t)}
+    ${petLendHTML(id, t)}
     ${t.enemyId ? `<p class="panel-sub">Its card</p>${enemyReadHTML(t)}` : ""}
     ${t.play ? `<p class="panel-sub">In this fight <span class="muted">— from their sheet</span></p>
       ${tblPlayReadHTML(t)}` : ""}
@@ -1626,6 +1638,160 @@ async function tblSaveToken(id) {
     initMod: Math.max(-5, Math.min(20, Number(($("#ed-init") || {}).value) || 0)),
   }, tblImagePatch("ed", t.image));
   await CocLive.patch(tblPath("tokens/" + id), patch);
+}
+
+/* ---------------------------------------------------------------- a creature lent to a character
+ *
+ * The Sawdust Hound a player tamed in session 1. The DM lends it to ONE character; that player moves it,
+ * rolls its initiative, tracks its hit points and conditions, and is the only one shown its whole card.
+ * It stands on every map, like the party does. The DM keeps everything and can take it back.
+ *
+ * Where it lives: the FIGURE says who has it (`petOf`, a character code) and carries a copy of the card
+ * (`petCard`), because the bestiary belongs to the DM's code and a player's browser cannot read it. The
+ * CHARACTER carries a copy of the whole thing (`pet`), so the sheet shows it outside a session and on a
+ * new device. The figure is the truth at the table; the character's copy is what the table last said.
+ */
+
+/* The characters on this board, by code — the only people a creature can be lent to. */
+function tblSeatedCharacters() {
+  const seen = new Map();
+  for (const t of Object.values(tblTokens())) {
+    if (t && t.charCode && !seen.has(t.charCode)) seen.set(t.charCode, String(t.name || t.charCode));
+  }
+  return [...seen.entries()];
+}
+
+/* What a character's sheet keeps of it. Hit points and conditions as the table last had them. */
+function tblPetRecord(id, t) {
+  return {
+    table: tbl.code, tableName: String((tbl.data.meta || {}).name || "").slice(0, 60), token: id,
+    name: String(t.name || "Companion").slice(0, 40), card: t.petCard || null,
+    hp: Number(t.hp) || 0, hpMax: Number(t.hpMax) || 0, speed: Number(t.speed) || 30,
+    initMod: Number(t.initMod) || 0,
+    conditions: Array.isArray(t.conditions) ? t.conditions.slice() : [],
+  };
+}
+
+/* The card as it is lent. A picture stored as data is left off: the figure already wears it, and a
+   card copied twice more (figure, sheet) is no place for a hundred kilobytes of it. */
+function tblPetCard(t) {
+  const e = t && t.enemyId ? tblEnemy(t.enemyId) : null;
+  if (!e) return null;
+  const card = JSON.parse(JSON.stringify(e));
+  if (typeof card.image === "string" && card.image.startsWith("data:")) delete card.image;
+  return card;
+}
+
+/* Off a character's sheet — but only if what the sheet holds is THIS creature from THIS table, so taking
+   one back here can never erase a companion the character has somewhere else. */
+async function tblClearPetRecord(code, id) {
+  if (!code) return;
+  const ch = await CocStore.load(code).catch(() => null);
+  const pet = ch && ch.pet;
+  if (!pet || pet.table !== tbl.code || (id && pet.token !== id)) return;
+  await CocStore.setField(code, "pet", null);
+  if (typeof setSheetPet === "function") setSheetPet(code, null);
+}
+
+async function tblLendPet(id, code) {
+  if (tbl.role !== "dm" || !CocStore.validCode(code)) return;
+  const t = tblTokens()[id];
+  if (!t || t.charCode || t.spawn) return;
+  const before = t.petOf;
+  const card = tblPetCard(t);
+  // No `scene`: it goes where the party goes, on every map, exactly as a player's own figure does.
+  await CocLive.patch(tblPath("tokens/" + id), { petOf: code, petCard: card, scene: null });
+  const who = (tblSeatedCharacters().find(([c]) => c === code) || [code, code])[1];
+  await CocLive.push(tblPath("log"), {
+    t: tblStamp(), who: "DM", kind: "system", text: `${t.name || "A creature"} now runs with ${who}`,
+  });
+  if (before && before !== code) await tblClearPetRecord(before, id).catch(() => {});
+  await CocStore.setField(code, "pet", tblPetRecord(id, Object.assign({}, t, { petOf: code, petCard: card })))
+    .catch(() => { /* the player's own browser writes it too, the moment it sees the figure */ });
+}
+
+async function tblTakePetBack(id) {
+  if (tbl.role !== "dm") return;
+  const t = tblTokens()[id];
+  if (!t || !t.petOf) return;
+  // Back to being one of the DM's creatures: on the map it is standing on now, and on no other.
+  await CocLive.patch(tblPath("tokens/" + id), { petOf: null, petCard: null, scene: tblSceneId() });
+  await CocLive.push(tblPath("log"), {
+    t: tblStamp(), who: "DM", kind: "system", text: `${t.name || "The creature"} goes back to the DM`,
+  });
+  await tblClearPetRecord(t.petOf, id).catch(() => {});
+}
+
+/* The DM's half, inside the figure editor. */
+function petLendHTML(id, t) {
+  if (t.charCode || t.spawn || t.kind !== "npc") return "";
+  const seated = tblSeatedCharacters();
+  const holder = t.petOf ? ((seated.find(([c]) => c === t.petOf) || [])[1] || "character " + t.petOf) : "";
+  return `<p class="panel-sub">Lend it to a player <span class="muted">— they move it, roll its initiative
+      and see its whole card; nobody else does</span></p>
+    ${t.petOf
+      ? `<p>Runs with <strong>${esc(holder)}</strong>. It follows the party onto every map.</p>
+         <div class="hp-controls"><button class="btn-quiet" data-tbl="pet-back" data-val="${esc(id)}">Take it back</button></div>`
+      : ""}
+    ${seated.filter(([c]) => c !== t.petOf).length
+      ? `<div class="chips">${seated.filter(([c]) => c !== t.petOf).map(([c, name]) =>
+          `<button class="chip" data-tbl="pet-lend" data-val="${esc(id)}|${esc(c)}">${t.petOf ? "Give to " : ""}${esc(name)}</button>`).join("")}</div>`
+      : t.petOf ? "" : `<p class="muted">Nobody with a character is on the board yet.</p>`}`;
+}
+
+/* The player's half: the whole creature, theirs to run. Hit points and conditions are tracked here
+   because this is the one panel that has them — the table tracks, it never decides (app-is-a-tracker). */
+function petPanelHTML(id, t) {
+  const pct = t.hpMax ? Math.max(0, Math.min(100, Math.round((Number(t.hp) || 0) / t.hpMax * 100))) : 0;
+  const conds = tblConds(id, t);
+  return `<section class="panel">
+    <h2>${esc(t.name || "Your companion")}</h2>
+    <p class="muted">Lent to you by the DM. You move it and roll its initiative; nobody else at the table
+      sees this card.</p>
+    ${t.image ? `<button type="button" class="art-open" data-tbl="art" data-val="${esc(id)}" title="See the picture">
+        <img class="figure-art" src="${esc(tblArt(t.image))}" alt="${esc(t.name || "")}" /></button>` : ""}
+    ${t.hpMax ? `<div class="hp-head"><span class="panel-sub">Hit points</span>
+        <div class="hp-num ${pct <= 25 ? "hurt" : ""}"><strong>${esc(t.hp)}</strong><span>/ ${esc(t.hpMax)}</span></div></div>
+      <div class="hp-bar"><div class="hp-fill ${pct <= 25 ? "hurt" : ""}" style="transform:scaleX(${pct / 100})"></div></div>`
+      : `<p class="muted">No hit points recorded for it.</p>`}
+    <div class="hp-controls">
+      <input id="mine-amt" class="num" type="number" min="1" value="1" aria-label="Amount" />
+      <button class="btn-quiet" data-tbl="mine-hp" data-val="${esc(id)}|-1">Damage</button>
+      <button class="btn-quiet" data-tbl="mine-hp" data-val="${esc(id)}|1">Heal</button>
+    </div>
+    <p class="panel-sub">What it is under</p>
+    <div class="chips">${Object.entries(TBL_CONDITION_NAMES).map(([k, label]) =>
+      `<button class="chip ${conds.includes(k) ? "on" : ""}" data-tbl="mine-cond"
+        data-val="${esc(id)}|${k}">${esc(label)}</button>`).join("")}</div>
+    <p class="panel-sub">Speed</p>
+    <p>${esc(Number(t.speed) || 30)} ft${t.size > 1 ? ` <span class="muted">&middot; ${esc(t.size)} squares across</span>` : ""}
+      <span class="muted">&middot; initiative ${esc(sign(Number(t.initMod) || 0))}</span></p>
+    ${t.petCard && typeof renderEnemy === "function"
+      ? `<div class="enemy-sheet">${renderEnemy(t.petCard)}</div>`
+      : `<p class="muted">The DM has not given it a card — ask them what it can do.</p>`}
+  </section>`;
+}
+
+/* The player's browser keeps the character's copy in step with the figure. Its own browser, because a
+   sheet saves itself whole from the copy it holds: written from anywhere else, the next tap on that
+   sheet would put back a copy with no companion in it. So the copy in memory is changed too. Written
+   only when what the table says has changed, so a fight is not a stream of saves. */
+function tblSyncPet() {
+  if (!tbl || !tbl.gotData || tbl.role === "dm") return;
+  const code = tbl.me.charCode;
+  if (!code) return;
+  const mine = Object.entries(tblTokens()).find(([, t]) => t && t.petOf === code);
+  const want = mine ? tblPetRecord(mine[0], mine[1]) : null;
+  const sig = (code + "|") + JSON.stringify(want);
+  if (sig === tbl.ui.petSig) return;
+  tbl.ui.petSig = sig;
+  if (want) {
+    CocStore.setField(code, "pet", want).catch(() => { tbl.ui.petSig = ""; });
+    if (typeof setSheetPet === "function") setSheetPet(code, want);
+  } else {
+    // Nothing lent here: a companion this table lent before, and has since taken back, comes off.
+    tblClearPetRecord(code, "").catch(() => {});
+  }
 }
 
 /* A guest's figure is the only record they have here, so they keep it themselves: their name, their hit

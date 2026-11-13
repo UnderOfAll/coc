@@ -398,7 +398,7 @@ function paintPeek() {
   // Anchored to the figure's own top-right corner, in stage coordinates.
   const sx = tbl.view.x + ((Number(t.x) || 0) + size) * cell * tbl.view.z;
   const sy = tbl.view.y + (Number(t.y) || 0) * cell * tbl.view.z;
-  const showHp = tbl.role === "dm" || tblIsMine(t);
+  const showHp = tbl.role === "dm" || tblIsMine(t) || tblIsMyPet(t);
   const conds = tblConds(id, t);
   const pct = t.hpMax ? Math.max(0, Math.min(100, Math.round((Number(t.hp) || 0) / t.hpMax * 100))) : 0;
   host.classList.remove("hidden");
@@ -433,7 +433,9 @@ function paintPeek() {
     ${tblArt(t.image)
       ? `<button class="btn-quiet" data-tbl="art" data-val="${esc(id)}">See the picture</button>` : ""}
     ${tbl.role === "dm"
-      ? `<button class="btn-quiet" data-tbl="peek-edit" data-val="${esc(id)}">Edit this figure</button>` : ""}`;
+      ? `<button class="btn-quiet" data-tbl="peek-edit" data-val="${esc(id)}">Edit this figure</button>` : ""}
+    ${tblIsMyPet(t)
+      ? `<button class="btn-quiet" data-tbl="peek-edit" data-val="${esc(id)}">Its whole card</button>` : ""}`;
   tblFitPeek(host, sx, sy);
 }
 

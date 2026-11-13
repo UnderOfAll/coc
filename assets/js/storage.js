@@ -142,6 +142,24 @@ function cocMakeStore(node, localPrefix, localIndex) {
     async load(code) { return backend.load(code); },
     async save(code, character) { return backend.save(code, character); },
     async remove(code) { return backend.remove(code); },
+    /* ONE FIELD, NOT THE WHOLE RECORD. A sheet saves itself whole, from its own copy; a second writer
+       doing the same — the table writing a lent companion onto a character — would put back whatever
+       that copy was missing. The cloud writes just the branch; the others have no branches, so they
+       read, change one key and write. Null removes it. */
+    async setField(code, field, value) {
+      if (mode === "firebase") {
+        const url = `${cfg.firebaseUrl.replace(/\/$/, "")}/${node}/${code}/${field}.json`;
+        const res = value == null
+          ? await fetch(url, { method: "DELETE" })
+          : await fetch(url, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(value) });
+        if (!res.ok) throw new Error("cloud save failed: " + res.status);
+        return true;
+      }
+      const ch = await backend.load(code);
+      if (!ch) return false;
+      if (value == null) delete ch[field]; else ch[field] = value;
+      return backend.save(code, ch);
+    },
     /* Every saved character in one call. Used only by the recovery roster. */
     async all() {
       if (backend.all) return backend.all();

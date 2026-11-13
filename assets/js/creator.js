@@ -1206,6 +1206,7 @@ function sheetFields(d, p, ch) {
     ["attacks", "Attacks", d.carried.length, attacksPanel(d)],
     ...(d.tricks.length ? [["tricks", "Tricks", d.tricks.length, tricksPanel(d, p)]] : []),
     ["features", "Features", d.features.length, featuresPanel(d, p)],
+    ...(ch.pet ? [["pet", "Companion", "", petSheetPanel(ch.pet)]] : []),
     ["gear", "Gear", "", gearPanel(d, ch)],
     ["inventory", "Inventory", items.length || "", inventoryPanel(ch, items)],
     // Levelling and deleting are not play: they are things you do between sessions, and a level-up
@@ -1225,6 +1226,37 @@ function sheetFields(d, p, ch) {
     `<div class="pane" id="pane-${esc(id)}" data-pane="${esc(id)}" role="tabpanel"
       aria-labelledby="tab-${esc(id)}"${ui.tab === id ? "" : " hidden"}>${html}</div>`).join("");
   return `<div class="tab-strip" role="tablist">${tabs}</div><div class="panes">${panes}</div>`;
+}
+
+/* A CREATURE THE DM LENT THIS CHARACTER — Kayki: the player sees "the pet they currently have on their
+   sheet even outside a session". It is RUN at the table, which is where its hit points and conditions
+   change, so this is the record of what the table last said rather than a second place to edit it. */
+function petSheetPanel(pet) {
+  const names = typeof TBL_CONDITION_NAMES !== "undefined" ? TBL_CONDITION_NAMES : {};
+  const conds = Array.isArray(pet.conditions) ? pet.conditions : [];
+  return `<section class="panel"><h2>${esc(pet.name || "Companion")}</h2>
+    <p class="muted">Lent to you by the DM${pet.tableName ? ` at ${esc(pet.tableName)}` : ""}. You move it and
+      roll its initiative at the table, and its hit points and conditions are tracked there — this is what
+      the table last said.</p>
+    <p><strong>${esc(Number(pet.hp) || 0)}</strong> / ${esc(Number(pet.hpMax) || 0)} hit points
+      <span class="muted">&middot; ${esc(Number(pet.speed) || 30)} ft &middot; initiative ${esc(sign(Number(pet.initMod) || 0))}</span></p>
+    ${conds.length ? `<div class="chips">${conds.map((c) => `<span class="chip on">${esc(names[c] || c)}</span>`).join("")}</div>` : ""}
+    ${pet.card && typeof renderEnemy === "function"
+      ? `<div class="enemy-sheet">${renderEnemy(pet.card)}</div>`
+      : `<p class="muted">The DM has not given it a card — ask them what it can do.</p>`}
+  </section>`;
+}
+
+/* The table says this character's companion changed. The copy in memory has to change with it, because
+   this sheet saves itself whole from that copy — leave it stale and the next tap writes the companion
+   back off (or back on). Repainted only when it can be seen to change. */
+function setSheetPet(code, pet) {
+  if (!sheet || sheet.code !== code || !sheet.ch) return;
+  const before = sheet.ch.pet || null;
+  if (JSON.stringify(before) === JSON.stringify(pet || null)) return;
+  if (pet) sheet.ch.pet = pet; else delete sheet.ch.pet;
+  if (!pet && ui.tab === "pet") ui.tab = "status";
+  if (!before !== !pet || ui.tab === "pet") renderSheet();
 }
 
 /* After a cast that forces a save, ask the one question the app cannot answer for itself. */
