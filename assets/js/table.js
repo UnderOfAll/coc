@@ -1691,6 +1691,7 @@ function tblDiagnostics() {
       here: Object.keys(tbl.data.presence || {}).length,
     } : null,
     trace: TBL_TRACE.slice(-25),
+    music: typeof tblMusicDiagnostics === "function" ? tblMusicDiagnostics() : null,
   };
 }
 
@@ -1720,6 +1721,12 @@ function debugPanelHTML() {
       <p class="panel-sub">Scene</p>
       ${row("grid", `${d.scene.cols}x${d.scene.rows} @ ${d.scene.cell}px${d.scene.grid ? "" : " (off)"}`)}
       ${row("map", d.scene.image)}
+      <p class="panel-sub">Music</p>
+      ${row("player", d.music ? (d.music.yt ? `youtube ${d.music.yt.state}${d.music.yt.at != null ? " @" + d.music.yt.at + "s" : ""}${d.music.yt.muted ? " MUTED" : ""}`
+        : d.music.audio ? `file ${d.music.audio.paused ? "paused" : "playing"} @${d.music.audio.at}s` : "none") : "")}
+      ${row("room is at", d.music && d.music.now ? `${d.music.now.roomAt}s${d.music.now.playing ? "" : " (paused)"}` : "nothing playing")}
+      ${row("sound allowed / page touched", d.music ? `${d.music.allowed ? "yes" : "no"} / ${d.music.touched}` : "")}
+      ${row("events logged", d.music ? String(d.music.trace.length) : "")}
       <p class="panel-sub">This table</p>
       ${row("figures / strokes / rolls / here",
         d.counts ? `${d.counts.figures} / ${d.counts.strokes} / ${d.counts.rolls} / ${d.counts.here}` : "")}

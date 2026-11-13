@@ -245,6 +245,25 @@ const back = await ytVol(0.5);
 ok(back && back.muted === false && back.vol === 50,
   "and coming off the bottom unmutes it AND restores the level — unMute must run before setVolume, or it puts the old one back");
 
+/* WHERE THE SECONDS GO. Kayki hears a track 5-10s after it "started", on every device, and no probe here
+   could reproduce it — so his devices write it down instead. Off unless diagnostics are on: a player's
+   browser keeps no log of anything. */
+ok((await dm.evaluate(() => tblMusicDiagnostics().trace.length)) === 0,
+  "with diagnostics off, the music keeps no log at all");
+await dm.evaluate(() => localStorage.setItem("coc:debug", "1"));
+await dm.evaluate((r) => CocLive.put(`tables/${r}/music/now`, {
+  kind: "youtube", src: "jNQXAC9IVRw", title: "YT2", playing: true, pos: 0, at: Date.now(), gen: 45 }), ROOM);
+await wait(5000);
+const md = await dm.evaluate(() => tblDiagnostics().music);
+const said = (w, d) => md.trace.some((e) => e.what === w && (!d || String(e.detail).includes(d)));
+ok(said("told", "PLAY youtube"), "with them on, it notes being told to play, and where the room was");
+ok(said("yt load", "jNQXAC9IVRw"), "that it handed the player the new track");
+ok(said("yt state", "playing"), "and when the player actually began — the gap between the two is the answer");
+ok(md.yt && md.yt.state === "playing" && md.now && md.now.playing, `and the snapshot agrees (${JSON.stringify(md.yt)})`);
+ok(md.trace.every((e) => e.ago >= 0), "with every entry timed");
+ok(md.trace.filter((e) => e.what === "yt play").length <= 1, "and the 2.5s tick does not flood it");
+await dm.evaluate(() => localStorage.removeItem("coc:debug"));
+
 /* DRAGGING A TRACK INTO A FOLDER. Pointer events, because HTML5 drag-and-drop does not exist under a
    finger and half this table is played on a phone — the board learned that the hard way. jsdom has no
    `elementFromPoint` worth the name and no layout to read a drop target out of, so this is the only

@@ -54,7 +54,55 @@ const mus = {
   advancing: false, // a queue advance is in flight; the tick and the `ended` event must not race
   blocked: false,   // the browser refused to start — it needs a gesture
   msg: "",
+  seen: "",         // the last `now` the trace wrote down, so a repaint is not an arrival
+  cmd: "",          // the last play/pause told to the player, so the 2.5s tick is not forty lines
+  volSeen: "",      // the last volume the trace wrote down
 };
+
+/* WHERE THE SECONDS GO. Kayki: the track "already started but the sound only starts playing after that
+   while, in any of the devices" — five to ten seconds. A headless probe on Chromium AND on his own Brave
+   had the player PLAYING and unmuted within 1-2s every time, with no seeks, so the gap lives on real
+   devices that no probe here can be. This writes down, with times, what this device was told and what
+   its player did about it, for Copy diagnostics. Only on a device with diagnostics switched on. */
+const MUS_TRACE = [];
+function tblMusTrace(what, detail) {
+  if (typeof tblDebugOn !== "function" || !tblDebugOn()) return;
+  MUS_TRACE.push({ t: Date.now(), what, detail: detail == null ? "" : String(detail).slice(0, 100) });
+  if (MUS_TRACE.length > 80) MUS_TRACE.shift();
+}
+const TBL_YT_STATES = { "-1": "unstarted", 0: "ended", 1: "playing", 2: "paused", 3: "buffering", 5: "cued" };
+/* Whether this page has been touched since it loaded — the browser's own answer, which is what decides
+   whether it lets sound start. Separate from TBL_MUSIC_OK, which is remembered across reloads. */
+function tblMusTouched() {
+  const ua = typeof navigator !== "undefined" ? /** @type {any} */ (navigator).userActivation : null;
+  return ua ? (ua.hasBeenActive ? "yes" : "no") : "unknown";
+}
+
+/* Everything the music knows about itself, right now, plus the trace — times in seconds before `when`. */
+function tblMusicDiagnostics() {
+  const now = tblMusicNow();
+  let yt = null;
+  try {
+    if (mus.yt && mus.ytOn) {
+      yt = { id: (mus.yt.getVideoData && mus.yt.getVideoData().video_id) || "",
+             state: TBL_YT_STATES[mus.yt.getPlayerState()] || mus.yt.getPlayerState(),
+             at: Number((mus.yt.getCurrentTime() || 0).toFixed(1)),
+             muted: mus.yt.isMuted(), vol: mus.yt.getVolume() };
+    } else if (mus.yt || mus.ytWant) yt = { state: "not ready yet" };
+  } catch { yt = { state: "unreadable" }; }
+  const a = mus.audio;
+  const end = Date.now();
+  return {
+    allowed: tblMusicAllowed(), touched: tblMusTouched(), silent: tblMusicSilent(),
+    vol: tblMusicVol(), blocked: mus.blocked, msg: mus.msg,
+    now: now ? { kind: now.kind, src: String(now.src || "").slice(0, 40), playing: !!now.playing,
+                 gen: now.gen || 0, roomAt: Number(tblMusicWhere(now).toFixed(1)) } : null,
+    yt,
+    audio: a ? { paused: a.paused, at: Number(a.currentTime.toFixed(1)), ready: a.readyState,
+                 muted: a.muted, vol: a.volume } : null,
+    trace: MUS_TRACE.map((e) => ({ ago: Number(((end - e.t) / 1000).toFixed(2)), what: e.what, detail: e.detail })),
+  };
+}
 
 /* ---------------------------------------------------------------- what is playing, and what is saved */
 
@@ -149,6 +197,8 @@ function tblMusicToggleMute() {
 function tblMusicPushVolume() {
   const off = tblMusicSilent();
   const v = off ? 0 : tblMusicVol();
+  const volKey = off ? "silent" : String(Math.round(v * 100)) + "%";
+  if (volKey !== mus.volSeen) { mus.volSeen = volKey; tblMusTrace("volume", volKey); }
   try {
     // The element's own `muted` as well as a zero volume: one of them is belt and the other braces, and
     // it costs nothing to be certain the thing is quiet.
@@ -251,10 +301,11 @@ let tblYtLoading = false;
 function tblMusicLoadYT() {
   if (tblYtLoading || (ytWin.YT && ytWin.YT.Player)) return;
   tblYtLoading = true;
-  ytWin.onYouTubeIframeAPIReady = () => { tblMusicMakeYT(); };
+  tblMusTrace("yt library", "fetching");
+  ytWin.onYouTubeIframeAPIReady = () => { tblMusTrace("yt library", "arrived"); tblMusicMakeYT(); };
   const s = document.createElement("script");
   s.src = "https://www.youtube.com/iframe_api";
-  s.onerror = () => { mus.msg = "YouTube could not be reached from this device."; paintSide(); };
+  s.onerror = () => { tblMusTrace("yt library", "FAILED"); mus.msg = "YouTube could not be reached from this device."; paintSide(); };
   document.head.appendChild(s);
 }
 
@@ -286,12 +337,16 @@ function tblMusicMakeYT() {
       playerVars: { autoplay: 0, controls: 0, disablekb: 1, playsinline: 1, rel: 0 },
       events: {
         onReady: () => {
+          tblMusTrace("yt player", "ready");
           mus.ytOn = true;
           tblMusicPushVolume();
           if (mus.ytWant) { const w = mus.ytWant; mus.ytWant = null; tblMusicDriveYT(w.id, w.at, w.play); }
         },
-        onError: () => { mus.msg = "That video will not play — it may be blocked from being embedded."; paintSide(); },
+        onError: (e) => { tblMusTrace("yt error", e && e.data); mus.msg = "That video will not play — it may be blocked from being embedded."; paintSide(); },
         onStateChange: (e) => {
+          if (e) tblMusTrace("yt state", (TBL_YT_STATES[e.data] || e.data) + " @" + (() => {
+            try { return Number(mus.yt.getCurrentTime().toFixed(1)) + "s" + (mus.yt.isMuted() ? " MUTED" : ""); }
+            catch { return "?"; } })());
           // 0 is ENDED, and it is the fast path only — the tick asks the same question every 2.5s in
           // case this never arrives. The chair advances; nobody else.
           if (e && e.data === 0 && tbl && tbl.role === "dm") tblMusicEnded().catch(() => {});
@@ -302,10 +357,15 @@ function tblMusicMakeYT() {
 }
 
 function tblMusicDriveYT(id, at, play) {
-  if (!mus.yt || !mus.ytOn) { mus.ytWant = { id, at, play }; tblMusicLoadYT(); return; }
+  if (!mus.yt || !mus.ytOn) {
+    if (!mus.ytWant) tblMusTrace("yt waiting", "player not ready; will " + (play ? "play" : "cue") + " when it is");
+    mus.ytWant = { id, at, play }; tblMusicLoadYT(); return;
+  }
   try {
     const loaded = (mus.yt.getVideoData && mus.yt.getVideoData().video_id) || "";
     if (loaded !== id) {
+      tblMusTrace(play ? "yt load" : "yt cue", id + " from " + Number(at).toFixed(1) + "s, touched " + tblMusTouched());
+      mus.cmd = play ? "play" : "pause";
       if (play) mus.yt.loadVideoById({ videoId: id, startSeconds: at });
       else mus.yt.cueVideoById({ videoId: id, startSeconds: at });
       tblMusicPushVolume();
@@ -318,7 +378,12 @@ function tblMusicDriveYT(id, at, play) {
     // second lock on the same door, because the cost of getting it wrong is a track that never stops.
     if (state === 0 && !play) return;
     const cur = Number(mus.yt.getCurrentTime && mus.yt.getCurrentTime()) || 0;
-    if (Math.abs(cur - at) > TBL_MUSIC_SLIP) mus.yt.seekTo(at, true);
+    if (Math.abs(cur - at) > TBL_MUSIC_SLIP) {
+      tblMusTrace("yt seek", cur.toFixed(1) + "s -> " + Number(at).toFixed(1) + "s");
+      mus.yt.seekTo(at, true);
+    }
+    const cmd = play ? "play" : "pause";
+    if (cmd !== mus.cmd) { mus.cmd = cmd; tblMusTrace("yt " + cmd, "touched " + tblMusTouched()); }
     if (play) mus.yt.playVideo(); else mus.yt.pauseVideo();
   } catch { /* the player is mid-load; the next paint will catch it */ }
 }
@@ -334,6 +399,11 @@ function tblMusicApply() {
   if (!now || !now.kind) { tblMusicSilence(); return; }
   const key = [now.kind, now.src, now.gen || 0].join("|");
   const allowed = !!now.playing && tblMusicAllowed();
+  if (key + "|" + !!now.playing !== mus.seen) {
+    mus.seen = key + "|" + !!now.playing;
+    tblMusTrace("told", (now.playing ? "PLAY " : "pause ") + now.kind + " " + String(now.src || "").slice(-24)
+      + " · room is at " + tblMusicWhere(now).toFixed(1) + "s · allowed " + tblMusicAllowed() + " · touched " + tblMusTouched());
+  }
 
   if (now.kind === "youtube") {
     if (mus.audio) { try { mus.audio.pause(); } catch { /* already gone */ } }
@@ -382,6 +452,9 @@ function tblMusicApply() {
        metadata, and reads the position AGAIN at that moment rather than using the stale one. */
     /* THE END OF A TRACK IS THE QUEUE'S CUE, and the DM's browser is the only one that acts on it —
        everybody else finds out the ordinary way, by `now` changing under them. */
+    for (const ev of ["playing", "waiting", "stalled", "pause"]) {
+      mus.audio.addEventListener(ev, () => tblMusTrace("audio " + ev, (mus.audio ? mus.audio.currentTime.toFixed(1) : "?") + "s"));
+    }
     mus.audio.addEventListener("ended", () => {
       if (tbl && tbl.role === "dm") tblMusicEnded().catch(() => {});
     });
@@ -403,6 +476,7 @@ function tblMusicApply() {
   const spot = tblMusicAt(now, mus.audio.duration);
   if (mus.key !== key) {
     mus.key = key;
+    tblMusTrace("audio load", String(src).slice(-32) + ", touched " + tblMusTouched());
     mus.audio.src = src;
   } else if (mus.audio.readyState > 0 && !spot.over
       && Math.abs((Number(mus.audio.currentTime) || 0) - spot.at) > TBL_MUSIC_SLIP) {
@@ -413,7 +487,7 @@ function tblMusicApply() {
     const p = mus.audio.play();
     // EVERY ENGINE REFUSES until the page has been touched, and it refuses by REJECTING rather than by
     // throwing — so this cannot be caught with try/catch around the call.
-    if (p && p.catch) p.catch(() => { if (!mus.blocked) { mus.blocked = true; paintSide(); } });
+    if (p && p.catch) p.catch(() => { if (!mus.blocked) { tblMusTrace("audio refused", "browser wants a touch"); mus.blocked = true; paintSide(); } });
   } else {
     try { mus.audio.pause(); } catch { /* fine */ }
   }
@@ -545,11 +619,13 @@ function tblMusicTeardown() {
   const host = document.getElementById("vtt-music");
   if (host) host.remove();
   mus.audio = null; mus.yt = null; mus.ytOn = false; mus.ytWant = null; mus.blocked = false; mus.msg = "";
+  mus.seen = ""; mus.cmd = ""; mus.volSeen = "";
 }
 
 /* The one gesture a browser wants. Pressing it is the interaction, so playback is allowed from here on
    — and it is remembered, because being asked at every session is the sort of thing nobody forgives. */
 function tblMusicEnable() {
+  tblMusTrace("sound turned on", "pressed");
   localStorage.setItem(TBL_MUSIC_OK, "1");
   mus.blocked = false;
   tblMusicApply();
