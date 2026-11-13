@@ -3650,6 +3650,39 @@ await until(() => !!$('[data-act="tab"]'));
 ok(!$('[data-act="tab"][data-val="pet"]'), "and a character with no companion has no such field");
 await go("#/manage", 120);
 
+console.log("\n— LEVELLING UP MID-SESSION —");
+/* Kayki: "they can level up without interrupting the table and automatically updating no?" A level-up
+   pressed on the sheet beside the board must reach the figure for everyone, with nobody leaving. */
+const luRoom = "445611", luCode = "777001";
+peek(`window.__chars["${luCode}"] = Object.assign(JSON.parse(JSON.stringify(window.__chars["123456"])), { name: "Lev", level: 1 });`);
+await peek(`CocLive.put("tables/${luRoom}", { meta: { name: "Level test", createdAt: 1, activeScene: "s1" },
+  scenes: { s1: { name: "Ring", cols: 10, rows: 8, cell: 70, createdAt: 1 } },
+  tokens: { tLev: { name: "Lev", charCode: "${luCode}", owner: "clev", kind: "pc", x: 1, y: 1, size: 1, hp: 1, hpMax: 1, speed: 30 } } })`);
+peek(`localStorage.removeItem("coc:table:dm:${luRoom}");
+  localStorage.setItem("coc:table:me:${luRoom}", JSON.stringify({ clientId: "clev", name: "Lev", charCode: "${luCode}" }));`);
+await go("#/table/" + luRoom, 300);
+const sameTable = peek(`window.__luTbl = tbl; tbl.role`);
+ok(sameTable === "player", "a player sits down");
+peek(`tbl.ui.panel = "sheet"; paintSide();`);
+await until(() => !!$('#vtt-sheet [data-act="levelup"]'));
+// The real level-1 maximum, worked out by the sheet's own arithmetic — not the figure's placeholder.
+const hpMax1 = peek(`derive(window.__chars["${luCode}"]).hpMax`);
+click($('#vtt-sheet [data-act="levelup"]'));
+await until(() => !!$('#vtt-sheet [data-act="lu-confirm"]'));
+click($('#vtt-sheet [data-act="lu-confirm"]'));
+await until(() => JSON.parse(peek(`JSON.stringify(tblTokens())`)).tLev.hpMax > hpMax1);
+const hpMax2 = JSON.parse(peek(`JSON.stringify(tblTokens())`)).tLev.hpMax;
+const hpMaxL2 = peek(`derive(Object.assign({}, window.__chars["${luCode}"], { level: 2 })).hpMax`);
+ok(hpMax2 > hpMax1 && hpMax2 === hpMaxL2,
+  `levelling up from the sheet beside the board puts the level-2 maximum on the figure for everyone (L1 ${hpMax1} -> ${hpMax2}, L2 is ${hpMaxL2})`);
+await wait(600);
+ok(JSON.parse(peek(`JSON.stringify(window.__chars["${luCode}"])`)).level === 2, "and the character is saved at level 2");
+ok(peek(`tbl === window.__luTbl && tbl.code === "${luRoom}"`), "without leaving or reopening the table");
+click($('[data-tbl="sheet-close"]'));
+await go("#/manage", 120);
+await peek(`CocLive.put("tables/${luRoom}", null)`);
+peek(`delete window.__chars["${luCode}"]; delete window.__luTbl;`);
+
 console.log("\n— TABLES YOU HAVE SAT AT —");
 /* HOWEVER YOU GOT THERE. Kayki: "my table even after opening from my dm page doesnt appear in the history
    of the play at a table screen". Only the landing page's Create and Join wrote the list, so a table
