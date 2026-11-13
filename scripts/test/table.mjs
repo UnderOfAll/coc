@@ -2324,6 +2324,54 @@ await until(() => peek(`__shownRolls.includes("Eve")`), 8000);
 ok(peek(`__shownRolls.includes("Eve")`),
   "a roll stamped the same millisecond as yours, from another device, still shows: " + peek(`__shownRolls.join()`));
 await until(() => peek(`!(tbl.rollQueue && tbl.rollQueue.length) && (typeof tblRollNow === "undefined" || !tblRollNow || tblRollNow.free)`), 6000);
+const pushRoll = (who, t, extra = "") => peek(`CocLive.push("tables/482910/log", { t: ${t}, src: "elsewhere", who: "${who}",
+  kind: "roll", total: 9, mod: 0, mode: "normal", dice: [{ s: 20, v: 9, sign: 1 }], text: "${who} rolled d20 → 9"${extra} })`);
+// TEN AT ONCE. Every one of them reaches the screen, and the backlog plays quickly rather than for twenty seconds.
+peek(`__shownRolls.length = 0; __shownAt.length = 0`);
+const ten = Date.now() + 2000;
+await Promise.all(Array.from({ length: 10 }, (_, i) => pushRoll("P" + i, ten + i)));
+await until(() => peek(`__shownRolls.length`) >= 10, 20000);
+const tenShown = peek(`__shownRolls.join()`);
+const tenSpan = peek(`__shownAt[__shownAt.length - 1] - __shownAt[0]`);
+ok(tenShown === "P0,P1,P2,P3,P4,P5,P6,P7,P8,P9", "ten rolls at the same moment are all shown, in order: " + tenShown);
+ok(tenSpan < 12000, "and the ten of them play through in " + tenSpan + "ms, not twenty seconds");
+await until(() => peek(`!(tbl.rollQueue && tbl.rollQueue.length) && (!tblRollNow || tblRollNow.free)`), 6000);
+// A device whose clock runs a minute FAST sees every other roll stamped "a minute ago". It still shows them.
+peek(`__shownRolls.length = 0`);
+await pushRoll("Fastclock", Date.now() - 60000);
+await until(() => peek(`__shownRolls.includes("Fastclock")`), 4000);
+ok(peek(`__shownRolls.includes("Fastclock")`), "a roll stamped a minute behind this device's clock is still shown");
+await until(() => peek(`!(tbl.rollQueue && tbl.rollQueue.length) && (!tblRollNow || tblRollNow.free)`), 6000);
+// A phone in a pocket: nothing is queued while the tab is hidden, so taking it out replays nothing.
+peek(`__shownRolls.length = 0; Object.defineProperty(document, "hidden", { configurable: true, get: () => true });`);
+await pushRoll("Pocket", Date.now() + 4000);
+await wait(1500);
+peek(`delete document.hidden;`);
+await wait(1500);
+ok(peek(`__shownRolls.length`) === 0 && peek(`(tbl.rollQueue || []).length`) === 0,
+  "a roll that arrives while the tab is hidden is logged, not queued for later: " + peek(`__shownRolls.join()`));
+// A roll that has waited too long in line is dropped from the line (it is in the log).
+peek(`tblRollNow = { entry: {}, queued: false, landed: false, free: false };`);   // something is up and stays up
+await pushRoll("Stale", Date.now() + 5000);
+await until(() => peek(`(tbl.rollQueue || []).length`) === 1, 3000);
+peek(`tblRollArrived.set(tbl.rollQueue[0], Date.now() - 60000); tblRollNow.free = true; tblRollPumpSoon();`);
+await wait(300);
+ok(!peek(`__shownRolls.includes("Stale")`) && peek(`tbl.rollQueue.length`) === 0,
+  "a roll that waited a minute in line is dropped, not shown late");
+// Tapping the dice away hands the screen to the next one at once.
+peek(`__shownRolls.length = 0`);
+const tap = Date.now() + 6000;
+await Promise.all([pushRoll("TapA", tap), pushRoll("TapB", tap + 1)]);
+await until(() => peek(`__shownRolls.includes("TapA")`), 3000);
+await wait(100);
+peek(`document.getElementById("roll-stage").click()`);
+await wait(150);
+ok(peek(`__shownRolls.includes("TapB")`), "tapping a roll away brings on the next one straight away");
+await until(() => peek(`!(tbl.rollQueue && tbl.rollQueue.length) && (!tblRollNow || tblRollNow.free)`), 6000);
+// Opening a table that already has a session's rolls in it replays none of them.
+peek(`__shownRolls.length = 0; tbl.rollSeen = null; paintLog();`);
+await wait(500);
+ok(peek(`__shownRolls.length`) === 0, "arriving at a table replays none of the rolls already in its log");
 peek(`tblShowRoll = window.__realShow;`);
 
 console.log("\n— PLAYERS CANNOT REDECORATE —");
@@ -3126,6 +3174,11 @@ await wait(150);
     .some((e) => e.t === future));
   const stamp = peek(`tblStamp()`);
   ok(stamp > future, `a stamp is never older than the newest entry already seen (${stamp} > ${future})`);
+  // The clock is read once. A millisecond ticking between two reads used to make the stamp EQUAL the newest
+  // entry, about one gate run in twenty; here it ticks on every read, so the old way fails every time.
+  const ticked = peek(`(function () { const real = Date.now; let n = real.call(Date);
+    Date.now = () => (n += 1); try { return tblStamp(); } finally { Date.now = real; } })()`);
+  ok(ticked > future, `and stays newer even when the clock moves while it is being read (${ticked} > ${future})`);
   const res = peek(`JSON.stringify(tblRollAndPost("1d4", "Damage", "normal", "Slowclock", true))`);
   ok(!!res, "a slow device can still roll");
   await until(() => Object.values(peek(`JSON.parse(JSON.stringify(tbl.data.log || {}))`))

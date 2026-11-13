@@ -540,8 +540,13 @@ let tblRollTimers = [];
  * Your own still shows the instant you make it. A backlog of two or more is thrown flat, which is quick:
  * five initiatives at once should be a few seconds of dice, not half a minute. */
 const TBL_ROLL_READ = 1200;
+const TBL_ROLL_READ_BUSY = 600;   // ten people rolling initiative is ten seconds of dice, not twenty
+/* A roll that has waited this long is news nobody is waiting for. A phone in a pocket has its timers slowed
+   to once a minute, and taking it out must not replay the last ten minutes of the fight. The log has them. */
+const TBL_ROLL_STALE = 30000;
 let tblRollNow = null;      // { entry, queued, landed, free } — what the overlay is showing
 let tblRollPumpT = null;
+const tblRollArrived = new WeakMap();   // entry → when it reached this device
 /* Which page threw a roll. Not its timestamp: a slow clock stamps "the newest I have seen, plus one", so two
    slow devices rolling together get the SAME stamp — and each took the other's roll for its own echo. */
 const TBL_PAGE_ID = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
@@ -561,8 +566,16 @@ function tblRollPump() {
   tblRollPumpT = null;
   if (!tbl || !tbl.rollQueue || !tbl.rollQueue.length) return;
   if (tblRollNow && !tblRollNow.free) return;
+  // Measured from when it ARRIVED here, on this device's own clock — never against the roller's stamp,
+  // which a fast clock on this side would read as old and skip every roll at the table.
+  const now = Date.now();
+  while (tbl.rollQueue.length && now - (tblRollArrived.get(tbl.rollQueue[0]) || now) > TBL_ROLL_STALE) {
+    tbl.rollQueue.shift();
+  }
+  if (!tbl.rollQueue.length) return;
   const next = tbl.rollQueue.shift();
-  tblShowRoll(next, { queued: true, flat: tbl.rollQueue.length >= 1 });
+  const replay = !!(tbl.rollReplay && tbl.rollReplay.delete(next.t));
+  tblShowRoll(next, { queued: true, flat: replay || tbl.rollQueue.length >= 1 });
 }
 /* The tumble of the flat dice, which is an INTERVAL and so was never in the list above. Two rolls inside
    half a second left the first one's tumble running against the second one's markup, taking its "rolling"
@@ -578,6 +591,8 @@ function tblRollStage() {
     // settled dice stayed behind it, unclickable because they ignore the pointer, until the next roll.
     node.addEventListener("click", () => {
       node.classList.remove("on"); dice3dRelease(); dice3dClear(true);
+      // Tapped away: that one is read. The next in line need not wait out its timer.
+      if (tblRollNow) { tblRollNow.landed = true; tblRollNow.free = true; tblRollPumpSoon(); }
     });
     document.body.appendChild(node);
   }
@@ -600,16 +615,23 @@ function tblShowRoll(entry, opts) {
   const backstop = setTimeout(() => landed("gave up"), 9000);
   const land = (how) => { clearTimeout(backstop); landed(how); };
   /* Whose turn the overlay is. A roll of somebody else's that is cut off before its dice land goes back
-     to the FRONT of the queue — your own roll does not wait, but it does not swallow theirs either. */
+     to the FRONT of the queue — your own roll does not wait, but it does not swallow theirs either. It comes
+     back FLAT: a second full throw of the same roll reads as that player rolling again. */
   const prev = tblRollNow;
-  if (prev && prev.queued && !prev.landed && tbl && tbl.rollQueue) tbl.rollQueue.unshift(prev.entry);
+  if (prev && prev.queued && !prev.landed && tbl && tbl.rollQueue) {
+    tbl.rollQueue.unshift(prev.entry);
+    if (!tbl.rollReplay) tbl.rollReplay = new Set();
+    tbl.rollReplay.add(prev.entry.t);
+  }
   const showing = tblRollNow = { entry, queued: !!opts.queued, landed: false, free: false };
   // A 3D throw that was cut off never releases its hold, and its numbers would read "rolling…" for good.
   if (dice3dHolding && dice3dHolding !== entry.t) dice3dRelease();
   settled.then(() => {
     showing.landed = true;
     // Long enough to read the number before the next one takes its place.
-    setTimeout(() => { showing.free = true; if (tblRollNow === showing) tblRollPumpSoon(); }, TBL_ROLL_READ);
+    const backlog = tbl && tbl.rollQueue ? tbl.rollQueue.length : 0;
+    setTimeout(() => { showing.free = true; if (tblRollNow === showing) tblRollPumpSoon(); },
+      backlog > 2 ? TBL_ROLL_READ_BUSY : TBL_ROLL_READ);
   });
   const node = tblRollStage();
   for (const t of tblRollTimers) clearTimeout(t);
@@ -931,8 +953,11 @@ function paintLog() {
       const mine = e.src ? e.src === TBL_PAGE_ID : own.has(e.t);
       if (e.kind === "roll" && !mine) arrived.push(e);
     }
-    if (arrived.length) {
+    // Nobody is looking at a hidden tab. What arrives while it is away is in the log, not in a queue.
+    if (arrived.length && !document.hidden) {
       if (!tbl.rollQueue) tbl.rollQueue = [];
+      const at = Date.now();
+      for (const e of arrived) tblRollArrived.set(e, at);
       // Oldest first: the order they were rolled in is the order they are watched in.
       tbl.rollQueue.push(...arrived.sort((a, b) => (a.t || 0) - (b.t || 0)));
       tblRollPumpSoon();

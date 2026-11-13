@@ -183,22 +183,25 @@ function tblCanMove(token) {
  *   - and the music's position is measured from when the track started, so a slow device thinks a track
  *     began later than it did and plays it from the wrong place.
  * None of it needs a server; it needs everyone to agree on what "now" is, and the table already says. */
-function tblSkew() {
+function tblSkew(now) {
   if (!tbl || !tbl.data) return 0;
+  if (now == null) now = Date.now();
   let newest = 0;
   const bump = (v) => { const n = Number(v) || 0; if (n > newest) newest = n; };
   for (const e of Object.values(tbl.data.log || {})) bump(e && e.t);
   for (const w of Object.values(tbl.data.presence || {})) bump(w && w.at);
   const m = (tbl.data.music || {}).now;
   if (m) bump(m.at);
-  const skew = newest - Date.now();
+  const skew = newest - now;
   // A day is not a clock difference, it is a bad record; adopting it would freeze the table in the
   // future for good.
   return skew > 0 && skew < 86400000 ? skew : 0;
 }
 
 /* What time it is AT THE TABLE, which is the only time worth comparing anything against. */
-function tblNow() { return Date.now() + tblSkew(); }
+/* The clock is read ONCE. Reading it twice — once here, once inside the skew — let a millisecond tick in
+   between, and a slow device then stamped its roll EQUAL to the newest one instead of after it. */
+function tblNow() { const now = Date.now(); return now + tblSkew(now); }
 
 /* IS THAT DEVICE STILL HERE — one place, because the same sum was written out in three files and every
    one of them measured another device's heartbeat against THIS device's clock. A minute of silence is
