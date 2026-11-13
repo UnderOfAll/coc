@@ -3506,6 +3506,25 @@ const gone = await aget(`CocLive.get("tables/${room}/presence")`);
 ok(gone && !gone[myClient], "and takes your name off the list");
 ok(gone && Object.keys(gone).length > 0, "while leaving everyone else on it");
 
+console.log("\n— TABLES YOU HAVE SAT AT —");
+/* HOWEVER YOU GOT THERE. Kayki: "my table even after opening from my dm page doesnt appear in the history
+   of the play at a table screen". Only the landing page's Create and Join wrote the list, so a table
+   reached from the DM page, a shared link or a refresh was never on it — on a new browser, his own table
+   was missing. Sitting down is what counts now. */
+const room2 = "445577";
+await peek(`CocLive.put("tables/${room2}", { meta: { name: "Reached by link", createdAt: 1 },
+  scenes: { s1: { name: "Ring", cols: 10, rows: 8, cell: 70, createdAt: 1 } } })`);
+peek(`localStorage.removeItem("coc:table:recent")`);
+await go("#/table/" + room2, 300);
+await until(() => peek(`tblRecent().some((r) => r.code === "${room2}")`));
+const sat = peek(`tblRecent().find((r) => r.code === "${room2}")`);
+ok(sat && sat.name === "Reached by link", `a table opened straight from a link goes on the list, by name (${JSON.stringify(sat)})`);
+await go("#/manage", 120);
+await go("#/table/445588", 300);
+ok(!peek(`tblRecent().some((r) => r.code === "445588")`), "but a code with no table behind it does not");
+await go("#/manage", 120);
+await peek(`CocLive.put("tables/${room2}", null)`);
+
 peek(`if (window.__realRandom) Math.random = window.__realRandom;`);
 
 console.log("\njsdom errors: " + errs.length); errs.slice(0, 8).forEach((e) => console.log("  " + e));

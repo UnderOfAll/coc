@@ -540,9 +540,14 @@ function tblOpen(code) {
     // Placing a figure has to wait until the board's contents are known, or a second device places a
     // second figure. But waiting for the next heartbeat meant sitting down and appearing to the table
     // up to twenty seconds later, which is how it behaved live. Try the moment the data lands.
+    // On the "tables you have sat at" list however you arrived — Create and Join wrote it, so a table
+    // reached from the DM page, a link or a refresh never was. Only a table that exists: a code with
+    // nothing behind it is a mistyped address, not a seat.
+    if (first && tbl.data.meta) tblRemember(code, tbl.data.meta.name);
     if (first) { tblSettleSeat(); tblEnsureToken(); tblStraightenTokens(); tblUnlinkTwinnedSeats(); tblMigrateDmNotes().catch(() => {}); }
   }));
   tblAnnounce();
+  if (!tbl) return;   // the table turned out to be closed and has already been torn down
   tbl.beat = setInterval(tblAnnounce, 20000);
   // Opening a table is a clear enough statement that dice are about to be thrown, so the physics arrives
   // now rather than on the first roll — which used to mean the first roll of every session was the flat
@@ -627,6 +632,9 @@ function tblAnnounce() {
     // At the TABLE's time, so a slow clock does not report itself as having last spoken a minute ago.
     at: tblNow(),
   }).catch(() => {});
+  // That write can answer at once, and for a code with no table behind it the answer is "closed", which
+  // tears the table down — so there may be nothing left to arm.
+  if (!tbl) return;
   // Armed once per table. The library re-arms it itself after a reconnection, so the beat must not
   // keep asking — that would be a write every twenty seconds for a promise already made.
   if (!tbl.deadman) {
