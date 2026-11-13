@@ -25,7 +25,7 @@ const COC_CONFIG = {
      on for that browser forever; nothing appears in the interface for anyone who has not. Only the HASH of
      the phrase is here, so reading this file does not hand it over — and it is a "do not bother anybody
      else with it" switch rather than a security boundary, which is all it needs to be. */
-  debugHash: "sha256:879b514f2cf8322455cfda275bc9ea9e7fc8f8f24fb2f831168bfc43f55659e7",
+  debugHash: "sha256:0614e6e2416b392b993593df5a89478e16c62ab803405d5af410540c58a16467",
 
   // --- Option B: Supabase (if you would rather use it) ---
   supabaseUrl: "",
