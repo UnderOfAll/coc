@@ -2280,9 +2280,42 @@ await peek(`CocLive.push("tables/482910/log", { t: Date.now() + 200, who: "Sable
   text: "Sable rolled Longbow: d20 + 5 → 11 = 16" })`);
 await wait(80);
 ok(peek(`tbl.lastRollAt`) > seenBefore, "a roll from another device is noticed");
+// It waits for the roll already up to be read — a second or so — rather than cutting it off.
+await until(() => /Sable/.test(doc.getElementById("roll-stage").textContent), 4000);
 ok(/Sable/.test(doc.getElementById("roll-stage").textContent), "and rolled on this screen: " +
   doc.getElementById("roll-stage").querySelector(".roll-head").textContent.trim());
 peek(`tbl.ui.dice.mode = "normal"; paintDice();`);
+
+console.log("\n— ROLLS THAT ARRIVE TOGETHER TAKE TURNS —");
+// Kayki, after the first session: "if everyone ran the dice at the same time it bugged." Only the newest
+// roll was ever shown, and one stamped a millisecond before yours never reached your screen at all.
+peek(`window.__shownRolls = []; window.__realShow = tblShowRoll;
+  window.__shownAt = [];
+  tblShowRoll = function (e, o) { __shownRolls.push(e.who); __shownAt.push(Date.now()); return __realShow(e, o); };`);
+await until(() => peek(`!(tbl.rollQueue && tbl.rollQueue.length) && (typeof tblRollNow === "undefined" || !tblRollNow || tblRollNow.free)`), 6000);
+const together = Date.now() + 1000;
+await peek(`Promise.all([["Ash", 1], ["Bram", 2], ["Cole", 3]].map(([w, o]) =>
+  CocLive.push("tables/482910/log", { t: ${together} + o, who: w, kind: "roll", total: 10 + o, mod: 0,
+    mode: "normal", dice: [{ s: 20, v: 10 + o, sign: 1 }], text: w + " rolled d20 → " + (10 + o) })))`);
+await until(() => peek(`__shownRolls.length`) >= 3, 10000);
+ok(peek(`__shownRolls.join()`) === "Ash,Bram,Cole",
+  "three rolls in one update are all shown, in the order they were rolled: " + peek(`__shownRolls.join()`));
+// Shown is not seen: each one has to stay up long enough to read, not be replaced a moment later.
+const gaps = peek(`JSON.stringify(__shownAt.slice(1).map((t, i) => t - __shownAt[i]))`);
+ok(JSON.parse(gaps).every((g) => g >= 1000), "and each stays up long enough to read before the next (ms: " + gaps + ")");
+await until(() => peek(`!(tbl.rollQueue && tbl.rollQueue.length) && (typeof tblRollNow === "undefined" || !tblRollNow || tblRollNow.free)`), 6000);
+peek(`__shownRolls.length = 0; __shownAt.length = 0`);
+// Yours goes up at once; somebody's made a moment EARLIER reaches the log after it, and must still show.
+const mineAt = peek(`tblRollAndPost("d20", "", "normal").settled && tbl.lastRollAt`);
+await peek(`CocLive.push("tables/482910/log", { t: ${mineAt} - 1, who: "Dace", kind: "roll", total: 4,
+  mod: 0, mode: "normal", dice: [{ s: 20, v: 4, sign: 1 }], text: "Dace rolled d20 → 4" })`);
+await until(() => peek(`__shownRolls.includes("Dace")`), 8000);
+ok(peek(`__shownRolls.includes("Dace")`),
+  "a roll stamped just before your own still reaches your screen: " + peek(`__shownRolls.join()`));
+ok(peek(`__shownRolls.filter((w) => w !== "Dace").length`) === 1,
+  "and your own is shown once, not again when its echo comes back");
+await until(() => peek(`!(tbl.rollQueue && tbl.rollQueue.length) && (typeof tblRollNow === "undefined" || !tblRollNow || tblRollNow.free)`), 6000);
+peek(`tblShowRoll = window.__realShow;`);
 
 console.log("\n— PLAYERS CANNOT REDECORATE —");
 peek(`tbl.role = "player"; tbl.me.charCode = "123456"; renderTableShell(); paintSide();`);

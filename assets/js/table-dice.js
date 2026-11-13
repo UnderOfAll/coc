@@ -168,7 +168,7 @@ function tblRollAndPost(spec, label, mode, whoOverride, quiet) {
   };
   if (tbl) {
     // Shown here at once, and marked as seen so the stream's echo does not roll it a second time.
-    tbl.lastRollAt = entry.t;
+    tblRollMarkOwn(entry);
     /* `quiet` still LOGS the roll — everyone can read it — but throws no dice for it. Rolling initiative
        for seven creatures is seven rolls in a row, and seven throws back to back is not a moment, it is
        a wait. The one roll you make yourself still gets its dice. */
@@ -528,6 +528,38 @@ function dice3dClear(now) {
    Built in JS rather than in index.html because every page can roll, and none of them should have to
    carry the markup for it. */
 let tblRollTimers = [];
+
+/* ROLLS THAT ARRIVE TOGETHER TAKE TURNS.
+ *
+ * Kayki, after the first session: "if everyone ran the dice at the same time it bugged." The overlay
+ * showed only the NEWEST roll in the log, and "new" meant "stamped later than the last one I saw" — so
+ * three rolls arriving in one update showed one, a roll landing mid-throw cut the last one off, and the
+ * roll stamped a millisecond BEFORE yours never appeared on your screen at all. The log always had them.
+ *
+ * So a roll is seen by its KEY in the log, not by its time, and somebody else's waits its turn here.
+ * Your own still shows the instant you make it. A backlog of two or more is thrown flat, which is quick:
+ * five initiatives at once should be a few seconds of dice, not half a minute. */
+const TBL_ROLL_READ = 1200;
+let tblRollNow = null;      // { entry, queued, landed, free } — what the overlay is showing
+let tblRollPumpT = null;
+function tblRollMarkOwn(entry) {
+  if (!tbl) return;
+  if (!tbl.rollOwn) tbl.rollOwn = new Set();
+  tbl.rollOwn.add(entry.t);
+  tbl.lastRollAt = Math.max(tbl.lastRollAt || 0, entry.t || 0);
+}
+function tblRollPumpSoon() {
+  if (tblRollPumpT) return;
+  // Never from inside a repaint: showing a roll repaints, and a repaint is what feeds the queue.
+  tblRollPumpT = setTimeout(tblRollPump, 0);
+}
+function tblRollPump() {
+  tblRollPumpT = null;
+  if (!tbl || !tbl.rollQueue || !tbl.rollQueue.length) return;
+  if (tblRollNow && !tblRollNow.free) return;
+  const next = tbl.rollQueue.shift();
+  tblShowRoll(next, { queued: true, flat: tbl.rollQueue.length >= 1 });
+}
 /* The tumble of the flat dice, which is an INTERVAL and so was never in the list above. Two rolls inside
    half a second left the first one's tumble running against the second one's markup, taking its "rolling"
    class off early and writing digits into elements that were no longer on the page. */
@@ -556,12 +588,25 @@ function tblRollStage() {
  *
  * It always keeps. A backstop resolves it even if a throw is abandoned, because something is waiting on
  * it to commit a number, and a number that never commits is a fight that never starts. */
-function tblShowRoll(entry) {
+function tblShowRoll(entry, opts) {
   if (!entry) return Promise.resolve("nothing");
+  opts = opts || {};
   let landed;
   const settled = new Promise((r) => { landed = r; });
   const backstop = setTimeout(() => landed("gave up"), 9000);
   const land = (how) => { clearTimeout(backstop); landed(how); };
+  /* Whose turn the overlay is. A roll of somebody else's that is cut off before its dice land goes back
+     to the FRONT of the queue — your own roll does not wait, but it does not swallow theirs either. */
+  const prev = tblRollNow;
+  if (prev && prev.queued && !prev.landed && tbl && tbl.rollQueue) tbl.rollQueue.unshift(prev.entry);
+  const showing = tblRollNow = { entry, queued: !!opts.queued, landed: false, free: false };
+  // A 3D throw that was cut off never releases its hold, and its numbers would read "rolling…" for good.
+  if (dice3dHolding && dice3dHolding !== entry.t) dice3dRelease();
+  settled.then(() => {
+    showing.landed = true;
+    // Long enough to read the number before the next one takes its place.
+    setTimeout(() => { showing.free = true; if (tblRollNow === showing) tblRollPumpSoon(); }, TBL_ROLL_READ);
+  });
   const node = tblRollStage();
   for (const t of tblRollTimers) clearTimeout(t);
   tblRollTimers = [];
@@ -583,7 +628,7 @@ function tblShowRoll(entry) {
   /* The 3D throw runs BESIDE the flat one, not instead of it: the flat dice tumble immediately while the
      library is still being fetched, and are hidden only once real dice are actually on the table. Nothing
      waits on the network to see a roll. */
-  const solid = dice3dWanted() && dice3dCanShow(dice);
+  const solid = !opts.flat && dice3dWanted() && dice3dCanShow(dice);
   // Which set of dice this roll ends up being told by — decided below, and read by the tumble when it
   // finishes. The flat dice are always thrown; sometimes real ones land on top of them.
   let flat = !solid;
@@ -868,19 +913,36 @@ function paintLog() {
   // first paint only records where the log had got to, or joining would replay the whole session.
   const newest = entries.length ? entries[0][1] : null;
   let fresh = false;
-  if (tbl.lastRollAt == null) tbl.lastRollAt = newest ? (newest.t || 0) : 0;
-  else if (newest && (newest.t || 0) > tbl.lastRollAt) {
-    tbl.lastRollAt = newest.t;
-    fresh = true;
-    if (newest.kind === "roll") tblShowRoll(newest);
+  if (!tbl.rollSeen) {
+    tbl.rollSeen = new Set(entries.map(([k]) => k));
+    if (tbl.lastRollAt == null) tbl.lastRollAt = newest ? (newest.t || 0) : 0;
+  } else {
+    const own = tbl.rollOwn || new Set();
+    const arrived = [];
+    for (const [k, e] of entries) {
+      if (tbl.rollSeen.has(k)) continue;
+      tbl.rollSeen.add(k);
+      tbl.lastRollAt = Math.max(tbl.lastRollAt || 0, e.t || 0);
+      fresh = true;
+      if (e.kind === "roll" && !own.has(e.t)) arrived.push(e);
+    }
+    if (arrived.length) {
+      if (!tbl.rollQueue) tbl.rollQueue = [];
+      // Oldest first: the order they were rolled in is the order they are watched in.
+      tbl.rollQueue.push(...arrived.sort((a, b) => (a.t || 0) - (b.t || 0)));
+      tblRollPumpSoon();
+    }
   }
   /* A roll APPEARS through tblShowRoll, above — for your own the moment you make it, for everyone
      else's the moment it arrives. All this has to do is keep what is already on screen current, which
      is what turns "rolling…" into the number when the dice land. A repaint for any other reason —
      somebody moving a figure, a map changing — must not put a spent roll back on the board. */
-  // Never BACKWARDS: a refresh may only ever show the same roll or a newer one.
-  if (last && newest && !fresh && !last.classList.contains("hidden")
-    && (newest.t || 0) >= tblBarAt) tblFlashRoll(newest);
+  // Never BACKWARDS: a refresh may only ever show the same roll or a newer one. While rolls are taking
+  // turns, the bar follows the one being watched rather than jumping ahead to the end of the queue.
+  const waiting = (tbl.rollQueue && tbl.rollQueue.length) || (tblRollNow && tblRollNow.queued && !tblRollNow.free);
+  const onBar = waiting && tblRollNow ? tblRollNow.entry : newest;
+  if (last && onBar && !fresh && !last.classList.contains("hidden")
+    && (waiting || (onBar.t || 0) >= tblBarAt)) tblFlashRoll(onBar);
   const host = $("#vtt-log");
   if (host) {
     host.innerHTML = entries.slice(0, 60).map(([, e]) => rollLineHTML(e)).join("")

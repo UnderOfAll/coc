@@ -804,7 +804,7 @@ async function tblInitRollMine() {
     mod: 0, mode: "normal", keptIdx: -1, total: 0, noTotal: true,
     nat: 0, spec: said,
   };
-  tbl.lastRollAt = entry.t;
+  tblRollMarkOwn(entry);
   const settled = tblShowRoll(entry);
   await CocLive.push(tblPath("log"), entry).catch(() => {});
   await settled;                       // the order is the result of the dice, so it waits for them
