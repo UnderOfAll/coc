@@ -2315,6 +2315,15 @@ ok(peek(`__shownRolls.includes("Dace")`),
 ok(peek(`__shownRolls.filter((w) => w !== "Dace").length`) === 1,
   "and your own is shown once, not again when its echo comes back");
 await until(() => peek(`!(tbl.rollQueue && tbl.rollQueue.length) && (typeof tblRollNow === "undefined" || !tblRollNow || tblRollNow.free)`), 6000);
+peek(`__shownRolls.length = 0`);
+// Two slow clocks stamp the SAME millisecond. That is somebody else's roll, not this one's echo.
+const twinAt = peek(`tblRollAndPost("d20", "", "normal").settled && tbl.lastRollAt`);
+await peek(`CocLive.push("tables/482910/log", { t: ${twinAt}, src: "another-device", who: "Eve", kind: "roll",
+  total: 6, mod: 0, mode: "normal", dice: [{ s: 20, v: 6, sign: 1 }], text: "Eve rolled d20 → 6" })`);
+await until(() => peek(`__shownRolls.includes("Eve")`), 8000);
+ok(peek(`__shownRolls.includes("Eve")`),
+  "a roll stamped the same millisecond as yours, from another device, still shows: " + peek(`__shownRolls.join()`));
+await until(() => peek(`!(tbl.rollQueue && tbl.rollQueue.length) && (typeof tblRollNow === "undefined" || !tblRollNow || tblRollNow.free)`), 6000);
 peek(`tblShowRoll = window.__realShow;`);
 
 console.log("\n— PLAYERS CANNOT REDECORATE —");

@@ -542,7 +542,11 @@ let tblRollTimers = [];
 const TBL_ROLL_READ = 1200;
 let tblRollNow = null;      // { entry, queued, landed, free } — what the overlay is showing
 let tblRollPumpT = null;
+/* Which page threw a roll. Not its timestamp: a slow clock stamps "the newest I have seen, plus one", so two
+   slow devices rolling together get the SAME stamp — and each took the other's roll for its own echo. */
+const TBL_PAGE_ID = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 function tblRollMarkOwn(entry) {
+  entry.src = TBL_PAGE_ID;
   if (!tbl) return;
   if (!tbl.rollOwn) tbl.rollOwn = new Set();
   tbl.rollOwn.add(entry.t);
@@ -924,7 +928,8 @@ function paintLog() {
       tbl.rollSeen.add(k);
       tbl.lastRollAt = Math.max(tbl.lastRollAt || 0, e.t || 0);
       fresh = true;
-      if (e.kind === "roll" && !own.has(e.t)) arrived.push(e);
+      const mine = e.src ? e.src === TBL_PAGE_ID : own.has(e.t);
+      if (e.kind === "roll" && !mine) arrived.push(e);
     }
     if (arrived.length) {
       if (!tbl.rollQueue) tbl.rollQueue = [];
