@@ -321,6 +321,49 @@ await dm.evaluate(() => tblMusicStop());
 await dm.evaluate((r, a, b) => Promise.all([CocLive.del(`tables/${r}/music/tracks/${a}`), CocLive.del(`tables/${r}/music/tracks/${b}`)]), ROOM, shelfA, shelfB);
 await wait(800);
 
+/* A SLOW FIRST LOAD KEEPS ITS INTRO. Kayki, 2026-11-14: a first play buffered for 3.5s, the drift check
+   jumped it to where the room's clock was, and the song began 3.6s in. Here the network is throttled so
+   the load is genuinely slow, and the DM's device must (a) not jump a player still loading its opening,
+   (b) start it from its first note, and (c) set the room's clock to that first note. */
+await dm.evaluate(() => localStorage.setItem("coc:debug", "1"));
+/* The YouTube frame is its own process (site isolation), so throttling the page alone throttles nothing
+   it loads — the conditions go on every target that is that frame, and on the page. */
+const cdps = [];
+for (const t of [dm.target(), ...browser.targets().filter((x) => x.url().includes("youtube.com/embed"))]) {
+  try { const c = await t.createCDPSession(); await c.send("Network.enable"); cdps.push(c); } catch { /* not throttleable */ }
+}
+const throttle = (on) => Promise.all(cdps.map((c) => c.send("Network.emulateNetworkConditions", on
+  ? { offline: false, latency: 1200, downloadThroughput: 60 * 1024, uploadThroughput: 60 * 1024 }
+  : { offline: false, latency: 0, downloadThroughput: -1, uploadThroughput: -1 }).catch(() => {})));
+await throttle(true);
+const slowFrom = await dm.evaluate(() => tblMusicDiagnostics().trace.length);
+await dm.evaluate((r) => CocLive.put(`tables/${r}/music/now`, {
+  kind: "youtube", src: "Tgli1xUKX5s", title: "Slow", playing: true, pos: 0, at: tblNow(), gen: 900 }), ROOM);
+let slow = null;
+for (let i = 0; i < 60 && !slow; i++) {
+  await wait(500);
+  slow = await dm.evaluate(() => { try { return mus.yt.getPlayerState() === 1 && mus.yt.getVideoData().video_id === "Tgli1xUKX5s" ? true : null; } catch { return null; } });
+}
+await wait(1500);
+await throttle(false);
+const sr = await dm.evaluate((from) => {
+  const tr = tblMusicDiagnostics().trace.slice(from);
+  const firstPlay = tr.find((e) => e.what === "yt state" && e.detail.startsWith("playing"));
+  const told = tr.find((e) => e.what === "told");
+  return { loadSecs: told && firstPlay ? +(told.ago - firstPlay.ago).toFixed(1) : null,
+    firstAt: firstPlay ? parseFloat(firstPlay.detail.split("@")[1]) : null,
+    seeks: tr.filter((e) => e.what === "yt seek").map((e) => e.detail),
+    anchor: tr.filter((e) => e.what === "anchor").map((e) => e.detail),
+    gap: +(tblMusicWhere(tblMusicNow()) - mus.yt.getCurrentTime()).toFixed(2) };
+}, slowFrom);
+ok(sr.loadSecs > 2.5 && cdps.length > 1, `the throttled load really was slower than the drift tolerance (${sr.loadSecs}s)`);
+ok(sr.firstAt != null && sr.firstAt < 0.6 && sr.seeks.length === 0,
+  `a slow first load is not jumped forward and starts from its first note (@${sr.firstAt}s, seeks ${JSON.stringify(sr.seeks)})`);
+ok(sr.anchor.length === 1 && Math.abs(sr.gap) < 1, `and the room's clock is set to the DM's first note (${JSON.stringify(sr.anchor)}, gap ${sr.gap}s)`);
+await dm.evaluate(() => tblMusicStop());
+await dm.evaluate(() => localStorage.removeItem("coc:debug"));
+await wait(800);
+
 /* DRAGGING A TRACK INTO A FOLDER. Pointer events, because HTML5 drag-and-drop does not exist under a
    finger and half this table is played on a phone — the board learned that the hard way. jsdom has no
    `elementFromPoint` worth the name and no layout to read a drop target out of, so this is the only

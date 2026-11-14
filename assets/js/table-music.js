@@ -58,6 +58,8 @@ const mus = {
   seen: "",         // the last `now` the trace wrote down, so a repaint is not an arrival
   cmd: "",          // the last play/pause told to the player, so the 2.5s tick is not forty lines
   volSeen: "",      // the last volume the trace wrote down
+  opening: false,   // this track was loaded from 0 and has not made a sound yet
+  anchored: -1,     // the gen whose clock this (DM's) device has already set to its first sound
 };
 
 /* WHERE THE SECONDS GO. Kayki: the track "already started but the sound only starts playing after that
@@ -376,10 +378,34 @@ function tblMusicMakeYT() {
           // 0 is ENDED, and it is the fast path only — the tick asks the same question every 2.5s in
           // case this never arrives. The chair advances; nobody else.
           if (e && e.data === 0 && tbl && tbl.role === "dm") tblMusicEnded().catch(() => {});
+          if (e && e.data === 1) { mus.opening = false; tblMusicAnchor(); }
         },
       },
     });
   } catch { mus.yt = null; }
+}
+
+/* THE ROOM'S CLOCK STARTS WITH THE DM'S FIRST NOTE, not with the press. The press is when the DM asked;
+   the sound comes a load later — a second, or three on a first play — and a clock that started at the
+   press makes every device that obeys it skip the intro. So the moment the DM's own player first plays
+   this track, its real position becomes the room's, once per track. A DM device that never plays (sound
+   off here) never anchors, and the press stands, as before. */
+function tblMusicAnchor() {
+  if (!tbl || tbl.role !== "dm" || !mus.yt || !mus.ytOn) return;
+  const now = tblMusicNow();
+  if (!now || !now.playing || now.kind !== "youtube") return;
+  const gen = Number(now.gen) || 0;
+  if (mus.anchored === gen) return;
+  try {
+    if (((mus.yt.getVideoData && mus.yt.getVideoData().video_id) || "") !== now.src) return;
+    mus.anchored = gen;
+    const cur = Number(mus.yt.getCurrentTime()) || 0;
+    const room = tblMusicWhere(now);
+    // Only a track's opening: a DM rejoining mid-song, or resuming, has nothing to re-set.
+    if (cur > TBL_MUSIC_SLIP * 2 || Math.abs(room - cur) < 0.25) return;
+    tblMusTrace("anchor", "room " + room.toFixed(1) + "s -> " + cur.toFixed(1) + "s, the DM's first note");
+    CocLive.patch(tblPath("music/now"), { pos: Math.round(cur * 100) / 100, at: tblNow() }).catch(() => {});
+  } catch { /* mid-load: the next playing event tries again */ }
 }
 
 function tblMusicDriveYT(id, at, play) {
@@ -400,6 +426,7 @@ function tblMusicDriveYT(id, at, play) {
          drift anyway — so a start inside that window is simply the start. Measured in Brave: from 0, no
          extra unstarted, 4 tracks of 4; from 0.002, the extra unstarted, 4 of 4. */
       const from = at < TBL_MUSIC_SLIP ? 0 : at;
+      mus.opening = from === 0 && play;
       if (play) mus.yt.loadVideoById({ videoId: id, startSeconds: from });
       else mus.yt.cueVideoById({ videoId: id, startSeconds: from });
       tblMusicPushVolume();
@@ -412,7 +439,14 @@ function tblMusicDriveYT(id, at, play) {
     // second lock on the same door, because the cost of getting it wrong is a track that never stops.
     if (state === 0 && !play) return;
     const cur = Number(mus.yt.getCurrentTime && mus.yt.getCurrentTime()) || 0;
-    if (Math.abs(cur - at) > TBL_MUSIC_SLIP) {
+    /* A TRACK STILL LOADING ITS OPENING IS NEVER JUMPED FORWARD. Kayki, 2026-11-14: a first play spent
+       3.5s buffering, the drift check saw the room 3.5s ahead and seeked — which restarted the load, and
+       the sound arrived 3.6s into the song with the intro gone. It starts from its first note; the DM's
+       device then sets the room's clock to that moment (tblMusicAnchor), and only a device that is still
+       well off after THAT is corrected. The DM's own player waits for its anchor for the same reason. */
+    const waiting = mus.opening && play && state !== 1 && cur < 0.5;
+    const unanchored = play && tbl && tbl.role === "dm" && mus.anchored !== (Number((tblMusicNow() || {}).gen) || 0) && cur < TBL_MUSIC_SLIP * 2;
+    if (!waiting && !unanchored && Math.abs(cur - at) > TBL_MUSIC_SLIP) {
       tblMusTrace("yt seek", cur.toFixed(1) + "s -> " + Number(at).toFixed(1) + "s");
       mus.yt.seekTo(at, true);
     }
@@ -666,7 +700,7 @@ function tblMusicTeardown() {
   const host = document.getElementById("vtt-music");
   if (host) host.remove();
   mus.audio = null; mus.yt = null; mus.ytOn = false; mus.ytWant = null; mus.blocked = false; mus.msg = "";
-  mus.seen = ""; mus.cmd = ""; mus.volSeen = "";
+  mus.seen = ""; mus.cmd = ""; mus.volSeen = ""; mus.opening = false; mus.anchored = -1;
 }
 
 /* The one gesture a browser wants. Pressing it is the interaction, so playback is allowed from here on
