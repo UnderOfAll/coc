@@ -300,7 +300,11 @@ function tblYouTubeId(url) {
    plays one never talks to Google. `onYouTubeIframeAPIReady` is a global the library insists on. */
 let tblYtLoading = false;
 function tblMusicLoadYT() {
-  if (tblYtLoading || (ytWin.YT && ytWin.YT.Player)) return;
+  /* THE LIBRARY OUTLIVES THE PLAYER. Leaving the table tears the player down, but the YouTube script stays
+     loaded, so "fetch it and build on arrival" never arrives twice. Kayki stepped off the table and back
+     and every track after that said "player not ready" for ever. Already here: build now. */
+  if (ytWin.YT && ytWin.YT.Player) { tblMusicMakeYT(); return; }
+  if (tblYtLoading) return;
   tblYtLoading = true;
   tblMusTrace("yt library", "fetching");
   ytWin.onYouTubeIframeAPIReady = () => { tblMusTrace("yt library", "arrived"); tblMusicMakeYT(); };

@@ -286,6 +286,18 @@ const off2 = await frameBox();
 ok(off2 && off2.w <= 1, `with diagnostics off, the switch left on does nothing — players never see it (${JSON.stringify(off2)})`);
 await dm.evaluate(() => { localStorage.setItem("coc:debug", "1"); tblMusicShowToggle(); localStorage.removeItem("coc:debug"); });
 
+/* LEAVING AND COMING BACK. Kayki, 2026-11-14: stepped off the table and back, and every track after that
+   said "player not ready" for ever. Leaving tears the player down; the YouTube LIBRARY stays loaded, so
+   the old "fetch the library, it will build the player when it arrives" never arrived a second time. */
+const goHash = (h) => dm.evaluate((x) => { location.hash = x; dispatchEvent(new HashChangeEvent("hashchange")); }, h);
+await goHash("#/");
+await wait(1500);
+await goHash("#/table/" + ROOM);
+await wait(6000);
+const cameBack = await dm.evaluate(() => ({ built: !!(mus.yt && mus.ytOn),
+  state: (() => { try { return mus.yt.getPlayerState(); } catch { return "none"; } })() }));
+ok(cameBack.built && cameBack.state === 1, `left the table and came back: the YouTube player is rebuilt and playing (${JSON.stringify(cameBack)})`);
+
 /* DRAGGING A TRACK INTO A FOLDER. Pointer events, because HTML5 drag-and-drop does not exist under a
    finger and half this table is played on a phone — the board learned that the hard way. jsdom has no
    `elementFromPoint` worth the name and no layout to read a drop target out of, so this is the only
