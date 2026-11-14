@@ -58,6 +58,9 @@ const mus = {
   seen: "",         // the last `now` the trace wrote down, so a repaint is not an arrival
   cmd: "",          // the last play/pause told to the player, so the 2.5s tick is not forty lines
   volSeen: "",      // the last volume the trace wrote down
+  ytPrev: null,     // the player's previous state, so "buffered, then gave up" can be told from a fresh load
+  kick: null,       // the retry timer while a stuck track is being nudged
+  kicks: 0,         // …and how many nudges it has had
 };
 
 /* WHERE THE SECONDS GO. Kayki: the track "already started but the sound only starts playing after that
@@ -373,6 +376,7 @@ function tblMusicMakeYT() {
           if (e) tblMusTrace("yt state", (TBL_YT_STATES[e.data] || e.data) + " @" + (() => {
             try { return Number(mus.yt.getCurrentTime().toFixed(1)) + "s" + (mus.yt.isMuted() ? " MUTED" : ""); }
             catch { return "?"; } })());
+          if (e) tblMusicYtState(e.data);
           // 0 is ENDED, and it is the fast path only — the tick asks the same question every 2.5s in
           // case this never arrives. The chair advances; nobody else.
           if (e && e.data === 0 && tbl && tbl.role === "dm") tblMusicEnded().catch(() => {});
@@ -380,6 +384,42 @@ function tblMusicMakeYT() {
       },
     });
   } catch { mus.yt = null; }
+}
+
+/* A TRACK THAT BUFFERS AND THEN GIVES UP IS NUDGED AT ONCE. Kayki's Brave, 2026-11-14, four tracks out of
+   four: load -> buffering -> back to "unstarted" at 0s, a black frame, and nothing — until the 2.5s tick
+   saw the room's clock 2.5s ahead and seeked, and every time the track began about a second after that
+   seek. So the seek was the cure all along; it simply came 3-4 seconds late, and 16 when the first one
+   did not take. Now the same seek-and-play goes in the moment the give-up is seen, and again every second
+   while it stays stuck, a few times at most. Only after BUFFERING: a fresh load also passes through
+   "unstarted", and that one is healthy. */
+const TBL_MUSIC_KICK_MS = 1000;
+const TBL_MUSIC_KICKS = 6;
+function tblMusicYtState(state) {
+  const prev = mus.ytPrev;
+  mus.ytPrev = state;
+  if (state !== -1) { clearTimeout(mus.kick); mus.kick = null; if (state === 1) mus.kicks = 0; return; }
+  if (prev !== 3) return;
+  // The budget is per track, not per give-up — a nudge that buffers and gives up again must not refill it.
+  if (mus.kicks < TBL_MUSIC_KICKS) tblMusicNudge();
+}
+function tblMusicNudge() {
+  clearTimeout(mus.kick); mus.kick = null;
+  if (!mus.yt || !mus.ytOn || mus.cmd !== "play") return;
+  const now = tblMusicNow();
+  if (!now || !now.playing || now.kind !== "youtube" || !tblMusicAllowed()) return;
+  try {
+    const st = Number(mus.yt.getPlayerState());
+    if (st !== -1 && st !== 5) return;   // unstarted or cued: told to play and not playing
+    if (((mus.yt.getVideoData && mus.yt.getVideoData().video_id) || "") !== now.src) return;
+    const spot = tblMusicAt(now, Number(now.dur) || 0);
+    if (spot.over) return;
+    mus.kicks += 1;
+    tblMusTrace("yt nudge", "stuck unstarted; seek " + spot.at.toFixed(1) + "s + play (" + mus.kicks + ")");
+    mus.yt.seekTo(spot.at, true);
+    mus.yt.playVideo();
+  } catch { return; }
+  if (mus.kicks < TBL_MUSIC_KICKS) mus.kick = setTimeout(tblMusicNudge, TBL_MUSIC_KICK_MS);
 }
 
 function tblMusicDriveYT(id, at, play) {
@@ -392,6 +432,7 @@ function tblMusicDriveYT(id, at, play) {
     if (loaded !== id) {
       tblMusTrace(play ? "yt load" : "yt cue", id + " from " + Number(at).toFixed(1) + "s, touched " + tblMusTouched());
       mus.cmd = play ? "play" : "pause";
+      mus.kicks = 0;
       if (play) mus.yt.loadVideoById({ videoId: id, startSeconds: at });
       else mus.yt.cueVideoById({ videoId: id, startSeconds: at });
       tblMusicPushVolume();
@@ -646,6 +687,7 @@ function tblMusicTeardown() {
   if (host) host.remove();
   mus.audio = null; mus.yt = null; mus.ytOn = false; mus.ytWant = null; mus.blocked = false; mus.msg = "";
   mus.seen = ""; mus.cmd = ""; mus.volSeen = "";
+  clearTimeout(mus.kick); mus.kick = null; mus.kicks = 0; mus.ytPrev = null;
 }
 
 /* The one gesture a browser wants. Pressing it is the interaction, so playback is allowed from here on

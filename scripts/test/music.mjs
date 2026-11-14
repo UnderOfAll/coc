@@ -298,6 +298,62 @@ const cameBack = await dm.evaluate(() => ({ built: !!(mus.yt && mus.ytOn),
   state: (() => { try { return mus.yt.getPlayerState(); } catch { return "none"; } })() }));
 ok(cameBack.built && cameBack.state === 1, `left the table and came back: the YouTube player is rebuilt and playing (${JSON.stringify(cameBack)})`);
 
+/* BUFFERED, THEN GAVE UP. Kayki's Brave, four tracks of four: load -> buffering -> "unstarted" at 0s and a
+   black frame, until a seek a few seconds later started it. No browser here gets stuck like that, so the
+   player is swapped for a stand-in that stays stuck until told otherwise, and records what it is asked.
+   The give-up is checked SYNCHRONOUSLY, so no repaint or tick can be what answered it. Run once with the
+   nudge removed — it must do nothing, or this test cannot tell a fix from luck — and once with it. */
+const stuckRun = (withNudge) => dm.evaluate(async (w) => {
+  const pause = (ms) => new Promise((r) => setTimeout(r, ms));
+  clearInterval(tblMusicTick); tblMusicTick = 1;
+  const realYt = mus.yt, realNudge = tblMusicNudge, src = tblMusicNow().src;
+  const calls = [];
+  let state = -1;
+  mus.yt = new Proxy({}, { get: (_, k) => {
+    if (k === "getPlayerState") return () => state;
+    if (k === "getVideoData") return () => ({ video_id: src });
+    if (k === "getCurrentTime") return () => 0;
+    if (k === "getDuration") return () => 0;
+    if (k === "isMuted") return () => false;
+    return (...args) => { calls.push(String(k) + (args.length ? " " + args[0] : "")); };
+  } });
+  if (!w) tblMusicNudge = () => {};
+  mus.kicks = 0;
+  tblMusicYtState(3); tblMusicYtState(-1);
+  const atOnce = calls.slice();
+  await pause(1150);
+  const afterRetry = calls.filter((c) => c.startsWith("seekTo")).length;
+  state = 1; tblMusicYtState(1);
+  await pause(1500);
+  const afterPlaying = calls.filter((c) => c.startsWith("seekTo")).length;
+  // A track that never starts is nudged a few times, then left to the tick — never forever.
+  state = -1; calls.length = 0; mus.kicks = 0;
+  tblMusicYtState(3); tblMusicYtState(-1);
+  await pause(8000);
+  // Counted by the nudge's own tally: a repaint's drift correction may also seek, and is not a nudge.
+  const capped = mus.kicks, cappedTimer = !!mus.kick;
+  tblMusicNudge = realNudge; mus.yt = realYt; mus.ytPrev = null;
+  clearTimeout(mus.kick); mus.kick = null; mus.kicks = 0;
+  tblMusicTick = null; tblMusicWatch();
+  return { cappedTimer, atOnce, afterRetry, afterPlaying, capped };
+}, withNudge);
+/* A fresh, long track: the 19-second test video above is over by now, and a finished track is rightly
+   never nudged — so the room is told about one that started a moment ago and has no end yet. */
+const freshTrack = (gen) => dm.evaluate((r, g) => CocLive.put(`tables/${r}/music/now`, {
+  kind: "youtube", src: "jNQXAC9IVRw", title: "YT2", playing: true, pos: 0, at: Date.now(), gen: g }), ROOM, gen);
+await freshTrack(46); await wait(2500);
+const control = await stuckRun(false);
+await freshTrack(47); await wait(2500);
+ok(control.atOnce.length === 0 && control.capped === 0,
+  `control: with the nudge removed, a stuck track is left alone (${JSON.stringify(control)})`);
+const nudged = await stuckRun(true);
+ok(nudged.atOnce.some((c) => c.startsWith("seekTo")) && nudged.atOnce.includes("playVideo"),
+  `a track that buffers and gives up is seeked to the room and told to play at once (${JSON.stringify(nudged.atOnce)})`);
+ok(nudged.afterRetry >= 2, `and nudged again a second later while it stays stuck (${nudged.afterRetry} seeks)`);
+ok(nudged.afterPlaying === nudged.afterRetry, "and left alone the moment it plays");
+ok(nudged.capped > 1 && nudged.capped <= 6 && !nudged.cappedTimer,
+  `and a track that never starts gets a few nudges, then none are pending (${nudged.capped}, timer ${nudged.cappedTimer})`);
+
 /* DRAGGING A TRACK INTO A FOLDER. Pointer events, because HTML5 drag-and-drop does not exist under a
    finger and half this table is played on a phone — the board learned that the hard way. jsdom has no
    `elementFromPoint` worth the name and no layout to read a drop target out of, so this is the only
