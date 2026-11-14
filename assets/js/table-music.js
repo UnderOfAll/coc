@@ -466,6 +466,19 @@ function tblMusicApply() {
        wraps; anything else stops at its own end. */
     const spot = tblMusicAt(now, ytDur);
     const over = spot.over || tblMusicOver();
+    /* THE CLOCK RUNNING OUT IS NOT THE TRACK RUNNING OUT, for a player still playing it. Since a fresh
+       track loads from 0, every player trails the room's clock by its own load time — about a second.
+       Pausing it the moment the clock said "over" stopped it at 18s of 19: it never reached ENDED, nothing
+       told the DM's device the track was done, and the queue sat in silence until the 25-second backstop.
+       Found by a 10-device run. Left alone, it plays its last second and ENDS, which is the cue. Nothing
+       here seeks, so this is not the replayed-tail loop the clamp exists for. */
+    if (over && !tblMusicOver()) {
+      try {
+        const holding = (mus.yt && mus.ytOn && mus.yt.getVideoData && mus.yt.getVideoData().video_id) || "";
+        const st = mus.yt && mus.ytOn ? Number(mus.yt.getPlayerState()) : -9;
+        if (holding === now.src && (st === 1 || st === 3)) return;
+      } catch { /* mid-load: fall through and pause */ }
+    }
     if (over) { try { mus.yt && mus.ytOn && mus.yt.pauseVideo(); } catch { /* mid-load */ } return; }
     tblMusicDriveYT(now.src, spot.at, allowed);
     return;

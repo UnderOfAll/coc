@@ -298,6 +298,29 @@ const cameBack = await dm.evaluate(() => ({ built: !!(mus.yt && mus.ytOn),
   state: (() => { try { return mus.yt.getPlayerState(); } catch { return "none"; } })() }));
 ok(cameBack.built && cameBack.state === 1, `left the table and came back: the YouTube player is rebuilt and playing (${JSON.stringify(cameBack)})`);
 
+/* THE QUEUE MOVES ON WHEN A YOUTUBE TRACK ENDS, not 25 seconds later. A fresh track loads from 0, so
+   every player trails the room's clock by its load time; pausing it when the CLOCK ran out stopped it a
+   second short of ENDED, and the queue waited for the backstop. Found by a 10-device run, 2026-11-14. */
+const shelfA = await dm.evaluate((r) => CocLive.push(`tables/${r}/music/tracks`, { kind: "youtube", src: "jNQXAC9IVRw", title: "Zoo", at: Date.now() }).then((x) => x.name || x), ROOM);
+const shelfB = await dm.evaluate((r, u) => CocLive.push(`tables/${r}/music/tracks`, { kind: "link", src: u, title: "After", at: Date.now() + 1 }).then((x) => x.name || x), ROOM, base + "/tone.wav");
+await wait(800);
+const [kA, kB] = await dm.evaluate(() => { const t = tblMusicTracks(); return [t.find((e) => e[1].title === "Zoo")[0], t.find((e) => e[1].title === "After")[0]]; });
+await dm.evaluate((r, b) => CocLive.put(`tables/${r}/music/queue`, [b]), ROOM, kB);
+await wait(600);
+/* Started as a slow device would see it: the room's clock 1.5s ahead of a player that loads from 0. A
+   fast headless player is otherwise never behind enough for the clock to run out first. */
+await dm.evaluate(async (a) => { await tblMusicPlay(a); await tblMusicSet({ at: tblNow() - 1500 }); }, kA);
+const zooStart = Date.now() - 1500;
+let movedAt = 0;
+while (Date.now() - zooStart < 40000) {
+  await wait(500);
+  if (await dm.evaluate(() => (tblMusicNow() || {}).title === "After")) { movedAt = (Date.now() - zooStart) / 1000; break; }
+}
+ok(movedAt > 15 && movedAt < 24, `a 19s YouTube track hands over to the queue when it ends (${movedAt ? movedAt.toFixed(1) + "s" : "not within 40s"})`);
+await dm.evaluate(() => tblMusicStop());
+await dm.evaluate((r, a, b) => Promise.all([CocLive.del(`tables/${r}/music/tracks/${a}`), CocLive.del(`tables/${r}/music/tracks/${b}`)]), ROOM, shelfA, shelfB);
+await wait(800);
+
 /* DRAGGING A TRACK INTO A FOLDER. Pointer events, because HTML5 drag-and-drop does not exist under a
    finger and half this table is played on a phone — the board learned that the hard way. jsdom has no
    `elementFromPoint` worth the name and no layout to read a drop target out of, so this is the only
