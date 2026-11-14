@@ -28,6 +28,7 @@
 const TBL_MUSIC_VOL = "coc:tbl:music:vol";      // this device's volume, 0-1
 const TBL_MUSIC_MUTE = "coc:tbl:music:mute";    // …and whether it is muted, both per DEVICE not per table
 const TBL_MUSIC_OK = "coc:tbl:music:ok";        // this browser has been touched, so it is allowed to play
+const TBL_MUSIC_SHOW = "coc:debug:show-player"; // a diagnostics device can bring the hidden player on screen
 /* A file becomes a base64 string a third bigger again, and it lands in the one document every device
    downloads on the way in. Four megabytes is about four minutes at a sane bitrate and is as far as this
    should ever be pushed — a link costs nothing and has no cap at all, which the panel says. */
@@ -319,7 +320,28 @@ function tblMusicHost() {
     // is torn out and rebuilt restarts the track from nothing every time a panel is opened.
     document.body.appendChild(host);
   }
+  tblMusicShowSync(host);
   return host;
+}
+
+/* THE HIDDEN PLAYER, BROUGHT INTO VIEW — diagnostics devices only, and only when asked. Kayki's tracks sat
+   "unstarted" at 0s for 15-17s while the app was sure it had said play, and nothing in the trace can say
+   WHY: an ad, a "confirm you're not a bot" wall and a spinner all report the same state. Looking at the
+   frame itself answers it. Off for everyone else, always; the switch lives in the Diagnostics panel. */
+function tblMusicShowOn() {
+  try { return typeof tblDebugOn === "function" && tblDebugOn() && localStorage.getItem(TBL_MUSIC_SHOW) === "1"; }
+  catch { return false; }
+}
+function tblMusicShowSync(host) {
+  const h = host || document.getElementById("vtt-music");
+  if (h) h.classList.toggle("music-host-shown", tblMusicShowOn());
+}
+function tblMusicShowToggle() {
+  try {
+    if (tblMusicShowOn()) localStorage.removeItem(TBL_MUSIC_SHOW);
+    else localStorage.setItem(TBL_MUSIC_SHOW, "1");
+  } catch { /* storage refused; the box simply stays as it was */ }
+  tblMusicShowSync();
 }
 
 function tblMusicMakeYT() {

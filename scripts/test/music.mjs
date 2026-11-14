@@ -262,7 +262,29 @@ ok(said("yt state", "playing"), "and when the player actually began — the gap 
 ok(md.yt && md.yt.state === "playing" && md.now && md.now.playing, `and the snapshot agrees (${JSON.stringify(md.yt)})`);
 ok(md.trace.every((e) => e.ago >= 0), "with every entry timed");
 ok(md.trace.filter((e) => e.what === "yt play").length <= 1, "and the 2.5s tick does not flood it");
+
+/* THE PLAYER ON SCREEN. A stalled track reports "unstarted @0s" whether it is an ad, a bot wall or a
+   spinner, so a diagnostics device can bring the hidden frame into view and LOOK. Measured, not trusted:
+   a class that is set but a frame still 1px wide off the left edge shows nothing. */
+const frameBox = () => dm.evaluate(() => {
+  const f = document.querySelector("#vtt-music iframe");
+  if (!f) return null;
+  const r = f.getBoundingClientRect();
+  return { w: Math.round(r.width), h: Math.round(r.height), x: Math.round(r.left), vis: getComputedStyle(document.getElementById("vtt-music")).opacity };
+});
+const hid = await frameBox();
+ok(hid && hid.w <= 1 && hid.x < 0, `by default the player stays hidden (${JSON.stringify(hid)})`);
+ok(await dm.evaluate(() => debugPanelHTML().includes('data-tbl="dbg-player"')), "the Diagnostics panel offers the switch");
+await dm.evaluate(() => tblMusicShowToggle());
+const shown = await frameBox();
+ok(shown && shown.w >= 300 && shown.h >= 170 && shown.x >= 0 && shown.vis === "1",
+  `switched on, the frame is on screen and big enough to read (${JSON.stringify(shown)})`);
+ok(await dm.evaluate(() => mus.yt.getPlayerState() === 1), "and it is still the same player, still playing");
 await dm.evaluate(() => localStorage.removeItem("coc:debug"));
+await dm.evaluate(() => tblMusicShowSync());
+const off2 = await frameBox();
+ok(off2 && off2.w <= 1, `with diagnostics off, the switch left on does nothing — players never see it (${JSON.stringify(off2)})`);
+await dm.evaluate(() => { localStorage.setItem("coc:debug", "1"); tblMusicShowToggle(); localStorage.removeItem("coc:debug"); });
 
 /* DRAGGING A TRACK INTO A FOLDER. Pointer events, because HTML5 drag-and-drop does not exist under a
    finger and half this table is played on a phone — the board learned that the hard way. jsdom has no

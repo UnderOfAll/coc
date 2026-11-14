@@ -1323,6 +1323,7 @@ document.addEventListener("click", (e) => {
   }
   else if (act === "dbg-copy") tblCopyDiagnostics();
   else if (act === "dbg-backup") tblDownloadBackup();
+  else if (act === "dbg-player") { tblMusicShowToggle(); paintSide(); }
   else if (act === "seat-pic") { tbl.ui.seatPic = "maps/" + val; paintSide(); }
   else if (act === "seat-take") tblTakeSeat(val).catch(tblFail);
   else if (act === "seat-new") tblNewSeat().catch(tblFail);
@@ -1755,6 +1756,7 @@ function debugPanelHTML() {
       ${row("room is at", d.music && d.music.now ? `${d.music.now.roomAt}s${d.music.now.playing ? "" : " (paused)"}` : "nothing playing")}
       ${row("sound allowed / page touched", d.music ? `${d.music.allowed ? "yes" : "no"} / ${d.music.touched}` : "")}
       ${row("events logged", d.music ? String(d.music.trace.length) : "")}
+      <button class="btn-quiet" data-tbl="dbg-player">${tblMusicShowOn() ? "Hide" : "Show"} the YouTube player</button>
       <p class="panel-sub">This table</p>
       ${row("figures / strokes / rolls / here",
         d.counts ? `${d.counts.figures} / ${d.counts.strokes} / ${d.counts.rolls} / ${d.counts.here}` : "")}

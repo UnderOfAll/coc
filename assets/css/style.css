@@ -1956,6 +1956,11 @@ body:has(.vtt) { height: 100dvh; overflow: hidden; }
    some engines treat as "not playing" and refuse. */
 .music-host { position: fixed; left: -9999px; top: 0; width: 1px; height: 1px;
   overflow: hidden; pointer-events: none; opacity: 0; }
+/* Diagnostics only: the same frame, on screen, so a stalled track shows what YouTube is doing instead. */
+.music-host.music-host-shown { left: auto; top: auto; right: 12px; bottom: 12px; z-index: 900;
+  width: min(320px, calc(100vw - 24px)); height: 180px; opacity: 1; pointer-events: auto;
+  border: 2px solid var(--gold); background: #000; }
+.music-host-shown iframe { width: 100% !important; height: 100% !important; }
 .music-now { margin: 0.2rem 0 0.6rem; }
 .music-vol { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
 .music-slider { flex: 1 1 8rem; min-width: 6rem; accent-color: var(--gold); }
