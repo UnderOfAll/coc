@@ -255,6 +255,11 @@ await dm.evaluate((r) => CocLive.put(`tables/${r}/music/now`, {
   kind: "youtube", src: "jNQXAC9IVRw", title: "YT2", playing: true, pos: 0, at: Date.now(), gen: 45 }), ROOM);
 await wait(5000);
 const md = await dm.evaluate(() => tblDiagnostics().music);
+// Who holds what, as this screen sees it — the initiative report could not be answered without it.
+const hd = await dm.evaluate(() => tblDiagnostics().holders);
+ok(hd && hd.presence.length >= 2 && hd.presence.every((p) => typeof p.ageS === "number")
+  && typeof hd.clock.skewMs === "number" && Array.isArray(hd.figures),
+  `diagnostics say who is present and how long ago they spoke (${hd ? hd.presence.length : 0} here)`);
 const said = (w, d) => md.trace.some((e) => e.what === w && (!d || String(e.detail).includes(d)));
 ok(said("told", "PLAY youtube"), "with them on, it notes being told to play, and where the room was");
 ok(said("yt load", "jNQXAC9IVRw"), "that it handed the player the new track");

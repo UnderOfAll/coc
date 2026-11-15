@@ -938,6 +938,7 @@ click($$('[data-act="lu-sub"]')[0]);
 // …and the same must be true of the "what this level adds" list itself.
 const sums=$$(".levelup .lu-grid .lu-list .lu-sum");
 ok(sums.length>0&&sums.some(n=>n.textContent.trim().length>20),"new features show what they do, not only their name");
+ok($$(".levelup .lu-grid .lu-list .fmeta").some(n=>!n.closest(".sub-card")),"and what they cost, how often and how far, as chips");
 ok(!$('[data-act="lu-confirm"]').disabled,"unblocked once chosen");
 const hpBefore=peek("sheet.ch.play.hp"), maxBefore=peek("derive(sheet.ch).hpMax");
 ok(/\+\d/.test($(".lu-hp").textContent),"shows the hit points it would add");

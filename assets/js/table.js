@@ -1693,6 +1693,31 @@ async function routeDebug(arg) {
     </section>`);
 }
 
+function tblHoldersDiag() {
+  const now = Date.now(), table = tblNow();
+  const pres = tbl.data.presence || {};
+  const meta = tbl.data.meta || {};
+  const init = meta.init || null;
+  const figures = Object.entries(tblTokens())
+    .filter(([, t]) => t && (t.kind !== "npc" || t.owner || t.petOf))
+    .map(([id, t]) => {
+      const p = t.owner ? pres[t.owner] : null;
+      return {
+        id, name: String(t.name || "").slice(0, 24), owner: t.owner || "", petOf: t.petOf || "",
+        mine: tblIsMine(t), myPet: tblIsMyPet(t),
+        holderHere: !!p, holderAgeS: p ? Math.round((table - (Number(p.at) || 0)) / 1000) : null,
+        present: tblHolderPresent(t),
+      };
+    });
+  return {
+    clock: { skewMs: tblSkew(now), aheadOfMineMs: table - now },
+    presence: Object.entries(pres).map(([cid, w]) => ({ cid, name: w && w.name, char: w && w.charCode, role: w && w.role,
+      ageS: w ? Math.round((table - (Number(w.at) || 0)) / 1000) : null })),
+    figures,
+    init: init ? { need: init.need || [], have: init.have || {}, mineOwed: tblInitOwed() } : null,
+  };
+}
+
 /* What the board thinks is going on, right now. */
 function tblDiagnostics() {
   const scene = tbl ? tblScene() : {};
@@ -1727,6 +1752,10 @@ function tblDiagnostics() {
       here: Object.keys(tbl.data.presence || {}).length,
     } : null,
     trace: TBL_TRACE.slice(-25),
+    /* WHO THIS SCREEN THINKS HOLDS WHAT. Kayki, 2026-11-15: two players got "You are in" and no Roll
+       button, while the DM's screen offered to roll for them as if they had left. Both answers come from
+       here — a figure's holder, whether that is this device, and whether that holder reads as present. */
+    holders: tbl ? tblHoldersDiag() : null,
     music: typeof tblMusicDiagnostics === "function" ? tblMusicDiagnostics() : null,
   };
 }

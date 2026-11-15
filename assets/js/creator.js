@@ -1612,6 +1612,16 @@ function trickMetaRow(t, d) {
   });
 }
 
+/* WHAT A NEW FEATURE OR TRICK COSTS, at the moment you take it. Kayki: cost, uses and range belong in the
+   level-up window, and Pledge / Turn / Prestige should explain themselves there the way Gambit DC does.
+   The same chips the sheet and the Grimoire show, with the tier as a badge that opens its definition. */
+function luMetaHTML(x, d) {
+  if (!x.tier) return metaRow(x.meta);
+  const badge = TIERS[x.tier]
+    ? `<span class="tier-badge tier-${esc(x.tier)}">${plainTermHTML(cap(x.tier), TIERS[x.tier], "")}</span>` : "";
+  return badge + trickMetaRow(x, d);
+}
+
 /* Features that cost something to use get a counter; the rest are reference text. A feature is
    "limited" if its own text says so — the sheet reads the meta rather than a hand-kept list. */
 function limitOf(f, level) {
@@ -1993,6 +2003,7 @@ function levelUpPanel(dNow) {
         <span class="lvl">L${esc(x.level || x._at)}</span> <strong>${esc(x.name)}</strong>
         ${x._from && x._from !== cls.name ? `<span class="muted">${esc(x._from)}</span>` : ""}
         ${x.role === "roleplay" ? `<span class="role-badge">Roleplay</span>` : ""}
+        ${luMetaHTML(x, dNext)}
         <span class="lu-sum">${fmtDesc(x.sheetSummary || x.description || "", x.tier ? trickLadder(x) : undefined)}</span>
       </li>`).join("")}</ul>`
     : `<p class="lu-none">${esc(empty)}</p>`;
