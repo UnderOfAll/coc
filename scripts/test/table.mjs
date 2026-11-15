@@ -3232,6 +3232,11 @@ await wait(150);
     "and the music never computes a negative position from a stamp it cannot reach");
   ok(peek(`Math.round(tblMusicWhere({ pos: 10, playing: true, at: tblNow() - 5000 }))`) === 15,
     "a track started five seconds ago at table time is five seconds further on");
+  // Table time MOVES on a slow device. It used to equal the newest stamp until the next event, so the
+  // music clock froze and the drift check dragged the player back to the same spot every tick.
+  const walked = peek(`(function () { const real = Date.now; let n = real.call(Date);
+    Date.now = () => n; try { const a = tblNow(); n += 2500; return tblNow() - a; } finally { Date.now = real; } })()`);
+  ok(walked === 2500, `table time on a slow device advances with its clock (${walked}ms of 2500)`);
 }
 
 /* A ROLL NOBODY ELSE CAN SEE SAYS SO. Kayki: "there is a player that the dice doesnt show for anyone,

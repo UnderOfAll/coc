@@ -183,6 +183,7 @@ function tblCanMove(token) {
  *   - and the music's position is measured from when the track started, so a slow device thinks a track
  *     began later than it did and plays it from the wrong place.
  * None of it needs a server; it needs everyone to agree on what "now" is, and the table already says. */
+let tblSkewSeen = { newest: 0, skew: 0 };
 function tblSkew(now) {
   if (!tbl || !tbl.data) return 0;
   if (now == null) now = Date.now();
@@ -192,7 +193,13 @@ function tblSkew(now) {
   for (const w of Object.values(tbl.data.presence || {})) bump(w && w.at);
   const m = (tbl.data.music || {}).now;
   if (m) bump(m.at);
-  const skew = newest - now;
+  /* THE SKEW IS MEASURED ONCE PER NEW STAMP, then held, so table time keeps moving. Kayki, 2026-11-15,
+     mid-session: "the musics are repeating itself after 3 sec and again and again." Recomputed on every
+     read, `newest - now` made tblNow() equal the newest stamp on any device behind it, which is a clock
+     that stands still between events. The music's position froze, the player ran ahead, and the 2.5s
+     drift check seeked it back to the same spot, again and again. */
+  if (newest !== tblSkewSeen.newest) tblSkewSeen = { newest, skew: newest - now };
+  const skew = tblSkewSeen.skew;
   // A day is not a clock difference, it is a bad record; adopting it would freeze the table in the
   // future for good.
   return skew > 0 && skew < 86400000 ? skew : 0;
