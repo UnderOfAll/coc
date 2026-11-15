@@ -1718,9 +1718,9 @@
         {
           "level": 2,
           "name": "Loaded Deck",
-          "description": "The first time each turn you hit a creature with a finesse weapon you're proficient with, you can spend 1 Mayhem to deal an extra [[1d6]] damage of that weapon's damage type.\n\n**On a critical hit — whether it came up naturally on a 20 or was forced by Ace in the Hole — everything doubles together.** You double the weapon's damage dice as normal AND you double Loaded Deck's extra dice, because they are damage dice on the same attack. A natural 20 also means Loaded Deck costs you no Mayhem at all: the deck was already loaded.",
+          "description": "The first time each turn you hit a creature with a finesse weapon you're proficient with, you can spend 1 Mayhem to deal an extra [[1d6]] damage of that weapon's damage type.\n\n**On any critical hit, everything doubles together.** You double the weapon's damage dice as normal AND you double Loaded Deck's extra dice, because they are damage dice on the same attack. A natural 20 also means Loaded Deck costs you no Mayhem at all: the deck was already loaded.",
           "narration": "The card that leaves your hand is heavier than it has any right to be. It goes in past the guard at an angle a card should not hold, and the wound it opens is much worse than the sound it made.",
-          "sheetSummary": "On your first hit of the turn with a finesse weapon you're proficient with: extra [[1d6]] damage of that weapon's type. On ANY critical hit — natural 20 or forced by Ace in the Hole — the weapon's dice AND Loaded Deck's dice are both doubled. On a natural 20 it also costs no Mayhem.",
+          "sheetSummary": "On your first hit of the turn with a finesse weapon you're proficient with: extra [[1d6]] damage of that weapon's type. On ANY critical hit, the weapon's dice AND Loaded Deck's dice are both doubled. On a natural 20 it also costs no Mayhem.",
           "meta": {
             "action": "Part of Attack",
             "cost": "1 Mayhem",
