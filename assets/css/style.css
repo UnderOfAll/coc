@@ -1066,9 +1066,19 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 .gear-k { color: var(--muted); font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.04em; }
 .gear-v { min-width: 0; overflow-wrap: anywhere; }
 .gear-x { grid-column: 2; display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.gear-acts { grid-column: 2; display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.2rem; }
+.gear-edit { margin: 0.4rem 0 0.8rem; padding: 0.7rem; border: 1px solid var(--gold); border-radius: 8px;
+  background: var(--panel-2); display: grid; gap: 0.5rem; }
+.gear-f { display: grid; gap: 0.2rem; font-size: 0.9rem; }
+.gear-f > span { color: var(--muted); font-size: 0.82rem; }
+.gear-f .text, .gear-f .num { width: 100%; box-sizing: border-box; }
+.gear-check { grid-template-columns: auto 1fr; align-items: center; gap: 0.5rem; }
+.gear-check > span { color: inherit; font-size: 0.9rem; }
+#gear-pick { flex: 1; min-width: 0; }
 @media (max-width: 480px) {
   .gear-row { grid-template-columns: 1fr; }
   .gear-x { grid-column: 1; }
+  .gear-acts { grid-column: 1; }
 }
 /* The level box is a stepper's middle, not a full-width field. */
 input.step-val { width: 3.4rem; }

@@ -753,8 +753,9 @@ ok($$(".atk-card").length===1,"choosing one weapon shows exactly one attack");
 // A character saved before weapons were choosable has to be able to fix that from the sheet.
 peek(`delete sheet.ch.weapons; renderSheet();`);
 ok($$(".atk-card").length===3,"an old save with no weapons recorded falls back to all three");
-click($$('[data-act="carry"]').find(b=>b.dataset.val==="Dagger"));
-ok($$(".atk-card").length===1,"and can be corrected from the Gear panel");
+// It corrects that by dropping what it does not carry, under Gear, which keeps the rest.
+for(const n of ["Razor Cards","Harlequin's Cane"]) click($$('.gear-row').find(r=>r.querySelector(".gear-v strong")&&r.querySelector(".gear-v strong").textContent===n).querySelector('[data-act="gear-drop"]'));
+ok($$(".atk-card").length===1&&/Dagger/.test($(".atk-card").textContent),"and can be corrected from the Gear panel");
 // You have the weapon you chose and no list of the others. Kayki: "the player doesn't have them, he
 // only has the option he chose in character creation." The picker survives for exactly one case — a
 // character saved before weapons were choosable, which is the case just above.
@@ -960,6 +961,24 @@ ok(peek("sheet.ch.scores.Dexterity")===17,"Dex 15 -> 17");
 ok(peek("sheet.ch.level")===4,"level 4");
 click($('[data-act="leveldown"]'));
 ok(peek("sheet.ch.level")===3&&peek("sheet.ch.scores.Dexterity")===15,"undo a level puts the ability points back");
+console.log("\n— GEAR FROM THE COMPENDIUM —");
+/* Kayki, 2026-11-15: any compendium weapon can be picked up, and the DM can hand one over with a story —
+   "like the Iron Chain, but +1 and slashing". Proficiency is the player's call. */
+click($('.tab[data-val="gear"]'));
+const gearWas=peek("derive(sheet.ch).carried.length");
+$("#gear-pick").value="w:Iron Chain";
+click($('[data-act="gear-add"]'));
+ok(peek("derive(sheet.ch).carried.length")===gearWas+1,"an added weapon is carried alongside the creation pick");
+const gid=peek('sheet.ch.gear.find(g=>g.base==="Iron Chain").id');
+click($(`[data-act="gear-edit"][data-val="${gid}"]`));
+$("#ge-name").value="Shining Chain"; $("#ge-bonus").value="1"; $("#ge-type").value="slashing"; $("#ge-prof").checked=false;
+click($('[data-act="gear-save"]'));
+const sc=peek('(()=>{const d=derive(sheet.ch);const c=d.carried.find(x=>x.w.name==="Shining Chain");return c&&{hit:c.hit,mod:c.mod,type:c.w.damage.type,prof:d.prof};})()');
+ok(sc&&sc.type==="slashing","its damage type is the one it was given");
+ok(sc&&sc.hit===sc.mod+1,"not proficient: to-hit is the modifier plus the item's +1, no proficiency bonus");
+click($('.tab[data-val="attacks"]'));
+ok($$(".atk-card").some(n=>/Shining Chain/.test(n.textContent)&&/Based on\s*Iron Chain/.test(n.textContent)),"and it has its own card under Attacks");
+click($('.tab[data-val="status"]'));
 console.log("\n— PERMANENT DELETE —");
 ok($('[data-act="delete-arm"]'),"a delete control exists");
 ok(!$("#del-confirm"),"but no confirm box until you ask for one");
@@ -1051,7 +1070,7 @@ ok(paneOf(".atk-card")==="attacks","weapons attacks are their own field");
 ok(paneOf(".trick-list-sheet")==="tricks","tricks are their own field");
 ok(paneOf(".feat-grid")==="features","features are their own field");
 ok(paneOf(".chips")==="status","the states chips are Status");
-ok(paneOf('[data-act="carry"]')==="gear","what you are holding is Gear");
+ok(paneOf('[data-act="gear-add"]')==="gear","what you are holding is Gear");
 ok(paneOf('[data-act="levelup"]')==="progress","levelling up is filed away from play");
 ok(paneOf('[data-act="delete-arm"]')==="progress","and so is deleting");
 click($$('.tab').find(b=>b.dataset.val==="inventory"));

@@ -62,6 +62,27 @@ function attackAbilityFor(cls, w, mods) {
   return { ability: "Strength", why: "No finesse and not a ranged weapon, so this attack uses Strength." };
 }
 
+/* The player's own gear: compendium pieces with their name, bonus, damage type and note on top. Firebase
+   drops an empty list, so absent and empty mean the same thing. */
+function gearList(ch) {
+  return Array.isArray(ch.gear) ? ch.gear.filter((g) => g && g.id && g.base) : [];
+}
+function gearKind(g) {
+  if (idx.weaponsByName.get(g.base)) return "weapon";
+  const a = idx.armorById.get(g.base);
+  return a ? (a.category === "shield" ? "shield" : "armor") : "";
+}
+/* What is being WORN in a slot: a piece from the gear list when one is on, otherwise the one chosen at
+   creation. A worn gear piece keeps its own name and adds its bonus to AC. */
+function wornPiece(ch, slot) {
+  const gid = slot === "armor" ? ch.armorGear : ch.shieldGear;
+  const g = gid ? gearList(ch).find((x) => x.id === gid) : null;
+  const base = g ? idx.armorById.get(g.base) : null;
+  if (base) return Object.assign({}, base, { name: g.name || base.name, _bonus: Number(g.bonus) || 0, _gear: g.id, _note: g.note || "" });
+  const id = slot === "armor" ? ch.armorId : ch.shieldId;
+  return id ? idx.armorById.get(id) || null : null;
+}
+
 /* Everything the sheet shows, computed fresh from the class data every time. */
 function derive(ch) {
   const cls = idx.classes.get(ch.classId);
@@ -84,21 +105,25 @@ function derive(ch) {
   hpMax = Math.max(1, hpMax);
 
   const primary = cls.primaryAbility;
-  const armor = ch.armorId ? idx.armorById.get(ch.armorId) : null;
-  const shield = ch.shieldId ? idx.armorById.get(ch.shieldId) : null;
+  const armor = wornPiece(ch, "armor");
+  const shield = wornPiece(ch, "shield");
 
   // AC: armour base + capped Dex, or 10 + Dex unarmoured, plus any shield.
   let ac, acNote;
   if (armor) {
     const cap = armor.maxDexBonus;
     const dex = cap == null ? mods.Dexterity : Math.min(mods.Dexterity, cap);
-    ac = Number(armor.baseAC) + dex;
-    acNote = `${armor.name} ${armor.baseAC} ${dex >= 0 ? "+" : "−"} ${Math.abs(dex)} Dex`;
+    ac = Number(armor.baseAC) + dex + (armor._bonus || 0);
+    acNote = `${armor.name} ${armor.baseAC} ${dex >= 0 ? "+" : "−"} ${Math.abs(dex)} Dex`
+      + (armor._bonus ? ` ${armor._bonus > 0 ? "+" : "−"} ${Math.abs(armor._bonus)} bonus` : "");
   } else {
     ac = 10 + mods.Dexterity;
     acNote = `unarmoured 10 ${mods.Dexterity >= 0 ? "+" : "−"} ${Math.abs(mods.Dexterity)} Dex`;
   }
-  if (shield) { ac += Number(shield.acBonus || 0); acNote += ` + ${shield.acBonus} ${shield.name}`; }
+  if (shield) {
+    const sb = Number(shield.acBonus || 0) + (shield._bonus || 0);
+    ac += sb; acNote += ` + ${sb} ${shield.name}`;
+  }
 
   const subclass = ch.subclassId ? idx.subclasses.get(ch.subclassId) : null;
 
@@ -153,8 +178,26 @@ function derive(ch) {
   const carried = picked.map((w) => {
     const { ability, why } = attackAbilityFor(cls, w, mods);
     const mod = mods[ability] || 0;
-    return { w, ability, why, hit: prof + mod, mod };
+    return { w, ability, why, hit: prof + mod, mod, proficient: true, bonus: 0 };
   });
+  /* GEAR FROM THE COMPENDIUM, on top of what creation gave. Kayki, 2026-11-15: a player can pick up any
+     weapon, and the DM can hand them one with a story attached — "like the Iron Chain, but +1, and
+     slashing". So each entry is a compendium weapon underneath with the player's own name, bonus, damage
+     type and note on top, and whether proficiency applies is the PLAYER'S call, not the class list's. */
+  for (const g of gearList(ch)) {
+    const base = idx.weaponsByName.get(g.base);
+    if (!base) continue;
+    const w = Object.assign({}, base, {
+      name: g.name || base.name,
+      damage: { die: base.damage.die, type: g.dmgType || base.damage.type },
+      _gear: g.id, _base: base.name, _note: g.note || "",
+    });
+    const { ability, why } = attackAbilityFor(cls, base, mods);
+    const mod = mods[ability] || 0;
+    const bonus = Number(g.bonus) || 0;
+    const proficient = g.prof !== false;
+    carried.push({ w, ability, why, mod, bonus, proficient, hit: (proficient ? prof : 0) + mod + bonus });
+  }
 
   // The class's own named DCs, worked out for this character. Caps live in the Engine panel and
   // Parry has its own box, so both are left out rather than duplicated.
@@ -286,6 +329,7 @@ const ui = {
   engineRules: false,   // the engine's own rules, open on the sheet — interface state, not the character
   tab: "status",   // which field of the sheet is open; interface state, never part of the character
   scrollToFields: false,
+  gearEdit: null,       // the gear entry whose edit form is open
 };
 
 function toolEl() { return $("#tool"); }
@@ -1478,15 +1522,18 @@ function attacksPanel(d) {
      with a weapon — the to-hit and the damage — were two cells in a list of five. Kayki: "attacks show
      the attack we have with the weapon, not just a label of the weapon itself." So: the name leads, the
      two rolls are the two big buttons beside it, and everything else is underneath. */
-  const cards = d.carried.map(({ w, ability, why, hit, mod }) => {
+  const cards = d.carried.map(({ w, ability, why, hit, mod, bonus = 0, proficient = true }) => {
+    // The item's own bonus rides on both rolls, as a +1 weapon does; proficiency only on the to-hit.
+    const dm = mod + bonus;
     const vers = (w.properties || []).includes("versatile") && w.versatileDamage
-      ? `<p class="atk-alt muted">Two-handed: ${rollBtn(w.versatileDamage + (mod ? sign(mod) : ""),
-          w.name + " damage (two-handed)", w.versatileDamage + " " + sign(mod))} ${esc(w.damage.type)}</p>` : "";
+      ? `<p class="atk-alt muted">Two-handed: ${rollBtn(w.versatileDamage + (dm ? sign(dm) : ""),
+          w.name + " damage (two-handed)", w.versatileDamage + " " + sign(dm))} ${esc(w.damage.type)}</p>` : "";
     // chipTip keeps the explanation on its own ⓘ rather than on the control — tapping a control on a
     // phone must do the thing, not explain it.
     const hitBtn = chipTip(rollBtn("1d20" + sign(hit), w.name + " to hit", sign(hit)),
-      `${why} Proficiency ${sign(d.prof)} + ${ability} ${sign(mod)}.`);
-    const dmgSpec = w.damage.die + (mod ? sign(mod) : "");
+      `${why} ${proficient ? `Proficiency ${sign(d.prof)}` : "Not proficient: no proficiency bonus"} + ${ability} ${sign(mod)}`
+      + `${bonus ? ` + item ${sign(bonus)}` : ""}.`);
+    const dmgSpec = w.damage.die + (dm ? sign(dm) : "");
     return `<div class="atk-card">
       <div class="atk-head">
         <strong class="atk-name">${esc(w.name)}</strong>
@@ -1496,9 +1543,12 @@ function attacksPanel(d) {
       <div class="atk-nums">
         <span class="atk-num"><span class="atk-k">To hit</span>${hitBtn}</span>
         <span class="atk-num"><span class="atk-k">Damage</span>${rollBtn(dmgSpec, w.name + " damage",
-          w.damage.die + " " + sign(mod))} <span class="muted">${esc(w.damage.type)}</span></span>
+          w.damage.die + " " + sign(dm))} <span class="muted">${esc(w.damage.type)}</span></span>
       </div>
       ${vers}
+      ${w._base && w._base !== w.name ? `<p class="atk-meta"><span class="atk-k">Based on</span> ${esc(w._base)}</p>` : ""}
+      ${proficient ? "" : `<p class="atk-meta muted">Not proficient — no proficiency bonus on the to-hit.</p>`}
+      ${w._note ? `<p class="atk-meta"><span class="atk-k">Effect</span> ${esc(w._note)}</p>` : ""}
       ${(w.properties || []).length ? `<p class="atk-meta"><span class="atk-k">Properties</span>
         ${propsHTML(w.properties)}</p>` : ""}
       ${w.mastery ? `<p class="atk-meta"><span class="atk-k">Mastery</span> ${masteryHTML(w.mastery)}</p>` : ""}
@@ -1791,39 +1841,193 @@ function statePanel(d, p) {
  * second weapon added to a growing pile. That is what creation does (one pick), and the sheet disagreeing
  * with creation is how a character ended up listing every weapon its class is proficient with. */
 function gearPanel(d, ch) {
-  const carried = Array.isArray(ch.weapons) ? ch.weapons : [];
-  const held = carried.length ? (d.weapons.find((w) => carried.includes(w.name)) || null) : null;
-  const row = (label, name, note, extra) => `<div class="gear-row">
+  const gear = gearList(ch);
+  const worn = new Set([ch.armorGear, ch.shieldGear].filter(Boolean));
+  const row = (label, name, note, extra, acts) => `<div class="gear-row">
     <span class="gear-k">${label}</span>
     <span class="gear-v"><strong>${esc(name)}</strong>${note ? ` <span class="muted">${note}</span>` : ""}</span>
     ${extra ? `<span class="gear-x">${extra}</span>` : ""}
+    ${acts ? `<span class="gear-acts">${acts}</span>` : ""}
   </div>`;
+  const btn = (act, val, text) => `<button class="btn-quiet" data-act="${act}" data-val="${esc(val)}">${text}</button>`;
+  // A creation pick is edited by first becoming an ordinary gear entry, so it has a key: "~" marks it.
+  const pieceActs = (gid, slot) => gid
+    ? btn("gear-edit", gid, "Edit") + btn("gear-off", slot, "Take off")
+    : btn("gear-edit", "~" + slot, "Edit") + btn("gear-off", slot, "Take off");
+  const bonusNote = (n) => n ? ` ${sign(n)}` : "";
+  const weaponRows = d.carried.map(({ w, bonus = 0, proficient = true }) => row(
+    plainTermHTML("Weapon", "Carried and ready. Its to-hit and damage are worked out under Attacks."),
+    w.name + bonusNote(bonus),
+    `${esc(w.damage.die)} ${esc(w.damage.type)}${w.range ? ` &middot; ${rangeTermHTML(w.range)}` : ""}`
+      + (proficient ? "" : " &middot; not proficient"),
+    propsHTML(w.properties) + (w.mastery ? " " + masteryHTML(w.mastery) : "") + (w._note ? `<br>${esc(w._note)}` : ""),
+    w._gear ? btn("gear-edit", w._gear, "Edit") + btn("gear-drop", w._gear, "Drop")
+      : btn("gear-edit", "~w:" + w.name, "Edit") + btn("gear-drop", "~w:" + w.name, "Drop"))).join("");
+  const bag = gear.filter((g) => gearKind(g) !== "weapon" && !worn.has(g.id)).map((g) => {
+    const a = idx.armorById.get(g.base);
+    const kind = gearKind(g);
+    return row(kind === "shield" ? "Shield" : "Armour", (g.name || a.name) + bonusNote(Number(g.bonus) || 0),
+      kind === "shield" ? `+${esc(a.acBonus)} AC` : `AC ${esc(acOf(a, d.mods.Dexterity))}`,
+      g.note ? esc(g.note) : "",
+      btn("gear-wear", g.id, "Wear") + btn("gear-edit", g.id, "Edit") + btn("gear-drop", g.id, "Drop"));
+  }).join("");
   return `<section class="panel">
+    <p class="panel-sub">Wearing</p>
     <div class="gear-list">
       ${row(plainTermHTML("Armour", "What you are wearing. Your AC at the top of the sheet already includes "
         + "it, and your shield if you carry one."),
-        d.armor ? d.armor.name : "None",
-        d.armor ? `AC ${esc(d.armor.baseAC)}` : "unarmoured",
-        d.armor && d.armor.trait ? armorTraitHTML(d.armor.trait) : "")}
-      ${d.shield ? row("Shield", d.shield.name, `+${esc(d.shield.acBonus)} AC`, "") : ""}
-      ${held
-        ? row(plainTermHTML("Weapon", "The one you chose when you built this character. Its to-hit and "
-            + "its damage are worked out under Attacks, proficiency already included."),
-            held.name,
-            `${esc(held.damage.die)} ${esc(held.damage.type)}${held.range ? ` &middot; ${rangeTermHTML(held.range)}` : ""}`,
-            propsHTML(held.properties) + (held.mastery ? " " + masteryHTML(held.mastery) : ""))
-        : ""}
+        d.armor ? d.armor.name + bonusNote(d.armor._bonus || 0) : "None",
+        d.armor ? `AC ${esc(acOf(d.armor, d.mods.Dexterity) + (d.armor._bonus || 0))}` : "unarmoured",
+        (d.armor && d.armor.trait ? armorTraitHTML(d.armor.trait) : "") + (d.armor && d.armor._note ? `<br>${esc(d.armor._note)}` : ""),
+        d.armor ? pieceActs(d.armor._gear, "armor") : "")}
+      ${d.shield ? row("Shield", d.shield.name + bonusNote(d.shield._bonus || 0),
+        `+${esc(Number(d.shield.acBonus || 0) + (d.shield._bonus || 0))} AC`,
+        d.shield._note ? esc(d.shield._note) : "", pieceActs(d.shield._gear, "shield")) : ""}
     </div>
-    ${/* YOU HAVE THE WEAPON YOU CHOSE, and no list of the others. Kayki: "the player doesn't have them,
-          he only has the option he chose in character creation." The picker survives for exactly one
-          case — a character saved before weapons were choosable, which has none recorded at all and
-          would otherwise be a sheet with no weapon on it and no way to give it one. */""}
-    ${held ? "" : `<p class="muted">No weapon was recorded when this character was made, so every weapon
-        the class is proficient with is listed under Attacks. Choose the one you actually carry:</p>
-      <div class="chips">${d.weapons.map((w) => chipTip(
-        `<button class="chip" data-act="carry" data-val="${esc(w.name)}">${esc(w.name)}</button>`,
-        weaponTipHTML(w, d))).join("")}</div>`}
+    <p class="panel-sub">Weapons</p>
+    ${weaponRows ? `<div class="gear-list">${weaponRows}</div>` : `<p class="muted">No weapon carried.</p>`}
+    ${bag ? `<p class="panel-sub">In the bag</p><div class="gear-list">${bag}</div>` : ""}
+    ${ui.gearEdit ? gearEditHTML(d, ch) : ""}
+    ${gearAddHTML(d)}
   </section>`;
+}
+
+/* ADD FROM THE COMPENDIUM. Every weapon — the class's own are marked, and proficiency starts on for
+   those and off for the rest, which the player can change. Armour only from what the class can wear. */
+function gearAddHTML(d) {
+  const own = new Set(d.weapons.map((w) => w.name));
+  const { wearable, shields } = armorFor(d.cls);
+  const weapons = [...(store.weapons || [])].sort((a, b) => a.name.localeCompare(b.name));
+  const opt = (v, t) => `<option value="${esc(v)}">${esc(t)}</option>`;
+  return `<p class="panel-sub">Add from the compendium</p>
+    <div class="inv-add">
+      <select id="gear-pick" class="text">
+        <optgroup label="Weapons">${weapons.map((w) => opt("w:" + w.name,
+          w.name + " — " + w.damage.die + " " + w.damage.type + (own.has(w.name) ? " (your class)" : ""))).join("")}</optgroup>
+        <optgroup label="Armour you can wear">${wearable.map((a) => opt("a:" + (a.id || slug(a)),
+          a.name + " — AC " + a.baseAC + " " + a.category)).join("")}</optgroup>
+        ${shields.length ? `<optgroup label="Shields">${shields.map((a) => opt("a:" + (a.id || slug(a)),
+          a.name + " — +" + a.acBonus + " AC")).join("")}</optgroup>` : ""}
+      </select>
+      <button class="btn-quiet" data-act="gear-add">Add</button>
+    </div>
+    <p class="muted">A weapon goes straight into your hands and under Attacks; armour goes in the bag until you wear it.
+      Edit any piece to rename it, give it a bonus, change its damage type or write what it does.</p>`;
+}
+
+const DAMAGE_TYPES = ["acid", "bludgeoning", "cold", "fire", "force", "lightning", "necrotic", "piercing",
+  "poison", "psychic", "radiant", "slashing", "thunder"];
+
+/* The piece being edited, as a small form. Read at Save, never per keystroke — the sheet repaints on
+   every change, and a box whose value came from state would lose the caret on each letter. */
+function gearEditHTML(d, ch) {
+  const g = gearList(ch).find((x) => x.id === ui.gearEdit);
+  if (!g) return "";
+  const kind = gearKind(g);
+  const base = kind === "weapon" ? idx.weaponsByName.get(g.base) : idx.armorById.get(g.base);
+  if (!base) return "";
+  const isW = kind === "weapon";
+  const type = g.dmgType || (isW ? base.damage.type : "");
+  return `<div class="gear-edit">
+    <p class="panel-sub">Edit — based on ${esc(base.name)}</p>
+    <label class="gear-f"><span>Name</span><input id="ge-name" class="text" type="text" maxlength="40"
+      value="${esc(g.name || "")}" placeholder="${esc(base.name)}" /></label>
+    <label class="gear-f"><span>${isW ? "Bonus to hit and damage" : "Bonus to AC"}</span>
+      <input id="ge-bonus" class="num" type="number" min="-5" max="5" value="${esc(Number(g.bonus) || 0)}" /></label>
+    ${isW ? `<label class="gear-f"><span>Damage type</span><select id="ge-type" class="text">${DAMAGE_TYPES.map((t) =>
+        `<option value="${t}"${t === type ? " selected" : ""}>${t}</option>`).join("")}</select></label>
+      <label class="gear-f gear-check"><input id="ge-prof" type="checkbox"${g.prof !== false ? " checked" : ""} />
+        <span>Proficient — add your proficiency bonus to hit</span></label>` : ""}
+    <label class="gear-f"><span>What it does</span><input id="ge-note" class="text" type="text" maxlength="160"
+      value="${esc(g.note || "")}" placeholder="Optional — an effect, a story, a quirk" /></label>
+    <div class="hp-controls">
+      <button class="btn-quiet on" data-act="gear-save" data-val="${esc(g.id)}">Save</button>
+      <button class="btn-quiet" data-act="gear-cancel">Cancel</button>
+    </div>
+  </div>`;
+}
+
+/* THE CREATION PICKS BECOME GEAR the first time any of them is touched. Until then the sheet reads them
+   where creation put them, exactly as before; after, everything a character carries lives in one list
+   and every piece of it can be edited, worn, taken off and dropped the same way. */
+const NO_WEAPON = "(none)";
+function gearNewId() { return "g" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5); }
+function gearAdopt(ch, d) {
+  const list = gearList(ch);
+  const raw = Array.isArray(ch.weapons) ? ch.weapons : [];
+  // A character saved before weapons were choosable recorded none and was shown every class weapon;
+  // those are what it has been carrying, so those are what it keeps.
+  const legacy = !raw.length;
+  for (const c of d.carried) {
+    if (!c.w._gear && (legacy || raw.includes(c.w.name))) list.push({ id: gearNewId(), base: c.w.name, prof: true });
+  }
+  ch.weapons = [NO_WEAPON];
+  if (ch.armorId && !ch.armorGear) {
+    const id = gearNewId(); list.push({ id, base: ch.armorId }); ch.armorGear = id;
+  }
+  if (ch.shieldId && !ch.shieldGear) {
+    const id = gearNewId(); list.push({ id, base: ch.shieldId }); ch.shieldGear = id;
+  }
+  ch.gear = list;
+}
+/* Which gear entry a button meant, once the creation picks have been adopted. */
+function gearResolve(ch, val) {
+  if (!String(val).startsWith("~")) return val;
+  const v = String(val).slice(1);
+  if (v === "armor") return ch.armorGear;
+  if (v === "shield") return ch.shieldGear;
+  const name = v.replace(/^w:/, "");
+  const g = gearList(ch).find((x) => x.base === name && !x.name);
+  return g ? g.id : "";
+}
+function gearAct(act, val, ch, d) {
+  if (act === "gear-cancel") { ui.gearEdit = null; return; }
+  gearAdopt(ch, d);
+  const list = gearList(ch);
+  if (act === "gear-add") {
+    const box = $("#gear-pick");
+    const v = String(box ? box.value : "");
+    if (v.startsWith("w:")) {
+      const w = idx.weaponsByName.get(v.slice(2));
+      if (w) list.push({ id: gearNewId(), base: w.name, prof: d.weapons.some((x) => x.name === w.name) });
+    } else if (v.startsWith("a:") && idx.armorById.get(v.slice(2))) {
+      list.push({ id: gearNewId(), base: v.slice(2) });
+    }
+    ch.gear = list;
+    return;
+  }
+  if (act === "gear-off") {
+    if (val === "armor") { ch.armorGear = null; ch.armorId = ""; }
+    else { ch.shieldGear = null; ch.shieldId = ""; }
+    return;
+  }
+  const id = gearResolve(ch, val);
+  const g = list.find((x) => x.id === id);
+  if (!g) return;
+  if (act === "gear-edit") ui.gearEdit = id;
+  else if (act === "gear-drop") {
+    ch.gear = list.filter((x) => x.id !== id);
+    if (ch.armorGear === id) { ch.armorGear = null; ch.armorId = ""; }
+    if (ch.shieldGear === id) { ch.shieldGear = null; ch.shieldId = ""; }
+    if (ui.gearEdit === id) ui.gearEdit = null;
+  } else if (act === "gear-wear") {
+    if (gearKind(g) === "shield") { ch.shieldGear = id; ch.shieldId = g.base; }
+    else if (gearKind(g) === "armor") { ch.armorGear = id; ch.armorId = g.base; }
+  } else if (act === "gear-save") {
+    const val2 = (sel) => { const n = $(sel); return n ? n.value : ""; };
+    g.name = String(val2("#ge-name")).trim().slice(0, 40);
+    g.bonus = Math.max(-5, Math.min(5, Math.round(Number(val2("#ge-bonus")) || 0)));
+    g.note = String(val2("#ge-note")).trim().slice(0, 160);
+    if (gearKind(g) === "weapon") {
+      const t = val2("#ge-type");
+      const base = idx.weaponsByName.get(g.base);
+      g.dmgType = DAMAGE_TYPES.includes(t) && t !== base.damage.type ? t : "";
+      const box = $("#ge-prof");
+      g.prof = box ? !!box.checked : true;
+    }
+    ch.gear = list;
+    ui.gearEdit = null;
+  }
 }
 
 /* Anything that is not a weapon, a suit of armour or a class feature. Firebase drops an empty array
@@ -2289,6 +2493,7 @@ function sheetAction(e) {
   }
   // One weapon in your hands, as at creation: picking another puts the last one away.
   else if (act === "carry") ch.weapons = [val];
+  else if (act.startsWith("gear-")) gearAct(act, val, ch, d);
   // Opening a field takes you to the top OF THAT FIELD, not to the top of the page: on a phone the
   // vitals fill the first screen, so leaving the scroll alone means tapping Tricks shows you your
   // hit points and scrolling to 0 shows you them from further away.
