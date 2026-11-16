@@ -569,9 +569,13 @@ function tblRollPump() {
   // Measured from when it ARRIVED here, on this device's own clock — never against the roller's stamp,
   // which a fast clock on this side would read as old and skip every roll at the table.
   const now = Date.now();
+  let dropped = false;
   while (tbl.rollQueue.length && now - (tblRollArrived.get(tbl.rollQueue[0]) || now) > TBL_ROLL_STALE) {
     tbl.rollQueue.shift();
+    dropped = true;
   }
+  // Dropped from the line is not dropped from the log: its number was being held back there, and is not now.
+  if (dropped) paintLog();
   if (!tbl.rollQueue.length) return;
   const next = tbl.rollQueue.shift();
   const replay = !!(tbl.rollReplay && tbl.rollReplay.delete(next.t));
@@ -628,6 +632,8 @@ function tblShowRoll(entry, opts) {
   if (dice3dHolding && dice3dHolding !== entry.t) dice3dRelease();
   settled.then(() => {
     showing.landed = true;
+    // The history was holding this one's number back; it can have it now.
+    if (tbl && typeof paintLog === "function") { try { paintLog(); } catch { /* left the table */ } }
     // Long enough to read the number before the next one takes its place.
     const backlog = tbl && tbl.rollQueue ? tbl.rollQueue.length : 0;
     setTimeout(() => { showing.free = true; if (tblRollNow === showing) tblRollPumpSoon(); },
@@ -892,7 +898,7 @@ function tblFlashRoll(entry) {
   if (tblFlashTimer) { clearTimeout(tblFlashTimer); tblFlashTimer = null; }
   // While the dice are still in the air it says "rolling…", and the five seconds are for the RESULT —
   // so the clock does not start until they have landed and the numbers are out.
-  if (dice3dHeld(entry)) return;
+  if (tblRollPending(entry)) return;
   tblFlashTimer = setTimeout(() => {
     const n = document.getElementById("vtt-lastroll");
     if (n) n.classList.add("hidden");
@@ -900,12 +906,50 @@ function tblFlashRoll(entry) {
   }, 5000);
 }
 
+/* Is this roll's number still a secret on this screen? Its dice are in the air (3D or flat), or it is
+   waiting its turn behind somebody else's. Everything that prints a total asks this first. */
+function tblRollPending(e) {
+  if (!e || e.kind !== "roll") return false;
+  if (dice3dHeld(e)) return true;
+  if (tblRollNow && !tblRollNow.landed && tblRollNow.entry && tblRollNow.entry.t === e.t
+    && (tblRollNow.entry.who || "") === (e.who || "")) return true;
+  return !!(typeof tbl !== "undefined" && tbl && tbl.rollQueue
+    && tbl.rollQueue.some((q) => q.t === e.t && (q.who || "") === (e.who || "")));
+}
+
+/* Where the reader is in the history: the line at the top of their view and how far it sat from the
+   edge. Kayki, session 2: "the roll history scroll, when everyone tries to see it, it bugs and goes to
+   the top." Any update at the table repaints the dock whole, so the list being read was a brand-new
+   list at the top. Kept by the LINE, not the pixel, because the history is newest-first: a roll that
+   arrives pushes everything down, and the reader should still be looking at what they were reading.
+   null means "at the top", which follows the newest roll the way it always has. */
+let tblLogView = null;
+function tblLogAnchor(host) {
+  if (host.scrollTop < 2) return null;
+  const edge = host.getBoundingClientRect().top;
+  for (const line of host.querySelectorAll("[data-log]")) {
+    const box = line.getBoundingClientRect();
+    if (box.bottom > edge + 1) return { key: asEl(line).dataset.log, off: box.top - edge };
+  }
+  return null;
+}
+function tblLogHold(host) {
+  host.onscroll = () => { tblLogView = tblLogAnchor(host); };
+  if (!tblLogView) return;
+  const key = tblLogView.key;
+  const line = [...host.querySelectorAll("[data-log]")].find((n) => asEl(n).dataset.log === key);
+  if (!line) { tblLogView = null; return; }
+  const want = tblLogView;
+  host.scrollTop += line.getBoundingClientRect().top - host.getBoundingClientRect().top - want.off;
+  tblLogView = want;   // the scroll just made reports the same place; never let it drift
+}
+
 /* The newest roll, in one line. */
 function lastRollHTML(e) {
   if (e.kind !== "roll" || !tblEntryDice(e).length) return esc(e.text || "");
   // Its dice are still rolling on this screen. Saying who is throwing what is the whole of what the bar
   // may give away until they stop.
-  if (dice3dHeld(e)) {
+  if (tblRollPending(e)) {
     return `<strong>${esc(e.who || "Someone")}</strong>${e.label ? " " + esc(e.label) : ""}` +
       `<span class="roll-waiting">${esc(e.spec || "")} &middot; rolling&hellip;</span>`;
   }
@@ -917,13 +961,24 @@ function lastRollHTML(e) {
 /* One line of the log. Laid out rather than written as a sentence: who, what for, the dice as dice, and
    the total big enough to read from across a table. Entries from before this existed, and the DM's
    system lines, still have their sentence and fall back to it. */
-function rollLineHTML(e) {
-  const nat = e.nat === 20 ? " nat20" : e.nat === 1 ? " nat1" : "";
+function rollLineHTML(e, key) {
+  const at = key ? ` data-log="${esc(key)}"` : "";
   if (e.kind !== "roll" || !tblEntryDice(e).length) {
-    return `<p class="roll-line${nat}">${esc(e.text || "")}</p>`;
+    const nat = e.nat === 20 ? " nat20" : e.nat === 1 ? " nat1" : "";
+    return `<p class="roll-line${nat}"${at}>${esc(e.text || "")}</p>`;
   }
+  /* Kayki, session 2: "the roll history shows the result before the dice finish landing." The bar above
+     already held its number back; the history underneath it did not, so the answer was sitting one line
+     down the whole time the dice were in the air. Same rule for both: who and what, never the number. */
+  if (tblRollPending(e)) {
+    return `<div class="roll-line roll-card"${at}>
+    <span class="roll-card-who">${esc(e.who || "Someone")}${e.label ? ` <span class="muted">${esc(e.label)}</span>` : ""}</span>
+    <span class="roll-waiting">${esc(e.spec || "")} &middot; rolling&hellip;</span>
+  </div>`;
+  }
+  const nat = e.nat === 20 ? " nat20" : e.nat === 1 ? " nat1" : "";
   const bits = tblRollBits(e);
-  return `<div class="roll-line roll-card${nat}">
+  return `<div class="roll-line roll-card${nat}"${at}>
     <span class="roll-card-who">${esc(e.who || "Someone")}${e.label ? ` <span class="muted">${esc(e.label)}</span>` : ""}</span>
     <span class="roll-card-dice">${bits.pips}${bits.mod}</span>
     <span class="roll-card-total">${esc(bits.total)}</span>
@@ -975,8 +1030,9 @@ function paintLog() {
     && (waiting || (onBar.t || 0) >= tblBarAt)) tblFlashRoll(onBar);
   const host = $("#vtt-log");
   if (host) {
-    host.innerHTML = entries.slice(0, 60).map(([, e]) => rollLineHTML(e)).join("")
+    host.innerHTML = entries.slice(0, 60).map(([k, e]) => rollLineHTML(e, k)).join("")
       || `<p class="muted">Nothing rolled yet.</p>`;
+    tblLogHold(host);
   }
   // A log nobody prunes grows for as long as the table exists. The DM's browser does it, once it is
   // clearly long, and only ever to the oldest entries.

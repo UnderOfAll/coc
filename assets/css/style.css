@@ -1074,6 +1074,9 @@ code { background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 4px; f
 .gear-f .text, .gear-f .num { width: 100%; box-sizing: border-box; }
 .gear-check { grid-template-columns: auto 1fr; align-items: center; gap: 0.5rem; }
 .gear-check > span { color: inherit; font-size: 0.9rem; }
+.gear-props { border: none; margin: 0; padding: 0; min-width: 0; }
+.gear-props > div { display: flex; flex-wrap: wrap; gap: 0.35rem 0.9rem; }
+.gear-props .gear-check { display: inline-grid; }
 #gear-pick { flex: 1; min-width: 0; }
 @media (max-width: 480px) {
   .gear-row { grid-template-columns: 1fr; }

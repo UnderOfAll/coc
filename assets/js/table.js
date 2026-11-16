@@ -937,6 +937,8 @@ function paintDice() {
 function tblPanel(which) {
   // On a desktop the dice are a dock of their own, so the Dice button opens and closes THAT rather than
   // taking over the panel the sheet and the DM's tools use.
+  // Opening the dice is opening them at the newest roll, not wherever the history was last left.
+  if (which === "dice") tblLogView = null;
   if (which === "dice" && tblWide()) {
     tbl.ui.dock = tbl.ui.dock === false;
     paintDock();

@@ -190,9 +190,12 @@ function derive(ch) {
     const w = Object.assign({}, base, {
       name: g.name || base.name,
       damage: { die: base.damage.die, type: g.dmgType || base.damage.type },
+      properties: gearProps(g, base),
       _gear: g.id, _base: base.name, _note: g.note || "",
     });
-    const { ability, why } = attackAbilityFor(cls, base, mods);
+    // Read off the piece as the player has it, not the compendium entry: a chain they have marked finesse
+    // swings with Dexterity, and a Joker's Charisma reaches it the same way it reaches a rapier.
+    const { ability, why } = attackAbilityFor(cls, w, mods);
     const mod = mods[ability] || 0;
     const bonus = Number(g.bonus) || 0;
     const proficient = g.prof !== false;
@@ -1915,6 +1918,17 @@ function gearAddHTML(d) {
       Edit any piece to rename it, give it a bonus, change its damage type or write what it does.</p>`;
 }
 
+/* The properties a player can switch on or off for a piece of their own. Kayki, 2026-11-15: the Shining
+   Chain is an Iron Chain the DM handed over, and it should be able to swing like a rapier — so finesse,
+   and the rest of the list, is the player's to set per piece. Stored only when it differs from the
+   compendium; "none" stands in for an empty list, which Firebase would otherwise drop and read back as
+   "the same as the compendium". */
+const WEAPON_PROPS = ["finesse", "light", "thrown", "reach", "versatile", "heavy", "two-handed"];
+function gearProps(g, base) {
+  if (!Array.isArray(g.props)) return base.properties || [];
+  return g.props.filter((x) => x !== "none");
+}
+
 const DAMAGE_TYPES = ["acid", "bludgeoning", "cold", "fire", "force", "lightning", "necrotic", "piercing",
   "poison", "psychic", "radiant", "slashing", "thunder"];
 
@@ -1937,7 +1951,10 @@ function gearEditHTML(d, ch) {
     ${isW ? `<label class="gear-f"><span>Damage type</span><select id="ge-type" class="text">${DAMAGE_TYPES.map((t) =>
         `<option value="${t}"${t === type ? " selected" : ""}>${t}</option>`).join("")}</select></label>
       <label class="gear-f gear-check"><input id="ge-prof" type="checkbox"${g.prof !== false ? " checked" : ""} />
-        <span>Proficient — add your proficiency bonus to hit</span></label>` : ""}
+        <span>Proficient — add your proficiency bonus to hit</span></label>
+      <fieldset class="gear-f gear-props"><span>Properties — finesse swings with the better of Str and Dex</span>
+        <div>${WEAPON_PROPS.map((pr) => `<label class="gear-check"><input type="checkbox" data-prop="${pr}"${
+          gearProps(g, base).includes(pr) ? " checked" : ""} /><span>${pr}</span></label>`).join("")}</div></fieldset>` : ""}
     <label class="gear-f"><span>What it does</span><input id="ge-note" class="text" type="text" maxlength="160"
       value="${esc(g.note || "")}" placeholder="Optional — an effect, a story, a quirk" /></label>
     <div class="hp-controls">
@@ -2024,6 +2041,15 @@ function gearAct(act, val, ch, d) {
       g.dmgType = DAMAGE_TYPES.includes(t) && t !== base.damage.type ? t : "";
       const box = $("#ge-prof");
       g.prof = box ? !!box.checked : true;
+      const ticks = [...document.querySelectorAll(".gear-props [data-prop]")];
+      if (ticks.length) {
+        const on = ticks.filter((n) => /** @type {HTMLInputElement} */ (n).checked).map((n) => asEl(n).dataset.prop);
+        // Anything the compendium has that this form does not offer ("special") is kept as it was.
+        const kept = (base.properties || []).filter((x) => !WEAPON_PROPS.includes(x));
+        const next = kept.concat(on);
+        const same = next.length === (base.properties || []).length && next.every((x) => (base.properties || []).includes(x));
+        if (same) delete g.props; else g.props = next.length ? next : ["none"];
+      }
     }
     ch.gear = list;
     ui.gearEdit = null;

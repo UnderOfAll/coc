@@ -654,6 +654,49 @@ console.log("\n— the creature's description grows —");
   await page.close();
 }
 
+console.log("\n— the roll history holds still while the table moves —");
+{
+  /* Kayki, session 2: "the roll history scroll, when everyone tries to see it, it bugs and goes to the top."
+     Every update at the table repainted the dice dock whole, so the list being read was replaced by a fresh
+     one at the top. Reading back through the rolls has to survive somebody else moving a figure. */
+  const { page } = await openTable(1280, 800, true);
+  await page.evaluate(async () => {
+    const t0 = Date.now() - 600000;
+    for (let i = 0; i < 40; i++) {
+      await CocLive.push("tables/482910/log", { t: t0 + i, src: "elsewhere", who: "P" + i, kind: "roll",
+        total: 5, mod: 0, mode: "normal", dice: [{ s: 20, v: 5, sign: 1 }], text: "P" + i + " rolled d20 → 5" });
+    }
+  });
+  await new Promise((r) => setTimeout(r, 500));
+  const logBox = () => page.evaluate(() => {
+    const n = document.getElementById("vtt-log");
+    return n ? { top: n.scrollTop, room: n.scrollHeight - n.clientHeight } : null;
+  });
+  const before = await logBox();
+  ok(before && before.room > 300, "the history is long enough to scroll (" + JSON.stringify(before) + ")");
+  await page.evaluate(() => { document.getElementById("vtt-log").scrollTop = 300; });
+  await new Promise((r) => setTimeout(r, 100));
+  // Somebody else moves a figure: the table repaints.
+  await page.evaluate(() => CocLive.patch("tables/482910/tokens/t2", { x: 9 }));
+  await new Promise((r) => setTimeout(r, 400));
+  const moved = await logBox();
+  ok(moved && Math.abs(moved.top - 300) < 2, "a figure moving elsewhere leaves the history where you were reading (" + (moved && moved.top) + ")");
+  // Somebody rolls: the new line goes on top, and what you were reading stays in front of you.
+  const firstSeen = () => page.evaluate(() => {
+    const n = document.getElementById("vtt-log");
+    const box = n.getBoundingClientRect();
+    const line = [...n.querySelectorAll(".roll-line")].find((l) => l.getBoundingClientRect().bottom > box.top + 1);
+    return line ? line.querySelector(".roll-card-who").textContent.trim() : "";
+  });
+  const reading = await firstSeen();
+  await page.evaluate(() => CocLive.push("tables/482910/log", { t: Date.now(), src: "elsewhere", who: "Late",
+    kind: "roll", total: 7, mod: 0, mode: "normal", dice: [{ s: 20, v: 7, sign: 1 }], text: "Late rolled d20 → 7" }));
+  await new Promise((r) => setTimeout(r, 400));
+  ok((await logBox()).top > 250 && (await firstSeen()) === reading,
+    "a new roll arriving keeps the same line in view (" + reading + " -> " + (await firstSeen()) + ")");
+  await page.close();
+}
+
 await browser.close();
 server.close();
 console.log(fails ? `\nFAILURES: ${fails}` : "\nThe board works under a finger and under a mouse.");

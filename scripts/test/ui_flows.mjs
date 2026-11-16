@@ -859,7 +859,8 @@ ok(/Show the \d+ (option|result)/.test(optBtn.textContent),"which says how many 
 const tablesBefore=$$(".feat-card .option-table").length;
 ok(tablesBefore===0,"folded away by default");
 click(optBtn);
-ok($$(".feat-card .option-table").length===1,"opens just that one");
+// A grouped table (Wild Card: good / amazing / bad / chaos) is several tables in ONE card.
+ok($$(".feat-card .option-table").length>=1&&new Set($$(".feat-card .option-table").map(t=>t.closest(".feat-card"))).size===1,"opens just that one");
 ok(/Hide the/.test($$('[data-act="open-opts"]')[0].textContent),"and offers to fold it back");
 click($$('[data-act="open-opts"]')[0]);
 ok($$(".feat-card .option-table").length===0,"which it does");
@@ -978,6 +979,28 @@ ok(sc&&sc.type==="slashing","its damage type is the one it was given");
 ok(sc&&sc.hit===sc.mod+1,"not proficient: to-hit is the modifier plus the item's +1, no proficiency bonus");
 click($('.tab[data-val="attacks"]'));
 ok($$(".atk-card").some(n=>/Shining Chain/.test(n.textContent)&&/Based on\s*Iron Chain/.test(n.textContent)),"and it has its own card under Attacks");
+/* And its PROPERTIES are the player's too. Kayki, after session 2: wruce's chain should be able to swing
+   like a rapier — "add the option to select the property". Iron Chain has no finesse, so Strength. */
+const chainAbility=()=>peek('(()=>{const c=derive(sheet.ch).carried.find(x=>x.w.name==="Shining Chain");return c&&c.ability+"|"+c.w.properties.join(",");})()');
+ok(/^Strength\|/.test(chainAbility()),"an Iron Chain with no finesse swings with Strength: "+chainAbility());
+click($('.tab[data-val="gear"]'));
+click($(`[data-act="gear-edit"][data-val="${gid}"]`));
+ok($$(".gear-props [data-prop]").length>=7,"the edit form offers the weapon properties");
+ok($('.gear-props [data-prop="reach"]').checked&&!$('.gear-props [data-prop="finesse"]').checked,"ticked as the compendium has them");
+$('.gear-props [data-prop="finesse"]').checked=true;
+click($('[data-act="gear-save"]'));
+const finesseWants=peek('attackAbilityFor(derive(sheet.ch).cls,{properties:["finesse"]},derive(sheet.ch).mods).ability');
+ok(chainAbility().startsWith(finesseWants+"|")&&/finesse/.test(chainAbility()),
+  "marked finesse, it swings like a rapier would for this class ("+chainAbility()+")");
+click($('.tab[data-val="attacks"]'));
+ok($$(".atk-card").some(n=>/Shining Chain/.test(n.textContent)&&/finesse/i.test(n.textContent)),"and its card says finesse");
+// Ticked back to what the compendium says, it stops storing an override at all.
+click($('.tab[data-val="gear"]'));
+click($(`[data-act="gear-edit"][data-val="${gid}"]`));
+$('.gear-props [data-prop="finesse"]').checked=false;
+click($('[data-act="gear-save"]'));
+ok(peek(`sheet.ch.gear.find(g=>g.id==="${gid}").props`)===undefined&&/^Strength\|/.test(chainAbility()),"ticked back to the compendium, the override is gone");
+click($('.tab[data-val="attacks"]'));
 click($('.tab[data-val="status"]'));
 console.log("\n— PERMANENT DELETE —");
 ok($('[data-act="delete-arm"]'),"a delete control exists");

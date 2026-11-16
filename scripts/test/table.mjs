@@ -1157,6 +1157,10 @@ const lastBits = () => ({
   total: ($("#vtt-lastroll .roll-card-total") || {}).textContent,
   dice: [...$$("#vtt-lastroll .pip-die")].map((n) => n.textContent),
 });
+// While the dice tumble the bar says who is rolling, never the number; it arrives when they land.
+ok(/rolling/.test(lastBits().who) && !lastBits().total, "the bar keeps the number back while the dice tumble: " + lastBits().who);
+await until(() => !$("#roll-stage").classList.contains("rolling"));
+await wait(30);
 ok(lastBits().total === "11" && lastBits().dice.join(",") === "5,5",
   "the newest roll is visible even with the panel shut (" + JSON.stringify(lastBits()) + ")");
 /* And it is a NOTIFICATION on the board, not a bar in the column above it. Standing there permanently
@@ -1178,20 +1182,22 @@ ok($$(".roll-line").length === 1, "and the log is still there when the panel is 
  * constructed and handed straight to it. Nothing is left to a coin toss. */
 const flash = async (v, sides) => {
   // Shown AND logged, because the assertions below count what the log kept.
-  await peek(`(async () => { const e = { t: Date.now(), who: "DM", kind: "roll",
+  // Marked as this page's own, as a real roll is, or its echo from the log queues it a second time.
+  await peek(`(async () => { const e = { t: Date.now(), src: TBL_PAGE_ID, who: "DM", kind: "roll",
     text: "DM rolled d${sides} → ${v}", nat: ${v === 20 && sides === 20 ? 20 : v === 1 ? 1 : 0},
     dice: [{ s: ${sides}, v: ${v} }], mod: 0, mode: "normal", total: ${v}, spec: "1d${sides}" };
     tbl.lastRollAt = e.t; tblShowRoll(e); await CocLive.push(tblPath("log"), e); })()`);
 };
+const flashLanded = async () => { await until(() => !$("#roll-stage").classList.contains("rolling")); await wait(30); };
 await flash(20, 20);
-await wait(60);
+await flashLanded();
 ok($("#vtt-lastroll").classList.contains("nat20"), "a natural 20 marks itself");
 // A straight single die IS its own total — printing both is how you get "DM 18 18".
 ok($$("#vtt-lastroll .pip-die").length === 0, "and a straight single die prints once, not twice");
 ok($("#vtt-lastroll .roll-card-total").textContent === "20",
   "as the total on its own: " + $("#vtt-lastroll").textContent.trim());
 await flash(1, 20);
-await wait(80);
+await flashLanded();
 ok($("#vtt-lastroll").classList.contains("nat1"), "and so does a natural 1");
 
 /* Five seconds and it takes itself away. Anyone who wants it back opens the Dice panel, where every roll
@@ -1302,7 +1308,7 @@ ok(thrown.total === (thrown.dice || [{}])[0].v + 7,
 // Shift and alt are the shortcut for advantage and disadvantage.
 peek(`window.__seq = [0.1, 0.9];`);
 $("#sheetroll").dispatchEvent(new window.MouseEvent("click", { bubbles: true, shiftKey: true }));
-await wait(60);
+await flashLanded();
 ok($$("#vtt-lastroll .pip-die.dropped").length === 1,
   "shift-click rolls with advantage, and says which die was dropped: " + JSON.stringify(lastBits()));
 peek(`$("#sheetroll").remove();`);
@@ -2385,6 +2391,26 @@ await until(() => peek(`!(tbl.rollQueue && tbl.rollQueue.length) && (!tblRollNow
 peek(`__shownRolls.length = 0; tbl.rollSeen = null; paintLog();`);
 await wait(500);
 ok(peek(`__shownRolls.length`) === 0, "arriving at a table replays none of the rolls already in its log");
+// Kayki, session 2: "the roll history shows the result before the dice finishes landing." The history is
+// one more place the number can leak from, and it leaked: the bar held it back, the list under it did not.
+const logLine = (who) => peek(`(function(){ const l = [...document.querySelectorAll("#vtt-log .roll-line")]
+  .find((n) => n.textContent.includes("${who}")); return l ? l.textContent.replace(/\\s+/g, " ") : "(none)"; })()`);
+ok(!!$("#vtt-log"), "the roll history is on screen for this");
+peek(`tblRollNow = { entry: {}, queued: false, landed: false, free: false };`);   // somebody else's roll is up
+await pushRoll("Waiter", Date.now() + 7000, ", total: 17, dice: [{ s: 20, v: 17, sign: 1 }]");
+await until(() => peek(`(tbl.rollQueue || []).length`) === 1, 3000);
+ok(/rolling/.test(logLine("Waiter")) && !/17/.test(logLine("Waiter")),
+  "a roll waiting its turn shows who is rolling, not what they got: " + logLine("Waiter"));
+peek(`tblRollNow.free = true; tblRollPumpSoon();`);
+await until(() => peek(`__shownRolls.includes("Waiter")`), 3000);
+await wait(120);
+ok(/rolling/.test(logLine("Waiter")) && !/17/.test(logLine("Waiter")),
+  "nor while its dice are still tumbling: " + logLine("Waiter"));
+await until(() => peek(`!!tblRollNow && tblRollNow.landed`), 4000);
+await wait(50);
+ok(/17/.test(logLine("Waiter")) && !/rolling/.test(logLine("Waiter")),
+  "and the number arrives in the history when they land: " + logLine("Waiter"));
+await until(() => peek(`!(tbl.rollQueue && tbl.rollQueue.length) && (!tblRollNow || tblRollNow.free)`), 6000);
 peek(`tblShowRoll = window.__realShow;`);
 
 console.log("\n— PLAYERS CANNOT REDECORATE —");

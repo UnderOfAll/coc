@@ -642,7 +642,7 @@
         "name": "Momentum",
         "resourceType": "pool",
         "description": "A personal pool of kinetic flow built from constant motion — sprints, spins, swings, and falls turned into finesse. The Acrobat's sole resource.",
-        "generation": "You build Momentum through motion, and only through motion — no technique that spends Momentum ever also grants it. Gain 1 Momentum (at most once per turn from this movement source) when you move at least 10 feet toward, away from, or around a hostile creature on your turn, or when you take the Dash or Disengage action. You also gain 1 Momentum the first time each turn you use Wall-Run. Trapeze Swing, Strike-and-Vanish, Momentum Strike, Flow State, and Riposte only spend Momentum — they never generate it.",
+        "generation": "You build Momentum through motion, and only through motion — no technique that spends Momentum ever also grants it. Gain 1 Momentum (at most once per turn from this movement source) when you move at least 10 feet toward, away from, or around a hostile creature on your turn, or when you take the Dash or Disengage action. You also gain 1 Momentum the first time each turn you use a Free Running maneuver (Wall-Run, Slide or Vault), and 1 more the first time in that same turn you chain a second, DIFFERENT maneuver into it. Trapeze Swing, Strike-and-Vanish, Momentum Strike, Flow State, and Riposte only spend Momentum — they never generate it.",
         "spend": "Spend Momentum in 1-point increments, at no action cost beyond the triggering action, to fuel your features (bonus damage, forced movement, extra mobility, or momentum-gated attacks). Unspent Momentum carries over between rounds, but never between fights: you start every combat with 0 Momentum and any left over is lost the moment the fight ends. Momentum is a per-combat currency like every other engine in this system — it is built during a fight and cannot be banked before one.",
         "cap": "5 (L1-4) · 6 (L5+) — Momentum Reserve raises it at 5th level",
         "capFormula": "5, rising to 6 from 5th level (Momentum Reserve)",
@@ -661,7 +661,13 @@
           },
           {
             "id": "wallrun",
-            "label": "I used Wall-Run",
+            "label": "I used a Free Running maneuver",
+            "gain": 1,
+            "oncePerTurn": true
+          },
+          {
+            "id": "combo",
+            "label": "I chained a second, different maneuver",
             "gain": 1,
             "oncePerTurn": true
           }
@@ -714,7 +720,7 @@
         {
           "level": 1,
           "name": "Wall-Run",
-          "description": "As part of your movement, once per turn, you can run up to half your speed along a vertical surface or across something that couldn't normally support your weight (a wall, a taut rope, a row of chairs), provided you end that move on solid ground or something you can grab. This is a signature move: it generates Momentum.",
+          "description": "As part of your movement, once per turn, you can run up to half your speed UP a vertical surface or across something that couldn't normally support your weight (a wall, a taut rope, a row of chairs), provided you end that move on solid ground or something you can grab. This is your vertical maneuver. Wall-Run, Slide and Vault are your three Free Running maneuvers. Each is part of your movement and once per turn, and you can use all three in the same turn if you have the movement for them. Each one covers up to half your speed (15 feet at the Acrobat's 30), so anything that makes you faster makes every maneuver longer too. The first maneuver each turn generates 1 Momentum, and chaining a second, different one in that same turn generates 1 more.",
           "board": {
             "verb": "move",
             "anchor": "self",
@@ -722,7 +728,43 @@
             "distance": "half-speed"
           },
           "narration": "You hit the wall at a dead sprint and simply do not stop — three, four strides straight up the brickwork, along the rope, across the backs of the chairs, whatever happens to be there. Gravity gets a vote eventually, but not until you have already landed where you meant to be. The crowd gasps a half-second late, every time.",
-          "sheetSummary": "Move up to half your speed along a vertical or unsupporting surface; must end on solid footing. Signature move: generates Momentum.",
+          "sheetSummary": "Vertical. Move up to half your speed up a wall or along an unsupporting surface; must end on solid footing. Free Running maneuver: the first each turn generates 1 Momentum, a second different one in the same turn 1 more.",
+          "meta": {
+            "action": "Movement",
+            "uses": "1 / turn",
+            "range": "Self"
+          }
+        },
+        {
+          "level": 1,
+          "name": "Slide",
+          "description": "As part of your movement, once per turn, you can drop low and slide up to half your speed in a straight line along the ground, passing THROUGH the spaces of creatures in your way, hostile or not, and ignoring difficult terrain for that slide. You can't end the slide in another creature's space. This is your horizontal maneuver: under a table, between an ogre's legs, across a floor slick with oil. Wall-Run, Slide and Vault are your three Free Running maneuvers. Each is part of your movement and once per turn, and you can use all three in the same turn if you have the movement for them. Each one covers up to half your speed (15 feet at the Acrobat's 30), so anything that makes you faster makes every maneuver longer too. The first maneuver each turn generates 1 Momentum, and chaining a second, different one in that same turn generates 1 more.",
+          "board": {
+            "verb": "move",
+            "anchor": "self",
+            "range": 0,
+            "distance": "half-speed"
+          },
+          "narration": "You hit the floor already moving and simply keep going: under the swing, between the legs, across the boards on one hip with sawdust spraying behind you. By the time anyone looks down you are up again on the other side of them.",
+          "sheetSummary": "Horizontal. Slide up to half your speed in a straight line along the ground, through creatures' spaces, ignoring difficult terrain; can't end in an occupied space. Free Running maneuver: the first each turn generates 1 Momentum, a second different one in the same turn 1 more.",
+          "meta": {
+            "action": "Movement",
+            "uses": "1 / turn",
+            "range": "Self"
+          }
+        },
+        {
+          "level": 1,
+          "name": "Vault",
+          "description": "As part of your movement, once per turn, you can leap up to half your speed in an arc, clearing creatures and obstacles up to 10 feet tall on the way and landing on your feet. You can push off anything solid to do it, a crate, a railing, an ally's braced hands, even an enemy's shoulders, and the arc can carry you up onto a ledge or down from one. This is your diagonal maneuver. Wall-Run, Slide and Vault are your three Free Running maneuvers. Each is part of your movement and once per turn, and you can use all three in the same turn if you have the movement for them. Each one covers up to half your speed (15 feet at the Acrobat's 30), so anything that makes you faster makes every maneuver longer too. The first maneuver each turn generates 1 Momentum, and chaining a second, different one in that same turn generates 1 more.",
+          "board": {
+            "verb": "move",
+            "anchor": "self",
+            "range": 0,
+            "distance": "half-speed"
+          },
+          "narration": "One foot on the barrel, one on somebody's shoulder, and you are over the whole knot of them in a single arc. You land, light and balanced, on the far side, facing whoever is about to realise they are now between you and the door.",
+          "sheetSummary": "Diagonal. Leap up to half your speed in an arc over creatures and obstacles up to 10 ft tall, up or down a level, landing on your feet. Free Running maneuver: the first each turn generates 1 Momentum, a second different one in the same turn 1 more.",
           "meta": {
             "action": "Movement",
             "uses": "1 / turn",
@@ -1535,9 +1577,9 @@
       "engine": {
         "name": "Mayhem",
         "resourceType": "pool",
-        "description": "A small pool of chaotic energy built from doing risky, unpredictable things in a fight and spent to draw Wild Cards and fuel Gambits. The Joker's sole resource — deliberately kept small so its swings stay bounded rather than build into a snowball.",
+        "description": "A small pool of chaotic energy built from doing risky, unpredictable things in a fight and spent to fuel Gambits, Turns and the rest of your kit. The Joker's sole resource — deliberately kept small so its swings stay bounded rather than build into a snowball.",
         "generation": "Gain 1 Mayhem the first time each turn you deal damage to a creature, AND gain 1 Mayhem the first time each turn you take damage, AND gain 1 Mayhem the first time each turn you roll a natural 1 or a natural 20 on an attack roll, ability check, or saving throw — three separate sources, each capped at once per turn (all three triggering in the same turn grants 3 Mayhem total; a source that already triggered this turn grants no more). This works from 1st level. None of these sources ever trigger off a Trick: damage you deal with a Trick, and rolls you make as part of one, generate no Mayhem. Your Tricks are free precisely because they don't feed the meter.",
-        "spend": "Spend Mayhem in 1-point increments, at no action cost beyond the triggering feature, to draw Wild Cards, to cast your Turns (1 each), to fuel your Gambits, and to pay for your other Mayhem-keyed features. Unspent Mayhem carries over between rounds, but never between fights: you start every combat with 0 Mayhem and any left over is lost the moment the fight ends. Mayhem is a per-combat currency like every other engine in this system — it is built during a fight and cannot be banked before one.",
+        "spend": "Spend Mayhem in 1-point increments, at no action cost beyond the triggering feature, to draw a second card with Full House, to cast your Turns (1 each), to fuel your Gambits, and to pay for your other Mayhem-keyed features. Unspent Mayhem carries over between rounds, but never between fights: you start every combat with 0 Mayhem and any left over is lost the moment the fight ends. Mayhem is a per-combat currency like every other engine in this system — it is built during a fight and cannot be banked before one.",
         "cap": "≈4–5 (L1–4) · 6+ (L5+)",
         "capFormula": "proficiency bonus + Charisma modifier (minimum 3)",
         "capMath": {
@@ -1573,7 +1615,7 @@
         {
           "level": 1,
           "name": "Mayhem",
-          "description": "You gain the Mayhem pool, a resource built from doing risky, chaotic things in a fight and spent to fuel your Wild Cards and Gambits. See your Mayhem engine for exactly how it is generated, spent, and capped.",
+          "description": "You gain the Mayhem pool, a resource built from doing risky, chaotic things in a fight and spent to fuel your Gambits and the rest of your kit. See your Mayhem engine for exactly how it is generated, spent, and capped.",
           "narration": "Every stupid, reckless, funny thing you do in a fight winds you tighter. You are grinning too much for someone bleeding this freely, and the pressure of it builds behind your teeth until you spend it on something nobody could have planned for.",
           "sheetSummary": "You gain the Mayhem pool. See the Mayhem engine for generation, spending, and cap.",
           "meta": {
@@ -1594,65 +1636,73 @@
         {
           "level": 1,
           "name": "Wild Card",
-          "description": "As a bonus action, spend 1 Mayhem to draw a Wild Card: roll a d8 and immediately resolve the matching result below, with no further action needed. Any saving throw listed is a Charisma saving throw against your gambit DC. Drawing costs a bonus action and 1 Mayhem, so it happens at most once per turn.",
+          "description": "As a bonus action, draw a Wild Card: roll a d8 and immediately resolve the matching result below, with no further action needed. Drawing costs no Mayhem, only the bonus action, so a bad draw never costs you twice. The deck does not care whose side anyone is on: two cards are good, two are amazing, two land on you, and two land on everyone standing near you, friends included. When the Joker reaches for the deck, the whole party should be nervous. Saving throws are against your gambit DC.\n\nIts dice grow with your level the way every class feature's do.",
           "narration": "You draw off the top without looking and let the deck decide what happens next. So does everyone else. The card turns over, the room finds out together, and for one second you are as surprised as anybody — you just hide it better.",
-          "sheetSummary": "Roll a d8 and resolve the matching result. Saves listed are Charisma saves vs {{gambit DC|8 + proficiency bonus + Charisma modifier}}.",
+          "sheetSummary": "Roll a d8: 1-2 good, 3-4 amazing, 5-6 bad for you, 7-8 chaos for everyone near you (allies too). Saves vs {{gambit DC|8 + proficiency bonus + Charisma modifier}}.",
           "options": [
             {
               "roll": 1,
-              "name": "Ace Up the Sleeve",
-              "effect": "You have advantage on the next attack roll or saving throw you make before the end of your next turn."
-            },
-            {
-              "roll": 2,
+              "group": "Good",
               "name": "Marked Card",
               "effect": "The next attack you hit with before the end of your next turn deals an extra [[1d6]] damage of that weapon's damage type."
             },
             {
+              "roll": 2,
+              "group": "Good",
+              "name": "Second Wind",
+              "effect": "You regain [[1d4]] + your Charisma modifier hit points (minimum 1), and your next attack roll before the end of your next turn has advantage."
+            },
+            {
               "roll": 3,
-              "name": "Contagious Cackle",
-              "effect": "Choose one creature you can see within 30 feet; it must succeed on a saving throw or its next attack roll before the start of your next turn is made with disadvantage."
+              "group": "Amazing",
+              "name": "Joker's Wild",
+              "effect": "You make one weapon attack right now, as part of this same bonus action. If it hits, it deals an extra [[1d6]] damage of that weapon's damage type."
             },
             {
               "roll": 4,
-              "name": "Quick Vanish",
-              "effect": "Until the end of your turn your speed increases by 10 feet, and you don't provoke opportunity attacks when you move away from a hostile creature this turn."
+              "group": "Amazing",
+              "name": "House of Cards",
+              "effect": "Every hostile creature within 15 feet of you must succeed on a Charisma saving throw or be Frightened of you until the end of your next turn."
             },
             {
               "roll": 5,
-              "name": "Second Wind",
-              "effect": "You regain [[1d4]] + your Charisma modifier hit points (minimum 1)."
+              "group": "Bad for you",
+              "name": "Paper Cut",
+              "effect": "The deck bites the hand that deals it: you take [[1d4]] psychic damage. It is still damage you took, so it can feed your Mayhem."
             },
             {
               "roll": 6,
-              "name": "Wild Swap",
-              "effect": "The deck turns on you for a moment — choose one hostile creature within 30 feet of you; it has advantage on the next attack roll it makes against you before the start of your next turn."
+              "group": "Bad for you",
+              "name": "Dropped Deck",
+              "effect": "Cards everywhere, and you scrambling after them: attack rolls against you have advantage until the start of your next turn."
             },
             {
               "roll": 7,
-              "name": "Static Shock",
-              "effect": "A spark of raw chaos jumps back through your own hand and you take [[1d4]] psychic damage."
+              "group": "Chaos for everyone nearby",
+              "name": "52 Pickup",
+              "effect": "The whole deck goes off at once. Every other creature within 10 feet of you, allies included, must make a Dexterity saving throw, taking [[1d6]] slashing damage on a failure or half as much on a success."
             },
             {
               "roll": 8,
-              "name": "Encore",
-              "effect": "If you have at least 1 Mayhem remaining, you may immediately spend it to draw again, rerolling on this table and resolving only the new result (this draw itself does nothing); if you have no Mayhem left, this draw has no further effect."
+              "group": "Chaos for everyone nearby",
+              "name": "Laughing Fit",
+              "effect": "The joke lands on everyone. Every creature within 15 feet of you, you included, must succeed on a Wisdom saving throw or fall prone, helpless with laughter."
             }
           ],
           "meta": {
             "action": "Bonus Action",
-            "cost": "1 Mayhem",
+            "cost": "Free",
             "uses": "1 / turn",
-            "range": "Self / 30 ft",
-            "save": "Cha save vs {{gambit DC|8 + proficiency bonus + Charisma modifier}} (some results)"
+            "range": "Self / 10-15 ft",
+            "save": "Cha / Dex / Wis save vs {{gambit DC|8 + proficiency bonus + Charisma modifier}} (some results)"
           }
         },
         {
           "level": 1,
           "name": "Chaotic Parry",
-          "description": "Once per turn when you Parry, after seeing the result, you may spend 1 Mayhem to reroll your Parry d20 — you must use the new roll, even if it is worse. Every Parry of yours narrates as a lunatic, last-second contortion rather than a clean block; the crowd can never tell whether it was skill or dumb luck.",
+          "description": "Once per turn when you Parry, after seeing the result, you may spend 1 Mayhem to reroll your Parry d20 — you must use the new roll, even if it is worse, and the reroll is measured against a Parry DC 1 higher than the first try (12 instead of your base 11, before anything else that moves it). The deck gives you a second chance, never a free one. Every Parry of yours narrates as a lunatic, last-second contortion rather than a clean block; the crowd can never tell whether it was skill or dumb luck.",
           "narration": "Your defence is not a block. It is a stumble, a duck that turns into a spin, a hand thrown up at the last possible instant — and when it looks like it went badly you simply refuse the result and flail your way into a better one. Nobody can tell whether you meant any of it. Neither can you.",
-          "sheetSummary": "After seeing your Parry result, reroll the Parry d20. You must use the new roll even if it is worse.",
+          "sheetSummary": "After seeing your Parry result, reroll the Parry d20. You must use the new roll even if it is worse, and the reroll is against a Parry DC 1 higher (12 instead of 11).",
           "meta": {
             "action": "When you Parry",
             "cost": "1 Mayhem",
@@ -1676,7 +1726,7 @@
           "level": 2,
           "name": "Tricks",
           "role": "combat",
-          "description": "You are a half-caster: your magic is real but it is not the point of you, and it arrives late. From 2nd level you can perform Tricks. You know every trick on the Joker list — a short one — with no preparation and no choosing; each becomes available at the level shown on your class trick ladder, and once available it is always available. Your disciplines are Legerdemain, Fortune, and Pyrotechnics. Your trick ability is your Charisma, so your trick save DC is the same number as your Gambit DC, {{gambit DC|8 + proficiency bonus + Charisma modifier}}, and any trick that makes an attack roll uses {{your trick attack|d20 + proficiency bonus + Charisma modifier}}. Pledges are at-will; a Turn costs 1 Mayhem and carries a cooldown in rounds; a Prestige spends Mayhem and can be performed only once per combat. Mayhem pours in from three separate sources and had nothing to spend it on but Wild Card, so from 2026-08-15 your Turns are paid for out of the same meter your chaos runs on — which is the throttle the class was always described as having. Casting NEVER generates Mayhem — that is the full casters' loop, not yours, so a Prestige always comes out of the resource your core kit already needs. A damaging Turn of yours also scales more slowly than a full caster's: see the Tricks and Casting rules page.",
+          "description": "You are a half-caster: your magic is real but it is not the point of you, and it arrives late. From 2nd level you can perform Tricks. You know every trick on the Joker list — a short one — with no preparation and no choosing; each becomes available at the level shown on your class trick ladder, and once available it is always available. Your disciplines are Legerdemain, Fortune, and Pyrotechnics. Your trick ability is your Charisma, so your trick save DC is the same number as your Gambit DC, {{gambit DC|8 + proficiency bonus + Charisma modifier}}, and any trick that makes an attack roll uses {{your trick attack|d20 + proficiency bonus + Charisma modifier}}. Pledges are at-will; a Turn costs 1 Mayhem and carries a cooldown in rounds; a Prestige spends Mayhem and can be performed only once per combat. Mayhem pours in from three separate sources and had too little to spend it on, so from 2026-08-15 your Turns are paid for out of the same meter your chaos runs on — which is the throttle the class was always described as having. Casting NEVER generates Mayhem — that is the full casters' loop, not yours, so a Prestige always comes out of the resource your core kit already needs. A damaging Turn of yours also scales more slowly than a full caster's: see the Tricks and Casting rules page.",
           "sheetSummary": "Half-caster: tricks from level 2. You know the entire Joker list; each unlocks at its listed level. Disciplines: Legerdemain, Fortune, and Pyrotechnics. Trick save DC is the same number as your Gambit DC, {{gambit DC|8 + proficiency bonus + Charisma modifier}}; trick attacks use {{your trick attack|d20 + proficiency bonus + Charisma modifier}}. Pledges at-will, Turns on cooldown, Prestiges spend Mayhem and are once per combat. Casting never generates Mayhem.",
           "narration": "You start doing things with the cards that the cards do not really do. Nobody in the company can tell where the sleight stops and the magic starts, and you have never volunteered the answer.",
           "meta": {
@@ -1699,8 +1749,8 @@
               "effect": "Choose one creature you can see within 30 feet of you; you and it instantly swap positions, each appearing in the other's space, and neither of you provokes opportunity attacks from the move (each of you must be able to occupy the other's space). Close on a target, drag a dangerous foe off a fragile ally and take its place yourself, or trade spots with an ally to slip out of a bad one. A willing creature swaps automatically; an unwilling creature can refuse by succeeding on a Charisma saving throw against your gambit DC (on a success, neither of you moves)."
             },
             {
-              "name": "Jinx",
-              "effect": "Choose one creature you can see within 30 feet of you and stack the deck against it. The first attack roll or saving throw it makes before the start of your next turn, it must roll twice and use the lower result. Unlike your other tricks, this also spoils a saving throw — set it up on your turn before an ally's spell or your own gambit lands. A hostile creature can shrug the jinx off by succeeding on a Charisma saving throw against your gambit DC when you declare it (on a success, the jinx has no effect)."
+              "name": "Misdeal",
+              "effect": "Choose one creature you can see within 30 feet of you and flick a card into its eyes at exactly the wrong moment. It must succeed on a Charisma saving throw against your gambit DC or lose its reaction until the start of your next turn: no opportunity attacks, no Parry, no reaction of any kind. While it is reeling, the next attack roll made against it before then adds [[1d4]]. Set it up before an ally runs past it, or before your own Switcheroo drops you in its reach."
             },
             {
               "name": "Fortune's Favor",
@@ -1744,12 +1794,12 @@
         {
           "level": 5,
           "name": "Full House",
-          "description": "When you spend Mayhem to draw a Wild Card, you may spend 1 additional Mayhem (2 total) to draw two cards instead of one. If you do, resolve only one of the two results — your choice — and discard the other; you never resolve both at once.",
+          "description": "When you draw a Wild Card, you may spend 1 Mayhem to draw two cards instead of one. If you do, resolve only one of the two results — your choice — and discard the other; you never resolve both at once. It is the only way to tame the deck, and it costs you.",
           "narration": "You draw two and fan them out where only you can see. Whatever the second card was, nobody will ever know: you let it fall, play the one you like, and act as though that was the only card there ever was.",
-          "sheetSummary": "When drawing a Wild Card, draw two cards and resolve only one of your choice; the other is discarded.",
+          "sheetSummary": "When drawing a Wild Card, spend 1 Mayhem to draw two cards and resolve only one of your choice; the other is discarded.",
           "meta": {
             "action": "Special",
-            "cost": "+1 Mayhem (2 total)",
+            "cost": "1 Mayhem",
             "range": "Self"
           }
         },
@@ -3641,7 +3691,7 @@
           "level": 3,
           "name": "Featherweight Landing",
           "role": "combat",
-          "description": "Your body has learned to always find purchase. You take no damage from a fall of 30 feet or less, and for any longer fall you calculate damage as though you had fallen 30 feet less than you actually did. In addition, whenever you fall or would be knocked prone as a result of your own fall or your own signature move (such as a failed Wall-Run or Trapeze Swing), you can spend 1 Momentum (no action required) to land on your feet instead, ending the fall without becoming prone, provided you end it in a space you could normally occupy. This does not apply to being knocked prone or forcibly moved by a hostile creature's attack, spell, or ability.",
+          "description": "Your body has learned to always find purchase. You take no damage from a fall of 30 feet or less, and for any longer fall you calculate damage as though you had fallen 30 feet less than you actually did. In addition, whenever you fall or would be knocked prone as a result of your own fall or your own signature move (such as a failed Wall-Run, Slide, Vault or Trapeze Swing), you can spend 1 Momentum (no action required) to land on your feet instead, ending the fall without becoming prone, provided you end it in a space you could normally occupy. This does not apply to being knocked prone or forcibly moved by a hostile creature's attack, spell, or ability.",
           "narration": "Your body has stopped believing in falling. Long drops end with a soft roll and a stand, and even the ones that go wrong — a slipped wall-run, a swing that came apart — end with your feet under you and your hands out as though it was choreography.",
           "sheetSummary": "No damage from a fall of 30 ft or less; longer falls count as 30 ft shorter. When you fall or would be knocked prone by your own fall or your own signature move, spend 1 Momentum (no action) to land on your feet in a space you could occupy. Never applies to a hostile creature's attack, spell, or ability.",
           "meta": {
@@ -4546,22 +4596,22 @@
       "id": "rigged-draw",
       "name": "Rigged Draw",
       "source": "Circus of Chaos",
-      "flavor": "You palm the card it needed and hand back one that guarantees it loses.",
+      "flavor": "It had the winning hand. You saw it, and then it didn't.",
       "tier": "turn",
       "discipline": "Fortune",
       "minLevel": 2,
       "cooldown": 2,
       "engineCost": 1,
-      "castingTime": "1 bonus action",
+      "castingTime": "1 reaction, which you take when a creature you can see within range hits with an attack roll or succeeds on a saving throw",
       "range": "30 feet",
       "components": [
         "Patter",
         "Flourish"
       ],
       "duration": "Instantaneous",
-      "description": "You gesture at a creature you can see within range, and fate quietly turns against it. Choose one creature within range; the next attack roll or ability check it makes before the start of your next turn is made with disadvantage. This has no effect on saving throws — for those, see your Gambit's Jinx.",
-      "narration": "You palm the card it needed and hand back one that guarantees it loses. Nothing visible happens. It simply has a worse next few seconds than it was expecting.",
-      "sheetSummary": "Target's next attack roll or ability check before the start of your next turn is made with disadvantage. Does not affect saving throws.",
+      "description": "Fate had already turned over, and you turn it back. When a creature you can see within range hits with an attack roll, or succeeds on a saving throw, you can make it reroll that d20 — it must use the new roll, even if it is better. Use it on a hit that was about to drop your ally, or on the save that was about to shrug off your side's best trick. You never choose the number; the deck just deals again.",
+      "narration": "It had the winning hand. You saw it, and then it didn't — the card it was sure of is somehow a different card, and nobody at the table can say when the swap happened.",
+      "sheetSummary": "Reaction: a creature within 30 ft that just hit with an attack or succeeded on a save rerolls that d20 and must use the new roll.",
       "classes": [
         "joker"
       ],

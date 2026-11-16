@@ -2,22 +2,22 @@
   "id": "rigged-draw",
   "name": "Rigged Draw",
   "source": "Circus of Chaos",
-  "flavor": "You palm the card it needed and hand back one that guarantees it loses.",
+  "flavor": "It had the winning hand. You saw it, and then it didn't.",
   "tier": "turn",
   "discipline": "Fortune",
   "minLevel": 2,
   "cooldown": 2,
   "engineCost": 1,
-  "castingTime": "1 bonus action",
+  "castingTime": "1 reaction, which you take when a creature you can see within range hits with an attack roll or succeeds on a saving throw",
   "range": "30 feet",
   "components": [
     "Patter",
     "Flourish"
   ],
   "duration": "Instantaneous",
-  "description": "You gesture at a creature you can see within range, and fate quietly turns against it. Choose one creature within range; the next attack roll or ability check it makes before the start of your next turn is made with disadvantage. This has no effect on saving throws — for those, see your Gambit's Jinx.",
-  "narration": "You palm the card it needed and hand back one that guarantees it loses. Nothing visible happens. It simply has a worse next few seconds than it was expecting.",
-  "sheetSummary": "Target's next attack roll or ability check before the start of your next turn is made with disadvantage. Does not affect saving throws.",
+  "description": "Fate had already turned over, and you turn it back. When a creature you can see within range hits with an attack roll, or succeeds on a saving throw, you can make it reroll that d20 — it must use the new roll, even if it is better. Use it on a hit that was about to drop your ally, or on the save that was about to shrug off your side's best trick. You never choose the number; the deck just deals again.",
+  "narration": "It had the winning hand. You saw it, and then it didn't — the card it was sure of is somehow a different card, and nobody at the table can say when the swap happened.",
+  "sheetSummary": "Reaction: a creature within 30 ft that just hit with an attack or succeeded on a save rerolls that d20 and must use the new roll.",
   "classes": [
     "joker"
   ]
