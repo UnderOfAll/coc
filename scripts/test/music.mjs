@@ -434,6 +434,17 @@ if (boxes) {
   await wait(150);
   const marked = await dm.evaluate(() => !!document.querySelector(".drop-into"));
   ok(marked, "and the folder under the pointer says it is the one that would take it");
+  /* A sync event mid-drag repaints the panel. That once threw the highlight away until the pointer moved
+     again, while the drop still landed — the flake this suite used to have under load. Both repaint paths. */
+  const kept = await dm.evaluate(() => {
+    const s = document.querySelector("#vtt-side");
+    delete s.dataset.rendered;
+    paintMusicPanel();
+    const soft = !!document.querySelector(".drop-into");
+    paintSide();
+    return { soft, full: !!document.querySelector(".drop-into") };
+  });
+  ok(kept.soft && kept.full, `and a repaint mid-drag keeps it lit (soft=${kept.soft}, full=${kept.full})`);
   await dm.mouse.up();
   await wait(700);
   const landed = await dm.evaluate((r) => CocLive.get(`tables/${r}/music/tracks`), ROOM);
@@ -441,6 +452,8 @@ if (boxes) {
   const want = await dm.evaluate(() => window.__f.b);
   ok(t.folder === want, `releasing puts it in that folder (folder=${t.folder === want ? "Main Stage" : t.folder})`);
   ok(!(await dm.evaluate(() => !!document.querySelector(".mus-ghost"))), "and the ghost is cleared up after it");
+  ok(!(await dm.evaluate(() => { paintSide(); return !!document.querySelector(".drop-into, .drop-before"); })),
+    "and a repaint after the drop lights nothing");
 }
 /* A PRESS THAT NEVER BECAME A DRAG MUST NOT MOVE ANYTHING — the handle is a hair from the play button. */
 const before = await dm.evaluate((r) => CocLive.get(`tables/${r}/music/tracks`), ROOM);

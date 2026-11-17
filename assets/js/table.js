@@ -1016,6 +1016,7 @@ function paintSide() {
   // The DM's panel is re-rendered on every stream event and compared against what is on screen, so what
   // is stored has to be the whole thing, header and all.
   if (which === "dm" || which === "music") side.dataset.rendered = side.innerHTML;
+  if (which === "music" && typeof musDragMark === "function") musDragMark();
   // The log lives in the dice panel and is filled by the stream, so a freshly opened panel would sit
   // empty until the next roll — showing "nothing rolled yet" under four rolls.
   else if (which === "dice") paintLog();
@@ -1074,6 +1075,7 @@ function tblRepaintLive(which, build) {
   });
   side.innerHTML = next;
   side.dataset.rendered = next;
+  if (which === "music" && typeof musDragMark === "function") musDragMark();
   side.querySelectorAll("input[id], textarea[id]").forEach((n) => {
     if (n.type !== "file" && kept[n.id] !== undefined) n.value = kept[n.id];
   });

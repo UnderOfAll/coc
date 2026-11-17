@@ -29,15 +29,14 @@
     },
     {
       "level": 3,
-      "name": "Collateral Chaos",
+      "name": "Short Fuse",
       "role": "combat",
-      "description": "Your chaos never stays contained to one target. The first time each turn you resolve a Wild Card result or a Gambit option that targets a single creature, and a second valid target for that same effect (an additional hostile creature if the original target was hostile, or an additional willing ally if the original was an ally) is within 5 feet of the original target, you may extend the effect to that second creature as well. The second creature is affected exactly as the first, including making its own saving throw if the effect calls for one. This costs no additional Mayhem, happens as part of the Wild Card or Gambit you're already resolving (not a separate action or reaction), and can happen only once per turn.",
-      "narration": "Whatever you did to one of them does not have the manners to stop there. It splashes — the same joke, the same trick, the same unpleasant surprise landing on whoever had the poor judgement to be standing next to them.",
-      "sheetSummary": "The first time each turn a Wild Card or Gambit targets a single creature, extend it to one more valid target of the same kind within 5 ft of the original. The second creature makes its own save. Costs no extra Mayhem and no action.",
+      "description": "You know how long a fuse burns, to the second. When you draw a Chaos card (52 Pickup, Laughing Fit), you can light it instead of letting it go off. Mark the space you are standing in: the card goes off at the start of your next turn, centred on that space instead of on you. It catches whoever is near that space when it goes off, you included if you are still standing there. Draw, run, and let it blow up behind you.",
+      "narration": "The card hisses in your fingers. You drop it, you walk away at a perfectly reasonable pace, and you do not look back, because the people who look back are the ones who did not know how long the fuse was.",
+      "sheetSummary": "When you draw a Chaos card, you can delay it: it goes off at the start of your next turn, centred on the space you drew it in. You are only caught if you are still there.",
       "meta": {
-        "action": "Passive",
-        "uses": "1 / turn",
-        "range": "5 ft"
+        "action": "Free",
+        "range": "Self (the space you drew in)"
       }
     },
     {

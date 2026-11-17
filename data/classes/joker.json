@@ -110,7 +110,7 @@
           "roll": 1,
           "group": "Good",
           "name": "Marked Card",
-          "effect": "The next attack you hit with before the end of your next turn deals an extra [[1d6]] damage of that weapon's damage type."
+          "effect": "Pick a creature you can see within 15 feet of you and teleport to an unoccupied space within 5 feet of it, behind it from where you stood. Then the cards spin out of your hands: each hostile creature within 5 feet of you must make a Dexterity saving throw, taking [[1d4]] + your Charisma modifier slashing damage on a failure, or half as much on a success."
         },
         {
           "roll": 2,
@@ -122,7 +122,7 @@
           "roll": 3,
           "group": "Amazing",
           "name": "Joker's Wild",
-          "effect": "You make one weapon attack right now, as part of this same bonus action. If it hits, it deals an extra [[1d6]] damage of that weapon's damage type."
+          "effect": "The card itself is the weapon. Flick it at a creature you can see within 60 feet as part of this same bonus action: a ranged attack using your Charisma modifier and proficiency bonus, which needs nothing in your hands and has no disadvantage for being within 5 feet of a hostile creature. On a hit it deals [[1d6]] + your Charisma modifier slashing damage, plus an extra [[1d6]]."
         },
         {
           "roll": 4,
@@ -140,7 +140,7 @@
           "roll": 6,
           "group": "Bad for you",
           "name": "Dropped Deck",
-          "effect": "Cards everywhere, and you scrambling after them: attack rolls against you have advantage until the start of your next turn."
+          "effect": "The cards scatter and you lunge after them: you swap places with a random creature within 15 feet of you, ally or enemy (roll among them). Until the start of your next turn, attack rolls against you have advantage. If no other creature is within 15 feet, you only suffer the advantage."
         },
         {
           "roll": 7,
@@ -159,7 +159,7 @@
         "action": "Bonus Action",
         "cost": "Free",
         "uses": "1 / turn",
-        "range": "Self / 10-15 ft",
+        "range": "Self / 5-60 ft",
         "save": "Cha / Dex / Wis save vs {{gambit DC|8 + proficiency bonus + Charisma modifier}} (some results)"
       }
     },
@@ -212,7 +212,7 @@
       "options": [
         {
           "name": "Switcheroo",
-          "effect": "Choose one creature you can see within 30 feet of you; you and it instantly swap positions, each appearing in the other's space, and neither of you provokes opportunity attacks from the move (each of you must be able to occupy the other's space). Close on a target, drag a dangerous foe off a fragile ally and take its place yourself, or trade spots with an ally to slip out of a bad one. A willing creature swaps automatically; an unwilling creature can refuse by succeeding on a Charisma saving throw against your gambit DC (on a success, neither of you moves)."
+          "effect": "You do not get to pick who you trade places with. Take the three creatures you can see within 30 feet of you that are farthest from you (fewer if fewer are there), numbered from farthest to closest, and roll a d6: 1-2 the first, 3-4 the second, 5-6 the third. With only two, 1-3 is the farther and 4-6 the closer; with only one, it is that one. You and the chosen creature instantly swap positions, each appearing in the other's space, and neither of you provokes opportunity attacks from the move (each of you must be able to occupy the other's space; if not, nothing happens). A willing creature swaps with no roll. An unwilling creature can refuse by succeeding on a Charisma saving throw against your gambit DC (on a success, neither of you moves)."
         },
         {
           "name": "Misdeal",

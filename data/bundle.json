@@ -1644,7 +1644,7 @@
               "roll": 1,
               "group": "Good",
               "name": "Marked Card",
-              "effect": "The next attack you hit with before the end of your next turn deals an extra [[1d6]] damage of that weapon's damage type."
+              "effect": "Pick a creature you can see within 15 feet of you and teleport to an unoccupied space within 5 feet of it, behind it from where you stood. Then the cards spin out of your hands: each hostile creature within 5 feet of you must make a Dexterity saving throw, taking [[1d4]] + your Charisma modifier slashing damage on a failure, or half as much on a success."
             },
             {
               "roll": 2,
@@ -1656,7 +1656,7 @@
               "roll": 3,
               "group": "Amazing",
               "name": "Joker's Wild",
-              "effect": "You make one weapon attack right now, as part of this same bonus action. If it hits, it deals an extra [[1d6]] damage of that weapon's damage type."
+              "effect": "The card itself is the weapon. Flick it at a creature you can see within 60 feet as part of this same bonus action: a ranged attack using your Charisma modifier and proficiency bonus, which needs nothing in your hands and has no disadvantage for being within 5 feet of a hostile creature. On a hit it deals [[1d6]] + your Charisma modifier slashing damage, plus an extra [[1d6]]."
             },
             {
               "roll": 4,
@@ -1674,7 +1674,7 @@
               "roll": 6,
               "group": "Bad for you",
               "name": "Dropped Deck",
-              "effect": "Cards everywhere, and you scrambling after them: attack rolls against you have advantage until the start of your next turn."
+              "effect": "The cards scatter and you lunge after them: you swap places with a random creature within 15 feet of you, ally or enemy (roll among them). Until the start of your next turn, attack rolls against you have advantage. If no other creature is within 15 feet, you only suffer the advantage."
             },
             {
               "roll": 7,
@@ -1693,7 +1693,7 @@
             "action": "Bonus Action",
             "cost": "Free",
             "uses": "1 / turn",
-            "range": "Self / 10-15 ft",
+            "range": "Self / 5-60 ft",
             "save": "Cha / Dex / Wis save vs {{gambit DC|8 + proficiency bonus + Charisma modifier}} (some results)"
           }
         },
@@ -1746,7 +1746,7 @@
           "options": [
             {
               "name": "Switcheroo",
-              "effect": "Choose one creature you can see within 30 feet of you; you and it instantly swap positions, each appearing in the other's space, and neither of you provokes opportunity attacks from the move (each of you must be able to occupy the other's space). Close on a target, drag a dangerous foe off a fragile ally and take its place yourself, or trade spots with an ally to slip out of a bad one. A willing creature swaps automatically; an unwilling creature can refuse by succeeding on a Charisma saving throw against your gambit DC (on a success, neither of you moves)."
+              "effect": "You do not get to pick who you trade places with. Take the three creatures you can see within 30 feet of you that are farthest from you (fewer if fewer are there), numbered from farthest to closest, and roll a d6: 1-2 the first, 3-4 the second, 5-6 the third. With only two, 1-3 is the farther and 4-6 the closer; with only one, it is that one. You and the chosen creature instantly swap positions, each appearing in the other's space, and neither of you provokes opportunity attacks from the move (each of you must be able to occupy the other's space; if not, nothing happens). A willing creature swaps with no roll. An unwilling creature can refuse by succeeding on a Charisma saving throw against your gambit DC (on a success, neither of you moves)."
             },
             {
               "name": "Misdeal",
@@ -2593,15 +2593,14 @@
         },
         {
           "level": 3,
-          "name": "Collateral Chaos",
+          "name": "Short Fuse",
           "role": "combat",
-          "description": "Your chaos never stays contained to one target. The first time each turn you resolve a Wild Card result or a Gambit option that targets a single creature, and a second valid target for that same effect (an additional hostile creature if the original target was hostile, or an additional willing ally if the original was an ally) is within 5 feet of the original target, you may extend the effect to that second creature as well. The second creature is affected exactly as the first, including making its own saving throw if the effect calls for one. This costs no additional Mayhem, happens as part of the Wild Card or Gambit you're already resolving (not a separate action or reaction), and can happen only once per turn.",
-          "narration": "Whatever you did to one of them does not have the manners to stop there. It splashes — the same joke, the same trick, the same unpleasant surprise landing on whoever had the poor judgement to be standing next to them.",
-          "sheetSummary": "The first time each turn a Wild Card or Gambit targets a single creature, extend it to one more valid target of the same kind within 5 ft of the original. The second creature makes its own save. Costs no extra Mayhem and no action.",
+          "description": "You know how long a fuse burns, to the second. When you draw a Chaos card (52 Pickup, Laughing Fit), you can light it instead of letting it go off. Mark the space you are standing in: the card goes off at the start of your next turn, centred on that space instead of on you. It catches whoever is near that space when it goes off, you included if you are still standing there. Draw, run, and let it blow up behind you.",
+          "narration": "The card hisses in your fingers. You drop it, you walk away at a perfectly reasonable pace, and you do not look back, because the people who look back are the ones who did not know how long the fuse was.",
+          "sheetSummary": "When you draw a Chaos card, you can delay it: it goes off at the start of your next turn, centred on the space you drew it in. You are only caught if you are still there.",
           "meta": {
-            "action": "Passive",
-            "uses": "1 / turn",
-            "range": "5 ft"
+            "action": "Free",
+            "range": "Self (the space you drew in)"
           }
         },
         {
@@ -2908,14 +2907,14 @@
           "level": 3,
           "name": "Stacked Deck",
           "role": "combat",
-          "description": "You've learned to load the deck in your favor. {{uses per combat|1 at levels 1-4, 2 at 5-10, 3 at 11-16, 4 at 17+ — the same breakpoints the Scaling Die uses}} times per combat, you can do one of the following, no action required: choose the result of a Wild Card draw instead of rolling the d8; reroll a d20 you just rolled for your own attack roll, ability check, or saving throw and use the new result; or target one creature within 30 feet of you that just made an attack roll or saving throw, forcing it to succeed on a Charisma saving throw against your gambit DC or reroll that d20 and use the new result. These uses cost no Mayhem and draw on nothing else you have.",
-          "narration": "The deck was never honest and neither were you. When the moment matters you simply arrange for the result you needed — or reach across the table and make somebody else take theirs again, which is worse.",
-          "sheetSummary": "Choose one: pick a Wild Card result instead of rolling; reroll your own d20 attack, check, or save and use the new result; or force a creature that just rolled a d20 to make a Charisma save vs {{gambit DC|8 + proficiency bonus + Charisma modifier}} or reroll and use the new result. Costs no Mayhem.",
+          "description": "You never eat a bad card. You hand it to someone else. {{uses per combat|2 at levels 1-4, 4 at 5-10, 6 at 11-16, 8 at 17+ — double the Scaling Die ladder}} times per combat, when you draw a Bad card (Paper Cut, Dropped Deck) or a Chaos card (52 Pickup, Laughing Fit), you can deal it to a creature you can see within 30 feet of you instead, no action required. That creature must make a Charisma saving throw against your gambit DC. On a failure, the card resolves as if that creature had drawn it: a Bad card lands on it instead of you, and a Chaos card goes off centred on it, so anyone standing near it, your allies included, is caught as they would have been around you. On a success it refuses the card, and the card comes straight back and resolves on you as it was drawn. These uses cost no Mayhem.",
+          "narration": "Every deck has bad cards in it. The trick was never avoiding them. The trick is making sure they end up in somebody else's hand, and smiling when they turn them over.",
+          "sheetSummary": "When you draw a Bad or Chaos card, deal it to a creature within 30 ft. It makes a Charisma save vs {{gambit DC|8 + proficiency bonus + Charisma modifier}}: on a failure the card resolves on it (Chaos centred on it), on a success it comes back to you. Costs no Mayhem.",
           "meta": {
             "action": "Free",
-            "uses": "Scaling: 1/2/3/4 per combat",
+            "uses": "Scaling x2: 2/4/6/8 per combat",
             "range": "30 ft",
-            "save": "Cha save vs {{gambit DC|8 + proficiency bonus + Charisma modifier}} (forced reroll)"
+            "save": "Cha save vs {{gambit DC|8 + proficiency bonus + Charisma modifier}}"
           }
         },
         {
@@ -2955,15 +2954,16 @@
       "features": [
         {
           "level": 3,
-          "name": "Reckless Grin",
+          "name": "Laugh It Off",
           "role": "combat",
-          "description": "As a bonus action, spend 1 Mayhem to throw caution to the wind until the start of your next turn: you have advantage on melee attack rolls you make with a finesse weapon you're proficient with, but attack rolls against you also have advantage until the start of your next turn. You can only be under the effect of Reckless Grin once at a time; using it again while it is already active changes nothing and doesn't cost additional Mayhem.",
-          "narration": "You stop defending. The grin arrives first and then you do, swinging into range with your guard nowhere at all, and for a few glorious seconds you are hitting a great deal harder than anybody hitting you can quite believe — and they are all hitting you.",
-          "sheetSummary": "Until the start of your next turn you have advantage on melee attacks with a finesse weapon you're proficient with, and attack rolls against you have advantage. Doesn't stack with itself.",
+          "description": "When a creature hits you with a melee attack, you can use your reaction and spend 1 Mayhem to laugh in its face. You take only half the damage from that hit, and the attacker takes [[1d4]] + your Charisma modifier psychic damage. You can do this once per round. It uses your reaction, so you cannot also Parry that attack.",
+          "narration": "It hurts. Of course it hurts. But you laugh anyway, loud and too long, right in their face, and somehow that is worse for them than anything you could have done with a blade.",
+          "sheetSummary": "When hit in melee: take half the damage, and the attacker takes [[1d4]] + Cha psychic. Once per round.",
           "meta": {
-            "action": "Bonus Action",
+            "action": "Reaction",
             "cost": "1 Mayhem",
-            "range": "Self"
+            "uses": "1 / round",
+            "range": "Melee (the attacker)"
           }
         },
         {

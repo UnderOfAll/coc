@@ -1684,7 +1684,9 @@ function limitOf(f, level) {
      that tracks the wrong half is worse than no counter. The card still says the whole sentence. */
   if (uses.includes(";")) return null;
   if (/1 \/ combat|once per combat|1 Mimic \/ combat/i.test(uses)) return { kind: "combat", n: 1 };
-  if (/scaling/i.test(uses) || /uses per combat/i.test(f.sheetSummary || "")) return { kind: "scaling" };
+  if (/scaling/i.test(uses) || /uses per combat/i.test(f.sheetSummary || "")) {
+    return { kind: "scaling", mult: /x2\b/i.test(uses) ? 2 : 1 };
+  }
   /* PER TURN, which is the commonest limit in the whole system and the one the sheet did not track at
      all: thirty-six features say "1 / turn" and eight say "1 / round", and every one of them rendered as
      plain reference text with nothing to press. For a player at a table, "your turn" and "the round" come
@@ -1726,7 +1728,7 @@ function featuresPanel(d, p) {
     let ctl = "";
     if (lim) {
       const perTurn = lim.kind === "turn";
-      const max = lim.kind === "combat" ? 1 : perTurn ? lim.n : d.scalingUses;
+      const max = lim.kind === "combat" ? 1 : perTurn ? lim.n : d.scalingUses * lim.mult;
       const used = (perTurn ? (p.turnUses || {}) : p.uses)[key] || 0;
       const leftN = Math.max(0, max - used);
       ctl = `<div class="uses">

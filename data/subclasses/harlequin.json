@@ -7,15 +7,16 @@
   "features": [
     {
       "level": 3,
-      "name": "Reckless Grin",
+      "name": "Laugh It Off",
       "role": "combat",
-      "description": "As a bonus action, spend 1 Mayhem to throw caution to the wind until the start of your next turn: you have advantage on melee attack rolls you make with a finesse weapon you're proficient with, but attack rolls against you also have advantage until the start of your next turn. You can only be under the effect of Reckless Grin once at a time; using it again while it is already active changes nothing and doesn't cost additional Mayhem.",
-      "narration": "You stop defending. The grin arrives first and then you do, swinging into range with your guard nowhere at all, and for a few glorious seconds you are hitting a great deal harder than anybody hitting you can quite believe — and they are all hitting you.",
-      "sheetSummary": "Until the start of your next turn you have advantage on melee attacks with a finesse weapon you're proficient with, and attack rolls against you have advantage. Doesn't stack with itself.",
+      "description": "When a creature hits you with a melee attack, you can use your reaction and spend 1 Mayhem to laugh in its face. You take only half the damage from that hit, and the attacker takes [[1d4]] + your Charisma modifier psychic damage. You can do this once per round. It uses your reaction, so you cannot also Parry that attack.",
+      "narration": "It hurts. Of course it hurts. But you laugh anyway, loud and too long, right in their face, and somehow that is worse for them than anything you could have done with a blade.",
+      "sheetSummary": "When hit in melee: take half the damage, and the attacker takes [[1d4]] + Cha psychic. Once per round.",
       "meta": {
-        "action": "Bonus Action",
+        "action": "Reaction",
         "cost": "1 Mayhem",
-        "range": "Self"
+        "uses": "1 / round",
+        "range": "Melee (the attacker)"
       }
     },
     {

@@ -9,14 +9,14 @@
       "level": 3,
       "name": "Stacked Deck",
       "role": "combat",
-      "description": "You've learned to load the deck in your favor. {{uses per combat|1 at levels 1-4, 2 at 5-10, 3 at 11-16, 4 at 17+ — the same breakpoints the Scaling Die uses}} times per combat, you can do one of the following, no action required: choose the result of a Wild Card draw instead of rolling the d8; reroll a d20 you just rolled for your own attack roll, ability check, or saving throw and use the new result; or target one creature within 30 feet of you that just made an attack roll or saving throw, forcing it to succeed on a Charisma saving throw against your gambit DC or reroll that d20 and use the new result. These uses cost no Mayhem and draw on nothing else you have.",
-      "narration": "The deck was never honest and neither were you. When the moment matters you simply arrange for the result you needed — or reach across the table and make somebody else take theirs again, which is worse.",
-      "sheetSummary": "Choose one: pick a Wild Card result instead of rolling; reroll your own d20 attack, check, or save and use the new result; or force a creature that just rolled a d20 to make a Charisma save vs {{gambit DC|8 + proficiency bonus + Charisma modifier}} or reroll and use the new result. Costs no Mayhem.",
+      "description": "You never eat a bad card. You hand it to someone else. {{uses per combat|2 at levels 1-4, 4 at 5-10, 6 at 11-16, 8 at 17+ — double the Scaling Die ladder}} times per combat, when you draw a Bad card (Paper Cut, Dropped Deck) or a Chaos card (52 Pickup, Laughing Fit), you can deal it to a creature you can see within 30 feet of you instead, no action required. That creature must make a Charisma saving throw against your gambit DC. On a failure, the card resolves as if that creature had drawn it: a Bad card lands on it instead of you, and a Chaos card goes off centred on it, so anyone standing near it, your allies included, is caught as they would have been around you. On a success it refuses the card, and the card comes straight back and resolves on you as it was drawn. These uses cost no Mayhem.",
+      "narration": "Every deck has bad cards in it. The trick was never avoiding them. The trick is making sure they end up in somebody else's hand, and smiling when they turn them over.",
+      "sheetSummary": "When you draw a Bad or Chaos card, deal it to a creature within 30 ft. It makes a Charisma save vs {{gambit DC|8 + proficiency bonus + Charisma modifier}}: on a failure the card resolves on it (Chaos centred on it), on a success it comes back to you. Costs no Mayhem.",
       "meta": {
         "action": "Free",
-        "uses": "Scaling: 1/2/3/4 per combat",
+        "uses": "Scaling x2: 2/4/6/8 per combat",
         "range": "30 ft",
-        "save": "Cha save vs {{gambit DC|8 + proficiency bonus + Charisma modifier}} (forced reroll)"
+        "save": "Cha save vs {{gambit DC|8 + proficiency bonus + Charisma modifier}}"
       }
     },
     {

@@ -1393,13 +1393,24 @@ window.addEventListener("pointermove", (e) => {
     musDrag.ghost = ghost;
   }
   musDrag.ghost.style.transform = `translate(${e.clientX + 12}px, ${e.clientY - 10}px)`;
-  document.querySelectorAll(".drop-into, .drop-before").forEach((n) =>
-    n.classList.remove("drop-into", "drop-before"));
-  const hit = musDropTarget(e.clientX, e.clientY);
-  musDrag.over = hit;
-  if (hit) hit.node.classList.add(hit.how === "into" ? "drop-into" : "drop-before");
+  musDrag.px = e.clientX;
+  musDrag.py = e.clientY;
+  musDragMark();
   musEdgeScroll(e.clientY);
 });
+
+/* Light the drop target under the pointer. Also called after the panel repaints: a sync event that
+   lands mid-drag swaps the panel's markup, which threw the highlight away (and left `over` holding a
+   node no longer on screen) until the pointer moved again. The drop itself still landed, so only the
+   highlight lied, which is what made test:music flake under load. */
+function musDragMark() {
+  if (!musDrag || !musDrag.live || musDrag.px == null) return;
+  document.querySelectorAll(".drop-into, .drop-before").forEach((n) =>
+    n.classList.remove("drop-into", "drop-before"));
+  const hit = musDropTarget(musDrag.px, musDrag.py);
+  musDrag.over = hit;
+  if (hit) hit.node.classList.add(hit.how === "into" ? "drop-into" : "drop-before");
+}
 
 /* THE PANEL SCROLLS, AND THE FOLDER YOU WANT IS OFTEN BELOW THE FOLD. Found by measuring rather than by
    thinking: with two folders open the second one's heading sat at y=1042 in an 850px window, so there was
