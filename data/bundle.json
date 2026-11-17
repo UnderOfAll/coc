@@ -1673,8 +1673,8 @@
             {
               "roll": 6,
               "group": "Bad for you",
-              "name": "Dropped Deck",
-              "effect": "The cards scatter and you lunge after them: you swap places with a random creature within 15 feet of you, ally or enemy (roll among them). Until the start of your next turn, attack rolls against you have advantage. If no other creature is within 15 feet, you only suffer the advantage."
+              "name": "Shuffled In",
+              "effect": "The deck shuffles you into the worst seat at the table. Take the three enemies within 15 feet of you with the most creatures within 5 feet of them, numbered from most crowded to least (on a tie, the farther enemy comes first), and make a {{d6 pick|Number them in order, then roll a d6: 1-2 the first, 3-4 the second, 5-6 the third. With only two, 1-3 is the first and 4-6 the second. With only one, it is that one.}} among them. You swap places with that enemy, each appearing in the other's space, without provoking opportunity attacks. Until the start of your next turn, attack rolls against you have advantage. If no enemy is within 15 feet, you only suffer the advantage."
             },
             {
               "roll": 7,
@@ -1746,7 +1746,7 @@
           "options": [
             {
               "name": "Switcheroo",
-              "effect": "You do not get to pick who you trade places with. Take the three creatures you can see within 30 feet of you that are farthest from you (fewer if fewer are there), numbered from farthest to closest, and roll a d6: 1-2 the first, 3-4 the second, 5-6 the third. With only two, 1-3 is the farther and 4-6 the closer; with only one, it is that one. You and the chosen creature instantly swap positions, each appearing in the other's space, and neither of you provokes opportunity attacks from the move (each of you must be able to occupy the other's space; if not, nothing happens). A willing creature swaps with no roll. An unwilling creature can refuse by succeeding on a Charisma saving throw against your gambit DC (on a success, neither of you moves)."
+              "effect": "You do not get to pick who you trade places with. Take the three creatures you can see within 30 feet of you that are farthest from you (fewer if fewer are there), numbered from farthest to closest, and make a {{d6 pick|Number them in order, then roll a d6: 1-2 the first, 3-4 the second, 5-6 the third. With only two, 1-3 is the first and 4-6 the second. With only one, it is that one.}} among them. You and the chosen creature instantly swap positions, each appearing in the other's space, and neither of you provokes opportunity attacks from the move (each of you must be able to occupy the other's space; if not, nothing happens). A willing creature swaps with no roll. An unwilling creature can refuse by succeeding on a Charisma saving throw against your gambit DC (on a success, neither of you moves)."
             },
             {
               "name": "Misdeal",
@@ -2907,7 +2907,7 @@
           "level": 3,
           "name": "Stacked Deck",
           "role": "combat",
-          "description": "You never eat a bad card. You hand it to someone else. {{uses per combat|2 at levels 1-4, 4 at 5-10, 6 at 11-16, 8 at 17+ — double the Scaling Die ladder}} times per combat, when you draw a Bad card (Paper Cut, Dropped Deck) or a Chaos card (52 Pickup, Laughing Fit), you can deal it to a creature you can see within 30 feet of you instead, no action required. That creature must make a Charisma saving throw against your gambit DC. On a failure, the card resolves as if that creature had drawn it: a Bad card lands on it instead of you, and a Chaos card goes off centred on it, so anyone standing near it, your allies included, is caught as they would have been around you. On a success it refuses the card, and the card comes straight back and resolves on you as it was drawn. These uses cost no Mayhem.",
+          "description": "You never eat a bad card. You hand it to someone else. {{uses per combat|2 at levels 1-4, 4 at 5-10, 6 at 11-16, 8 at 17+ — double the Scaling Die ladder}} times per combat, when you draw a Bad card (Paper Cut, Shuffled In) or a Chaos card (52 Pickup, Laughing Fit), you can deal it to a creature you can see within 30 feet of you instead, no action required. That creature must make a Charisma saving throw against your gambit DC. On a failure, the card resolves as if that creature had drawn it: a Bad card lands on it instead of you, and a Chaos card goes off centred on it, so anyone standing near it, your allies included, is caught as they would have been around you. On a success it refuses the card, and the card comes straight back and resolves on you as it was drawn. These uses cost no Mayhem.",
           "narration": "Every deck has bad cards in it. The trick was never avoiding them. The trick is making sure they end up in somebody else's hand, and smiling when they turn them over.",
           "sheetSummary": "When you draw a Bad or Chaos card, deal it to a creature within 30 ft. It makes a Charisma save vs {{gambit DC|8 + proficiency bonus + Charisma modifier}}: on a failure the card resolves on it (Chaos centred on it), on a success it comes back to you. Costs no Mayhem.",
           "meta": {
